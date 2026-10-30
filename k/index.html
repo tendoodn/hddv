@@ -24,6 +24,27 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
 <body>
 <header><div class="wrap"><h1>Quản lý K rủi ro cùng Tendoo</h1><p>Theo dõi mua vào, bán ra, tồn kho và hệ số K theo từng hồ sơ.</p></div></header>
 <main>
+<section class="card" id="cloudSyncCard">
+  <div class="section-title"><h2>☁️ Tài khoản & đồng bộ online</h2><span id="syncStatus" class="sub">Chưa đăng nhập</span></div>
+  <p class="hint" style="margin-top:0">Vui lòng đăng nhập hoặc tạo tài khoản để sử dụng ứng dụng. Sau khi đăng nhập thành công, toàn bộ giao diện và tính năng quản lý sẽ được mở.</p>
+  <div id="authArea" style="margin-top:14px">
+    <div class="row"><div class="field"><label for="sbEmail">Email</label><input id="sbEmail" type="email" autocomplete="username" placeholder="email@example.com"></div><div class="field"><label for="sbPassword">Mật khẩu</label><input id="sbPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu (tối thiểu 6 ký tự)"></div></div>
+    <div class="row" style="margin-top:10px"><button type="button" id="sbSignIn">Đăng nhập & đồng bộ</button><button type="button" id="sbSignUp" class="secondary">Tạo tài khoản</button><button type="button" id="sbForgotPassword" class="secondary">Quên mật khẩu?</button><button type="button" id="sbSignOut" class="danger" hidden>Đăng xuất</button></div>
+    <div id="sbRecoveryArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
+      <label for="sbNewPassword">Mật khẩu mới</label>
+      <input id="sbNewPassword" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
+      <button type="button" id="sbUpdatePassword" style="margin-top:8px">Lưu mật khẩu mới</button>
+    </div>
+    <div id="sbChangePasswordArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
+      <strong>Đổi mật khẩu tài khoản</strong>
+      <div class="field" style="margin-top:8px"><label for="sbCurrentPassword">Mật khẩu hiện tại</label><input id="sbCurrentPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"></div>
+      <div class="field"><label for="sbChangedPassword">Mật khẩu mới</label><input id="sbChangedPassword" type="password" autocomplete="new-password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"></div>
+      <button type="button" id="sbChangePassword" style="margin-top:8px">Đổi mật khẩu</button>
+    </div>
+  </div>
+  <p class="hint">Dữ liệu của mỗi tài khoản được phân quyền riêng. Hãy giữ kín mật khẩu và xuất bản sao JSON định kỳ để dự phòng.</p>
+</section>
+<div id="appContent" hidden>
   
 <section class="card">
   <div class="section-title">
@@ -127,27 +148,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
     <p id="productKEmpty" class="empty" hidden>Chưa có dữ liệu mặt hàng trong tháng này.</p>
   </section>
 
-<section class="card" id="cloudSyncCard">
-  <div class="section-title"><h2>☁️ Tài khoản & đồng bộ online</h2><span id="syncStatus" class="sub">Chưa đăng nhập</span></div>
-  <p class="hint" style="margin-top:0">Đăng ký hoặc đăng nhập tài khoản Tendoo K để lưu dữ liệu online và sử dụng trên nhiều thiết bị. Bạn không cần tạo dự án Supabase hay nhập khóa kết nối.</p>
-  <div id="authArea" style="margin-top:14px">
-    <div class="row"><div class="field"><label for="sbEmail">Email</label><input id="sbEmail" type="email" autocomplete="username" placeholder="email@example.com"></div><div class="field"><label for="sbPassword">Mật khẩu</label><input id="sbPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu (tối thiểu 6 ký tự)"></div></div>
-    <div class="row" style="margin-top:10px"><button type="button" id="sbSignIn">Đăng nhập & đồng bộ</button><button type="button" id="sbSignUp" class="secondary">Tạo tài khoản</button><button type="button" id="sbForgotPassword" class="secondary">Quên mật khẩu?</button><button type="button" id="sbSignOut" class="danger" hidden>Đăng xuất</button></div>
-    <div id="sbRecoveryArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
-      <label for="sbNewPassword">Mật khẩu mới</label>
-      <input id="sbNewPassword" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
-      <button type="button" id="sbUpdatePassword" style="margin-top:8px">Lưu mật khẩu mới</button>
-    </div>
-    <div id="sbChangePasswordArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
-      <strong>Đổi mật khẩu tài khoản</strong>
-      <div class="field" style="margin-top:8px"><label for="sbCurrentPassword">Mật khẩu hiện tại</label><input id="sbCurrentPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"></div>
-      <div class="field"><label for="sbChangedPassword">Mật khẩu mới</label><input id="sbChangedPassword" type="password" autocomplete="new-password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"></div>
-      <button type="button" id="sbChangePassword" style="margin-top:8px">Đổi mật khẩu</button>
-    </div>
-  </div>
-  <p class="hint">Dữ liệu của mỗi tài khoản được phân quyền riêng. Hãy giữ kín mật khẩu và xuất bản sao JSON định kỳ để dự phòng.</p>
-</section>
 
+
+</div>
 </main>
 <footer>Dữ liệu được lưu trên thiết bị và đồng bộ online theo tài khoản; hãy sao lưu JSON định kỳ để dự phòng.
   <div class="footer-links"><a href="https://tendoodn.github.io/t" target="_blank" rel="noopener noreferrer">Báo giá và tiện ích Tendoo</a><a href="https://taihoadon.online" target="_blank" rel="noopener noreferrer">Đăng ký mua tools tra cứu hóa đơn chứng từ</a><a href="https://chromewebstore.google.com/detail/bbdeblbinfjmbeljddnaghfombblfppp" target="_blank" rel="noopener noreferrer">Tải add-on chrome tra cứu và tải hoá đơn TCT</a><a href="https://zalo.me/0393906086" target="_blank" rel="noopener noreferrer">Liên hệ Zalo: 0393906086</a></div>
@@ -528,8 +531,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
     $('sbSignOut').hidden=!cloudUser;$('sbSignIn').hidden=!!cloudUser;$('sbSignUp').hidden=!!cloudUser;
     $('sbEmail').disabled=!!cloudUser;$('sbPassword').disabled=!!cloudUser;
     $('sbChangePasswordArea').hidden=!cloudUser;
-    if(cloudUser){syncStatus('Đã đăng nhập: '+cloudUser.email,true);}
-    else syncStatus('Đã cấu hình · chưa đăng nhập');
+    $('appContent').hidden=!cloudUser;
+    $('sbForgotPassword').hidden=!!cloudUser;
+    if(cloudUser){syncStatus('Đã đăng nhập: '+cloudUser.email+' · đã mở toàn bộ tính năng',true);}
+    else syncStatus('Vui lòng đăng nhập hoặc tạo tài khoản để mở toàn bộ tính năng');
   }
   $('sbForgotPassword').addEventListener('click',async()=>{
     try{
@@ -557,7 +562,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
     buildSupabase();
     sbClient.auth.onAuthStateChange((event)=>{
       if(event==='PASSWORD_RECOVERY')$('sbRecoveryArea').hidden=false;
-      if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')refreshAuthUI().catch(()=>{});
+      if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='SIGNED_OUT')refreshAuthUI().catch(()=>{});
     });
   }catch(initError){
     syncStatus('Không khởi tạo được Supabase: '+(initError.message||'lỗi không xác định'));
@@ -571,7 +576,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       if(error)throw error;
       if(!data.session){
         syncStatus('Đã gửi email xác nhận · vui lòng kiểm tra hộp thư',true);
-        alert('Đăng ký đã được tiếp nhận. Supabase đã gửi email xác nhận đến địa chỉ của bạn. Hãy mở email, nhấn Xác nhận tài khoản rồi quay lại trang này để đăng nhập. Nếu chưa thấy thư, hãy kiểm tra Spam/Thư rác.');
+        alert('Đăng ký đã được tiếp nhận. Supabase đã gửi email xác nhận đến địa chỉ của bạn. Hãy mở email, nhấn Xác nhận tài khoản, quay lại trang này và đăng nhập bằng email/mật khẩu vừa tạo. Toàn bộ tính năng sẽ mở sau khi đăng nhập thành công. Nếu chưa thấy thư, hãy kiểm tra Spam/Thư rác.');
         return;
       }
       cloudUser=data.user;

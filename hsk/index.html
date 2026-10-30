@@ -17,6 +17,13 @@ input,select,button{font:inherit;border-radius:11px;border:1px solid var(--line)
 .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metric{padding:14px;border-radius:14px;background:#f7faf8;border:1px solid var(--line)}.metric .label{font-size:12px;color:var(--muted);font-weight:700}.metric .value{font-size:clamp(19px,3.4vw,26px);font-weight:800;overflow-wrap:anywhere;margin-top:5px}.metric.k{background:var(--green2);border-color:#cce8d8}.metric.k .value{color:var(--green)}
 .add-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.item-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 0}.item-row button{padding:8px 10px}.item-row input{min-width:0}.hint{font-size:13px;color:var(--muted);margin:10px 0 0}.history{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:650px}th,td{text-align:right;padding:11px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:12px;color:var(--muted);background:#f7faf8}th:first-child,td:first-child{text-align:left}tbody tr.active{background:#eff8f2}td strong{color:var(--green)}.actions{display:flex;gap:8px;flex-wrap:wrap}.empty{text-align:center;padding:24px;color:var(--muted)}
 .k.warning{background:#fde7e7!important;border-color:#e7a5a5!important}.k.warning .value{color:#b42318!important}.profile-bar{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.profile-bar .field{min-width:180px}.overlay{position:fixed;inset:0;background:#10251fd1;display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}.overlay.show{display:flex}.dialog{width:min(100%,480px);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:22px;box-shadow:0 20px 80px #0005}.dialog h2{margin:0 0 8px;font-size:22px}.dialog p{color:var(--muted);margin:0 0 16px}.dialog .field{margin:12px 0}.dialog .buttons{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}.dialog .secret-hint{background:#fff5df;border:1px solid #f0d6a2;padding:12px;border-radius:12px;font-size:14px}.profile-meta{font-size:12px;color:var(--muted)}.tabbar{display:flex;gap:8px;margin:0 0 14px}.tabbar button{flex:1}.tabbar button[aria-selected="true"]{background:#123b35;color:white}.tab-page{display:none}.tab-page.active{display:block}.transaction-table{min-width:680px}.footer-links{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:10px}.footer-links a{color:var(--green);font-weight:700}.delete-transaction{padding:6px 10px;font-size:13px}.warning-text{color:#b42318;font-weight:800}.report-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.report-options label{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;color:var(--ink)}.report-options input{width:auto}.live-warning{display:none;margin-top:10px;padding:12px;border:1px solid #e7a5a5;background:#fde7e7;color:#a4231b;border-radius:12px;font-weight:700}.live-warning.show{display:block}
+#cloudSyncCard{position:relative}
+.account-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;margin:0 0 0 auto}
+.account-actions button{padding:8px 13px;font-size:14px}
+#cloudSyncCard.is-authenticated{padding:8px 12px;margin-bottom:12px;min-height:0}
+#cloudSyncCard.is-authenticated>.section-title,#cloudSyncCard.is-authenticated>#authArea,#cloudSyncCard.is-authenticated>p{display:none!important}
+#cloudSyncCard.is-authenticated .account-actions{margin:0}
+@media(max-width:560px){.account-actions{gap:6px}.account-actions button{padding:7px 10px;font-size:13px}}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
 @media(max-width:560px){.metrics{grid-template-columns:1fr}.metric{display:flex;align-items:center;justify-content:space-between;gap:12px}.metric .value{margin:0;text-align:right}.add-grid{grid-template-columns:1fr}.card{padding:15px}main{padding:0 10px}}
 </style>
@@ -25,25 +32,31 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
 <header><div class="wrap"><h1>Quản lý K rủi ro cùng Tendoo</h1><p>Theo dõi mua vào, bán ra, tồn kho và hệ số K theo từng hồ sơ.</p></div></header>
 <main>
 <section class="card" id="cloudSyncCard">
+  <div class="account-actions" id="accountActions" hidden>
+    <button type="button" id="sbOpenChangePassword" class="secondary">Đổi mật khẩu</button>
+    <button type="button" id="sbSignOut" class="danger">Đăng xuất</button>
+  </div>
   <div class="section-title"><h2>☁️ Tài khoản & đồng bộ online</h2><span id="syncStatus" class="sub">Chưa đăng nhập</span></div>
   <p class="hint" style="margin-top:0">Vui lòng đăng nhập hoặc tạo tài khoản để sử dụng ứng dụng. Sau khi đăng nhập thành công, toàn bộ giao diện và tính năng quản lý sẽ được mở.</p>
   <div id="authArea" style="margin-top:14px">
     <div class="row"><div class="field"><label for="sbEmail">Email</label><input id="sbEmail" type="email" autocomplete="username" placeholder="email@example.com"></div><div class="field"><label for="sbPassword">Mật khẩu</label><input id="sbPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu (tối thiểu 6 ký tự)"></div></div>
-    <div class="row" style="margin-top:10px"><button type="button" id="sbSignIn">Đăng nhập & đồng bộ</button><button type="button" id="sbSignUp" class="secondary">Tạo tài khoản</button><button type="button" id="sbForgotPassword" class="secondary">Quên mật khẩu?</button><button type="button" id="sbSignOut" class="danger" hidden>Đăng xuất</button></div>
+    <div class="row" style="margin-top:10px"><button type="button" id="sbSignIn">Đăng nhập & đồng bộ</button><button type="button" id="sbSignUp" class="secondary">Tạo tài khoản</button><button type="button" id="sbForgotPassword" class="secondary">Quên mật khẩu?</button></div>
     <div id="sbRecoveryArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
       <label for="sbNewPassword">Mật khẩu mới</label>
       <input id="sbNewPassword" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
       <button type="button" id="sbUpdatePassword" style="margin-top:8px">Lưu mật khẩu mới</button>
     </div>
-    <div id="sbChangePasswordArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
-      <strong>Đổi mật khẩu tài khoản</strong>
-      <div class="field" style="margin-top:8px"><label for="sbCurrentPassword">Mật khẩu hiện tại</label><input id="sbCurrentPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"></div>
-      <div class="field"><label for="sbChangedPassword">Mật khẩu mới</label><input id="sbChangedPassword" type="password" autocomplete="new-password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"></div>
-      <button type="button" id="sbChangePassword" style="margin-top:8px">Đổi mật khẩu</button>
-    </div>
   </div>
-  <p class="hint">Dữ liệu của mỗi tài khoản được phân quyền riêng. Hãy giữ kín mật khẩu và xuất bản sao JSON định kỳ để dự phòng.</p>
 </section>
+<div class="overlay" id="changePasswordModal" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle">
+  <div class="dialog">
+    <h2 id="changePasswordTitle">Đổi mật khẩu tài khoản</h2>
+    <p>Nhập mật khẩu hiện tại và mật khẩu mới của bạn.</p>
+    <div class="field"><label for="sbCurrentPassword">Mật khẩu hiện tại</label><input id="sbCurrentPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"></div>
+    <div class="field"><label for="sbChangedPassword">Mật khẩu mới</label><input id="sbChangedPassword" type="password" autocomplete="new-password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"></div>
+    <div class="buttons"><button type="button" id="sbCloseChangePassword" class="secondary">Hủy</button><button type="button" id="sbChangePassword">Đổi mật khẩu</button></div>
+  </div>
+</div>
 <div id="appContent" hidden>
   
 <section class="card">
@@ -528,9 +541,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
   }
   async function refreshAuthUI(){
     const {data}=await sbClient.auth.getSession();cloudUser=data.session?.user||null;
-    $('sbSignOut').hidden=!cloudUser;$('sbSignIn').hidden=!!cloudUser;$('sbSignUp').hidden=!!cloudUser;
+    $('accountActions').hidden=!cloudUser;$('cloudSyncCard').classList.toggle('is-authenticated',!!cloudUser);$('sbSignIn').hidden=!!cloudUser;$('sbSignUp').hidden=!!cloudUser;
     $('sbEmail').disabled=!!cloudUser;$('sbPassword').disabled=!!cloudUser;
-    $('sbChangePasswordArea').hidden=!cloudUser;
     $('appContent').hidden=!cloudUser;
     $('sbForgotPassword').hidden=!!cloudUser;
     if(cloudUser){syncStatus('Đã đăng nhập: '+cloudUser.email+' · đã mở toàn bộ tính năng',true);}
@@ -598,6 +610,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       catch(syncError){syncStatus('Đã đăng nhập · lỗi tải dữ liệu online');alert('Đăng nhập thành công, nhưng không tải được dữ liệu đám mây. Kiểm tra bảng k_user_data và chính sách RLS trong Supabase. Chi tiết: '+(syncError.message||'không xác định'));}
     }catch(e){syncStatus('Đăng nhập chưa thành công');alert(e.message||'Không thể đăng nhập. Vui lòng thử lại hoặc liên hệ quản trị viên.');}
   });
+  $('sbOpenChangePassword').addEventListener('click',()=>{$('changePasswordModal').classList.add('show');$('sbCurrentPassword').focus();});
+  $('sbCloseChangePassword').addEventListener('click',()=>{$('changePasswordModal').classList.remove('show');});
+  $('changePasswordModal').addEventListener('click',(e)=>{if(e.target===$('changePasswordModal'))$('changePasswordModal').classList.remove('show');});
   $('sbChangePassword').addEventListener('click',async()=>{
     const button=$('sbChangePassword');
     try{
@@ -613,7 +628,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       button.textContent='Đang đổi mật khẩu…';
       const {error}=await buildSupabase().auth.updateUser({password:newPassword});
       if(error)throw error;
-      $('sbCurrentPassword').value='';$('sbChangedPassword').value='';
+      $('sbCurrentPassword').value='';$('sbChangedPassword').value='';$('changePasswordModal').classList.remove('show');
       syncStatus('Đổi mật khẩu thành công',true);
       alert('Đã đổi mật khẩu thành công.');
     }catch(e){syncStatus('Chưa đổi được mật khẩu');alert(e.message||'Không thể đổi mật khẩu.');}

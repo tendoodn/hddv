@@ -188,6 +188,21 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
   const MONTH_KEY = 'monthly-purchase-sales-v1';
   const PROFILE_KEY = 'monthly-purchase-sales-profiles-v1';
   const $ = id => document.getElementById(id);
+  window.addEventListener('error', event => {
+    const status = document.getElementById('syncStatus');
+    if(status) {
+      status.textContent = 'Lỗi JavaScript: ' + (event.message || 'không xác định');
+      status.style.color = '#b42318';
+    }
+  });
+  window.addEventListener('unhandledrejection', event => {
+    const status = document.getElementById('syncStatus');
+    if(status) {
+      const reason = event.reason;
+      status.textContent = 'Lỗi xử lý: ' + (reason?.message || String(reason || 'không xác định'));
+      status.style.color = '#b42318';
+    }
+  });
   const now = new Date();
   $('month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const parseNum = value => {
@@ -555,8 +570,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       const {data,error}=await c.auth.signUp({email,password,options:{emailRedirectTo:APP_REDIRECT_URL}});
       if(error)throw error;
       if(!data.session){
-        syncStatus('Tài khoản đã tạo nhưng đang chờ xác nhận email');
-        alert('Supabase chưa cấp phiên đăng nhập. Hãy vào Supabase > Authentication > Sign In / Providers > Email và tắt Confirm email, sau đó thử tạo tài khoản bằng email khác. Nếu vẫn lỗi, kiểm tra Email provider và giới hạn đăng ký.');
+        syncStatus('Đã gửi email xác nhận · vui lòng kiểm tra hộp thư',true);
+        alert('Đăng ký đã được tiếp nhận. Supabase đã gửi email xác nhận đến địa chỉ của bạn. Hãy mở email, nhấn Xác nhận tài khoản rồi quay lại trang này để đăng nhập. Nếu chưa thấy thư, hãy kiểm tra Spam/Thư rác.');
         return;
       }
       cloudUser=data.user;

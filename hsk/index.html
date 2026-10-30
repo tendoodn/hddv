@@ -572,7 +572,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       const c=buildSupabase(),email=$('sbEmail').value.trim(),password=$('sbPassword').value;
       if(!email||password.length<6)throw Error('Nhập email hợp lệ và mật khẩu tối thiểu 6 ký tự.');
       syncStatus('Đang tạo tài khoản…');
-      const {data,error}=await c.auth.signUp({email,password,options:{emailRedirectTo:APP_REDIRECT_URL}});
+      const {data,error}=await c.auth.signUp({email,password});
       if(error)throw error;
       if(!data.session){
         syncStatus('Đã gửi email xác nhận · vui lòng kiểm tra hộp thư',true);

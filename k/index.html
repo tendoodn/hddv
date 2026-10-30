@@ -138,6 +138,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       <input id="sbNewPassword" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
       <button type="button" id="sbUpdatePassword" style="margin-top:8px">Lưu mật khẩu mới</button>
     </div>
+    <div id="sbChangePasswordArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
+      <strong>Đổi mật khẩu tài khoản</strong>
+      <div class="field" style="margin-top:8px"><label for="sbCurrentPassword">Mật khẩu hiện tại</label><input id="sbCurrentPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"></div>
+      <div class="field"><label for="sbChangedPassword">Mật khẩu mới</label><input id="sbChangedPassword" type="password" autocomplete="new-password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"></div>
+      <button type="button" id="sbChangePassword" style="margin-top:8px">Đổi mật khẩu</button>
+    </div>
   </div>
   <p class="hint">Dữ liệu của mỗi tài khoản được phân quyền riêng. Hãy giữ kín mật khẩu và xuất bản sao JSON định kỳ để dự phòng.</p>
 </section>
@@ -455,6 +461,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
   const DEFAULT_SB_URL='https://vagetcrguyqimuarcxlr.supabase.co';
   const DEFAULT_SB_KEY='sb_publishable_KALfsV4On7kr8dsGNIDyRA_BP2oQ_jS';
   let sbClient=null, sbClientConfig='', cloudUser=null, syncTimer=null, syncing=false, suppressCloudSync=false;
+  const APP_REDIRECT_URL=window.location.origin+window.location.pathname;
   function syncStatus(message, good=false){$('syncStatus').textContent=message;$('syncStatus').style.color=good?'#176b52':'var(--muted)';}
   function buildSupabase(){
     const url=DEFAULT_SB_URL, key=DEFAULT_SB_KEY;
@@ -505,6 +512,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
     const {data}=await sbClient.auth.getSession();cloudUser=data.session?.user||null;
     $('sbSignOut').hidden=!cloudUser;$('sbSignIn').hidden=!!cloudUser;$('sbSignUp').hidden=!!cloudUser;
     $('sbEmail').disabled=!!cloudUser;$('sbPassword').disabled=!!cloudUser;
+    $('sbChangePasswordArea').hidden=!cloudUser;
     if(cloudUser){syncStatus('Đã đăng nhập: '+cloudUser.email,true);}
     else syncStatus('Đã cấu hình · chưa đăng nhập');
   }
@@ -513,7 +521,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       const c=buildSupabase(),email=$('sbEmail').value.trim();
       if(!email)throw Error('Hãy nhập email đã đăng ký trước.');
       syncStatus('Đang gửi email khôi phục…');
-      const {error}=await c.auth.resetPasswordForEmail(email,{redirectTo:window.location.href.split('#')[0]});
+      const {error}=await c.auth.resetPasswordForEmail(email,{redirectTo:APP_REDIRECT_URL});
       if(error)throw error;
       syncStatus('Đã gửi email khôi phục');
       alert('Nếu email đã đăng ký, Supabase sẽ gửi liên kết đặt lại mật khẩu. Hãy mở email và nhấn vào liên kết để quay lại trang K.');
@@ -530,15 +538,21 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       await refreshAuthUI();
     }catch(e){alert(e.message||'Không thể cập nhật mật khẩu.');}
   });
-  sbClient.auth.onAuthStateChange((event)=>{
-    if(event==='PASSWORD_RECOVERY')$('sbRecoveryArea').hidden=false;
-  });
+  try{
+    buildSupabase();
+    sbClient.auth.onAuthStateChange((event)=>{
+      if(event==='PASSWORD_RECOVERY')$('sbRecoveryArea').hidden=false;
+      if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')refreshAuthUI().catch(()=>{});
+    });
+  }catch(initError){
+    syncStatus('Không khởi tạo được Supabase: '+(initError.message||'lỗi không xác định'));
+  }
   $('sbSignUp').addEventListener('click',async()=>{
     try{
       const c=buildSupabase(),email=$('sbEmail').value.trim(),password=$('sbPassword').value;
       if(!email||password.length<6)throw Error('Nhập email hợp lệ và mật khẩu tối thiểu 6 ký tự.');
       syncStatus('Đang tạo tài khoản…');
-      const {data,error}=await c.auth.signUp({email,password});
+      const {data,error}=await c.auth.signUp({email,password,options:{emailRedirectTo:APP_REDIRECT_URL}});
       if(error)throw error;
       if(!data.session){
         syncStatus('Tài khoản đã tạo nhưng đang chờ xác nhận email');
@@ -563,6 +577,27 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
       try{await pullCloud();}
       catch(syncError){syncStatus('Đã đăng nhập · lỗi tải dữ liệu online');alert('Đăng nhập thành công, nhưng không tải được dữ liệu đám mây. Kiểm tra bảng k_user_data và chính sách RLS trong Supabase. Chi tiết: '+(syncError.message||'không xác định'));}
     }catch(e){syncStatus('Đăng nhập chưa thành công');alert(e.message||'Không thể đăng nhập. Vui lòng thử lại hoặc liên hệ quản trị viên.');}
+  });
+  $('sbChangePassword').addEventListener('click',async()=>{
+    const button=$('sbChangePassword');
+    try{
+      const currentPassword=$('sbCurrentPassword').value;
+      const newPassword=$('sbChangedPassword').value;
+      if(!cloudUser)throw Error('Bạn cần đăng nhập trước.');
+      if(!currentPassword)throw Error('Hãy nhập mật khẩu hiện tại.');
+      if(newPassword.length<6)throw Error('Mật khẩu mới cần tối thiểu 6 ký tự.');
+      button.disabled=true;button.textContent='Đang xác thực…';
+      const email=cloudUser.email;
+      const {error:loginError}=await buildSupabase().auth.signInWithPassword({email,password:currentPassword});
+      if(loginError)throw Error('Mật khẩu hiện tại không đúng hoặc không thể xác thực: '+loginError.message);
+      button.textContent='Đang đổi mật khẩu…';
+      const {error}=await buildSupabase().auth.updateUser({password:newPassword});
+      if(error)throw error;
+      $('sbCurrentPassword').value='';$('sbChangedPassword').value='';
+      syncStatus('Đổi mật khẩu thành công',true);
+      alert('Đã đổi mật khẩu thành công.');
+    }catch(e){syncStatus('Chưa đổi được mật khẩu');alert(e.message||'Không thể đổi mật khẩu.');}
+    finally{button.disabled=false;button.textContent='Đổi mật khẩu';}
   });
   $('sbSignOut').addEventListener('click',async()=>{if(!sbClient)return;const {error}=await sbClient.auth.signOut();if(error){alert(error.message);return;}cloudUser=null;profiles=[];activeId='';months={};localStorage.removeItem(PROFILE_KEY);localStorage.removeItem(MONTH_KEY);ensureWorkingProfile();render();await refreshAuthUI();});
   try{buildSupabase();(async()=>{await refreshAuthUI();if(cloudUser){try{await pullCloud();}catch(e){syncStatus('Lỗi tải dữ liệu: '+(e.message||'không xác định'));}}})().catch(()=>{});}catch(e){syncStatus('Không thể khởi tạo dịch vụ đồng bộ');}

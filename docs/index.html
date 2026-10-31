@@ -40,6 +40,7 @@ small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
 <div style="margin-top:20px"><div class="muted">Trạng thái gói</div><h1 id="licenseTitle">Đang kiểm tra…</h1><div id="licenseMeta" class="muted"></div></div>
 <div id="trialArea" class="actions hidden"><button id="trialBtn">Kích hoạt dùng thử 7 ngày</button></div>
 <div id="dashMsg" class="notice hidden"></div>
+<div class="panel" style="margin-top:14px"><h2>Đổi mã quà tặng</h2><label>Mã quà tặng</label><input id="giftCode" placeholder="TENDOO-XXXXXXXXXX" autocomplete="off"><div class="actions"><button id="redeemGiftBtn">Đổi mã</button></div><div class="muted" style="font-size:12px;margin-top:8px">Mỗi mã chỉ sử dụng được một lần trên toàn hệ thống.</div></div>
 <div id="paymentArea" class="panel hidden" style="margin-top:14px"><h2>Thanh toán chuyển khoản</h2><div id="paymentInfo" class="notice"></div><div id="qrCountdown" class="notice" style="text-align:center;font-weight:800;color:#92400e;background:#fffbeb">Mã QR tự đóng sau 05:00</div><div style="text-align:center;margin:16px 0"><img id="paymentQr" alt="Mã QR thanh toán" style="max-width:280px;width:100%;border:1px solid #e2e8f0;border-radius:12px"></div><div class="actions"><button id="checkPaymentBtn" class="secondary">Tôi đã chuyển khoản – kiểm tra gói</button><button id="closePaymentBtn" class="secondary">Đóng</button></div><small class="muted">Chỉ chuyển đúng số tiền và nội dung hiển thị. Không sửa nội dung chuyển khoản.</small></div>
 </div>
 <div class="grid">
@@ -54,6 +55,7 @@ small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
 <div id="adminMsg" class="notice hidden"></div>
 </div>
 </section>
+<section id="passwordRecovery" class="panel hidden" style="margin-top:14px"><h2>Đặt mật khẩu mới</h2><label>Mật khẩu mới</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8"><div class="actions"><button id="saveNewPassword">Lưu mật khẩu mới</button></div><div id="passwordMsg" class="notice hidden"></div></section>
 <div class="foot">Thanh toán chuyển khoản MB Bank qua VietQR. Gói được kích hoạt tự động sau khi SePay xác nhận giao dịch hợp lệ.</div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -66,7 +68,7 @@ const client = configured ? window.supabase.createClient(SUPABASE_URL,SUPABASE_A
 const $ = id => document.getElementById(id);
 function message(id,text,error=false){const el=$(id);el.textContent=text;el.classList.remove("hidden","error");if(error)el.classList.add("error")}
 function clear(id){$(id).classList.add("hidden")}
-function date(v){return new Date(v).toLocaleString("vi-VN")}
+function date(v){return new Date(v).toLocaleString("vi-VN")}\nfunction money(v){return Number(v).toLocaleString("vi-VN")+"đ"}
 let paymentPollTimer=null;
 let paymentQrTimeout=null;
 let paymentQrCountdownTimer=null;
@@ -87,7 +89,7 @@ async function refresh(options={}){
  $("auth").classList.toggle("hidden",!!session);$("dashboard").classList.toggle("hidden",!session);
  if(!session)return;
  $("userEmail").textContent=session.user.email||"";
- const {data:license,error}=await client.rpc("addon_my_license");
+ const {data:plans}=await client.from("addon_plans").select("code,price_vnd").in("code",["monthly","yearly"]);for(const p of plans||[]){if(p.code==="monthly")$("monthlyPrice").textContent=money(p.price_vnd);if(p.code==="yearly")$("yearlyPrice").textContent=money(p.price_vnd)}\n const {data:license,error}=await client.rpc("addon_my_license");
  if(error){$("licenseTitle").textContent="Chưa xác định";message("dashMsg","Không kiểm tra được quyền sử dụng: "+error.message,true);return}
  if(license.active){
   $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
@@ -103,7 +105,10 @@ async function refresh(options={}){
  const {data:isAdmin}=await client.rpc("addon_is_admin");
  $("adminArea").classList.toggle("hidden",!isAdmin);
 }
-$("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
+
+$("redeemGiftBtn").onclick=async()=>{const code=$("giftCode").value.trim();if(!code)return message("dashMsg","Vui lòng nhập mã quà tặng.",true);const b=$("redeemGiftBtn");b.disabled=true;const {data,error}=await client.rpc("addon_redeem_gift",{p_code:code});b.disabled=false;if(error){message("dashMsg","Không đổi được mã: "+error.message,true);return}message("dashMsg","Đổi mã thành công! Đã cộng "+data.months+" tháng. Hạn mới: "+date(data.ends_at));$("giftCode").value="";await refresh()};
+$("saveNewPassword").onclick=async()=>{const password=$("newPassword").value;if(password.length<8)return message("passwordMsg","Mật khẩu cần ít nhất 8 ký tự.",true);const {error}=await client.auth.updateUser({password});if(error)message("passwordMsg","Không cập nhật được: "+error.message,true);else{$("passwordRecovery").classList.add("hidden");message("authMsg","Đã cập nhật mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.")}};
+\n$("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
 $("signupBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else message("authMsg",data.session?"Đăng ký thành công.":"Đã gửi email xác minh. Vui lòng xác minh email rồi đăng nhập.")};
 $("resetBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình Supabase.",true);const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.origin});if(error)message("authMsg",error.message,true);else message("authMsg","Đã gửi hướng dẫn đặt lại mật khẩu nếu email hợp lệ.")};
 $("logoutBtn").onclick=async()=>{stopPaymentPolling();await client.auth.signOut();await refresh()};
@@ -144,6 +149,6 @@ $("checkPaymentBtn").onclick=async()=>{
 $("trialBtn").onclick=async()=>{const {error}=await client.rpc("addon_claim_trial");if(error)message("dashMsg",error.message,true);else message("dashMsg","Đã kích hoạt dùng thử 7 ngày.");await refresh()};
 $("grantBtn").onclick=async()=>{const {data,error}=await client.rpc("addon_admin_grant",{p_user_id:$("targetUser").value.trim(),p_plan_code:$("grantPlan").value,p_start_now:true});if(error)message("adminMsg",error.message,true);else message("adminMsg","Đã cấp/gia hạn thành công đến "+date(data.ends_at))};
 if(!configured){message("authMsg","Cần tạo dự án Supabase riêng, chạy migration SQL và điền SUPABASE_URL cùng SUPABASE_ANON_KEY vào tệp này.",true)}
-else{client.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh()}
+else{client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")$("passwordRecovery").classList.remove("hidden");setTimeout(refresh,0)});refresh()}
 </script>
 </body></html>

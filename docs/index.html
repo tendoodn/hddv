@@ -68,7 +68,8 @@ const client = configured ? window.supabase.createClient(SUPABASE_URL,SUPABASE_A
 const $ = id => document.getElementById(id);
 function message(id,text,error=false){const el=$(id);el.textContent=text;el.classList.remove("hidden","error");if(error)el.classList.add("error")}
 function clear(id){$(id).classList.add("hidden")}
-function date(v){return new Date(v).toLocaleString("vi-VN")}\nfunction money(v){return Number(v).toLocaleString("vi-VN")+"đ"}
+function date(v){return new Date(v).toLocaleString("vi-VN")}
+function money(v){return Number(v).toLocaleString("vi-VN")+"đ"}
 let paymentPollTimer=null;
 let paymentQrTimeout=null;
 let paymentQrCountdownTimer=null;
@@ -89,7 +90,8 @@ async function refresh(options={}){
  $("auth").classList.toggle("hidden",!!session);$("dashboard").classList.toggle("hidden",!session);
  if(!session)return;
  $("userEmail").textContent=session.user.email||"";
- const {data:plans}=await client.from("addon_plans").select("code,price_vnd").in("code",["monthly","yearly"]);for(const p of plans||[]){if(p.code==="monthly")$("monthlyPrice").textContent=money(p.price_vnd);if(p.code==="yearly")$("yearlyPrice").textContent=money(p.price_vnd)}\n const {data:license,error}=await client.rpc("addon_my_license");
+ const {data:plans}=await client.from("addon_plans").select("code,price_vnd").in("code",["monthly","yearly"]);for(const p of plans||[]){if(p.code==="monthly")$("monthlyPrice").textContent=money(p.price_vnd);if(p.code==="yearly")$("yearlyPrice").textContent=money(p.price_vnd)}
+ const {data:license,error}=await client.rpc("addon_my_license");
  if(error){$("licenseTitle").textContent="Chưa xác định";message("dashMsg","Không kiểm tra được quyền sử dụng: "+error.message,true);return}
  if(license.active){
   $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
@@ -108,7 +110,8 @@ async function refresh(options={}){
 
 $("redeemGiftBtn").onclick=async()=>{const code=$("giftCode").value.trim();if(!code)return message("dashMsg","Vui lòng nhập mã quà tặng.",true);const b=$("redeemGiftBtn");b.disabled=true;const {data,error}=await client.rpc("addon_redeem_gift",{p_code:code});b.disabled=false;if(error){message("dashMsg","Không đổi được mã: "+error.message,true);return}message("dashMsg","Đổi mã thành công! Đã cộng "+data.months+" tháng. Hạn mới: "+date(data.ends_at));$("giftCode").value="";await refresh()};
 $("saveNewPassword").onclick=async()=>{const password=$("newPassword").value;if(password.length<8)return message("passwordMsg","Mật khẩu cần ít nhất 8 ký tự.",true);const {error}=await client.auth.updateUser({password});if(error)message("passwordMsg","Không cập nhật được: "+error.message,true);else{$("passwordRecovery").classList.add("hidden");message("authMsg","Đã cập nhật mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.")}};
-\n$("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
+
+$("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
 $("signupBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else message("authMsg",data.session?"Đăng ký thành công.":"Đã gửi email xác minh. Vui lòng xác minh email rồi đăng nhập.")};
 $("resetBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình Supabase.",true);const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.href.split("#")[0]});if(error)message("authMsg",error.message,true);else message("authMsg","Đã gửi hướng dẫn đặt lại mật khẩu nếu email hợp lệ.")};
 $("logoutBtn").onclick=async()=>{stopPaymentPolling();await client.auth.signOut();await refresh()};
@@ -120,7 +123,10 @@ async function createPaymentOrder(planCode){
   const {data,error}=await client.functions.invoke("addon-create-order",{body:{plan_code:planCode}});
   if(error || !data?.success) throw new Error(data?.error || error?.message || "Không tạo được đơn hàng.");
   const p=data.payment;
-  $("paymentInfo").textContent="Số tiền: "+Number(p.amount_vnd).toLocaleString("vi-VN")+" đ\\nNgân hàng: "+p.bank_name+"\\nChủ tài khoản: "+p.account_name+"\\nNội dung chuyển khoản: "+p.transfer_content;
+  $("paymentInfo").textContent="Số tiền: "+Number(p.amount_vnd).toLocaleString("vi-VN")+" đ\
+Ngân hàng: "+p.bank_name+"\
+Chủ tài khoản: "+p.account_name+"\
+Nội dung chuyển khoản: "+p.transfer_content;
   $("paymentQr").src=p.qr_url;
   $("paymentArea").classList.remove("hidden");
   startPaymentPolling();

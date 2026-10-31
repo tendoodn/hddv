@@ -21,6 +21,7 @@ declare
   v_order public.addon_orders%rowtype;
   v_plan public.addon_plans%rowtype;
   v_start timestamptz := pg_catalog.now();
+  v_existing_end timestamptz;
   v_end timestamptz;
   v_event_id uuid;
 begin
@@ -76,6 +77,16 @@ begin
 
   if not found then
     raise exception 'plan_unavailable';
+  end if;
+
+  select pg_catalog.max(ends_at) into v_existing_end
+  from public.addon_subscriptions
+  where user_id = v_order.user_id
+    and status = 'active'
+    and ends_at > v_start;
+
+  if v_existing_end is not null then
+    v_start := v_existing_end;
   end if;
 
   v_end := case

@@ -39,11 +39,11 @@ small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
 <div class="row"><div><div class="muted">Tài khoản</div><strong id="userEmail"></strong></div><button id="logoutBtn" class="secondary">Đăng xuất</button></div>
 <div style="margin-top:20px"><div class="muted">Trạng thái gói</div><h1 id="licenseTitle">Đang kiểm tra…</h1><div id="licenseMeta" class="muted"></div></div>
 <div id="trialArea" class="actions hidden"><button id="trialBtn">Kích hoạt dùng thử 7 ngày</button></div>
-<div id="dashMsg" class="notice hidden"></div>
+<div id="dashMsg" class="notice hidden"></div>\n<div id="paymentArea" class="panel hidden" style="margin-top:14px"><h2>Thanh toán chuyển khoản</h2><div id="paymentInfo" class="notice"></div><div style="text-align:center;margin:16px 0"><img id="paymentQr" alt="Mã QR thanh toán" style="max-width:280px;width:100%;border:1px solid #e2e8f0;border-radius:12px"></div><div class="actions"><button id="checkPaymentBtn" class="secondary">Tôi đã chuyển khoản – kiểm tra gói</button><button id="closePaymentBtn" class="secondary">Đóng</button></div><small class="muted">Chỉ chuyển đúng số tiền và nội dung hiển thị. Không sửa nội dung chuyển khoản.</small></div>
 </div>
 <div class="grid">
-<div class="plan"><h2>Gói 1 tháng</h2><div class="price" id="monthlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một tháng lịch.</p><button class="secondary" disabled>Thanh toán đang cấu hình</button></div>
-<div class="plan"><h2>Gói 1 năm</h2><div class="price" id="yearlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một năm lịch.</p><button class="secondary" disabled>Thanh toán đang cấu hình</button></div>
+<div class="plan"><h2>Gói 1 tháng</h2><div class="price" id="monthlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một tháng lịch.</p><button id="buyMonthlyBtn">Mua gói 1 tháng</button></div>
+<div class="plan"><h2>Gói 1 năm</h2><div class="price" id="yearlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một năm lịch.</p><button id="buyYearlyBtn">Mua gói 1 năm</button></div>
 </div>
 <div id="adminArea" class="panel hidden" style="margin-top:14px">
 <h2>Quản trị cấp gói</h2><p class="muted">Chỉ tài khoản quản trị chính mới được cấp gói. Nhập UUID người dùng lấy từ hệ thống quản trị khi hoàn thiện.</p>
@@ -90,6 +90,26 @@ $("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu
 $("signupBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else message("authMsg",data.session?"Đăng ký thành công.":"Đã gửi email xác minh. Vui lòng xác minh email rồi đăng nhập.")};
 $("resetBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình Supabase.",true);const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.origin});if(error)message("authMsg",error.message,true);else message("authMsg","Đã gửi hướng dẫn đặt lại mật khẩu nếu email hợp lệ.")};
 $("logoutBtn").onclick=async()=>{await client.auth.signOut();await refresh()};
+async function createPaymentOrder(planCode){
+ clear("dashMsg");
+ const button = planCode === "monthly" ? $("buyMonthlyBtn") : $("buyYearlyBtn");
+ button.disabled = true;
+ try{
+  const {data,error}=await client.functions.invoke("addon-create-order",{body:{plan_code:planCode}});
+  if(error || !data?.success) throw new Error(data?.error || error?.message || "Không tạo được đơn hàng.");
+  const p=data.payment;
+  $("paymentInfo").textContent="Số tiền: "+Number(p.amount_vnd).toLocaleString("vi-VN")+" đ\\nNgân hàng: "+p.bank_name+"\\nChủ tài khoản: "+p.account_name+"\\nNội dung chuyển khoản: "+p.transfer_content;
+  $("paymentQr").src=p.qr_url;
+  $("paymentArea").classList.remove("hidden");
+  $("paymentArea").scrollIntoView({behavior:"smooth",block:"center"});
+ }catch(e){message("dashMsg","Không tạo được đơn hàng: "+(e?.message||"Lỗi không xác định"),true)}
+ finally{button.disabled=false}
+}
+$("buyMonthlyBtn").onclick=()=>createPaymentOrder("monthly");
+$("buyYearlyBtn").onclick=()=>createPaymentOrder("yearly");
+$("closePaymentBtn").onclick=()=>$("paymentArea").classList.add("hidden");
+$("checkPaymentBtn").onclick=async()=>{await refresh();message("dashMsg","Đã cập nhật trạng thái gói. Nếu bạn vừa chuyển khoản, vui lòng chờ SePay xác nhận rồi kiểm tra lại.")};
+
 $("trialBtn").onclick=async()=>{const {error}=await client.rpc("addon_claim_trial");if(error)message("dashMsg",error.message,true);else message("dashMsg","Đã kích hoạt dùng thử 7 ngày.");await refresh()};
 $("grantBtn").onclick=async()=>{const {data,error}=await client.rpc("addon_admin_grant",{p_user_id:$("targetUser").value.trim(),p_plan_code:$("grantPlan").value,p_start_now:true});if(error)message("adminMsg",error.message,true);else message("adminMsg","Đã cấp/gia hạn thành công đến "+date(data.ends_at))};
 if(!configured){message("authMsg","Cần tạo dự án Supabase riêng, chạy migration SQL và điền SUPABASE_URL cùng SUPABASE_ANON_KEY vào tệp này.",true)}

@@ -25,15 +25,15 @@ declare
   v_end timestamptz;
   v_event_id uuid;
 begin
-  if p_payment_reference is null or pg_catalog.length(pg_catalog.trim(p_payment_reference)) = 0
-     or p_provider_event_id is null or pg_catalog.length(pg_catalog.trim(p_provider_event_id)) = 0
+  if p_payment_reference is null or pg_catalog.length(pg_catalog.btrim(p_payment_reference)) = 0
+     or p_provider_event_id is null or pg_catalog.length(pg_catalog.btrim(p_provider_event_id)) = 0
      or p_amount is null or p_amount <= 0 then
     raise exception 'invalid_payment_parameters';
   end if;
 
   select * into v_order
   from public.addon_orders
-  where payment_reference = pg_catalog.upper(pg_catalog.trim(p_payment_reference))
+  where payment_reference = pg_catalog.upper(pg_catalog.btrim(p_payment_reference))
   for update;
 
   if not found then

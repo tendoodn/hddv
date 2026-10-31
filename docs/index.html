@@ -68,7 +68,10 @@ function message(id,text,error=false){const el=$(id);el.textContent=text;el.clas
 function clear(id){$(id).classList.add("hidden")}
 function date(v){return new Date(v).toLocaleString("vi-VN")}
 let paymentPollTimer=null;
+let paymentQrTimeout=null;
 function stopPaymentPolling(){if(paymentPollTimer){clearInterval(paymentPollTimer);paymentPollTimer=null}}
+function stopPaymentQrTimeout(){if(paymentQrTimeout){clearTimeout(paymentQrTimeout);paymentQrTimeout=null}}
+function closePaymentQr(){stopPaymentPolling();stopPaymentQrTimeout();$("paymentArea").classList.add("hidden")}
 function startPaymentPolling(){
  stopPaymentPolling();
  paymentPollTimer=setInterval(async()=>{
@@ -87,9 +90,7 @@ async function refresh(options={}){
   $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
   $("licenseMeta").textContent="Gói "+license.plan_code+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
   $("trialArea").classList.add("hidden");
-  stopPaymentPolling();
-  $("paymentArea").classList.add("hidden");
-  if(options.fromPaymentPoll) message("dashMsg","SePay đã xác nhận thanh toán. Gói Add-on của bạn đã được kích hoạt thành công.");
+  // Keep the QR visible until the five-minute display timeout or manual close.
  }else{
   $("licenseTitle").textContent="Chưa có gói hoạt động";
   $("licenseMeta").textContent="Tài khoản chưa có gói còn hiệu lực.";
@@ -115,20 +116,22 @@ async function createPaymentOrder(planCode){
   $("paymentQr").src=p.qr_url;
   $("paymentArea").classList.remove("hidden");
   startPaymentPolling();
+  stopPaymentQrTimeout();
+  paymentQrTimeout=setTimeout(()=>{closePaymentQr();message("dashMsg","Mã QR đã tự đóng sau 5 phút. Nếu chưa thanh toán, bạn có thể tạo mã mới.")},300000);
   $("paymentArea").scrollIntoView({behavior:"smooth",block:"center"});
  }catch(e){message("dashMsg","Không tạo được đơn hàng: "+(e?.message||"Lỗi không xác định"),true)}
  finally{button.disabled=false}
 }
 $("buyMonthlyBtn").onclick=()=>createPaymentOrder("monthly");
 $("buyYearlyBtn").onclick=()=>createPaymentOrder("yearly");
-$("closePaymentBtn").onclick=()=>{$("paymentArea").classList.add("hidden");stopPaymentPolling()};
+$("closePaymentBtn").onclick=()=>closePaymentQr();
 $("checkPaymentBtn").onclick=async()=>{
  const btn=$("checkPaymentBtn");btn.disabled=true;
  try{
   await refresh();
   const {data:license}=await client.rpc("addon_my_license");
-  if(license?.active){stopPaymentPolling();$("paymentArea").classList.add("hidden");message("dashMsg","Thanh toán đã được xác nhận. Gói Add-on đang hoạt động.");}
-  else{message("dashMsg","Chưa nhận được xác nhận thanh toán từ SePay. Trang sẽ tự kiểm tra lại mỗi 5 giây.");startPaymentPolling();}
+  if(license?.active){message("dashMsg","Tài khoản hiện có gói đang hoạt động. Mã QR vẫn được giữ trong tối đa 5 phút.");}
+  else{message("dashMsg","Chưa thấy gói hoạt động. Trang sẽ tự kiểm tra lại mỗi 5 giây.");startPaymentPolling();}
  }finally{btn.disabled=false}
 };
 

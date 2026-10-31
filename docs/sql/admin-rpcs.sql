@@ -3,7 +3,7 @@
 -- The claim itself remains writable only through addon_claim_trial().
 -- Table privilege is required in addition to the RLS policy.
 GRANT SELECT ON TABLE public.addon_trial_claims TO authenticated;
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
@@ -59,7 +59,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO ''
-AS $
+AS $$
 DECLARE v_sub public.addon_subscriptions%rowtype;
 BEGIN
   IF NOT public.addon_is_admin() THEN RAISE EXCEPTION 'admin_required'; END IF;
@@ -78,7 +78,7 @@ BEGIN
     jsonb_build_object('subscription_id',v_sub.id,'plan_code',v_sub.plan_code,'source',v_sub.source));
   RETURN jsonb_build_object('success',true,'subscription_id',v_sub.id);
 END;
-$;
+$$;
 
 -- Remove the former account-wide revoke RPC so it cannot be called accidentally.
 DROP FUNCTION IF EXISTS public.addon_admin_revoke(uuid);

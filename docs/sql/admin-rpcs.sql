@@ -1,7 +1,9 @@
 
 -- Allow each signed-in user to read only their own trial claim status.
 -- The claim itself remains writable only through addon_claim_trial().
-DO $$
+-- Table privilege is required in addition to the RLS policy.
+GRANT SELECT ON TABLE public.addon_trial_claims TO authenticated;
+DO $
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
@@ -51,25 +53,35 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.addon_admin_revoke(p_user_id uuid)
+-- Revoke exactly one subscription; never revoke every package on an account.
+CREATE OR REPLACE FUNCTION public.addon_admin_revoke_subscription(p_subscription_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO ''
-AS $$
-DECLARE v_count integer;
+AS $
+DECLARE v_sub public.addon_subscriptions%rowtype;
 BEGIN
   IF NOT public.addon_is_admin() THEN RAISE EXCEPTION 'admin_required'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id=p_user_id) THEN RAISE EXCEPTION 'user_not_found'; END IF;
-  UPDATE public.addon_subscriptions
-    SET status='revoked'
-    WHERE user_id=p_user_id AND status='active' AND ends_at > now();
-  GET DIAGNOSTICS v_count = ROW_COUNT;
+  IF p_subscription_id IS NULL THEN RAISE EXCEPTION 'subscription_required'; END IF;
+  SELECT * INTO v_sub
+    FROM public.addon_subscriptions
+    WHERE id=p_subscription_id
+    FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'subscription_not_found'; END IF;
+  IF v_sub.status <> 'active' OR v_sub.ends_at <= now() THEN
+    RAISE EXCEPTION 'subscription_not_active';
+  END IF;
+  UPDATE public.addon_subscriptions SET status='revoked' WHERE id=p_subscription_id;
   INSERT INTO public.addon_audit_logs(actor_id,target_user_id,action,details)
-  VALUES(auth.uid(),p_user_id,'subscriptions_revoked',jsonb_build_object('rows',v_count));
-  RETURN jsonb_build_object('success',true,'revoked_count',v_count);
+  VALUES(auth.uid(),v_sub.user_id,'subscription_revoked',
+    jsonb_build_object('subscription_id',v_sub.id,'plan_code',v_sub.plan_code,'source',v_sub.source));
+  RETURN jsonb_build_object('success',true,'subscription_id',v_sub.id);
 END;
-$$;
+$;
+
+-- Remove the former account-wide revoke RPC so it cannot be called accidentally.
+DROP FUNCTION IF EXISTS public.addon_admin_revoke(uuid);
 
 CREATE OR REPLACE FUNCTION public.addon_admin_list_logs(p_limit integer DEFAULT 100)
 RETURNS jsonb
@@ -96,8 +108,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.addon_admin_list_users(text) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.addon_admin_revoke(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.addon_admin_revoke_subscription(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.addon_admin_list_logs(integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.addon_admin_list_users(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.addon_admin_revoke(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.addon_admin_revoke_subscription(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.addon_admin_list_logs(integer) TO authenticated;

@@ -47,7 +47,7 @@ begin
  if not public.addon_is_admin() then raise exception 'admin_required'; end if;
  if p_months < 1 or p_months > 120 then raise exception 'invalid_months'; end if;
  loop
-  v_code := 'TENDOO-' || upper(encode(gen_random_bytes(5),'hex'));
+  v_code := 'TENDOO-' || upper(encode(public.gen_random_bytes(5),'hex'));
   exit when not exists(select 1 from public.addon_gift_codes where code=v_code);
  end loop;
  insert into public.addon_gift_codes(code,months,expires_at,created_by)
@@ -119,7 +119,7 @@ begin
  return jsonb_build_object('success',true,'months',v_gift.months,'ends_at',v_end);
 end $$;
 
-grant execute on function public.addon_admin_set_price(text,bigint) to authenticated;
+revoke all on function public.addon_admin_set_price(text,bigint) from public, anon;\nrevoke all on function public.addon_admin_create_gift(integer,timestamptz) from public, anon;\nrevoke all on function public.addon_admin_list_gifts() from public, anon;\nrevoke all on function public.addon_admin_set_gift_active(uuid,boolean) from public, anon;\nrevoke all on function public.addon_admin_delete_gift(uuid) from public, anon;\nrevoke all on function public.addon_redeem_gift(text) from public, anon;\ngrant execute on function public.addon_admin_set_price(text,bigint) to authenticated;
 grant execute on function public.addon_admin_create_gift(integer,timestamptz) to authenticated;
 grant execute on function public.addon_admin_list_gifts() to authenticated;
 grant execute on function public.addon_admin_set_gift_active(uuid,boolean) to authenticated;

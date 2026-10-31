@@ -1,3 +1,22 @@
+
+-- Allow each signed-in user to read only their own trial claim status.
+-- The claim itself remains writable only through addon_claim_trial().
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public'
+      AND tablename='addon_trial_claims'
+      AND policyname='trial claim self read'
+  ) THEN
+    CREATE POLICY "trial claim self read"
+      ON public.addon_trial_claims
+      FOR SELECT TO authenticated
+      USING (user_id = auth.uid());
+  END IF;
+END;
+$$;
+
 -- Tendoo Add-on admin RPCs
 -- Run in Supabase SQL Editor as project owner.
 

@@ -40,7 +40,7 @@ small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
 <div style="margin-top:20px"><div class="muted">Trạng thái gói</div><h1 id="licenseTitle">Đang kiểm tra…</h1><div id="licenseMeta" class="muted"></div></div>
 <div id="trialArea" class="actions hidden"><button id="trialBtn">Kích hoạt dùng thử 7 ngày</button></div>
 <div id="dashMsg" class="notice hidden"></div>
-<div id="paymentArea" class="panel hidden" style="margin-top:14px"><h2>Thanh toán chuyển khoản</h2><div id="paymentInfo" class="notice"></div><div style="text-align:center;margin:16px 0"><img id="paymentQr" alt="Mã QR thanh toán" style="max-width:280px;width:100%;border:1px solid #e2e8f0;border-radius:12px"></div><div class="actions"><button id="checkPaymentBtn" class="secondary">Tôi đã chuyển khoản – kiểm tra gói</button><button id="closePaymentBtn" class="secondary">Đóng</button></div><small class="muted">Chỉ chuyển đúng số tiền và nội dung hiển thị. Không sửa nội dung chuyển khoản.</small></div>
+<div id="paymentArea" class="panel hidden" style="margin-top:14px"><h2>Thanh toán chuyển khoản</h2><div id="paymentInfo" class="notice"></div><div id="qrCountdown" class="notice" style="text-align:center;font-weight:800;color:#92400e;background:#fffbeb">Mã QR tự đóng sau 05:00</div><div style="text-align:center;margin:16px 0"><img id="paymentQr" alt="Mã QR thanh toán" style="max-width:280px;width:100%;border:1px solid #e2e8f0;border-radius:12px"></div><div class="actions"><button id="checkPaymentBtn" class="secondary">Tôi đã chuyển khoản – kiểm tra gói</button><button id="closePaymentBtn" class="secondary">Đóng</button></div><small class="muted">Chỉ chuyển đúng số tiền và nội dung hiển thị. Không sửa nội dung chuyển khoản.</small></div>
 </div>
 <div class="grid">
 <div class="plan"><h2>Gói 1 tháng</h2><div class="price" id="monthlyPrice">20.000đ</div><p class="muted">Gia hạn thêm một tháng lịch.</p><button id="buyMonthlyBtn">Mua gói 1 tháng</button></div>
@@ -69,8 +69,11 @@ function clear(id){$(id).classList.add("hidden")}
 function date(v){return new Date(v).toLocaleString("vi-VN")}
 let paymentPollTimer=null;
 let paymentQrTimeout=null;
+let paymentQrCountdownTimer=null;
+let paymentQrExpiresAt=0;
 function stopPaymentPolling(){if(paymentPollTimer){clearInterval(paymentPollTimer);paymentPollTimer=null}}
-function stopPaymentQrTimeout(){if(paymentQrTimeout){clearTimeout(paymentQrTimeout);paymentQrTimeout=null}}
+function stopPaymentQrTimeout(){if(paymentQrTimeout){clearTimeout(paymentQrTimeout);paymentQrTimeout=null}if(paymentQrCountdownTimer){clearInterval(paymentQrCountdownTimer);paymentQrCountdownTimer=null}}
+function updatePaymentQrCountdown(){const remaining=Math.max(0,Math.ceil((paymentQrExpiresAt-Date.now())/1000));const mm=String(Math.floor(remaining/60)).padStart(2,"0");const ss=String(remaining%60).padStart(2,"0");$("qrCountdown").textContent=remaining>0?`Mã QR tự đóng sau ${mm}:${ss}`:"Mã QR đã hết thời gian hiển thị";}
 function closePaymentQr(){stopPaymentPolling();stopPaymentQrTimeout();$("paymentArea").classList.add("hidden")}
 function startPaymentPolling(){
  stopPaymentPolling();
@@ -117,6 +120,9 @@ async function createPaymentOrder(planCode){
   $("paymentArea").classList.remove("hidden");
   startPaymentPolling();
   stopPaymentQrTimeout();
+  paymentQrExpiresAt=Date.now()+300000;
+  updatePaymentQrCountdown();
+  paymentQrCountdownTimer=setInterval(updatePaymentQrCountdown,1000);
   paymentQrTimeout=setTimeout(()=>{closePaymentQr();message("dashMsg","Mã QR đã tự đóng sau 5 phút. Nếu chưa thanh toán, bạn có thể tạo mã mới.")},300000);
   $("paymentArea").scrollIntoView({behavior:"smooth",block:"center"});
  }catch(e){message("dashMsg","Không tạo được đơn hàng: "+(e?.message||"Lỗi không xác định"),true)}

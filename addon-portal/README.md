@@ -4,14 +4,14 @@ A separate account and licensing service for the invoice-lookup Chrome Add-on. T
 
 ## Decisions
 - Dedicated Supabase project; do not reuse Tendoo K credentials or database.
-- Plans: 7-day trial (once per normalized email), one calendar month, one calendar year.
+- Plans: 7-day trial (once per normalized email), one calendar month (20,000 VND), one calendar year (200,000 VND).
 - Paid subscriptions can be granted manually by the sole owner-admin or activated automatically after verified payment.
 - VietQR is the payment presentation/transfer format. Automatic reconciliation requires a bank transaction feed/webhook provider (for example a supported bank webhook intermediary); a QR image alone cannot confirm that money arrived.
 - Server time is authoritative for all expiry checks.
 - The extension must call a server-side license-check endpoint/RPC. Never embed the Supabase service-role key or payment webhook secret in extension/browser code.
 
 ## Repository layout
-- `supabase/migrations/001_addon_license_portal.sql`: initial isolated schema, RLS, trial claim, license status and admin grant RPCs.
+- `supabase/migrations/001_addon_license_portal.sql`: initial isolated schema, RLS, trial claim, license status and admin grant RPCs.\n- `supabase/migrations/002_addon_pricing_and_order_creation.sql`: agreed prices, authenticated order creation, and service-role-only payment activation RPC.
 - `public/`: customer portal frontend (to be added after project URL/anon key are configured).
 - `supabase/functions/`: payment order creation, signed payment webhook adapter, and extension license validation (to be added for the chosen bank-feed provider).
 
@@ -25,7 +25,7 @@ A separate account and licensing service for the invoice-lookup Chrome Add-on. T
    select id from auth.users where lower(email) = lower('YOUR_ADMIN_EMAIL');
    ```
    Run this once only for the single primary administrator.
-5. Set the monthly/yearly prices in `addon_plans.price_vnd` after deciding the actual prices.
+5. Run `supabase/migrations/002_addon_pricing_and_order_creation.sql` to set the monthly price to 20,000 VND, yearly price to 200,000 VND, and add secure order creation.
 6. Configure SMTP/email verification and password reset in Supabase Auth.
 7. Configure a VietQR-compatible bank transaction notification provider. Store provider secrets only as Supabase Edge Function secrets. Webhook processing must verify the provider signature, match the exact transfer reference and amount, and use a unique provider event ID to prevent duplicate activation.
 8. Deploy the portal and Edge Functions only after configuring the new Supabase project values and payment provider.

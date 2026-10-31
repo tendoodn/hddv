@@ -101,8 +101,13 @@ async function refresh(options={}){
  }else{
   $("licenseTitle").textContent="Chưa có gói hoạt động";
   $("licenseMeta").textContent="Tài khoản chưa có gói còn hiệu lực.";
-  const {data:claim}=await client.from("addon_trial_claims").select("id").eq("user_id",session.user.id).maybeSingle();
-  $("trialArea").classList.toggle("hidden",!!claim);
+  const {data:claim,error:claimError}=await client.from("addon_trial_claims").select("id").eq("user_id",session.user.id).maybeSingle();
+  if(claimError){
+   $("trialArea").classList.add("hidden");
+   message("dashMsg","Không kiểm tra được trạng thái dùng thử: "+claimError.message,true);
+  }else{
+   $("trialArea").classList.toggle("hidden",!!claim);
+  }
  }
  const {data:isAdmin}=await client.rpc("addon_is_admin");
  $("adminArea").classList.toggle("hidden",!isAdmin);
@@ -152,7 +157,7 @@ $("checkPaymentBtn").onclick=async()=>{
  }finally{btn.disabled=false}
 };
 
-$("trialBtn").onclick=async()=>{const {error}=await client.rpc("addon_claim_trial");if(error)message("dashMsg",error.message,true);else message("dashMsg","Đã kích hoạt dùng thử 7 ngày.");await refresh()};
+$("trialBtn").onclick=async()=>{const b=$("trialBtn");b.disabled=true;try{const {error}=await client.rpc("addon_claim_trial");if(error)message("dashMsg",error.message,true);else message("dashMsg","Đã kích hoạt dùng thử 7 ngày.");await refresh()}finally{b.disabled=false}};
 $("grantBtn").onclick=async()=>{const {data,error}=await client.rpc("addon_admin_grant",{p_user_id:$("targetUser").value.trim(),p_plan_code:$("grantPlan").value,p_start_now:true});if(error)message("adminMsg",error.message,true);else message("adminMsg","Đã cấp/gia hạn thành công đến "+date(data.ends_at))};
 if(!configured){message("authMsg","Cần tạo dự án Supabase riêng, chạy migration SQL và điền SUPABASE_URL cùng SUPABASE_ANON_KEY vào tệp này.",true)}
 else{client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")$("passwordRecovery").classList.remove("hidden");setTimeout(refresh,0)});refresh()}

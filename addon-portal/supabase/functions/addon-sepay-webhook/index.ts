@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const WEBHOOK_SECRET = Deno.env.get("SEPAY_WEBHOOK_SECRET")!;
+const SEPAY_BANK_ACCOUNT = Deno.env.get("SEPAY_BANK_ACCOUNT")!;
 
 const json = (body: Record<string, unknown>, status = 200) =>
   Response.json(body, { status, headers: { "Content-Type": "application/json" } });
@@ -28,7 +29,7 @@ async function hmacHex(secret: string, message: string): Promise<string> {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok");
   if (req.method !== "POST") return json({ success: false, error: "method_not_allowed" }, 405);
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !WEBHOOK_SECRET) {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !WEBHOOK_SECRET || !SEPAY_BANK_ACCOUNT) {
     console.error("Missing webhook environment configuration");
     return json({ success: false, error: "server_configuration_error" }, 500);
   }
@@ -53,17 +54,23 @@ Deno.serve(async (req: Request) => {
     const transferType = String(event?.transferType ?? "").toLowerCase();
     const amount = Number(event?.transferAmount);
     const content = String(event?.content ?? "").toUpperCase();
+    const code = String(event?.code ?? "").toUpperCase();
+    const accountNumber = String(event?.accountNumber ?? "").trim();
 
     if (eventId === undefined || eventId === null || !Number.isSafeInteger(Number(eventId))) {
       return json({ success: false, error: "invalid_event_id" }, 400);
     }
     if (transferType !== "in") return json({ success: true, ignored: true });
+    if (!accountNumber || accountNumber !== SEPAY_BANK_ACCOUNT) {
+      return json({ success: true, ignored: true });
+    }
     if (!Number.isSafeInteger(amount) || amount <= 0) {
       return json({ success: false, error: "invalid_transfer_amount" }, 400);
     }
 
     // Only accept the exact generated reference token, not arbitrary substrings.
-    const matches = content.match(/ADDON[0-9A-F]{10}/g) ?? [];
+    const codeMatches = code.match(/^ADDON[0-9A-F]{10}$/) ?? [];
+    const matches = codeMatches.length ? codeMatches : (content.match(/ADDON[0-9A-F]{10}/g) ?? []);
     const references = [...new Set(matches)];
     if (references.length !== 1) return json({ success: true, ignored: true });
 

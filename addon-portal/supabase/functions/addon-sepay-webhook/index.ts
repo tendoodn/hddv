@@ -60,9 +60,9 @@ Deno.serve(async (req: Request) => {
     if (eventId === undefined || eventId === null || !Number.isSafeInteger(Number(eventId))) {
       return json({ success: false, error: "invalid_event_id" }, 400);
     }
-    if (transferType !== "in") return json({ success: true, ignored: true });
+    if (transferType !== "in") return json({ success: true });
     if (!accountNumber || accountNumber !== SEPAY_BANK_ACCOUNT) {
-      return json({ success: true, ignored: true });
+      return json({ success: true });
     }
     if (!Number.isSafeInteger(amount) || amount <= 0) {
       return json({ success: false, error: "invalid_transfer_amount" }, 400);
@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
     const codeMatches = code.match(/^ADDON[0-9A-F]{10}$/) ?? [];
     const matches = codeMatches.length ? codeMatches : (content.match(/ADDON[0-9A-F]{10}/g) ?? []);
     const references = [...new Set(matches)];
-    if (references.length !== 1) return json({ success: true, ignored: true });
+    if (references.length !== 1) return json({ success: true });
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -90,7 +90,10 @@ Deno.serve(async (req: Request) => {
       return json({ success: false, error: "payment_processing_failed" }, retryable ? 500 : 400);
     }
 
-    return json({ success: true, result: data });
+    // SePay requires exactly HTTP 200/201 and JSON {"success": true}.
+    // Do not return internal RPC details in the webhook acknowledgement.
+    console.log("SePay payment processed:", data);
+    return json({ success: true });
   } catch (error) {
     console.error("SePay webhook error:", error instanceof Error ? error.message : "unknown");
     return json({ success: false, error: "invalid_webhook_payload" }, 400);

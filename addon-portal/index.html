@@ -39,11 +39,12 @@ small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
 <div class="row"><div><div class="muted">Tài khoản</div><strong id="userEmail"></strong></div><button id="logoutBtn" class="secondary">Đăng xuất</button></div>
 <div style="margin-top:20px"><div class="muted">Trạng thái gói</div><h1 id="licenseTitle">Đang kiểm tra…</h1><div id="licenseMeta" class="muted"></div></div>
 <div id="trialArea" class="actions hidden"><button id="trialBtn">Kích hoạt dùng thử 7 ngày</button></div>
-<div id="dashMsg" class="notice hidden"></div>\n<div id="paymentArea" class="panel hidden" style="margin-top:14px"><h2>Thanh toán chuyển khoản</h2><div id="paymentInfo" class="notice"></div><div style="text-align:center;margin:16px 0"><img id="paymentQr" alt="Mã QR thanh toán" style="max-width:280px;width:100%;border:1px solid #e2e8f0;border-radius:12px"></div><div class="actions"><button id="checkPaymentBtn" class="secondary">Tôi đã chuyển khoản – kiểm tra gói</button><button id="closePaymentBtn" class="secondary">Đóng</button></div><small class="muted">Chỉ chuyển đúng số tiền và nội dung hiển thị. Không sửa nội dung chuyển khoản.</small></div>
+<div id="dashMsg" class="notice hidden"></div>
+<div id="paymentArea" class="panel hidden" style="margin-top:14px"><h2>Thanh toán chuyển khoản</h2><div id="paymentInfo" class="notice"></div><div style="text-align:center;margin:16px 0"><img id="paymentQr" alt="Mã QR thanh toán" style="max-width:280px;width:100%;border:1px solid #e2e8f0;border-radius:12px"></div><div class="actions"><button id="checkPaymentBtn" class="secondary">Tôi đã chuyển khoản – kiểm tra gói</button><button id="closePaymentBtn" class="secondary">Đóng</button></div><small class="muted">Chỉ chuyển đúng số tiền và nội dung hiển thị. Không sửa nội dung chuyển khoản.</small></div>
 </div>
 <div class="grid">
-<div class="plan"><h2>Gói 1 tháng</h2><div class="price" id="monthlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một tháng lịch.</p><button id="buyMonthlyBtn">Mua gói 1 tháng</button></div>
-<div class="plan"><h2>Gói 1 năm</h2><div class="price" id="yearlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một năm lịch.</p><button id="buyYearlyBtn">Mua gói 1 năm</button></div>
+<div class="plan"><h2>Gói 1 tháng</h2><div class="price" id="monthlyPrice">20.000đ</div><p class="muted">Gia hạn thêm một tháng lịch.</p><button id="buyMonthlyBtn">Mua gói 1 tháng</button></div>
+<div class="plan"><h2>Gói 1 năm</h2><div class="price" id="yearlyPrice">200.000đ</div><p class="muted">Gia hạn thêm một năm lịch.</p><button id="buyYearlyBtn">Mua gói 1 năm</button></div>
 </div>
 <div id="adminArea" class="panel hidden" style="margin-top:14px">
 <h2>Quản trị cấp gói</h2><p class="muted">Chỉ tài khoản quản trị chính mới được cấp gói. Nhập UUID người dùng lấy từ hệ thống quản trị khi hoàn thiện.</p>
@@ -53,13 +54,13 @@ small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
 <div id="adminMsg" class="notice hidden"></div>
 </div>
 </section>
-<div class="foot">Bản nền ban đầu. Thanh toán VietQR chỉ được kích hoạt sau khi cấu hình nhà cung cấp thông báo giao dịch và xác thực webhook phía máy chủ.</div>
+<div class="foot">Thanh toán chuyển khoản MB Bank qua VietQR. Gói được kích hoạt tự động sau khi SePay xác nhận giao dịch hợp lệ.</div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* Configure with credentials from the dedicated Add-on Supabase project only. */
-const SUPABASE_URL = "YOUR_ADDON_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "YOUR_ADDON_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://ucqqjdsoyvvaxswzbhaw.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ";
 const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
 const client = configured ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY) : null;
 const $ = id => document.getElementById(id);

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tendoo Add-on — Cổng tài khoản</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f7fb}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:980px;margin:auto;padding:32px 18px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.brand{font-size:20px;font-weight:800;letter-spacing:.2px}.brand span{color:#2563eb}
+.panel{background:#fff;border:1px solid #e4eaf2;border-radius:18px;padding:24px;box-shadow:0 8px 28px #1e293b0a}
+.hero{margin-bottom:18px}.muted{color:#64748b}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+h1{font-size:28px;margin:8px 0}h2{font-size:18px;margin:0 0 14px}
+label{display:block;font-size:13px;font-weight:650;margin:12px 0 6px}
+input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}
+button{border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer;background:#2563eb;color:white}
+button.secondary{background:#eaf0f9;color:#1e293b}button:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.hidden{display:none!important}
+.plan{border:1px solid #e2e8f0;border-radius:14px;padding:18px}.price{font-size:25px;font-weight:800;margin:8px 0}
+.status{display:inline-block;border-radius:999px;padding:5px 10px;background:#dcfce7;color:#166534;font-size:12px;font-weight:750}
+.notice{padding:12px;border-radius:10px;background:#eff6ff;color:#1e40af;margin-top:14px;white-space:pre-wrap}
+.error{background:#fef2f2;color:#991b1b}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}
+small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
+@media(max-width:560px){.wrap{padding:20px 12px}.panel{padding:18px}h1{font-size:24px}}
+</style>
+</head>
+<body><main class="wrap">
+<header><div class="brand">TENDOO <span>ADD-ON</span></div><small class="muted">Cổng tài khoản tra cứu hóa đơn</small></header>
+<section class="hero"><h1>Quản lý tài khoản Add-on</h1><div class="muted">Đăng nhập, theo dõi thời hạn và quản lý gói sử dụng.</div></section>
+<section id="auth" class="panel">
+<h2 id="authTitle">Đăng nhập</h2>
+<label>Email</label><input id="email" type="email" autocomplete="email" placeholder="email@example.com">
+<label>Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu">
+<div class="actions"><button id="loginBtn">Đăng nhập</button><button id="signupBtn" class="secondary">Tạo tài khoản</button><button id="resetBtn" class="secondary">Quên mật khẩu</button></div>
+<div id="authMsg" class="notice hidden"></div>
+</section>
+<section id="dashboard" class="hidden">
+<div class="panel" style="margin-bottom:14px">
+<div class="row"><div><div class="muted">Tài khoản</div><strong id="userEmail"></strong></div><button id="logoutBtn" class="secondary">Đăng xuất</button></div>
+<div style="margin-top:20px"><div class="muted">Trạng thái gói</div><h1 id="licenseTitle">Đang kiểm tra…</h1><div id="licenseMeta" class="muted"></div></div>
+<div id="trialArea" class="actions hidden"><button id="trialBtn">Kích hoạt dùng thử 7 ngày</button></div>
+<div id="dashMsg" class="notice hidden"></div>
+</div>
+<div class="grid">
+<div class="plan"><h2>Gói 1 tháng</h2><div class="price" id="monthlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một tháng lịch.</p><button class="secondary" disabled>Thanh toán đang cấu hình</button></div>
+<div class="plan"><h2>Gói 1 năm</h2><div class="price" id="yearlyPrice">Liên hệ</div><p class="muted">Gia hạn thêm một năm lịch.</p><button class="secondary" disabled>Thanh toán đang cấu hình</button></div>
+</div>
+<div id="adminArea" class="panel hidden" style="margin-top:14px">
+<h2>Quản trị cấp gói</h2><p class="muted">Chỉ tài khoản quản trị chính mới được cấp gói. Nhập UUID người dùng lấy từ hệ thống quản trị khi hoàn thiện.</p>
+<label>UUID người dùng</label><input id="targetUser" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+<label>Gói cấp</label><select id="grantPlan" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px"><option value="monthly">1 tháng</option><option value="yearly">1 năm</option></select>
+<div class="actions"><button id="grantBtn">Cấp / gia hạn</button></div>
+<div id="adminMsg" class="notice hidden"></div>
+</div>
+</section>
+<div class="foot">Bản nền ban đầu. Thanh toán VietQR chỉ được kích hoạt sau khi cấu hình nhà cung cấp thông báo giao dịch và xác thực webhook phía máy chủ.</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* Configure with credentials from the dedicated Add-on Supabase project only. */
+const SUPABASE_URL = "YOUR_ADDON_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_ADDON_SUPABASE_ANON_KEY";
+const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
+const client = configured ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY) : null;
+const $ = id => document.getElementById(id);
+function message(id,text,error=false){const el=$(id);el.textContent=text;el.classList.remove("hidden","error");if(error)el.classList.add("error")}
+function clear(id){$(id).classList.add("hidden")}
+function date(v){return new Date(v).toLocaleString("vi-VN")}
+async function refresh(){
+ const {data:{session}}=await client.auth.getSession();
+ $("auth").classList.toggle("hidden",!!session);$("dashboard").classList.toggle("hidden",!session);
+ if(!session)return;
+ $("userEmail").textContent=session.user.email||"";
+ const {data:license,error}=await client.rpc("addon_my_license");
+ if(error){$("licenseTitle").textContent="Chưa xác định";message("dashMsg","Không kiểm tra được quyền sử dụng: "+error.message,true);return}
+ if(license.active){
+  $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
+  $("licenseMeta").textContent="Gói "+license.plan_code+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
+  $("trialArea").classList.add("hidden");
+ }else{
+  $("licenseTitle").textContent="Chưa có gói hoạt động";
+  $("licenseMeta").textContent="Tài khoản chưa có gói còn hiệu lực.";
+  const {data:claim}=await client.from("addon_trial_claims").select("id").eq("user_id",session.user.id).maybeSingle();
+  $("trialArea").classList.toggle("hidden",!!claim);
+ }
+ const {data:isAdmin}=await client.rpc("addon_is_admin");
+ $("adminArea").classList.toggle("hidden",!isAdmin);
+}
+$("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
+$("signupBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else message("authMsg",data.session?"Đăng ký thành công.":"Đã gửi email xác minh. Vui lòng xác minh email rồi đăng nhập.")};
+$("resetBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình Supabase.",true);const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.origin});if(error)message("authMsg",error.message,true);else message("authMsg","Đã gửi hướng dẫn đặt lại mật khẩu nếu email hợp lệ.")};
+$("logoutBtn").onclick=async()=>{await client.auth.signOut();await refresh()};
+$("trialBtn").onclick=async()=>{const {error}=await client.rpc("addon_claim_trial");if(error)message("dashMsg",error.message,true);else message("dashMsg","Đã kích hoạt dùng thử 7 ngày.");await refresh()};
+$("grantBtn").onclick=async()=>{const {data,error}=await client.rpc("addon_admin_grant",{p_user_id:$("targetUser").value.trim(),p_plan_code:$("grantPlan").value,p_start_now:true});if(error)message("adminMsg",error.message,true);else message("adminMsg","Đã cấp/gia hạn thành công đến "+date(data.ends_at))};
+if(!configured){message("authMsg","Cần tạo dự án Supabase riêng, chạy migration SQL và điền SUPABASE_URL cùng SUPABASE_ANON_KEY vào tệp này.",true)}
+else{client.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh()}
+</script>
+</body></html>

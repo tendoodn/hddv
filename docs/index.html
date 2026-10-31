@@ -67,7 +67,16 @@ const $ = id => document.getElementById(id);
 function message(id,text,error=false){const el=$(id);el.textContent=text;el.classList.remove("hidden","error");if(error)el.classList.add("error")}
 function clear(id){$(id).classList.add("hidden")}
 function date(v){return new Date(v).toLocaleString("vi-VN")}
-async function refresh(){
+let paymentPollTimer=null;
+function stopPaymentPolling(){if(paymentPollTimer){clearInterval(paymentPollTimer);paymentPollTimer=null}}
+function startPaymentPolling(){
+ stopPaymentPolling();
+ paymentPollTimer=setInterval(async()=>{
+  if($("paymentArea").classList.contains("hidden")){stopPaymentPolling();return}
+  await refresh({fromPaymentPoll:true});
+ },5000);
+}
+async function refresh(options={}){
  const {data:{session}}=await client.auth.getSession();
  $("auth").classList.toggle("hidden",!!session);$("dashboard").classList.toggle("hidden",!session);
  if(!session)return;
@@ -78,6 +87,9 @@ async function refresh(){
   $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
   $("licenseMeta").textContent="Gói "+license.plan_code+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
   $("trialArea").classList.add("hidden");
+  stopPaymentPolling();
+  $("paymentArea").classList.add("hidden");
+  if(options.fromPaymentPoll) message("dashMsg","SePay đã xác nhận thanh toán. Gói Add-on của bạn đã được kích hoạt thành công.");
  }else{
   $("licenseTitle").textContent="Chưa có gói hoạt động";
   $("licenseMeta").textContent="Tài khoản chưa có gói còn hiệu lực.";
@@ -90,7 +102,7 @@ async function refresh(){
 $("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
 $("signupBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else message("authMsg",data.session?"Đăng ký thành công.":"Đã gửi email xác minh. Vui lòng xác minh email rồi đăng nhập.")};
 $("resetBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình Supabase.",true);const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.origin});if(error)message("authMsg",error.message,true);else message("authMsg","Đã gửi hướng dẫn đặt lại mật khẩu nếu email hợp lệ.")};
-$("logoutBtn").onclick=async()=>{await client.auth.signOut();await refresh()};
+$("logoutBtn").onclick=async()=>{stopPaymentPolling();await client.auth.signOut();await refresh()};
 async function createPaymentOrder(planCode){
  clear("dashMsg");
  const button = planCode === "monthly" ? $("buyMonthlyBtn") : $("buyYearlyBtn");
@@ -102,14 +114,23 @@ async function createPaymentOrder(planCode){
   $("paymentInfo").textContent="Số tiền: "+Number(p.amount_vnd).toLocaleString("vi-VN")+" đ\\nNgân hàng: "+p.bank_name+"\\nChủ tài khoản: "+p.account_name+"\\nNội dung chuyển khoản: "+p.transfer_content;
   $("paymentQr").src=p.qr_url;
   $("paymentArea").classList.remove("hidden");
+  startPaymentPolling();
   $("paymentArea").scrollIntoView({behavior:"smooth",block:"center"});
  }catch(e){message("dashMsg","Không tạo được đơn hàng: "+(e?.message||"Lỗi không xác định"),true)}
  finally{button.disabled=false}
 }
 $("buyMonthlyBtn").onclick=()=>createPaymentOrder("monthly");
 $("buyYearlyBtn").onclick=()=>createPaymentOrder("yearly");
-$("closePaymentBtn").onclick=()=>$("paymentArea").classList.add("hidden");
-$("checkPaymentBtn").onclick=async()=>{await refresh();message("dashMsg","Đã cập nhật trạng thái gói. Nếu bạn vừa chuyển khoản, vui lòng chờ SePay xác nhận rồi kiểm tra lại.")};
+$("closePaymentBtn").onclick=()=>{$("paymentArea").classList.add("hidden");stopPaymentPolling()};
+$("checkPaymentBtn").onclick=async()=>{
+ const btn=$("checkPaymentBtn");btn.disabled=true;
+ try{
+  await refresh();
+  const {data:license}=await client.rpc("addon_my_license");
+  if(license?.active){stopPaymentPolling();$("paymentArea").classList.add("hidden");message("dashMsg","Thanh toán đã được xác nhận. Gói Add-on đang hoạt động.");}
+  else{message("dashMsg","Chưa nhận được xác nhận thanh toán từ SePay. Trang sẽ tự kiểm tra lại mỗi 5 giây.");startPaymentPolling();}
+ }finally{btn.disabled=false}
+};
 
 $("trialBtn").onclick=async()=>{const {error}=await client.rpc("addon_claim_trial");if(error)message("dashMsg",error.message,true);else message("dashMsg","Đã kích hoạt dùng thử 7 ngày.");await refresh()};
 $("grantBtn").onclick=async()=>{const {data,error}=await client.rpc("addon_admin_grant",{p_user_id:$("targetUser").value.trim(),p_plan_code:$("grantPlan").value,p_start_now:true});if(error)message("adminMsg",error.message,true);else message("adminMsg","Đã cấp/gia hạn thành công đến "+date(data.ends_at))};

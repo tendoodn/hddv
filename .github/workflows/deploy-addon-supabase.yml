@@ -1,0 +1,41 @@
+name: Deploy Supabase Add-on Functions
+
+on:
+  push:
+    branches:
+      - feature/addon-license-portal
+    paths:
+      - "addon-portal/supabase/functions/addon-create-order/**"
+      - "addon-portal/supabase/functions/addon-sepay-webhook/**"
+      - ".github/workflows/deploy-addon-supabase.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy addon-create-order
+        working-directory: addon-portal
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy addon-create-order --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: Deploy addon-sepay-webhook
+        working-directory: addon-portal
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy addon-sepay-webhook --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}

@@ -15,6 +15,21 @@ begin
   or to_regclass('public.addon_trial_claims') is null
   or to_regclass('public.addon_gift_codes') is null
  then raise exception 'not_the_expected_old_autotax_schema'; end if;
+ if (
+  select array_agg(tablename order by tablename)
+  from pg_tables where schemaname='public' and tablename like 'addon_%'
+ ) is distinct from array[
+  'addon_admins','addon_audit_logs','addon_device_sessions',
+  'addon_gift_codes','addon_gift_redemptions','addon_orders',
+  'addon_payment_events','addon_plans','addon_profiles',
+  'addon_subscriptions','addon_trial_claims'
+ ]::name[]
+ then raise exception 'unexpected_legacy_tables_refusing_to_modify'; end if;
+ if not exists(
+  select 1 from pg_trigger
+  where tgrelid='auth.users'::regclass
+   and tgname='addon_auth_user_profile' and tgenabled='O'
+ ) then raise exception 'auth_profile_trigger_missing_or_disabled'; end if;
  if to_regclass('public.addon_package_lots') is not null
  then raise exception 'v32_already_installed_or_partial_state_stop'; end if;
  if not exists (select 1 from public.addon_admins)

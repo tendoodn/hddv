@@ -1217,7 +1217,88 @@ begin
   return jsonb_build_object('allowed',false,'reason','mst_mode_not_selected');
  end if;
  m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]-]','','g'));
+ if m !~ '^[0-9]{10}([0-9]{3})?
+ perform pg_advisory_xact_lock(hashtextextended(u::text,0));
+ select coalesce(sum(quantity),0)::int into cap from public.addon_package_lots
+ where user_id=u and family='mst' and (expires_at is null or expires_at>now());
+ if cap=0 then return jsonb_build_object('allowed',false,'reason','mst_package_expired','capacity',0); end if;
+ select not exists(select 1 from public.addon_package_lots where user_id=u and family='mst'
+   and grant_kind<>'trial' and (expires_at is null or expires_at>now())) into trial_only;
+ select id into existing_id from public.addon_mst_assignments where user_id=u and mst=m;
+ if existing_id is null then
+  if (select count(*) from public.addon_mst_assignments where user_id=u)>=cap then
+   return jsonb_build_object('allowed',false,'reason','mst_capacity_reached','capacity',cap);
+  end if;
+  if trial_only then
+   -- Trial issuance must have reserved the identity; no cross-account reuse.
+   if not exists(select 1 from public.addon_trial_mst_registry where mst=m and first_user_id=u) then
+    return jsonb_build_object('allowed',false,'reason','trial_mst_not_reserved');
+   end if;
+  end if;
+  insert into public.addon_mst_assignments(user_id,mst) values(u,m) returning id into existing_id;
+ end if;
+ select count(*) into assigned_rank from public.addon_mst_assignments where user_id=u and id<=existing_id;
+ return jsonb_build_object('allowed',assigned_rank<=cap,
+  'reason',case when assigned_rank<=cap then 'ok' else 'mst_capacity_reduced' end,
+  'capacity',cap,'assigned_rank',assigned_rank);
+end $$;
+
+create or replace function public.addon_list_my_mst_assignments() returns jsonb
+language plpgsql stable security definer set search_path=public,auth as $$
+begin
+ if auth.uid() is null then raise exception 'authentication_required'; end if;
+ return coalesce((select jsonb_agg(jsonb_build_object('id',id,'mst',mst,'assigned_at',assigned_at)
+  order by assigned_at,id) from public.addon_mst_assignments where user_id=auth.uid()),'[]'::jsonb);
+end $$;
+
+create or replace function public.addon_admin_list_mst_assignments(p_user_id uuid default null) returns jsonb
+language plpgsql stable security definer set search_path=public,auth as $$
+begin
+ if not public.addon_is_admin() then raise exception 'admin_required'; end if;
+ return coalesce((select jsonb_agg(jsonb_build_object('id',a.id,'user_id',a.user_id,
+ 'email',u.email,'mst',a.mst,'assigned_at',a.assigned_at) order by a.assigned_at,a.id)
+ from public.addon_mst_assignments a join auth.users u on u.id=a.user_id
+ where p_user_id is null or a.user_id=p_user_id),'[]'::jsonb);
+end $$;
+
+create or replace function public.addon_unlink_mst(p_mst text,p_user_id uuid default null) returns jsonb
+language plpgsql security definer set search_path=public,auth as $$
+declare actor uuid:=auth.uid(); target uuid; m text; deleted_count int; admin_mode boolean;
+begin
+ if actor is null then raise exception 'authentication_required'; end if;
+ admin_mode:=public.addon_is_admin();
+ target:=coalesce(p_user_id,actor);
+ if target<>actor and not admin_mode then raise exception 'admin_required'; end if;
+ if not admin_mode then
+  if not exists(select 1 from public.addon_package_lots where user_id=target and family='mst'
+   and (expires_at is null or expires_at>now())) then
+   raise exception 'mst_unlink_requires_active_package';
+  end if;
+ end if;
+ m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]-]','','g'));
  if m='' then raise exception 'mst_required'; end if;
+ perform pg_advisory_xact_lock(hashtextextended(target::text,0));
+ delete from public.addon_mst_assignments where user_id=target and mst=m;
+ get diagnostics deleted_count=row_count;
+ if deleted_count=0 then raise exception 'mst_assignment_not_found'; end if;
+ insert into public.addon_audit_logs(actor_id,target_user_id,action,details)
+ values(actor,target,'mst_assignment_removed',jsonb_build_object('mst',m,'by_admin',admin_mode));
+ -- Historical trial identity remains reserved, preventing trial farming.
+ return jsonb_build_object('success',true,'mst',m);
+end $$;
+
+revoke all on function public.addon_reserve_trial_identity(text) from public,anon;
+revoke all on function public.addon_authorize_mst(text) from public,anon;
+revoke all on function public.addon_list_my_mst_assignments() from public,anon;
+revoke all on function public.addon_admin_list_mst_assignments(uuid) from public,anon;
+revoke all on function public.addon_unlink_mst(text,uuid) from public,anon;
+-- Trial issuance must be a trusted server-side operation; never expose reservation to end users.
+-- Trial reservation is intentionally not exposed until the trusted issuer is implemented.
+grant execute on function public.addon_authorize_mst(text) to authenticated;
+grant execute on function public.addon_list_my_mst_assignments() to authenticated;
+grant execute on function public.addon_admin_list_mst_assignments(uuid) to authenticated;
+grant execute on function public.addon_unlink_mst(text,uuid) to authenticated;
+ then raise exception 'invalid_mst'; end if;
  perform pg_advisory_xact_lock(hashtextextended(u::text,0));
  select coalesce(sum(quantity),0)::int into cap from public.addon_package_lots
  where user_id=u and family='mst' and (expires_at is null or expires_at>now());
@@ -1415,7 +1496,6 @@ end $$;
 revoke all on function public.addon_record_invoice_download(jsonb)
  from public,anon,authenticated;
 
-
 -- ========== 015_invoice_mode_claim_hardening.sql ==========
 -- AutoTax V3.2: select invoice mode for invoice-only accounts and preserve atomic quota claims.
 -- Deploy after 014_invoice_reread_entitlements.sql.
@@ -1484,7 +1564,6 @@ end $$;
 revoke all on function public.addon_claim_invoice_quota(jsonb) from public;
 grant execute on function public.addon_claim_invoice_quota(jsonb) to authenticated;
 
-
 -- ========== 016_admin_customer_v32_snapshot.sql ==========
 -- AutoTax V3.2: one admin-only customer snapshot for both extension and web admin.
 -- Deploy after migration 015. Read-only RPC; no legacy subscription data.
@@ -1512,8 +1591,8 @@ begin
    'mst_nearest_expiry',ms.nearest_expiry,
    'mst_farthest_expiry',ms.farthest_expiry,
    'mst_assignments',coalesce(assn.items,'[]'::jsonb),
-   'trial_used',tr.email_normalized is not null,
-   'trial_expires_at',ms.trial_expires_at,
+   'trial_used',coalesce(tr.was_used,false),
+   'trial_expires_at',trial_lot.latest_expiry,
    'last_package_at',lots.last_package_at
   ) order by u.created_at desc
  ),'[]'::jsonb)
@@ -1524,8 +1603,14 @@ begin
   order by created_at desc limit 500
  ) u
  left join public.addon_usage_modes um on um.user_id=u.id
- left join public.addon_trial_email_registry tr
-  on tr.email_normalized=lower(btrim(u.email))
+ left join lateral (
+  select exists(select 1 from public.addon_trial_email_registry r
+   where r.first_user_id=u.id or r.email_normalized=lower(btrim(u.email))) as was_used
+ ) tr on true
+ left join lateral (
+  select max(l.expires_at) as latest_expiry
+  from public.addon_package_lots l where l.user_id=u.id and l.grant_kind='trial'
+ ) trial_lot on true
  left join lateral (
   select coalesce(sum(l.quantity),0)::bigint as purchased,
          coalesce(sum(l.remaining),0)::bigint as remaining,
@@ -1557,7 +1642,6 @@ end $$;
 revoke all on function public.addon_admin_list_users_v32(text)
  from public,anon,authenticated;
 grant execute on function public.addon_admin_list_users_v32(text) to authenticated;
-
 
 -- ========== 017_shared_catalog_and_admin_logs.sql ==========
 -- AutoTax V3.2: public package catalog and admin audit use shared backend data.
@@ -1600,6 +1684,42 @@ begin
 end $$;
 revoke all on function public.addon_admin_list_logs(integer) from public,anon;
 grant execute on function public.addon_admin_list_logs(integer) to authenticated;
+
+-- ========== 018_remove_legacy_plan_order_dependency.sql ==========
+-- AutoTax V3.2: remove mandatory dependency on legacy monthly/yearly plan rows.
+-- Apply after 017_shared_catalog_and_admin_logs.sql.
+alter table public.addon_orders alter column plan_code drop not null;
+
+create or replace function public.addon_create_package_order(p_package_code text)
+returns jsonb language plpgsql security definer set search_path=public,auth as $$
+declare
+ u uuid:=auth.uid();
+ p public.addon_package_catalog%rowtype;
+ ref text;
+ o public.addon_orders%rowtype;
+begin
+ if u is null then raise exception 'authentication_required'; end if;
+ select * into p from public.addon_package_catalog
+ where code=p_package_code and active for share;
+ if not found or p.price_vnd<=0 then raise exception 'package_unavailable'; end if;
+ if p.family='mst' and (p.validity_days is null or p.validity_days<1)
+ then raise exception 'mst_validity_not_configured'; end if;
+ loop
+  ref:='ADDON'||upper(encode(gen_random_bytes(5),'hex'));
+  exit when not exists(select 1 from public.addon_orders where payment_reference=ref);
+ end loop;
+ insert into public.addon_orders
+  (user_id,package_code,package_quantity_snapshot,package_validity_days_snapshot,
+   amount_vnd,currency,status,payment_reference,payment_provider)
+ values
+  (u,p.code,p.quantity,p.validity_days,p.price_vnd,'VND','pending',ref,'sepay')
+ returning * into o;
+ return jsonb_build_object('success',true,'order_id',o.id,
+  'package_code',p.code,'amount_vnd',o.amount_vnd,'payment_reference',ref);
+end $$;
+
+revoke all on function public.addon_create_package_order(text) from public,anon;
+grant execute on function public.addon_create_package_order(text) to authenticated;
 
 -- Restore administrators; authentication accounts were never deleted.
 insert into public.addon_admins(user_id) select user_id from autotax_preserved_admins on conflict do nothing;

@@ -313,7 +313,7 @@ $('historyRefresh')?.addEventListener('click',()=>loadHistory().catch(e=>log('Kh
 $('historyExport')?.addEventListener('click',()=>{
   const cols=['mst','kind','form','date','series','invoiceNo','template','sellerTax','sellerName','buyerTax','buyerName','lastSearchedAt','searchedCount','downloadedAt','downloadedFormats'];
   const csv=[cols.join(','),...historyRecords.map(r=>cols.map(k=>'"'+String(Array.isArray(r[k])?r[k].join('|'):(r[k]??'')).replace(/"/g,'""')+'"').join(','))];
-  const blob=new Blob(['\\uFEFF'+csv.join('\\r\\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  const blob=new Blob(['\uFEFF'+csv.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='autotax-lich-su-hoa-don.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 loadHistory().catch(e=>log('Không đọc được lịch sử: '+e.message,'error'));

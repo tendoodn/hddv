@@ -103,7 +103,7 @@ const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
 assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');
 assert(adminHtml.includes('id="packageHistoryDialog" class="history-modal"'), 'Missing modal history window');
-assert(adminHtml.includes('addon_admin_package_transactions_v32'), 'Admin history must call server-paged transactions');
+assert(adminHtml.includes('addon_admin_search_package_transactions_v32'), 'Admin history must call server-paged transactions with search filter');
 assert(adminHtml.includes('id="historyPrev"') && adminHtml.includes('id="historyNext"'), 'Missing history pager');
 assert(adminHtml.includes('data-history='), 'Missing customer-specific history shortcut');
 assert(!adminHtml.includes('id="packageHistoryBody"'), 'Old inline expanded history must not be present');

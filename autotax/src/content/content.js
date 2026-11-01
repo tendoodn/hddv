@@ -97,30 +97,34 @@ async function save(bytes, mime, filename) {
 }
 
 async function assertPackageAccessForMst(mst) {
-  const stored = await chrome.storage.local.get('autotax_license_session_v1');
-  const token = stored.autotax_license_session_v1?.access_token;
-  if (!token) throw new Error('Vui lòng đăng nhập tài khoản AutoTax để kiểm tra gói sử dụng.');
-  const base = 'https://ucqqjdsoyvvaxswzbhaw.supabase.co';
-  const key = 'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
-  const headers = { apikey:key, Authorization:'Bearer '+token, 'Content-Type':'application/json' };
-  const response = await fetch(base+'/rest/v1/rpc/addon_my_entitlements',{method:'POST',headers,body:'{}'});
-  if (!response.ok) throw new Error('Không xác minh được gói AutoTax. Vui lòng thử lại.');
-  const state = await response.json();
-  if (state.mode === 'invoice') {
-    // Always let the server check invoice identities: already charged invoices are free to reread even at zero balance.
-    return { mode:'invoice', remaining:Number(state.packages?.invoice?.remaining||0) };
+  const stored=await chrome.storage.local.get('autotax_license_session_v1');
+  const token=stored.autotax_license_session_v1?.access_token;
+  if(!token)throw new Error('Vui lòng đăng nhập AutoTax và cấu hình hồ sơ MST.');
+  const base='https://ucqqjdsoyvvaxswzbhaw.supabase.co';
+  const key='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
+  const headers={apikey:key,Authorization:'Bearer '+token,'Content-Type':'application/json'};
+  // A server-side READ-ONLY check against the ACTUAL GDT session MST.
+  // Never auto-assign unknown MSTs just because a package has spare capacity.
+  const response=await fetch(base+'/rest/v1/rpc/addon_verify_session_mst_v33',{
+    method:'POST',headers,body:JSON.stringify({p_mst:mst})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.message||
+    'Không kiểm tra được danh sách hồ sơ MST. Tìm kiếm đã bị khóa.');
+  if(!result.allowed){
+    const messages={
+      mst_profile_not_configured:'Chưa cấu hình MST '+(mst||'đang đăng nhập')+
+        '. Hãy thêm MST này trong danh sách hồ sơ của AutoTax.',
+      mst_capacity_reduced:'MST này vượt quá số hồ sơ còn hiệu lực trong gói.',
+      mst_package_expired:'Gói MST đã hết hạn.',
+      invoice_package_required:'Gói số tờ không còn quyền tra cứu.',
+      invalid_mst:'MST của phiên đăng nhập cổng Thuế không hợp lệ.'
+    };
+    throw new Error(messages[result.reason]||
+      'MST đang đăng nhập không được phép tra cứu với tài khoản AutoTax.');
   }
-  const check = await fetch(base+'/rest/v1/rpc/addon_authorize_mst',{method:'POST',headers,body:JSON.stringify({p_mst:mst})});
-  const result = await check.json().catch(()=>({}));
-  if (!check.ok || !result.allowed) {
-    const reason = result.reason === 'mst_capacity_reached' ? 'Đã sử dụng hết số MST trong gói.' :
-      result.reason === 'mst_capacity_reduced' ? 'Gói MST đã hết hạn một phần; MST này hiện vượt quá hạn mức còn hiệu lực.' :
-      'Chế độ MST chưa được kích hoạt hoặc không hợp lệ.';
-    throw new Error(reason+' Dữ liệu và hồ sơ MST vẫn được giữ nguyên.');
-  }
-  return { mode:'mst', remaining:null };
+  return {mode:result.mode||'mst',remaining:null};
 }
-
 async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly, sheets = {} }, send) {
   stopFlag = false;
   const shouldStop = () => stopFlag;

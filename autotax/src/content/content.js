@@ -92,7 +92,7 @@ async function assertPackageAccessForMst(mst) {
   const state = await response.json();
   if (state.mode === 'invoice') {
     if (Number(state.packages?.invoice?.remaining||0) <= 0) throw new Error('Gói hóa đơn đã hết lượt. Hãy gia hạn hoặc chuyển sang chế độ MST nếu còn gói.');
-    return;
+    return { mode:'invoice', remaining:Number(state.packages?.invoice?.remaining||0) };
   }
   const check = await fetch(base+'/rest/v1/rpc/addon_authorize_mst',{method:'POST',headers,body:JSON.stringify({p_mst:mst})});
   const result = await check.json().catch(()=>({}));
@@ -102,6 +102,7 @@ async function assertPackageAccessForMst(mst) {
       'Chế độ MST chưa được kích hoạt hoặc không hợp lệ.';
     throw new Error(reason+' Dữ liệu và hồ sơ MST vẫn được giữ nguyên.');
   }
+  return { mode:'mst', remaining:null };
 }
 
 async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly, sheets = {} }, send) {
@@ -109,7 +110,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
   const shouldStop = () => stopFlag;
   const profile = await HDDT.getSessionInfo();
   if (!profile.ready) throw new Error('Chưa đăng nhập hoadondientu – hãy đăng nhập rồi bấm ↻');
-  await assertPackageAccessForMst(profile.mst);
+  const packageAccess = await assertPackageAccessForMst(profile.mst);
   const dir = `${DOWNLOAD_ROOT}/${safeName([profile.mst, profile.company].filter(Boolean).join(' – ')) || 'CongTy'}/${isoOf(tuNgay)}_${isoOf(denNgay)}`;
 
   // 1. Tra cứu
@@ -123,6 +124,14 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     // Cổng chậm: đếm giây ngay trên dòng trạng thái để người dùng biết vẫn đang chờ, không phải treo
     onWait: (w) => send({ type: 'status', text: `${w.label}: ${waitText(w)}${w.slow && !w.rate ? ' (tra máy tính tiền thường chậm, chờ tối đa 90 giây)' : ''}` }) });
   let rows = res.rows;
+  // Trong chế độ gói số tờ, giới hạn số hóa đơn xử lý chi tiết theo số lượt còn lại. Tra cứu/Excel đơn thuần không tiêu hao lượt.
+  if (packageAccess.mode === 'invoice' && (formats.xml || formats.html || formats.pdf)) {
+    const limit = Math.max(0, packageAccess.remaining || 0);
+    if (rows.length > limit) {
+      send({ type:'log', level:'warn', text:`Gói còn ${limit} lượt; chỉ xử lý chi tiết tối đa ${limit} hóa đơn trong lượt chạy này.` });
+      rows = rows.slice(0, limit);
+    }
+  }
   // Chỉ HĐ thay thế / điều chỉnh / hủy: lọc theo tthai ngay sau tra cứu, trước khi tải chi tiết (tthai 1 = hóa đơn mới)
   if (adjOnly) {
     rows = rows.filter((r) => r.tthai && Number(r.tthai) !== 1);

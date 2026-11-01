@@ -1089,7 +1089,8 @@ grant execute on function public.addon_set_usage_mode(text) to authenticated;
 -- AutoTax V3.2: bounded invoice claim batches, safe rereads and mode changes.
 -- Deploy after 014_invoice_reread_entitlements.sql.
 -- A successful claim reserves exactly one quota unit before exporting.
--- Claims of previously charged invoices do not charge again.
+-- Claims of previously charged invoices do not charge again, even if a row is
+-- later classified with a different purchase/sale direction.
 create or replace function public.addon_claim_invoice_quota(p_items jsonb)
 returns jsonb language plpgsql security definer set search_path=public,auth as $$
 declare
@@ -1127,7 +1128,7 @@ begin
    continue;
   end if;
   if exists(select 1 from public.addon_invoice_deductions d
-            where d.user_id=u and d.mst=v_mst and d.direction=v_direction
+            where d.user_id=u and d.mst=v_mst
               and d.form_code=v_form and d.series=v_series and d.invoice_number=v_invoice) then
    v_seen := v_seen + 1;
    v_keys := v_keys || jsonb_build_array(item);

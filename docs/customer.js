@@ -150,7 +150,7 @@ function closeTimersOnly(){
 }
 async function action(id,fn){
  const button=$(id);button.disabled=true;
- try{await fn()}catch(error){showMessage(prettyError(error),true)}
+ try{await fn()}catch(error){showMessage(prettyError(error),true,$("dashboard").hidden?"authMessage":"accountMessage")}
  finally{button.disabled=false}
 }
 $("loginBtn").addEventListener("click",()=>action("loginBtn",async()=>{

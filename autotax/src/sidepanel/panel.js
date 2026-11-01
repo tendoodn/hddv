@@ -273,42 +273,9 @@ const picker = createRangePicker({
 });
 preset('lastMonth');
 
-// Bản quyền: bật thu phí mà chưa kích hoạt (hoặc hết hạn) → hộp kích hoạt hiện ngay, không đóng được
-let lic = { tier: 'open' };
-const vnDate = (d) => d.split('-').reverse().join('/');
-function applyLicense(st) {
-  lic = { tier: 'open' };
-  // Giao diện bản nội bộ không hiển thị thông báo bản quyền/dùng thử của tác giả cũ.
-  for (const id of ['notice', 'noticeUpdate', 'noticeTrial', 'noticePrivate']) {
-    const el = $(id);
-    if (el) el.hidden = true;
-  }
-  if ($('licModal')?.open) $('licModal').close();
-}
-async function openLicense() {
-  $('licReason').textContent = lic.reason || '';
-  $('machineId').textContent = await License.machineId();
-  // Còn dùng thử → đóng được (nút ×, Esc); bị khóa → không đóng được
-  $('licClose').hidden = lic.tier === 'locked';
-  if (!$('licModal').open) { $('licMsg').textContent = ''; $('licInput').value = ''; $('licModal').showModal(); }
-}
-$('trialActivate').addEventListener('click', (e) => { e.preventDefault(); openLicense(); });
-$('licClose').addEventListener('click', () => $('licModal').close());
-// Esc / đóng kiểu khác khi chưa kích hoạt → mở lại
-$('licModal').addEventListener('cancel', (e) => { if (lic.tier === 'locked') e.preventDefault(); });
-$('licModal').addEventListener('close', () => { if (lic.tier === 'locked') openLicense(); });
-$('copyMid').addEventListener('click', async () => {
-  await navigator.clipboard.writeText($('machineId').textContent);
-  $('copyMid').textContent = 'Đã sao chép ✓'; $('copyMid').classList.add('copied');
-  setTimeout(() => { $('copyMid').textContent = 'Sao chép'; $('copyMid').classList.remove('copied'); }, 1500);
-});
-guard($('licSubmit'), async () => {
-  const res = await License.activate($('licInput').value);
-  if (!res.ok) { $('licMsg').className = 'lic-msg error'; $('licMsg').textContent = res.reason; return; }
-  log(`Kích hoạt thành công – cấp cho ${res.name}, hạn đến ${vnDate(res.expires)}`, 'ok');
-  applyLicense(await License.status());
-});
-
-// Lấy cờ thu phí trước để máy mới cài không thấy hộp kích hoạt chớp lên khi đang tắt thu phí (run() vẫn tự kiểm tra lại)
-applyLicense({ tier: 'open' });
+// Gate the existing invoice workflow using the server-verified license.
+let licenseAllowed=false;
+function applyLicense(st){licenseAllowed=['trial','paid'].includes(st?.tier);syncRun()}
+document.addEventListener('autotax-license-change',e=>applyLicense(e.detail?.license));
+document.addEventListener('autotax-license-gate',e=>{licenseAllowed=!!e.detail?.allowed;syncRun()});
 init().catch((e) => log(e.message, 'error'));

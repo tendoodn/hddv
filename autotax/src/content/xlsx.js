@@ -104,23 +104,47 @@
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">${freezePane(freeze)}</sheetView></sheetViews><cols>${cols}</cols><sheetData>${body}</sheetData>${merged}</worksheet>`;
   }
 
-  // Tên sheet: ≤ 31 ký tự, không chứa []:*?/\
-  const sheetName = (s) => s.replace(/[[\]:*?/\\]/g, ' ').slice(0, 31);
-
-  // Vùng lọc của các sheet dạng bảng (Excel báo lỗi nếu <definedNames> rỗng)
-  const filterNames = (sheets) => {
-    const names = sheets.map((s, i) => s.layout ? '' : `<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${esc(sheetName(s.name))}'!$A$1:$${colName(s.columns.length - 1)}$${Math.max(s.rows.length + 1, 1)}</definedName>`).join('');
-    return names ? `<definedNames>${names}</definedNames>` : '';
+  // Tên sheet Excel: tối đa 31 ký tự, loại ký tự cấm, không rỗng và không trùng.
+  const cleanSheetName = (value) => {
+    let name = String(value || 'Sheet').replace(/[\\[\\]:*?/\\\\]/g, ' ').trim();
+    name = name.replace(/^'+|'+$/g, '').slice(0, 31).trim();
+    return name || 'Sheet';
+  };
+  const sheetNames = (sheets) => {
+    const used = new Set();
+    return sheets.map((s, i) => {
+      const base = cleanSheetName(s.name || ('Sheet' + (i + 1)));
+      let name = base, n = 2;
+      while (used.has(name.toLowerCase())) {
+        const suffix = ' (' + (n++) + ')';
+        name = base.slice(0, Math.max(1, 31 - suffix.length)) + suffix;
+      }
+      used.add(name.toLowerCase());
+      return name;
+    });
   };
 
+  const filterNames = (sheets, names) => {
+    const defs = sheets.map((s, i) => {
+      if (s.layout) return '';
+      const quoted = names[i].replace(/'/g, "''");
+      const lastCol = colName(Math.max(0, (s.columns && s.columns.length || 1) - 1));
+      const lastRow = Math.max((s.rows && s.rows.length || 0) + 1, 1);
+      return '<definedName name="_xlnm._FilterDatabase" localSheetId="' + i + '" hidden="1">' +
+        "'" + esc(quoted) + "'!$A$1:$" + lastCol + '$' + lastRow + '</definedName>';
+    }).join('');
+    return defs ? '<definedNames>' + defs + '</definedNames>' : '';
+  };
   function buildXlsx(sheets) {
+    if (!Array.isArray(sheets) || !sheets.length) throw new Error('Workbook phải có ít nhất một sheet.');
+    const names = sheetNames(sheets);
     const files = [
       { name: '[Content_Types].xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>` },
       { name: '_rels/.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
       { name: 'xl/workbook.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s, i) => `<sheet name="${esc(sheetName(s.name))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${filterNames(sheets)}<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>` },
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s, i) => `<sheet name="${esc(names[i])}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${filterNames(sheets, names)}<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>` },
       { name: 'xl/_rels/workbook.xml.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
       { name: 'xl/styles.xml', data: STYLES },

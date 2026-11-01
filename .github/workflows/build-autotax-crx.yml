@@ -38,9 +38,9 @@ jobs:
           cp -a autotax/. "$RELEASE/"
           while IFS= read -r -d '' FILE; do
             node_modules/.bin/terser "$FILE" --compress --mangle \
-              --format comments=false --output "$FILE.min"
-            node --check "$FILE.min"
-            mv "$FILE.min" "$FILE"
+              --format comments=false --output "$FILE.min.js"
+            node --check "$FILE.min.js"
+            mv "$FILE.min.js" "$FILE"
           done < <(find "$RELEASE" -type f -name '*.js' -print0)
           echo "AUTOTAX_RELEASE=$RELEASE" >> "$GITHUB_ENV"
           echo "Release JS minified without prohibited obfuscation."

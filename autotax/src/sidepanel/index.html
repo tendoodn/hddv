@@ -25,12 +25,21 @@
   </header>
 
   <main>
-    <section id="license-card" class="license-card" aria-label="Quản lý bản quyền AutoTax">
-      <div class="license-head"><div><strong>Quản lý bản quyền</strong><div class="license-caption">Tài khoản và gói sử dụng AutoTax</div></div><button id="lic-refresh" type="button" class="license-refresh" title="Kiểm tra bản quyền">↻</button></div>
-      <div id="lic-auth"><label for="lic-email">Email tài khoản</label><input id="lic-email" type="email" autocomplete="username" placeholder="email@example.com"><label for="lic-password">Mật khẩu</label><input id="lic-password" type="password" autocomplete="current-password" placeholder="Mật khẩu tài khoản"><div class="license-buttons"><button id="lic-login" type="button" class="primary">Đăng nhập</button><button id="lic-register" type="button">Tạo tài khoản</button></div></div>
-      <div id="lic-account" hidden><div class="license-user"><span>Tài khoản</span><strong id="lic-email-label"></strong></div><div class="license-status-row"><span id="lic-state" class="lic-state locked">Đang kiểm tra…</span><button id="lic-logout" type="button">Đăng xuất</button></div><p id="lic-detail" class="license-detail">Đang kiểm tra quyền sử dụng…</p><div class="license-buttons"><button id="lic-trial" type="button" class="primary" hidden>Kích hoạt dùng thử 7 ngày</button></div><div id="lic-buy" class="license-buttons" hidden><button id="lic-buy-month" type="button">Gói 1 tháng · 20.000đ</button><button id="lic-buy-year" type="button">Gói 1 năm · 200.000đ</button></div><div id="lic-payment" class="license-payment" hidden><p id="lic-payment-info"></p><img id="lic-qr" alt="QR thanh toán AutoTax"><button id="lic-close-qr" type="button">Đóng mã QR</button></div></div>
-      <p id="lic-message" class="lic-message" hidden></p><p class="license-footnote">Quyền sử dụng được xác minh trực tuyến. Khi hết hạn, chức năng tải hóa đơn sẽ tự khóa.</p>
-    </section>
+    <section id="license-card" class="license-card" aria-label="Tài khoản và gói AutoTax">
+  <div class="license-head"><div><strong>Gói sử dụng AutoTax</strong><div class="license-caption">Quản lý số hóa đơn hoặc số MST</div></div><button id="lic-refresh" type="button" class="license-refresh" title="Làm mới">↻</button></div>
+  <div id="lic-auth"><label for="lic-email">Email tài khoản</label><input id="lic-email" type="email" autocomplete="username" placeholder="email@example.com"><label for="lic-password">Mật khẩu</label><input id="lic-password" type="password" autocomplete="current-password" placeholder="Mật khẩu"><div class="license-buttons"><button id="lic-login" type="button" class="primary">Đăng nhập</button><button id="lic-register" type="button">Tạo tài khoản</button></div></div>
+  <div id="lic-account" hidden>
+    <div class="license-user"><span>Tài khoản</span><strong id="lic-email-label"></strong></div>
+    <div id="lic-entitlements" class="license-entitlements"><div class="license-empty">Đang tải quyền sử dụng…</div></div>
+    <div id="lic-mode-wrap" class="license-mode" hidden><label for="lic-mode">Chế độ sử dụng</label><select id="lic-mode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><small>Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</small></div>
+    <div class="license-status-row"><span id="lic-state" class="lic-state locked">Đang kiểm tra…</span><button id="lic-logout" type="button">Đăng xuất</button></div>
+    <div class="license-buttons"><button id="lic-renew" type="button" class="primary">Gia hạn / Mua gói</button><button id="lic-password-open" type="button">Đổi mật khẩu</button></div>
+    <div id="lic-password-box" hidden><label for="lic-new-password">Mật khẩu mới</label><input id="lic-new-password" type="password" autocomplete="new-password" minlength="8" placeholder="Ít nhất 8 ký tự"><button id="lic-password-save" type="button">Cập nhật mật khẩu</button></div>
+    <div id="lic-packages" class="license-packages" hidden><div class="license-package-head"><strong>Chọn gói muốn mua</strong><button id="lic-packages-close" type="button">Đóng</button></div><div id="lic-package-list"></div></div>
+    <div id="lic-payment" class="license-payment" hidden><p id="lic-payment-info"></p><img id="lic-qr" alt="QR thanh toán AutoTax"><button id="lic-close-qr" type="button">Đóng mã QR</button></div>
+  </div>
+  <p id="lic-message" class="lic-message" hidden></p><p class="license-footnote">Quyền và số dư được xác minh trực tuyến. Hồ sơ MST và dữ liệu hóa đơn không bị xóa khi gói hết hạn.</p>
+</section>
 
     <details class="history-card" id="historyCard">
       <summary><span><strong>Theo dõi hóa đơn</strong><small id="historySummary">Đang tải lịch sử cục bộ…</small></span><span class="history-count" id="historyCount">0</span></summary>

@@ -46,7 +46,8 @@ const migrationNames=[
  '022_admin_paginated_package_transactions.sql',
  '023_fix_package_checkout_pgcrypto_schema.sql',
  '024_five_minute_qr_realtime_order_status.sql',
- '025_admin_revoke_restore_compensation_and_transaction_codes.sql'
+ '025_admin_revoke_restore_compensation_and_transaction_codes.sql',
+ '026_hide_inactive_package_history.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -96,6 +97,7 @@ assert(customerHtml.indexOf('id="paymentArea"')<customerHtml.indexOf('id="packag
 assert(customerHtml.includes('#paymentArea #paymentQr{display:block;margin:14px auto}'),'QR should be centered');
 assert(customerJs.includes('"loginForm").addEventListener("submit"'),'Enter login handler missing');
 assert(customerJs.includes('scrollIntoView({behavior:reducedMotion'),'Buying must center scroll on QR');
+assert(!customerHtml.includes('href="https://github.com/'), 'Customer UI must not expose GitHub source links');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
 assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');
@@ -108,6 +110,9 @@ assert(adminHtml.includes('id="packageAdjustmentDialog"'),'Missing audited packa
 assert(adminHtml.includes('addon_admin_adjust_package_lot_v32'),'Missing revoke/restore RPC hookup');
 assert(adminHtml.includes('addon_admin_compensate_failed_order_v32'),'Missing failed/refunded compensation RPC hookup');
 assert(adminHtml.includes('<th>Mã đơn</th><th>Mã giao dịch</th>'),'Missing order and transaction ID columns');
+assert(adminHtml.includes('addon_admin_hide_package_history_v32'), 'Admin history hide RPC must be wired');
+assert(adminHtml.includes('data-adjust="hide"'), 'Admin history must provide hide button for eligible records');
+assert(adminHtml.includes('h.can_hide'), 'Admin hide button must depend on server authorization');
 assert(adminHtml.includes('days=family==="mst"?365:null'), 'MST family must default to 365 days in admin');
 const candidate=load('addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql');
 for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);

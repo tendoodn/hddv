@@ -17,6 +17,8 @@ const HISTORY_LIMIT = 20000;
 const invoiceHistoryKey = (r, mst) => [mst || '', r.kind || '', r.form || '', r.khmshdon || '', r.khhdon || '', r.shdon || ''].join('|');
 // Reserve quota before any file is produced. Previously charged invoice identities
 // are returned as allowed without consuming another unit.
+// Bound each atomic claim request to prevent huge transactions on large invoice searches.
+const INVOICE_CLAIM_BATCH_SIZE = 250;
 async function claimInvoiceQuota(rows, mst) {
   if (!rows?.length) return { rows: [], deducted: 0, previously: 0, denied: 0 };
   const stored = await chrome.storage.local.get('autotax_license_session_v1');
@@ -25,25 +27,35 @@ async function claimInvoiceQuota(rows, mst) {
   const base = 'https://ucqqjdsoyvvaxswzbhaw.supabase.co';
   const key = 'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
   const headers = { apikey: key, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
-  const items = rows.map(r => ({
-    mst: mst || '', direction: r.kind || '',
-    form_code: [r.form || '', r.khmshdon || ''].join(':'),
-    series: r.khhdon || '', invoice_number: String(r.shdon ?? '')
-  }));
-  const res = await fetch(base + '/rest/v1/rpc/addon_claim_invoice_quota', {
-    method: 'POST', headers, body: JSON.stringify({ p_items: items })
-  });
-  const result = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(result.message || result.error || 'Không xác minh được lượt sử dụng. Hãy cập nhật SQL 011 trên Supabase.');
-  const allowed = new Set((result.allowed_items || []).map(item =>
-    [item.mst, item.direction, item.form_code, item.series, item.invoice_number].join('|')));
-  return {
-    rows: rows.filter(r => allowed.has([mst || '', r.kind || '',
-      [r.form || '', r.khmshdon || ''].join(':'), r.khhdon || '', String(r.shdon ?? '')].join('|'))),
-    deducted: Number(result.deducted || 0),
-    previously: Number(result.previously_deducted || 0),
-    denied: Number(result.denied || 0)
-  };
+  const allowedRows = [];
+  let deducted = 0, previously = 0, denied = 0;
+  const invoiceKey = item => JSON.stringify([
+    item.mst, item.direction, item.form_code, item.series, item.invoice_number
+  ]);
+  for (let offset = 0; offset < rows.length; offset += INVOICE_CLAIM_BATCH_SIZE) {
+    const batch = rows.slice(offset, offset + INVOICE_CLAIM_BATCH_SIZE);
+    const items = batch.map(r => ({
+      mst: mst || '', direction: r.kind || '',
+      form_code: [r.form || '', r.khmshdon || ''].join(':'),
+      series: r.khhdon || '', invoice_number: String(r.shdon ?? '')
+    }));
+    const res = await fetch(base + '/rest/v1/rpc/addon_claim_invoice_quota', {
+      method: 'POST', headers, body: JSON.stringify({ p_items: items })
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(result.message || result.error ||
+        'Không xác minh được lượt sử dụng. Hãy liên hệ quản trị AutoTax.');
+    }
+    const allowed = new Set((result.allowed_items || []).map(invoiceKey));
+    for (let i = 0; i < batch.length; i++) {
+      if (allowed.has(invoiceKey(items[i]))) allowedRows.push(batch[i]);
+    }
+    deducted += Number(result.deducted || 0);
+    previously += Number(result.previously_deducted || 0);
+    denied += Number(result.denied || 0);
+  }
+  return { rows: allowedRows, deducted, previously, denied };
 }
 
 async function updateInvoiceHistory(rows, mst, mode, formats = {}) {

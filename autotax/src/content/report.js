@@ -58,17 +58,24 @@
 
   function invoiceSheet(name, rows, details, withPdf, mstCheck, illegal) {
     const list = sorted(rows).map((r) => ({ r, m: money(r) }));
-    const sum = (k) => total(list, (x) => x.m[k]);
+    const currencies = [...new Set(list.map(({ r }) => r.dvtte || 'VND'))].sort();
+    const totals = currencies.map((currency) => {
+      const group = list.filter(({ r }) => (r.dvtte || 'VND') === currency);
+      const sum = (k) => total(group, (x) => x.m[k]);
+      const row = ['', currencies.length > 1 ? `Tổng (${currency})` : 'Tổng', '', '', '', '', '', '', '', '', '', '',
+        sum('cthue'), sum('thue'), sum('phi'), sum('tong'), currency];
+      return row;
+    });
     return {
       name, columns: [...INVOICE_COLS, ...(withPdf ? PDF_COLS : []), ...(mstCheck ? MST_COLS : [])], totalRow: true,
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
-          String(r.shdon), dateVN(r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte,
-          r.dvtte !== 'VND' ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
+          String(r.shdon), dateVN(r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte || 'VND',
+          r.dvtte && r.dvtte !== 'VND' ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
           ...((o) => [o.name, o.code, ...(withPdf ? [linkCell(o)] : [])])(HDDT.originalLookup(r, headOf(details, r))),
           ...(mstCheck ? mstRisk(r, illegal) : [])]),
-        ['', 'Tổng', '', '', '', '', '', '', '', '', '', '', sum('cthue'), sum('thue'), sum('phi'), sum('tong')],
+        ...totals,
       ],
     };
   }

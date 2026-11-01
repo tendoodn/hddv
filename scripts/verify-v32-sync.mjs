@@ -148,7 +148,7 @@ assert(panelCss.includes('--accent:#e60012') && panelCss.includes('--accent-stro
 assert(panelCss.includes('grid-template-columns:repeat(5,minmax(0,1fr))'),'Five date preset buttons must stay on one row');
 assert(panelCss.includes('.sheet-opts .sheet-grid'),'Excel sheets must form two columns');
 assert(panelJs.includes("key: 'thisYear', label: 'Cả năm'"),'Missing current-year preset');
-const orderedSheets=['reduction','hdkd','risk','seller','gtgt','adjust'];
+const orderedSheets=['reduction','hdkd','risk','seller','gtgt','adjust','tendoo'];
 const listedSheets=[...panelHtml.matchAll(/name="sheet" value="([^"]+)"/g)].map(m=>m[1]);
 assert.deepEqual(listedSheets,orderedSheets,'Incorrect Excel sheet ordering');
 assert(!panelHtml.includes('Cập nhật mới:')&&!panelHtml.includes('Phiên bản sử dụng nội bộ'),'Obsolete extension notices must be removed');

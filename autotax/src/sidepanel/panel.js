@@ -154,84 +154,132 @@ function formats() {
 const SHEETS = ['risk', 'seller', 'adjust', 'reduction', 'hdkd', 'gtgt', 'tendoo'];
 const sheets = () => Object.fromEntries(SHEETS.map((k) => [k, checked('sheet').includes(k)]));
 
-/* Optional Tendoo stock-import bridge: both Excel files are parsed locally. */
-let tendooCatalog=null,tendooTemplate=null,tendooMappingRequest=null;
-let tendooPendingNames=[],tendooSavedLinks={};
+/* Stock import templates are bundled, only the product catalog is uploaded. */
+let stockPlatform='tendoo',tendooCatalog=null;
+let tendooTemplate=TendooImport.builtinTemplate(stockPlatform);
+let tendooMappingRequest=null,tendooPendingNames=[],tendooSavedLinks={};
 const TENDOO_LINKS_KEY='autotax_tendoo_sku_links_v1';
+const STOCK_SETTINGS_KEY='autotax_stock_import_settings_v1';
 function tendooCatalogKey(){
- if(!tendooCatalog?.length)return '';
- let hash=2166136261;
- for(const product of tendooCatalog){
-  const value=product.sku+'|'+product.name+'\n';
-  for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619)>>>0;
- }
- return 'catalog-'+tendooCatalog.length+'-'+hash.toString(16);
+  if(!tendooCatalog?.length)return '';
+  let hash=2166136261;
+  for(const product of tendooCatalog){
+    const value=product.sku+'|'+product.name+'\n';
+    for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619)>>>0;
+  }
+  return stockPlatform+'-catalog-'+tendooCatalog.length+'-'+hash.toString(16);
 }
 async function loadTendooLinks(){
- tendooSavedLinks={};
- if(!tendooCatalog?.length)return;
- const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
- const known=new Set(tendooCatalog.map(p=>p.sku));
- tendooSavedLinks=Object.fromEntries(Object.entries(data[tendooCatalogKey()]||{})
-  .filter(([name,sku])=>name&&known.has(sku)));
+  tendooSavedLinks={};
+  if(!tendooCatalog?.length)return;
+  const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
+  const known=new Set(tendooCatalog.map(p=>p.sku));
+  tendooSavedLinks=Object.fromEntries(Object.entries(data[tendooCatalogKey()]||{})
+    .filter(([name,sku])=>name&&known.has(sku)));
 }
 async function keepTendooLinks(mapping){
- const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
- tendooSavedLinks={...tendooSavedLinks,...mapping};
- data[tendooCatalogKey()]=tendooSavedLinks;
- await chrome.storage.local.set({[TENDOO_LINKS_KEY]:data});
- updateTendooUi();
+  const known=new Set((tendooCatalog||[]).map(p=>p.sku));
+  const accepted=Object.fromEntries(Object.entries(mapping||{}).filter(([k,v])=>k&&known.has(v)));
+  if(!Object.keys(accepted).length)return;
+  const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
+  tendooSavedLinks={...tendooSavedLinks,...accepted};
+  data[tendooCatalogKey()]=tendooSavedLinks;
+  await chrome.storage.local.set({[TENDOO_LINKS_KEY]:data});
+  updateTendooUi();
 }
 const tendooDialog=$('tendooSettingsDialog');
 function tendooStatus(message,error=false){
- const el=$('tendooSetupStatus');el.textContent=message;
- el.style.color=error?'#b91c1c':'#166534';
+  const el=$('tendooSetupStatus');el.textContent=message;
+  el.style.color=error?'#b91c1c':'#166534';
 }
-const tendooReady=()=>Array.isArray(tendooCatalog)&&tendooCatalog.length>0&&!!tendooTemplate;
+const misaSettings=()=>({
+  warehouse:$('misaWarehouse').value.trim(),
+  lastDocNumber:$('misaLastDoc').value.trim()
+});
+function stockSettingsValid(){
+  if(stockPlatform!=='misa')return true;
+  const settings=misaSettings();
+  if(!settings.warehouse)return false;
+  try{TendooImport.nextDocumentNumber(settings.lastDocNumber,1);return true}
+  catch{return false}
+}
+const tendooReady=()=>Array.isArray(tendooCatalog)&&tendooCatalog.length>0&&
+  !!tendooTemplate?.headers?.length&&stockSettingsValid();
 function updateTendooUi(){
- const selected=$('tendooSyncCheck').checked;
- $('tendooSummary').hidden=!selected;
- $('tendooSummaryText').textContent=tendooReady()?
-  tendooCatalog.length+' SKU · '+Object.keys(tendooSavedLinks).length+' liên kết đã lưu · mẫu: '+tendooTemplate.fileName:
-  'Cần file BC_San_Pham và mẫu nhập kho Tendoo.';
+  $('tendooSummary').hidden=!$('tendooSyncCheck').checked;
+  const label=stockPlatform==='misa'?'MISA':'Tendoo';
+  $('tendooSummaryText').textContent=tendooReady()?
+    label+': '+tendooCatalog.length+' mã hàng · '+Object.keys(tendooSavedLinks).length+
+      ' liên kết đã lưu · mẫu đã tích hợp':
+    label+': cần tải '+(stockPlatform==='misa'?'Danh sách hàng hóa':'BC_San_Pham')+
+      (stockPlatform==='misa'?' và nhập Mã kho / Mã chứng từ gần nhất.':'.');
+}
+function refreshPlatformFields(){
+  const misa=stockPlatform==='misa';
+  $('misaStockSettings').hidden=!misa;
+  $('stockCatalogLabel').textContent=misa?
+    '2. Tải Danh sách hàng hóa MISA (.xlsx)':
+    '2. Tải báo cáo sản phẩm BC_San_Pham_*.xlsx';
+  $('stockTemplateInfo').textContent=misa?
+    'MISA eShop: mẫu nhap_khau_hang_hoa (22 cột phiếu nhập kho) tích hợp sẵn.':
+    'Tendoo: mẫu nhập kho GTGT (11 cột) tích hợp sẵn.';
+  $('stockPlatform').value=stockPlatform;
+  tendooTemplate=TendooImport.builtinTemplate(stockPlatform);
+  updateTendooUi();
 }
 function openTendooSettings(){
- if(!tendooDialog.open)tendooDialog.showModal();
- tendooStatus(tendooReady()?
-  'Đã đọc '+tendooCatalog.length+' SKU và file mẫu '+tendooTemplate.fileName+'.':
-  'Hãy chọn đủ hai file .xlsx trước khi tiếp tục.');
+  refreshPlatformFields();
+  if(!tendooDialog.open)tendooDialog.showModal();
+  tendooStatus(tendooReady()?
+    'Đã đọc '+tendooCatalog.length+' mã hàng, mẫu '+stockPlatform.toUpperCase()+' tích hợp.':
+    'Chọn file danh mục sản phẩm, rồi hoàn tất các ô bắt buộc.');
+}
+async function storeStockSettings(){
+  await chrome.storage.local.set({[STOCK_SETTINGS_KEY]:{platform:stockPlatform,...misaSettings()}});
 }
 $('tendooSyncCheck').addEventListener('change',()=>{
- updateTendooUi();
- if($('tendooSyncCheck').checked)openTendooSettings();
- summarize();
+  updateTendooUi();
+  if($('tendooSyncCheck').checked)openTendooSettings();
+  summarize();
 });
 $('tendooConfigureBtn').addEventListener('click',openTendooSettings);
+$('stockPlatform').addEventListener('change',()=>{
+  stockPlatform=$('stockPlatform').value;
+  tendooCatalog=null;tendooSavedLinks={};$('tendooCatalogFile').value='';
+  refreshPlatformFields();
+  tendooStatus('Hãy tải danh sách hàng hóa '+stockPlatform.toUpperCase()+'.');
+});
 $('tendooCatalogFile').addEventListener('change',async e=>{
- const file=e.target.files?.[0];if(!file)return;
- tendooCatalog=null;updateTendooUi();tendooStatus('Đang đọc báo cáo sản phẩm...');
- try{tendooCatalog=await TendooImport.catalog(file);await loadTendooLinks();
-  tendooStatus('Đã đọc '+tendooCatalog.length+' SKU, '+Object.keys(tendooSavedLinks).length+' liên kết đã lưu.');
- }catch(err){tendooStatus('File BC_San_Pham không hợp lệ: '+err.message,true)}
- updateTendooUi();
+  const file=e.target.files?.[0];if(!file)return;
+  tendooCatalog=null;updateTendooUi();tendooStatus('Đang đọc danh mục sản phẩm...');
+  try{
+    tendooCatalog=await TendooImport.catalog(file);await loadTendooLinks();
+    tendooStatus('Đã đọc '+tendooCatalog.length+' mã hàng, '+
+      Object.keys(tendooSavedLinks).length+' liên kết đã lưu.');
+  }catch(err){tendooStatus('Danh mục không hợp lệ: '+err.message,true)}
+  updateTendooUi();
 });
-$('tendooTemplateFile').addEventListener('change',async e=>{
- const file=e.target.files?.[0];if(!file)return;
- tendooTemplate=null;updateTendooUi();tendooStatus('Đang đọc file mẫu...');
- try{tendooTemplate=await TendooImport.template(file);
-  tendooStatus('Đã đọc '+tendooTemplate.headers.length+' cột mẫu nhập kho.');
- }catch(err){tendooStatus('File mẫu nhập kho không hợp lệ: '+err.message,true)}
- updateTendooUi();
-});
-$('tendooSettingsApply').addEventListener('click',()=>{
- if(!tendooReady())return tendooStatus('Chưa đủ hai file đúng định dạng.',true);
- tendooDialog.close();log('Tendoo: đã cấu hình '+tendooCatalog.length+' SKU và mẫu nhập kho.','ok');
+for(const id of ['misaWarehouse','misaLastDoc'])$(id).addEventListener('input',updateTendooUi);
+$('tendooSettingsApply').addEventListener('click',async()=>{
+  if(!tendooReady())return tendooStatus('Thiếu danh mục, mã kho hoặc mã chứng từ gần nhất không hợp lệ.',true);
+  try{
+    await storeStockSettings();tendooDialog.close();
+    log(stockPlatform.toUpperCase()+': đã cấu hình '+tendooCatalog.length+
+      ' mã hàng và mẫu nhập kho tích hợp.','ok');
+  }catch(e){tendooStatus('Lỗi lưu cấu hình: '+e.message,true)}
 });
 $('tendooSettingsCancel').addEventListener('click',()=>{
- tendooDialog.close();
- if(!tendooReady())$('tendooSyncCheck').checked=false;
- updateTendooUi();summarize();
+  tendooDialog.close();
+  if(!tendooReady())$('tendooSyncCheck').checked=false;
+  updateTendooUi();summarize();
 });
+chrome.storage.local.get([STOCK_SETTINGS_KEY,'autotax_misa_last_document_v1']).then(data=>{
+  const old=data[STOCK_SETTINGS_KEY]||{};
+  stockPlatform=old.platform==='misa'?'misa':'tendoo';
+  $('misaWarehouse').value=old.warehouse||'';
+  $('misaLastDoc').value=data.autotax_misa_last_document_v1||old.lastDocNumber||'';
+  refreshPlatformFields();
+}).catch(()=>{});
 async function openTendooMatchTab(){
  if(!tendooMappingRequest||!tendooPendingNames.length)return;
  const sessionKey='autotax-tendoo-request-'+tendooMappingRequest;

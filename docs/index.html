@@ -70,6 +70,7 @@ function message(id,text,error=false){const el=$(id);el.textContent=text;el.clas
 function clear(id){$(id).classList.add("hidden")}
 function date(v){return new Date(v).toLocaleString("vi-VN")}
 function money(v){return Number(v).toLocaleString("vi-VN")+"đ"}
+function planName(code){return code==="monthly"?"Gói 1 tháng":code==="yearly"?"Gói 1 năm":String(code||"Gói sử dụng");}
 let paymentPollTimer=null;
 let paymentQrTimeout=null;
 let paymentQrCountdownTimer=null;
@@ -90,7 +91,7 @@ async function checkPaymentConfirmation(){
    stopPaymentPolling();stopPaymentQrTimeout();$("paymentArea").classList.add("hidden");
    paymentBaselineEndsAt=license.ends_at;
    await refresh();
-   message("dashMsg","🎉 Gia hạn thành công! Gói "+license.plan_code+" đã được cập nhật. Thời hạn mới đến "+date(license.ends_at)+".");
+   message("dashMsg", "🎉 Gia hạn thành công! "+planName(license.plan_code)+" đã được cập nhật. Thời hạn mới đến "+date(license.ends_at)+".");
    return true;
   }
   return false;
@@ -111,7 +112,7 @@ async function refresh(options={}){
  if(error){$("licenseTitle").textContent="Chưa xác định";message("dashMsg","Không kiểm tra được quyền sử dụng: "+error.message,true);return}
  if(license.active){
   $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
-  $("licenseMeta").textContent="Gói "+license.plan_code+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
+  $("licenseMeta").textContent="+planName(license.plan_code)+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
   $("trialArea").classList.add("hidden");
   // Keep the QR visible until the five-minute display timeout or manual close.
  }else{

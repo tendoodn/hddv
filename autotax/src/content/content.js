@@ -101,7 +101,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
       // Zip quá lớn (gói HTML ~300 KB/hóa đơn) → tách phần để không vượt giới hạn truyền dữ liệu của Chrome
       const suffix = part > 1 || !last ? `_phan${part}` : '';
       await save(Zip.writeZip(files), 'application/zip', `${dir}/${HDDT.KINDS[kind].folder}_${month}${suffix}.zip`);
-      if (bucketInvoiceKeys.length) await updateInvoiceHistory(rows.filter(r => bucketInvoiceKeys.includes(invoiceHistoryKey(r, profile.mst))), profile.mst, 'downloaded', formats);
+      if (bucketInvoiceKeys.length) await updateInvoiceHistory(rows.filter(r => bucketInvoiceKeys.includes(invoiceHistoryKey(r, profile.mst))), profile.mst, 'downloaded', { xml: !!formats.xml, html: !!formats.html, pdf: !!formats.pdf });
       saved++; files = []; bytes = 0; bucketInvoiceKeys = []; part++;
     };
     const add = (name, data) => { files.push({ name, data }); bytes += data.length; };
@@ -198,7 +198,6 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     const book = Report.buildSheets(rows, details, { withLines: formats.lines, withPdf: formats.pdf, sheets, originals, illegal, tuNgay, denNgay, mst: profile.mst, company: profile.company,
       kinds, adjOnly, skipped: res.skipped || [], stopped: stopFlag || res.stopped });
     await save(Xlsx.buildXlsx(book), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name);
-    await updateInvoiceHistory(rows, profile.mst, 'downloaded', { excel: true });
     // 1 dòng: số sheet + tóm tắt rủi ro (chỉ nêu khi có cảnh báo / lưu ý)
     const risk = book.find((x) => x.summary)?.summary;
     const flags = risk ? [risk.bad && `${risk.bad} hóa đơn bị cảnh báo`, risk.warn && `${risk.warn} hóa đơn cần lưu ý`].filter(Boolean).join(', ') : '';

@@ -1,4 +1,4 @@
-# AutoTax 3.2.0
+# AutoTax 3.2.1 — source release candidate
 
 Chrome Manifest V3 side-panel extension for invoice lookup and download.
 
@@ -34,3 +34,7 @@ Deploy Edge Functions from addon-portal/supabase/functions and configure the req
 - These clients use the same Supabase project and server RPCs; GitHub does not hold customer data. The installed Chrome Extension must be repackaged/published or reloaded after source updates.
 - A one-time MST trial is bound to both email and MST; once registered, that history is not erased by unlink. Paid packages are not blocked by an MST used in another account's trial.
 - The extension submits only invoice identity fields (including MST and invoice number) to Supabase for quota deduplication; full XML/PDF/Excel files are generated and saved on the user's device.
+
+## Extension 3.2.1 build
+
+GitHub Actions `AutoTax V3.2 sync checks` produces a candidate ZIP only after JavaScript/RPC tests and positive plus negative PostgreSQL upgrade tests pass. This artifact is for review; it is **not** automatically published to Chrome Web Store. Production licensing will become functional only after the existing Supabase instance is migrated safely. See `addon-portal/supabase/DEPLOY_V32_RUNBOOK.md`.

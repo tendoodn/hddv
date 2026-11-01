@@ -3,6 +3,23 @@
 const BASE="https://ucqqjdsoyvvaxswzbhaw.supabase.co";
 const PUBLIC_KEY="sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ";
 const client=window.supabase.createClient(BASE,PUBLIC_KEY);
+const downloadUrlIsSafe=value=>{
+ try{const url=new URL(String(value||"").trim());return url.protocol==="https:"&&!!url.hostname}
+ catch{return false}
+};
+async function loadExtensionDownloadLink(){
+ const button=document.getElementById("extensionDownloadBtn");
+ try{
+  const {data,error}=await client.from("addon_public_settings")
+   .select("value").eq("setting_key","extension_download_url").maybeSingle();
+  if(error)throw error;
+  const url=String(data?.value||"").trim();
+  button.hidden=!downloadUrlIsSafe(url);
+  if(!button.hidden)button.href=url;
+  else button.removeAttribute("href");
+ }catch{button.hidden=true;button.removeAttribute("href")}
+}
+
 const $=id=>document.getElementById(id);
 const vnDate=value=>value?new Date(value).toLocaleString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
@@ -303,6 +320,13 @@ $("webAddMstForm").addEventListener("submit",async e=>{
 $("giftWebBtn").addEventListener("click",()=>{$("giftWebDialog").showModal();$("unlockCode").focus()});
 $("closeGiftWebBtn").addEventListener("click",()=>$("giftWebDialog").close());
 $("renewWebBtn").addEventListener("click",()=>$("planSection").scrollIntoView({behavior:"smooth",block:"center"}));
+$("passwordOpenBtn").addEventListener("click",()=>{
+ $("passwordPanel").hidden=false;
+ $("passwordPanel").scrollIntoView({behavior:"smooth",block:"center"});
+ $("newPassword").focus();
+});
+$("passwordCloseBtn").addEventListener("click",()=>{$("passwordPanel").hidden=true});
+
 $("trialBtn").addEventListener("click",()=>action("trialBtn",async()=>{
  const mst=$("trialMst").value.trim().replace(/[ -]/g,"");
  if(!/^\d{10}(\d{2})?$/.test(mst))throw Error("MST phải có 10 hoặc 12 chữ số.");
@@ -334,4 +358,5 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
  showMessage("Mật khẩu đã được thay đổi.");
 }));
 client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")$("passwordRecovery").hidden=false});
+loadExtensionDownloadLink();
 refresh();

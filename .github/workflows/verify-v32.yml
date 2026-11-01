@@ -82,7 +82,7 @@ jobs:
       - name: Reject production upgrade when no snapshot is present
         run: |
           set -euo pipefail
-          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql >/tmp/v32-no-backup.log 2>&1; then
+          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql >/tmp/v32-no-backup.log 2>&1; then
             echo "ERROR: upgrade succeeded without required snapshot"
             exit 1
           fi
@@ -95,7 +95,7 @@ jobs:
         run: |
           set -euo pipefail
           psql -v ON_ERROR_STOP=1 -c "update public.addon_plans set price_vnd=777 where code='monthly'"
-          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql >/tmp/v32-stale-snapshot.log 2>&1; then
+          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql >/tmp/v32-stale-snapshot.log 2>&1; then
             echo "ERROR: upgrade accepted stale content with unchanged row count"
             exit 1
           fi
@@ -104,7 +104,7 @@ jobs:
       - name: Validate read-only production preflight SQL syntax
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PREDEPLOY_V32_READ_ONLY.sql
       - name: Dry-run V3.2 upgrade against PostgreSQL 16
-        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql
       - name: Verify restricted client roles and RPC grants
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/070_assert_role_permissions.sql
       - name: Verify entitlements and paid/trial scenarios
@@ -134,7 +134,7 @@ jobs:
         run: |
           set -euo pipefail
           export PGDATABASE=autotax_abort_test
-          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql >/tmp/v32-expected-abort.log 2>&1; then
+          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql >/tmp/v32-expected-abort.log 2>&1; then
             cat /tmp/v32-expected-abort.log
             echo "ERROR: Upgrade unexpectedly succeeded despite unrelated foreign key."
             exit 1

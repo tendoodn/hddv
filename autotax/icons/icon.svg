@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Nền xanh ngọc (khác nền xanh dương của "Tải hồ sơ thuế hàng loạt") -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#0f766e"/>
+  <!-- Tờ hóa đơn phía sau (nhiều hóa đơn) -->
+  <path d="M40 22h44a6 6 0 0 1 6 6v66H34V28a6 6 0 0 1 6-6z" fill="#5eead4" transform="rotate(-8 62 58)"/>
+  <!-- Hóa đơn chính, mép dưới răng cưa -->
+  <path d="M38 18h48a6 6 0 0 1 6 6v78l-6-5-6 5-6-5-6 5-6-5-6 5-6-5-6 5-6-5-6 5V24a6 6 0 0 1 6-6z" fill="#ffffff"/>
+  <!-- Dòng chữ trên hóa đơn -->
+  <rect x="44" y="30" width="26" height="6" rx="3" fill="#0f766e"/>
+  <rect x="44" y="44" width="36" height="5" rx="2.5" fill="#99f6e4"/>
+  <rect x="44" y="55" width="30" height="5" rx="2.5" fill="#99f6e4"/>
+  <rect x="44" y="66" width="20" height="5" rx="2.5" fill="#99f6e4"/>
+  <!-- Nút tải xuống -->
+  <circle cx="88" cy="88" r="22" fill="#f97316" stroke="#0f766e" stroke-width="5"/>
+  <path d="M88 76v20M79 88l9 9 9-9" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -97,6 +97,52 @@
     }
     return {columns:h.columns,headers:h.headers,preRows:rows.slice(0,h.index),fileName:file.name};
   }
+  // Built-in headers transcribed from the two supplied import templates (no second upload).
+  function builtinTemplate(platform='tendoo'){
+    if(platform==='misa'){
+      const headers=['Loại nhập kho','Ngày chứng từ (*)','Số chứng từ (*)',
+        'Mã đối tượng','Tên đối tượng','Diễn giải','Hình thức thanh toán',
+        'Mã hàng (*)','Tên hàng','Số lô','Hạn sử dụng','Mã kho (*)',
+        'Mã vị trí lưu kho','ĐVT','Số lượng (*)','Đơn giá','Thành tiền',
+        '% chiết khấu','Tiền chiết khấu','Thuế suất','Tiền thuế','Tiền thanh toán'];
+      const preRows=[
+        ['FILE MẪU PHIẾU NHẬP KHO ĐỂ NHẬP VÀO PHẦN MỀM MISA eShop'],
+        ['Hướng dẫn:'],
+        ['- Điền dữ liệu vào các cột tương ứng trên file này. Thông tin chiết khấu và thuế áp dụng cho nhập kho mua hàng'],
+        ['- Các cột có dấu (*) là những cột bắt buộc'],
+        ['- Các dòng cùng Số chứng từ phải có cùng thông tin đầu phiếu'],
+        ['- Kiểm tra mã kho và số chứng từ trước khi nhập MISA'],
+        Array.from({length:7},()=> '').concat('Chi tiết hàng tiền')];
+      return {platform:'misa',fileName:'nhap_khau_hang_hoa (mẫu MISA eShop tích hợp)',
+        headers,preRows,columns:{sku:7,name:8,unit:13,quantity:14,price:15,tax:19}};
+    }
+    const headers=['Mã sản phẩm/nvl (*)','Loại hàng','Tên sản phẩm/nvl',
+      'Đơn vị tính','Số lượng (*)','Đơn giá (*)','Giảm giá sản phẩm %',
+      'Giảm giá sản phẩm VNĐ','Thuế GTGT','Tổng giảm giá sản phẩm VNĐ','Tiền thuế'];
+    return {platform:'tendoo',fileName:'File mẫu nhập kho hoá đơn GTGT (tích hợp)',
+      headers,preRows:[],columns:{sku:0,type:1,name:2,unit:3,quantity:4,price:5,
+        discount:6,discountAmount:7,tax:8,discountTotal:9,taxAmount:10}};
+  }
+  function nextDocumentNumber(last,index=1){
+    const original=String(last??'').trim();
+    const match=/^(.*?)(\d+)(\D*)$/.exec(original);
+    if(!match||match[2].length>20)throw Error('Mã chứng từ gần nhất phải có phần số, ví dụ NK0001.');
+    return match[1]+String(BigInt(match[2])+BigInt(index)).padStart(match[2].length,'0')+match[3];
+  }
+  function misaTax(rate,mtt){
+    if(mtt)return 'KCT';
+    const n=norm(rate);
+    if(/kct|khong chiu thue/.test(n))return 'KCT';
+    if(/kkknt|khong tinh thue|khong ke khai/.test(n))return 'KKKNT';
+    const fraction=taxRate(rate,false);
+    return typeof fraction==='number'?(Number((fraction*100).toFixed(2))+'%'):'KKKNT';
+  }
+  function dateVN(value){
+    const date=new Date(value);
+    if(Number.isNaN(date.valueOf()))return '';
+    return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',
+      day:'2-digit',month:'2-digit',year:'numeric'}).format(date);
+  }
   const cleanFile=v=>String(v||'').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,' ').trim().slice(0,90)||'HoaDon';
   const goods=lines=>(lines||[]).filter(l=>l?.ten&&
     !['Ghi chú, diễn giải','Phí, lệ phí','Chiết khấu thương mại'].includes(l.tchat)&&
@@ -157,19 +203,18 @@
   }
   const num=value=>{const n=Number(value);return Number.isFinite(n)?n:0};
   function makePackage(rows,details,items,sample,links={}){
+    if(sample?.platform==='misa')return makeMisaPackage(rows,details,items,sample,links,arguments[5]||{});
     const misses=missing(rows,details,items,links);
-    if(misses.length)throw Error('Chưa ghép SKU cho '+misses.length+' tên hàng.');
     const files=[];let count=0,skipped=0;
     for(const invoice of rows.filter(r=>r.kind==='purchase')){
       const lines=goods(details.get(invoice.key)?.lines);
       if(!lines.length){skipped++;continue}
       const data=lines.map(line=>{
         const product=findProduct(line,items,links);
-        if(!product)throw Error('Không xác định SKU cho '+String(line.ten));
         const cells=Array(sample.headers.length).fill('');
         const set=(role,value)=>{if(sample.columns[role]!=null)cells[sample.columns[role]]=value};
-        set('sku',product.sku);set('name',product.name);set('unit',line.dvt||product.unit);
-        set('type',product.type||'Sản phẩm');set('quantity',num(line.sl));
+        set('sku',product?.sku||'THIẾU MÃ');set('name',product?.name||String(line.ten));set('unit',line.dvt||product?.unit||'');
+        set('type',product?.type||'Sản phẩm');set('quantity',num(line.sl));
         set('price',num(line.dgia));
         // STCKhau is a percentage. The Tendoo sample expects the fraction 0.03, not 3.
         const rawDiscount=num(line.ck),discount=rawDiscount>1?rawDiscount/100:rawDiscount;
@@ -190,11 +235,65 @@
     }
     if(!files.length)throw Error('Không có hóa đơn mua vào đủ dữ liệu chi tiết.');
     files.push({name:'HUONG_DAN.txt',data:'AutoTax / Tendoo - '+count+' hoa don mua vao\n'+
+      'San pham chua khop duoc giu nguyen ten va ghi THIẾU MÃ trong cot SKU. Vui long doi chieu truoc khi nhap.\n'+
       'Mau: '+(sample.fileName||'mau Tendoo da tai')+'\n'+
       'Moi hoa don la mot file Excel. Can kiem tra truoc khi nhap kho.\n'+
       'Hoa don MTT duoc gan muc Khong chiu thue (KCT).\n'+
       (skipped?'Bo qua '+skipped+' hoa don thieu dong san pham.\n':'')});
-    return {zip:Zip.writeZip(files),count,skipped};
+    return {zip:Zip.writeZip(files),count,skipped,missing:misses.length};
   }
-  window.TendooImport={normalize:norm,workbook,catalog,template,searchCatalog,missing,makePackage};
+
+  function makeMisaPackage(rows,details,items,sample,links={},settings={}){
+    const warehouse=String(settings.warehouse||'').trim();
+    const lastDoc=String(settings.lastDocNumber||'').trim();
+    if(!warehouse)throw Error('Bạn cần nhập Mã kho MISA trước khi xuất.');
+    nextDocumentNumber(lastDoc,1);
+    const misses=missing(rows,details,items,links);
+    const files=[];let count=0,skipped=0,lastIssued=lastDoc;
+    for(const invoice of rows.filter(r=>r.kind==='purchase')){
+      const lines=goods(details.get(invoice.key)?.lines);
+      if(!lines.length){skipped++;continue}
+      const doc=nextDocumentNumber(lastDoc,count+1);
+      const date=dateVN(invoice.tdlap);
+      if(!date)throw Error('Hóa đơn '+String(invoice.shdon||'')+' không có ngày chứng từ hợp lệ.');
+      const invoiceRef=[invoice.khhdon,invoice.shdon].filter(Boolean).join('-');
+      const data=lines.map(line=>{
+        const product=findProduct(line,items,links);
+        const cells=Array(sample.headers.length).fill('');
+        const n=num(line.sl),price=num(line.dgia);
+        const tax=misaTax(line.tsuat,invoice.form==='mtt');
+        const pretax=line.thtien!=null&&Number.isFinite(Number(line.thtien))?
+          Number(line.thtien):n*price;
+        const amountTax=invoice.form==='mtt'?0:(line.tthue!=null&&Number.isFinite(Number(line.tthue))?Number(line.tthue):0);
+        cells[0]='Nhập kho mua hàng';cells[1]=date;cells[2]=doc;
+        cells[4]=String(invoice.nbten||'');
+        cells[5]='Nhập theo HĐ '+invoiceRef;
+        cells[7]=product?.sku||'THIẾU MÃ';
+        cells[8]=product?.name||String(line.ten);
+        cells[11]=warehouse;cells[13]=line.dvt||product?.unit||'';
+        cells[14]=n;cells[15]=price;cells[16]=pretax;
+        if(line.ck!=null&&num(line.ck)>0){
+          const ck=num(line.ck);cells[17]=ck>1?ck/100:ck;
+        }
+        cells[19]=tax;
+        if(tax!=='KCT'&&tax!=='KKKNT'&&line.tthue!=null&&Number.isFinite(Number(line.tthue)))cells[20]=amountTax;
+        cells[21]=pretax+amountTax;
+        return cells;
+      });
+      const bytes=Xlsx.buildXlsx([{name:'Nhap kho',layout:true,
+        rows:[...sample.preRows,sample.headers,...data],widths:sample.headers.map((h,i)=>
+          [4,5,8].includes(i)?32:19)}]);
+      count++;lastIssued=doc;
+      files.push({name:'nhap_khau_hang_hoa_'+cleanFile(doc)+'_'+
+        cleanFile(invoiceRef||String(count))+'.xlsx',data:bytes});
+    }
+    if(!files.length)throw Error('Không có hóa đơn mua vào đủ chi tiết để nhập kho MISA.');
+    files.push({name:'HUONG_DAN.txt',data:'AutoTax / MISA eShop - '+count+' hoa don\n'+
+      'Ma kho: '+warehouse+'\n'+'Ma chung tu cuoi duoc tao: '+lastIssued+'\n'+
+      'THIẾU MÃ: san pham chua co ma trong danh muc, can sua truoc khi nhap MISA.\n'+
+      'Ngay chung tu lay tu ngay hoa don, kiem tra trong MISA truoc khi nhap.\n'+
+      (skipped?'Bo qua '+skipped+' hoa don thieu chi tiet.\n':'')});
+    return {zip:Zip.writeZip(files),count,skipped,missing:misses.length,lastIssued};
+  }
+  window.TendooImport={normalize:norm,workbook,catalog,template,builtinTemplate,nextDocumentNumber,searchCatalog,missing,makePackage};
 })();

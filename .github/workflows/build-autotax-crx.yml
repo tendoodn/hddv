@@ -22,6 +22,8 @@ jobs:
       - name: Test offline Tendoo SKU import and Excel ZIP logic
         run: |
           node --check autotax/src/content/tendoo-import.js
+          node --check autotax/src/sidepanel/panel.js
+          node --check autotax/src/sidepanel/tendoo-match.js
           node --check autotax/src/content/content.js
           node --check autotax/src/license/license.js
           node --check docs/customer.js

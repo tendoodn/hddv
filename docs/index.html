@@ -117,7 +117,24 @@ $("redeemGiftBtn").onclick=async()=>{const code=$("giftCode").value.trim();if(!c
 $("saveNewPassword").onclick=async()=>{const password=$("newPassword").value;if(password.length<8)return message("passwordMsg","Mật khẩu cần ít nhất 8 ký tự.",true);const {error}=await client.auth.updateUser({password});if(error)message("passwordMsg","Không cập nhật được: "+error.message,true);else{$("passwordRecovery").classList.add("hidden");message("authMsg","Đã cập nhật mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.")}};
 
 $("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
-$("signupBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else message("authMsg",data.session?"Đăng ký thành công.":"Đã gửi email xác minh. Vui lòng xác minh email rồi đăng nhập.")};
+const DUPLICATE_SIGNUP_EMAIL="Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.";
+function isDuplicateSignupError(error){
+ const code=String(error?.code||"").toLowerCase();
+ return ["user_already_exists","email_exists","identity_already_exists"].includes(code) ||
+ /user already registered|email already (registered|exists|in use)|already registered/i.test(String(error?.message||""));
+}
+$("signupBtn").onclick=async()=>{
+ if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);
+ const btn=$("signupBtn");btn.disabled=true;
+ try{
+  const {data,error}=await client.auth.signUp({email:$("email").value.trim().toLowerCase(),password:$("password").value});
+  if(error)return message("authMsg",isDuplicateSignupError(error)?DUPLICATE_SIGNUP_EMAIL:error.message,true);
+  // With email confirmation enabled, Supabase may return a fake user with empty identities.
+  if(data?.user && Array.isArray(data.user.identities) && data.user.identities.length===0)
+   return message("authMsg",DUPLICATE_SIGNUP_EMAIL,true);
+  message("authMsg",data?.session?"Đăng ký thành công.":"Đã gửi email xác minh (nếu địa chỉ hợp lệ). Vui lòng kiểm tra email rồi đăng nhập.");
+ }finally{btn.disabled=false}
+};
 $("resetBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình Supabase.",true);const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.href.split("#")[0]});if(error)message("authMsg",error.message,true);else message("authMsg","Đã gửi hướng dẫn đặt lại mật khẩu nếu email hợp lệ.")};
 $("logoutBtn").onclick=async()=>{stopPaymentPolling();await client.auth.signOut();await refresh()};
 async function createPaymentOrder(planCode){

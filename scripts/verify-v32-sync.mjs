@@ -42,7 +42,8 @@ const migrationNames=[
  '018_remove_legacy_plan_order_dependency.sql',
  '019_bounded_invoice_claims_and_reread_mode.sql',
  '020_mst_one_year_collapsible_admin_history.sql',
- '021_admin_direct_package_grant.sql'
+ '021_admin_direct_package_grant.sql',
+ '022_admin_paginated_package_transactions.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -76,9 +77,11 @@ assert(adminGrant.includes("p_package_code"),'Manual package grant must bind one
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
 assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');
-assert(adminHtml.includes('id="packageHistoryBody" class="hidden"'), 'Admin package history must be collapsed by default');
-assert(adminHtml.includes('aria-expanded="false"'), 'History expand button must be accessible');
-assert(adminHtml.includes('Thu gọn lịch sử'), 'Missing history collapse control');
+assert(adminHtml.includes('id="packageHistoryDialog" class="history-modal"'), 'Missing modal history window');
+assert(adminHtml.includes('addon_admin_package_transactions_v32'), 'Admin history must call server-paged transactions');
+assert(adminHtml.includes('id="historyPrev"') && adminHtml.includes('id="historyNext"'), 'Missing history pager');
+assert(adminHtml.includes('data-history='), 'Missing customer-specific history shortcut');
+assert(!adminHtml.includes('id="packageHistoryBody"'), 'Old inline expanded history must not be present');
 assert(adminHtml.includes('days=family==="mst"?365:null'), 'MST family must default to 365 days in admin');
 const candidate=load('addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql');
 for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);

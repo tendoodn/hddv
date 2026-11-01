@@ -12,6 +12,12 @@ begin
  if exists(select 1 from public.addon_package_catalog
   where family='invoice' and validity_days is not null)
  then raise exception 'invoice_packages_have_expiration'; end if;
+ begin
+  update public.addon_package_catalog set validity_days=null
+  where code='MST5';
+  raise exception 'expected_null_duration_constraint_violation';
+ exception when check_violation then null;
+ end;
 end $verify$;
 
 begin;

@@ -489,6 +489,8 @@
         return await fetchInvoice({ ...row.gocRef, kind: row.kind, form, ttxly: null }, shouldStop, onWait);
       } catch (e) {
         if (shouldStop() || e.status === 401) throw e;
+        // Chỉ đổi endpoint khi cổng xác nhận không có hóa đơn ở nguồn hiện tại; lỗi mạng/429/5xx không được nhân đôi request.
+        if (!(e.status === 404 || /không tồn tại|không tìm thấy|chưa có thông tin|not found/i.test(e.message || ''))) throw e;
         lastError = e;
       }
     }

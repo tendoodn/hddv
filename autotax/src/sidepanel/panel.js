@@ -147,7 +147,7 @@ $('to').addEventListener('input', () => { activePreset = null; renderPresets(); 
 
 const checked = (name) => [...document.querySelectorAll(`input[name=${name}]:checked`)].map((i) => i.value);
 function formats() {
-  const f = Object.fromEntries(['excel', 'xml', 'html', 'pdf'].map((k) => [k, checked('fmt').includes(k)]));
+  const f = Object.fromEntries(['excel', 'xml', 'pdf', 'html'].map((k) => [k, checked('fmt').includes(k)]));
   // Chi tiết sản phẩm là sheet cố định của Excel → luôn tải chi tiết từng hóa đơn khi chọn Excel
   f.lines = f.excel;
   return f;

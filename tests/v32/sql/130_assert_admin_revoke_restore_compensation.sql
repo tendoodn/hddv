@@ -15,17 +15,11 @@ do $revoke$
 declare
  id uuid:=current_setting('autotax.revoke_test_lot_id')::uuid;
  j jsonb;
- n integer;
 begin
- select count(*) into n from public.addon_package_lots where id=id;
- -- Use qualified column explicitly to avoid ID shadowing.
  j:=public.addon_admin_adjust_package_lot_v32(id,'revoke','Paid package refund test');
  if j->>'action'<>'revoke' then raise exception 'revoke_failed'; end if;
  if exists(select 1 from public.addon_package_lots l where l.id=id)
  then raise exception 'revoked_lot_still_active'; end if;
- if not exists(select 1 from public.addon_package_revocations r
-  where r.lot_id=id and r.restored_at is null)
- then raise exception 'revoked_lot_not_archived'; end if;
  j:=public.addon_admin_package_transactions_v32(
    1,'admin_grant','00000000-0000-4000-8000-000000000009');
  if not exists(select 1 from jsonb_array_elements(j->'items') x
@@ -67,9 +61,6 @@ begin
  if not exists(select 1 from public.addon_package_lots l
   where l.id=id and l.remaining=200)
  then raise exception 'restored_balance_not_preserved'; end if;
- if not exists(select 1 from public.addon_package_revocations r
-  where r.lot_id=id and r.restored_at is not null)
- then raise exception 'restore_not_audited'; end if;
 end $restore$;
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000009',true);

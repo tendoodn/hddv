@@ -33,15 +33,14 @@
     <div id="lic-entitlements" class="license-entitlements"><div class="license-empty">Đang tải quyền sử dụng…</div></div>
     <div id="lic-trial-panel" class="license-entitlement" hidden>
       <div><b>Dùng thử 7 ngày · 1 MST</b><small>Mỗi email và MST chỉ được dùng thử một lần.</small>
-        <input id="lic-trial-mst" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="Nhập MST 10 hoặc 13 chữ số" aria-label="MST muốn dùng thử">
+        <input id="lic-trial-mst" type="text" inputmode="numeric" autocomplete="off" maxlength="13" placeholder="Nhập MST 10 hoặc 12 chữ số" aria-label="MST muốn dùng thử">
       </div>
       <button id="lic-trial-start" type="button">Kích hoạt dùng thử</button>
     </div>
     <div id="lic-mst-assignments" class="license-entitlements" hidden aria-live="polite"></div>
     <div id="lic-mode-wrap" class="license-mode" hidden><label for="lic-mode">Chế độ sử dụng</label><select id="lic-mode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><small>Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</small></div>
     <div class="license-status-row"><span id="lic-state" class="lic-state locked">Đang kiểm tra…</span><button id="lic-logout" type="button">Đăng xuất</button></div>
-    <div class="license-buttons"><button id="lic-renew" type="button" class="primary">Gia hạn</button><button id="lic-password-open" type="button">Đổi mật khẩu</button></div>
-    <div class="license-unlock"><label for="lic-unlock-code">Mã unlock gói</label><div class="license-buttons"><input id="lic-unlock-code" type="text" autocomplete="off" placeholder="Nhập mã unlock"><button id="lic-unlock-redeem" type="button">Kích hoạt</button></div><small>Mã unlock chỉ áp dụng cho gói được chỉ định và chỉ sử dụng một lần.</small></div>
+    <div class="license-buttons license-main-actions"><button id="lic-renew" type="button" class="primary">Gia hạn</button><button id="lic-gift-open" type="button" title="Nhập mã quà tặng" aria-haspopup="dialog" aria-controls="lic-unlock-dialog">🎁 Quà tặng</button><button id="lic-password-open" type="button">Đổi mật khẩu</button></div>
     <div id="lic-password-box" hidden><label for="lic-current-password">Mật khẩu hiện tại</label><input id="lic-current-password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"><label for="lic-new-password">Mật khẩu mới</label><input id="lic-new-password" type="password" autocomplete="new-password" minlength="8" placeholder="Ít nhất 8 ký tự"><button id="lic-password-save" type="button">Cập nhật mật khẩu</button></div>
     <div id="lic-packages" class="license-packages" hidden><div class="license-package-head"><strong>Chọn gói muốn mua</strong><button id="lic-packages-close" type="button">Đóng</button></div><div id="lic-package-list"></div></div>
     <div id="lic-payment" class="license-payment" hidden><p id="lic-payment-info"></p><img id="lic-qr" alt="QR thanh toán AutoTax"><button id="lic-close-qr" type="button">Đóng mã QR</button></div>
@@ -58,26 +57,6 @@
       <div class="history-table-wrap"><table class="history-table"><thead><tr><th>Ngày</th><th>Số / ký hiệu</th><th>Đối tác</th><th>Trạng thái</th></tr></thead><tbody id="historyRows"><tr><td colspan="4">Chưa có lịch sử.</td></tr></tbody></table></div>
       <div class="history-foot"><span>Lịch sử lưu trên máy này, tối đa 20.000 hóa đơn.</span><button id="historyRefresh" type="button">Làm mới</button><button id="historyExport" type="button">Xuất CSV</button></div>
     </details>
-
-    <!-- Thông báo cập nhật (0.1.10): cổng đổi cách tra hóa đơn máy tính tiền. Liên hệ qua trang tổng hợp tiện ích (có Zalo, Facebook, email) -->
-    <div id="notice" class="notice" role="status">
-      <span class="notice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></span>
-      <p id="noticeUpdate">
-        <strong>Cập nhật mới:</strong> tính năng <b>tải hóa đơn máy tính tiền</b> đã được cập nhật theo những thay đổi mới của cổng thuế.
-        Nếu gặp vấn đề khi tải, hãy <a href="#">liên hệ quản trị nội bộ</a>.
-      </p>
-
-      <!-- Chỉ hiện khi tác giả tắt thu phí (tier open), thay cho thông báo cập nhật -->
-      <div id="noticePrivate" class="notice-body" hidden>
-        <strong class="notice-title">Thông báo quan trọng</strong>
-        <p>Đây là bản sử dụng nội bộ.
-          </p>
-        <p></p>
-        <p>Nếu bạn muốn tiếp tục sử dụng, hãy liên hệ quản trị nội bộ qua Zalo, Gmail hoặc Facebook:</p>
-        <a class="notice-cta" href="#">Hỗ trợ nội bộ</a>
-        <p class="notice-thanks">Cảm ơn mọi người đã đồng hành cùng tiện ích. Mong tiện ích đã giúp bạn có trải nghiệm tốt và cùng nhau vượt qua kỳ báo cáo quý 3 này thật nhẹ nhàng ♥</p>
-      </div>
-    </div>
 
     <details class="privacy">
       <summary>
@@ -107,16 +86,6 @@
         <span class="quick-link-arrow" aria-hidden="true">↗</span>
       </a>
     </section>
-
-    <!-- Link sang trang tổng hợp tiện ích của tác giả: chỉ mở tab mới khi người dùng bấm, logo là ảnh tĩnh trong extension -->
-    <a hidden class="more-tools" href="#">
-      <span class="more-logos" aria-hidden="true"><img src="sister-logo.svg" alt="" /><span class="more-plus">+</span></span>
-      <span class="more-text">
-        <strong class="more-title">Phiên bản sử dụng nội bộ</strong>
-        <span class="more-sub">Dữ liệu được xử lý trên máy tính của bạn</span>
-      </span>
-      <span class="more-arrow" aria-hidden="true">→</span>
-    </a>
 
     <section class="section">
       <h2>Khoảng thời gian</h2>
@@ -167,13 +136,13 @@
       <!-- Sheet thêm trong file Excel (DS hóa đơn + Chi tiết sản phẩm luôn có) -->
       <fieldset id="sheetOpts" class="sheet-opts">
         <legend>Sheet thêm trong Excel</legend>
-        <div class="checks">
-          <label class="check" title="Hóa đơn hủy/thay thế, lệch số học, thanh toán tiền mặt từ 5 triệu, chữ ký số, ngày ký khác tháng"><input type="checkbox" name="sheet" value="risk" checked />Kiểm tra rủi ro HĐ</label>
-          <label class="check" title="Thêm 2 cột vào DS hóa đơn: người bán (mua vào) / người mua (bán ra) có tên trong danh sách công khai người sử dụng hóa đơn không hợp pháp của cổng không (tra gộp, lưu kết quả trên máy)"><input type="checkbox" name="sheet" value="seller" checked />Kiểm tra rủi ro MST (thêm cột vào DS hóa đơn)</label>
-          <label class="check" title="Đặt HĐ thay thế/điều chỉnh cạnh HĐ gốc, tô màu chỗ thay đổi"><input type="checkbox" name="sheet" value="adjust" checked />So sánh HĐ thay thế với HĐ gốc</label>
+        <div class="checks sheet-grid">
           <label class="check" title="Mẫu bảng kê tải lên HTKK (NQ 142/2024/QH15)"><input type="checkbox" name="sheet" value="reduction" checked />Phụ lục giảm thuế GTGT</label>
           <label id="hdkdOpt" class="check" title="Mẫu 01-2/BK-HĐKD cho hộ kinh doanh, lập từ hóa đơn mua vào" hidden><input type="checkbox" name="sheet" value="hdkd" />Bảng kê HĐKD (hộ KD)</label>
+          <label class="check" title="Hóa đơn hủy/thay thế, lệch số học, thanh toán tiền mặt từ 5 triệu, chữ ký số, ngày ký khác tháng"><input type="checkbox" name="sheet" value="risk" checked />Kiểm tra rủi ro HĐ</label>
+          <label class="check" title="Thêm 2 cột vào DS hóa đơn: người bán (mua vào) / người mua (bán ra) có tên trong danh sách công khai người sử dụng hóa đơn không hợp pháp của cổng không (tra gộp, lưu kết quả trên máy)"><input type="checkbox" name="sheet" value="seller" checked />Kiểm tra rủi ro MST</label>
           <label id="gtgtOpt" class="check" title="Tờ khai 01/GTGT điền sẵn từ hóa đơn để đối chiếu – chỉ lập khi chọn trọn 1 tháng hoặc 1 quý"><input type="checkbox" name="sheet" value="gtgt" />Tờ khai 01/GTGT (tham khảo)</label>
+          <label class="check" title="Đặt HĐ thay thế/điều chỉnh cạnh HĐ gốc, tô màu chỗ thay đổi"><input type="checkbox" name="sheet" value="adjust" checked />So sánh HĐ thay thế với HĐ gốc</label>
         </div>
       </fieldset>
     </section>
@@ -197,6 +166,19 @@
     </div>
     <div id="status" class="status"></div>
   </footer>
+
+  <dialog id="lic-unlock-dialog" class="license-gift-dialog" aria-labelledby="lic-unlock-title">
+    <form id="lic-unlock-form">
+      <div class="gift-dialog-head"><span aria-hidden="true">🎁</span><h2 id="lic-unlock-title">Kích hoạt mã quà tặng</h2></div>
+      <p class="gift-desc">Nhập mã unlock được quản trị cấp. Mỗi mã chỉ dùng một lần và kích hoạt đúng gói tương ứng.</p>
+      <label for="lic-unlock-code">Mã quà tặng</label>
+      <input id="lic-unlock-code" type="text" autocomplete="off" autocapitalize="characters" placeholder="Nhập mã unlock" required />
+      <div class="license-buttons">
+        <button id="lic-unlock-redeem" type="submit" class="primary">Kích hoạt</button>
+        <button id="lic-unlock-close" type="button">Đóng</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- Hiện khi tải xong (không hiện khi bấm Dừng) -->
   <dialog id="doneModal" class="modal" aria-labelledby="doneTitle">

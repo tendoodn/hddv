@@ -3,7 +3,7 @@
   "manifest_version": 3,
   "name": "AutoTax - Công cụ tải HĐĐT",
   "short_name": "AutoTax",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "AutoTax - Công cụ hỗ trợ tra cứu và tải hóa đơn điện tử.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -17,7 +17,8 @@
     "storage"
   ],
   "host_permissions": [
-    "https://hoadondientu.gdt.gov.vn/*"
+    "https://hoadondientu.gdt.gov.vn/*",
+    "https://ucqqjdsoyvvaxswzbhaw.supabase.co/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",
@@ -63,4 +64,4 @@
       "run_at": "document_idle"
     }
   ]
-}
+}\n

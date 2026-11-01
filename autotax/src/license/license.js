@@ -40,7 +40,7 @@
   }
   if(mode==='invoice')info.append(heading,detail);
   card.append(info,value);holder.append(card);
-  $('lic-state').textContent=license?.allowed?'Đã kích hoạt':'Chưa có quyền sử dụng';
+  $('lic-state').textContent=mode==='invoice'&&invLeft===0&&license?.can_reread_charged_invoices?'Hết lượt mới · được đọc lại hóa đơn cũ':license?.allowed?'Đã kích hoạt':'Chưa có quyền sử dụng';
   $('lic-state').className='lic-state '+(license?.allowed?'active':'locked');
   const trialPanel=$('lic-trial-panel');if(trialPanel)trialPanel.hidden=!active||!!license?.allowed||Number(invBought)>0||mstCount>0;
   gate();

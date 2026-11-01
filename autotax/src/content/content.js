@@ -160,11 +160,12 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
   const originals = new Map();
   if (formats.excel && sheets.adjust && !stopFlag && !res.stopped) {
     const adj = rows.filter((r) => Report.isAdjusting(r));
-    const byRef = new Map(rows.map((r) => [Report.refKey(r), r]));
+    const { unique: byRef, ambiguous: ambiguousRefs } = Report.indexByRef(rows);
     const todo = [];
     for (const r of adj) {
       if (!details.get(r.key)?.lines) todo.push({ row: r, get: () => HDDT.fetchInvoice(r, shouldStop), put: (inv) => details.set(r.key, { source: inv.source, head: inv.head, lines: inv.lines, fees: inv.fees }) });
       const k = Report.refKey(r.gocRef), inRange = byRef.get(k);
+      if (ambiguousRefs.has(k)) { originals.set(k, { ambiguous: true }); continue; }
       if (inRange ? details.get(inRange.key)?.lines || todo.some((t) => t.row === inRange) : originals.has(k)) continue;
       if (inRange) todo.push({ row: inRange, get: () => HDDT.fetchInvoice(inRange, shouldStop), put: (inv) => details.set(inRange.key, { source: inv.source, head: inv.head, lines: inv.lines, fees: inv.fees }) });
       else { originals.set(k, null); todo.push({ row: r, gocOf: true, get: () => HDDT.fetchOriginal(r, shouldStop), put: (inv) => originals.set(k, inv) }); }

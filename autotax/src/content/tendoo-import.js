@@ -47,14 +47,21 @@
     sku:['sku','ma sku','ma san pham','ma san pham nguyen lieu','ma hang'],
     name:['ten san pham','ten san pham nguyen lieu','ten hang','ten nguyen lieu'],
     type:['loai hang','loai san pham'],
-    unit:['don vi tinh','dvt'],
+    unit:['don vi tinh','dvt','ten don vi'],
     quantity:['so luong','sl nhap'],
     price:['don gia','gia nhap'],
     discount:['giam gia','chiet khau'],
+    discountAmount:['giam gia san pham vnd'],
+    discountTotal:['tong giam gia san pham vnd'],
+    taxAmount:['tien thue'],
     tax:['thue gtgt','thue suat','vat','thue gia tri gia tang']
   };
   const roleOf=value=>{
     const str=norm(value);
+    // Distinguish discount percentage and VND columns in the 11-column Tendoo template.
+    if(str.startsWith('tong giam gia san pham vnd'))return 'discountTotal';
+    if(str.startsWith('giam gia san pham vnd'))return 'discountAmount';
+    if(str.startsWith('tien thue'))return 'taxAmount';
     for(const [role,names] of Object.entries(aliases)){
       if(names.some(n=>str===n||str.startsWith(n+' ')))return role;
     }return null;
@@ -85,14 +92,15 @@
   }
   async function template(file){
     const rows=await workbook(file),h=header(rows,4);
-    for(const role of ['sku','quantity','price','tax']){
+    for(const role of ['sku','name','quantity','price','tax']){
       if(h.columns[role]==null)throw Error('File mẫu nhập kho thiếu cột '+role+'.');
     }
     return {columns:h.columns,headers:h.headers,preRows:rows.slice(0,h.index),fileName:file.name};
   }
   const cleanFile=v=>String(v||'').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,' ').trim().slice(0,90)||'HoaDon';
-  const goods=lines=>(lines||[]).filter(l=>l?.ten&&l.tchat!=='Ghi chú, diễn giải'&&
-    l.tchat!=='Phí, lệ phí'&&l.sl!=null&&Number(l.sl)>0);
+  const goods=lines=>(lines||[]).filter(l=>l?.ten&&
+    !['Ghi chú, diễn giải','Phí, lệ phí','Chiết khấu thương mại'].includes(l.tchat)&&
+    l.sl!=null&&Number(l.sl)>0&&Number(l.dgia??0)>=0);
   // Fast lookup for the interactive link dialog: search both BC name and SKU,
   // ignoring accents/case and ranking exact or prefix matches first.
   function searchCatalog(products,query,limit=12){
@@ -114,7 +122,9 @@
   }
   function findProduct(line,items,links={}){
     const key=norm(line.ten),linked=links[key];
-    if(linked)return items.find(p=>p.sku===linked)||null;
+    if(linked){const product=items.find(p=>p.sku===linked);if(product)return product}
+    const exactSku=String(line.ma||'').trim();
+    if(exactSku){const found=items.find(p=>p.sku===exactSku);if(found)return found}
     const same=items.filter(p=>norm(p.name)===key);return same.length===1?same[0]:null;
   }
   function missing(rows,details,items,links={}){
@@ -127,9 +137,23 @@
     return [...miss].map(([key,name])=>({key,name}));
   }
   function taxRate(v,mtt){
-    if(mtt)return 'KCT';const str=String(v??'').trim().toUpperCase();
-    if(/KCT|KHONG CHIU|KHÔNG CHỊU/i.test(str))return 'KCT';
-    const num=str.match(/\d+(?:[.,]\d+)?/);return num?num[0].replace(',','.')+'%':'KCT';
+    // The actual Tendoo template stores VAT as an Excel fraction (0.08), not '8%'.
+    // MTT purchases are non-VAT for this import flow, as requested.
+    if(mtt)return 'Không chịu thuế';
+    const str=String(v??'').trim();
+    const normalized=norm(str);
+    if(/kct|khong chiu thue/.test(normalized))return 'Không chịu thuế';
+    if(/kktnt|khong tinh thue|khong ke khai/.test(normalized))return 'Không tính thuế';
+    if(/^\d+(?:[.,]\d+)?%$/.test(str)){
+      const n=Number(str.slice(0,-1).replace(',','.'))/100;
+      return Number.isFinite(n)?n:'Không tính thuế';
+    }
+    if(/^\d+(?:[.,]\d+)?$/.test(str)){
+      const n=Number(str.replace(',','.'));
+      return n<=1?n:n<=100?n/100:'Không tính thuế';
+    }
+    // Unknown rates must not be silently presented as 0% or VAT deductible.
+    return 'Không tính thuế';
   }
   const num=value=>{const n=Number(value);return Number.isFinite(n)?n:0};
   function makePackage(rows,details,items,sample,links={}){
@@ -146,8 +170,16 @@
         const set=(role,value)=>{if(sample.columns[role]!=null)cells[sample.columns[role]]=value};
         set('sku',product.sku);set('name',product.name);set('unit',line.dvt||product.unit);
         set('type',product.type||'Sản phẩm');set('quantity',num(line.sl));
-        set('price',num(line.dgia));set('discount',num(line.ck));
-        set('tax',taxRate(line.tsuat,invoice.form==='mtt'));return cells;
+        set('price',num(line.dgia));
+        // STCKhau is a percentage. The Tendoo sample expects the fraction 0.03, not 3.
+        const rawDiscount=num(line.ck),discount=rawDiscount>1?rawDiscount/100:rawDiscount;
+        if(rawDiscount>0&&discount<=1)set('discount',discount);
+        const mtt=invoice.form==='mtt';
+        set('tax',taxRate(line.tsuat,mtt));
+        // Monetary discount/tax columns are optional, never populate with guessed values.
+        if(!mtt&&line.tthue!=null&&Number.isFinite(Number(line.tthue)))
+          set('taxAmount',Number(line.tthue));
+        return cells;
       });
       const book=[{name:'Nhap kho',layout:true,
         rows:[...sample.preRows,sample.headers,...data],widths:sample.headers.map(()=>22)}];
@@ -160,7 +192,7 @@
     files.push({name:'HUONG_DAN.txt',data:'AutoTax / Tendoo - '+count+' hoa don mua vao\n'+
       'Mau: '+(sample.fileName||'mau Tendoo da tai')+'\n'+
       'Moi hoa don la mot file Excel. Can kiem tra truoc khi nhap kho.\n'+
-      'Hoa don MTT duoc gan thue suat KCT.\n'+
+      'Hoa don MTT duoc gan muc Khong chiu thue (KCT).\n'+
       (skipped?'Bo qua '+skipped+' hoa don thieu dong san pham.\n':'')});
     return {zip:Zip.writeZip(files),count,skipped};
   }

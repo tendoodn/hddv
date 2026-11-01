@@ -39,7 +39,8 @@ const migrationNames=[
  '015_invoice_mode_claim_hardening.sql',
  '016_admin_customer_v32_snapshot.sql',
  '017_shared_catalog_and_admin_logs.sql',
- '018_remove_legacy_plan_order_dependency.sql'
+ '018_remove_legacy_plan_order_dependency.sql',
+ '019_bounded_invoice_claims_and_reread_mode.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -60,7 +61,7 @@ for(const path of sourcePaths){
  assert(!/addon_my_license|addon_claim_trial|addon_redeem_gift/.test(source),'Old RPC in '+path);
 }
 const candidate=load('addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql');
-for(let number=5;number<=18;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);
+for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);
 const truncate=candidate.split('truncate table')[1]?.split('restart identity restrict')[0]||'';
 assert(!truncate.includes('auth.users'),'auth.users is in truncate');
 assert(!truncate.includes('addon_admins'),'admin roles are in truncate');

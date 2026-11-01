@@ -1,3 +1,7 @@
+-- LEGACY V1/V2 ONLY — KHÔNG CHẠY TRÊN AUTOTAX V3.2.
+-- Đây là SQL của hệ thống thuê bao tháng/năm cũ và có thể ghi đè RPC mới.
+-- Logic V3.2 nằm tại addon-portal/supabase/migrations/; dùng bộ triển khai được duyệt.
+
 
 -- Allow each signed-in user to read only their own trial claim status.
 -- The claim itself remains writable only through addon_claim_trial().

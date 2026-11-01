@@ -40,6 +40,11 @@ end $$;
 revoke all on function public.addon_create_package_order(text) from public,anon;
 grant execute on function public.addon_create_package_order(text) to authenticated;
 
+-- RLS already restricts order reads to owner/admin; explicitly grant the
+-- authenticated role SELECT so the invoker RPC also works on fresh installs.
+alter table public.addon_orders enable row level security;
+grant select on public.addon_orders to authenticated;
+
 -- SECURITY INVOKER: RLS restricts this read to the signed-in order owner.
 -- The explicit auth.uid filter prevents admin access being mistaken for ownership.
 create or replace function public.addon_my_order_status(p_order_id uuid)

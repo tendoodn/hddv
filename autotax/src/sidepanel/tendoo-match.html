@@ -31,12 +31,12 @@
   </style>
 </head>
 <body>
-  <header><div class="wrap"><h1>Liên kết SKU sản phẩm mua vào</h1><p>Đối chiếu tên trên hóa đơn với danh mục BC_San_Pham. Dữ liệu chỉ được xử lý trong tiện ích AutoTax.</p></div></header>
+  <header><div class="wrap"><h1>Liên kết SKU sản phẩm mua vào</h1><p>Đối chiếu tên trên hóa đơn với danh mục MISA hoặc Tendoo. Có thể bỏ qua hàng không có mã: file giữ tên gốc và ghi THIẾU MÃ.</p></div></header>
   <main class="wrap">
     <div class="toolbar"><strong id="overview">Đang tải danh mục...</strong><span class="counter" id="progress">—</span></div>
     <form id="linkForm"><div id="rows"></div></form>
   </main>
-  <div class="actions"><div class="wrap"><button form="linkForm" type="submit" class="primary" id="save">Xác nhận liên kết và tiếp tục xuất ZIP</button><span role="status" id="status"></span></div></div>
+  <div class="actions"><div class="wrap"><button form="linkForm" type="submit" class="primary" id="save">Tiếp tục xuất ZIP (cho phép THIẾU MÃ)</button><span role="status" id="status"></span></div></div>
   <script src="../content/tendoo-import.js"></script>
   <script src="tendoo-match.js"></script>
 </body>

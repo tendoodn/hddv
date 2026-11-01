@@ -13,17 +13,17 @@ select set_config('autotax.revoke_test_lot_id',
 
 do $revoke$
 declare
- id uuid:=current_setting('autotax.revoke_test_lot_id')::uuid;
+ v_lot_id uuid:=current_setting('autotax.revoke_test_lot_id')::uuid;
  j jsonb;
 begin
- j:=public.addon_admin_adjust_package_lot_v32(id,'revoke','Paid package refund test');
+ j:=public.addon_admin_adjust_package_lot_v32(v_lot_id,'revoke','Paid package refund test');
  if j->>'action'<>'revoke' then raise exception 'revoke_failed'; end if;
- if exists(select 1 from public.addon_package_lots l where l.id=id)
+ if exists(select 1 from public.addon_package_lots l where l.id=v_lot_id)
  then raise exception 'revoked_lot_still_active'; end if;
  j:=public.addon_admin_package_transactions_v32(
    1,'admin_grant','00000000-0000-4000-8000-000000000009');
  if not exists(select 1 from jsonb_array_elements(j->'items') x
-  where x->>'lot_id'=id::text and x->>'status'='revoked'
+  where x->>'lot_id'=v_lot_id::text and x->>'status'='revoked'
    and x->>'transaction_code' like 'ADMIN-%')
  then raise exception 'revoked_grant_missing_transaction_details'; end if;
 end $revoke$;
@@ -53,13 +53,13 @@ end $forbidden$;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',true);
 do $restore$
 declare
- id uuid:=current_setting('autotax.revoke_test_lot_id')::uuid;
+ v_lot_id uuid:=current_setting('autotax.revoke_test_lot_id')::uuid;
  j jsonb;
 begin
- j:=public.addon_admin_adjust_package_lot_v32(id,'restore','Reinstated after verification');
+ j:=public.addon_admin_adjust_package_lot_v32(v_lot_id,'restore','Reinstated after verification');
  if j->>'action'<>'restore' then raise exception 'restore_failed'; end if;
  if not exists(select 1 from public.addon_package_lots l
-  where l.id=id and l.remaining=200)
+  where l.id=v_lot_id and l.remaining=200)
  then raise exception 'restored_balance_not_preserved'; end if;
 end $restore$;
 

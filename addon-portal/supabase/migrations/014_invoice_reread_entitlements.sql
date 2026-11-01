@@ -7,7 +7,7 @@ declare
  inv jsonb; ms jsonb; v_mode text;
  v_invoice_remaining bigint; v_invoice_purchased bigint; v_mst_capacity bigint;
  v_nearest timestamptz; v_expiring bigint;
- v_has_history boolean;
+ v_has_history boolean; v_trial_used boolean; v_ever_had_package boolean; v_trial_expires timestamptz;
 begin
  if u is null then raise exception 'authentication_required'; end if;
  select jsonb_build_object('remaining',coalesce(sum(remaining),0),
@@ -16,6 +16,9 @@ begin
  from public.addon_package_lots where user_id=u and family='invoice';
  select exists(select 1 from public.addon_invoice_deductions where user_id=u)
  into v_has_history;
+ select exists(select 1 from public.addon_package_lots where user_id=u) into v_ever_had_package;
+ select exists(select 1 from public.addon_trial_email_registry where first_user_id=u or email_normalized=(select lower(btrim(email)) from auth.users where id=u)) into v_trial_used;
+ select max(expires_at) into v_trial_expires from public.addon_package_lots where user_id=u and grant_kind='trial';
  select min(expires_at) into v_nearest from public.addon_package_lots
  where user_id=u and family='mst' and (expires_at is null or expires_at>now());
  select coalesce(sum(quantity),0) into v_expiring from public.addon_package_lots
@@ -36,6 +39,9 @@ begin
    else v_mst_capacity>0 end,
  'can_download_new_invoices',v_invoice_remaining>0,
  'can_reread_charged_invoices',v_has_history,
+ 'trial_used',v_trial_used,
+ 'trial_expires_at',v_trial_expires,
+ 'ever_had_package',v_ever_had_package,
  'packages',jsonb_build_object('invoice',inv,'mst',ms),
  'mode',v_mode,
  -- updated_at is informational only; do not use as proof of an order.

@@ -111,6 +111,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/021_admin_direct_package_grant.sql
       - name: Add private server-paginated admin transaction history
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/022_admin_paginated_package_transactions.sql
+      - name: Fix Supabase pgcrypto package-checkout function search path
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/023_fix_package_checkout_pgcrypto_schema.sql
       - name: Verify production readiness report is readable
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants
@@ -128,6 +130,9 @@ jobs:
 
       - name: Verify purchase and admin grant history popup paging
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/100_assert_paged_package_transactions.sql
+
+      - name: Verify customer checkout works with pgcrypto in extensions schema
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/110_assert_package_checkout_pgcrypto.sql
 
       - name: Prepare unrelated-FK rollback scenario in another isolated DB
         run: |

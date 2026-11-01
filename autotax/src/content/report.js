@@ -708,7 +708,11 @@
   // opts.sheets: sheet thêm người dùng chọn; originals: Map refKey → hóa đơn gốc ngoài khoảng ngày (tải riêng)
   function buildSheets(rows, details, opts = {}) {
     const want = { reduction: true, risk: true, seller: true, adjust: true, hdkd: false, gtgt: false, ...opts.sheets };
-    const sheets = [invoiceSheet('DS hóa đơn', rows, details, opts.withPdf, want.seller, opts.illegal)];
+    // Tách danh sách hóa đơn thành hai sheet độc lập; giữ nguyên bộ cột, dữ liệu và tổng cộng.
+    const sheets = [
+      invoiceSheet('Mua vào', rows.filter((r) => r.kind === 'purchase'), details, opts.withPdf, want.seller, opts.illegal),
+      invoiceSheet('Bán ra', rows.filter((r) => r.kind === 'sold'), details, opts.withPdf, want.seller, opts.illegal),
+    ];
     if (opts.withLines) sheets.push(linesSheet(rows, details));
     if (want.risk) sheets.push(riskSheet(rows, details, opts));
     if (want.adjust) { const s = adjustSheet(rows, details, opts); if (s) sheets.push(s); }

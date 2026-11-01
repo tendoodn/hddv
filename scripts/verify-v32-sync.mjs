@@ -51,7 +51,8 @@ const migrationNames=[
  '026_hide_inactive_package_history.sql',
  '027_admin_order_search.sql',
  '028_mst_12_digit_trial_and_authorization.sql',
- '028_explicit_mst_profiles_and_session_lock.sql'
+ '028_explicit_mst_profiles_and_session_lock.sql',
+ '029_admin_extension_download_link.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -105,6 +106,23 @@ assert(!crxPanel.includes('id="tendooTemplateFile"')&&bridge.includes('builtinTe
 assert(bridge.includes('THIẾU MÃ')&&bridge.includes('makeMisaPackage'),
  'Unmatched product lines must remain exportable in both formats');
 assert(crxPanel.includes('id="tendooMatchDialog"'),'Missing SKU mapping dialog');
+assert(crxPanel.includes('id="tendooMatchClose"')&&crxPanel.includes('id="lic-account-quick-actions"'),
+ 'Stock mapping close and compact license controls missing');
+assert(!crxPanel.includes('Quản lý số hóa đơn hoặc số MST'),'Remove obsolete package subtitle');
+assert(crxPanel.indexOf('id="lic-mode-wrap"')<crxPanel.indexOf('id="lic-entitlements"'),
+ 'License mode must live below the package title');
+for(const format of ['Excel','XML','PDF','HTML'])
+ assert(crxPanel.includes('<span>'+format+'</span>'),'Missing compact format '+format);
+assert(crxPanel.includes('PL giảm thuế GTGT')&&crxPanel.includes('Bảng kê HĐKD'),
+ 'Excel main sheet labels must be compact');
+assert(portal.includes('id="extensionDownloadBtn"')&&
+ load('docs/customer.js').includes('addon_public_settings'),
+ 'Customer download link must resolve from server config');
+assert(admin.includes('id="extensionDownloadUrl"')&&admin.includes('addon_public_settings'),
+ 'Admin must save dynamic extension link to Supabase');
+const settingsSql=load('addon-portal/supabase/migrations/029_admin_extension_download_link.sql');
+assert(settingsSql.includes('enable row level security')&&settingsSql.includes('addon_is_admin()'),
+ 'Extension link is publicly readable but writes must be restricted to admin');
 assert(crxJs.includes('Sản phẩm gốc · HĐ mua vào') &&
  crxJs.includes('Sản phẩm liên kết · danh mục '),
  'SKU mapping must distinguish invoice product and linked BC product');

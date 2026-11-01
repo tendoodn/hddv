@@ -124,10 +124,19 @@ declare
 begin
  foreach v_fn in array array['addon_start_mst_trial(text)','addon_authorize_mst(text)'] loop
   select pg_get_functiondef(('public.'||v_fn)::regprocedure) into v_def;
-  if v_def not like '%'||v_old||'%' then
-   raise exception 'mst_validation_pattern_not_found_in_%',v_fn;
+  if position(v_old in v_def)>0 then
+    execute replace(v_def,v_old,v_new);
+  elsif position(v_new in v_def)>0
+     or position('^[0-9]{10}([0-9]{2}|[0-9]{3})?
+ end loop;
+end $extend_mst$;
+notify pgrst,'reload schema';
+ in v_def)>0 then
+    -- Another additive migration already expanded the rule, preserve it.
+    null;
+  else
+    raise exception 'mst_validation_pattern_not_found_in_%',v_fn;
   end if;
-  execute replace(v_def,v_old,v_new);
  end loop;
 end $extend_mst$;
 notify pgrst,'reload schema';

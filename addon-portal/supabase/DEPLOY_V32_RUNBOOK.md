@@ -2,6 +2,21 @@
 
 **Status: awaiting read-only Supabase dependency preflight and verified backup. Do not execute production candidate yet.**
 
+## Bản sao lưu đã được tạo trong Supabase SQL Editor
+
+Người sở hữu cung cấp manifest ngày 01/11/2026 lúc 10:14:55 UTC:
+`autotax_backup_20261101._manifest`: 11/11 bảng sao chép đúng số dòng.
+Đặc biệt: `addon_admins=1`, `addon_profiles=3`,
+`addon_orders=27`, `addon_subscriptions=17`,
+`addon_payment_events=8`, `addon_audit_logs=34`.
+Bảng sao lưu nằm trong schema riêng; script backup bật RLS và thu hồi quyền anon/authenticated.
+Đây là **bản sao tại chính database**, không phải một bản dump ngoại tuyến.
+
+SQL triển khai dự kiến: `PRODUCTION_UPGRADE_V32_ONE_TIME.sql`.
+Script production có thêm khóa bảng cũ và kiểm tra nội dung **toàn bộ 11 bản sao**
+khớp dữ liệu gốc, thay vì chỉ so sánh số dòng. Nếu dữ liệu phát sinh sau snapshot
+hoặc schema đã đổi, script từ chối nâng cấp; cần tạo snapshot mới trước.
+
 ## Production preflight đã xác nhận (01/11/2026)
 
 Người sở hữu dự án đã chạy `PREDEPLOY_V32_READ_ONLY.sql` trong Supabase SQL Editor và cung cấp kết quả:
@@ -33,7 +48,7 @@ GitHub Actions đã kiểm tra V3.2 dưới cả role `authenticated` và `anon`
 5. Take and independently verify a Supabase database backup including all existing Auth and public tables. This is mandatory because the upgrade deliberately removes prior licensing, orders, gifts, trial records, and audit history. Current customers will receive new unlock codes at the owner's discretion.
 
 ## SQL upgrade
-- Candidate source: `UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql`.
+- Production SQL source: `PRODUCTION_UPGRADE_V32_ONE_TIME.sql` (kiểm thử trên PostgreSQL giả lập; yêu cầu bản sao 11 bảng khớp hoàn toàn).
 - This script uses one transaction, preserves auth.users and addon_admins, installs migrations 005–018, wipes legacy business records, replaces the legacy monthly/yearly checkout dependency, re-seeds addon_profiles, and revokes legacy RPCs.
 - The candidate is **not authorized for production** until preflight and backup complete.
 - Do not run `REBUILD_V32_DRAFT_DO_NOT_RUN.sql` or `docs/sql/*.sql`. The first one uses destructive DDL; the latter are deprecated old billing scripts.

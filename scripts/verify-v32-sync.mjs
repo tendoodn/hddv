@@ -15,7 +15,8 @@ checkIds('docs/customer.js','docs/index.html',/\$\("([^"]+)"\)/g);
 checkIds('docs/admin.html','docs/admin.html',/\$\("([^"]+)"\)/g);
 checkIds('docs/admin-mst.js','docs/admin.html',/getElementById\("([^"]+)"\)/g);
 checkIds('autotax/src/license/license.js','autotax/src/sidepanel/index.html',/\$\('([^']+)'\)/g);
-for(const path of ['docs/customer.js','docs/admin-mst.js','autotax/src/license/license.js','autotax/src/content/content.js']) testScript(path,load(path));
+for(const path of ['docs/customer.js','docs/admin-mst.js','autotax/src/license/license.js',
+'autotax/src/content/content.js','autotax/src/content/tendoo-import.js']) testScript(path,load(path));
 const admin=load('docs/admin.html');
 for(const match of admin.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))
  if(match[1].trim())testScript('admin-inline',match[1]);
@@ -81,10 +82,24 @@ const adminGrant=load('addon-portal/supabase/migrations/021_admin_direct_package
 assert(adminGrant.includes("raise exception 'admin_required'"),'Manual package grant requires admin check');
 assert(adminGrant.includes("'admin_package_granted_v32'"),'Manual package grant requires audit');
 assert(adminGrant.includes("p_package_code"),'Manual package grant must bind one catalog package');
+const portal=load('docs/index.html');
+assert(portal.includes('--tendoo:#e60012'),'Account portal must match red Tendoo panel');
+assert(portal.includes('id="mstProfilesWeb"')&&portal.includes('id="giftWebDialog"'),
+  'Web should have matching collapsed MST and gift UX');
+assert(!load('autotax/src/sidepanel/index.html').includes('class="privacy"'),
+  'Remove obsolete privacy teaser from compact panel');
+const bridge=load('autotax/src/content/tendoo-import.js');
+assert(bridge.includes('makePackage')&&bridge.includes("mtt"),'Tendoo import bridge must export MTT KCT');
+const manifest=load('autotax/manifest.json');
+assert(manifest.includes('src/content/tendoo-import.js'),'Extension must load offline Tendoo module');
 const crxPanel=load('autotax/src/sidepanel/index.html');
 const crxJs=load('autotax/src/sidepanel/panel.js');
 const crxContent=load('autotax/src/content/content.js');
 const crxLicense=load('autotax/src/license/license.js');
+assert(crxPanel.includes('id="tendooSyncCheck"'),'Missing Tendoo option');
+assert(crxPanel.includes('id="tendooCatalogFile"')&&crxPanel.includes('id="tendooTemplateFile"'),
+ 'Tendoo import must require SKU and template files');
+assert(crxPanel.includes('id="tendooMatchDialog"'),'Missing SKU mapping dialog');
 assert(crxPanel.includes('id="lic-mst-add-form"'),'Missing MST profile add form');
 assert(crxPanel.includes('id="mstGuardMessage"'),'Missing MST mismatch warning');
 assert(crxPanel.includes('id="historyMst"'),'Invoice history must filter by MST');

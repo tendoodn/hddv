@@ -24,8 +24,8 @@ begin
    'mst_nearest_expiry',ms.nearest_expiry,
    'mst_farthest_expiry',ms.farthest_expiry,
    'mst_assignments',coalesce(assn.items,'[]'::jsonb),
-   'trial_used',tr.email_normalized is not null,
-   'trial_expires_at',ms.trial_expires_at,
+   'trial_used',coalesce(tr.was_used,false),
+   'trial_expires_at',trial_lot.latest_expiry,
    'last_package_at',lots.last_package_at
   ) order by u.created_at desc
  ),'[]'::jsonb)
@@ -36,8 +36,14 @@ begin
   order by created_at desc limit 500
  ) u
  left join public.addon_usage_modes um on um.user_id=u.id
- left join public.addon_trial_email_registry tr
-  on tr.email_normalized=lower(btrim(u.email))
+ left join lateral (
+  select exists(select 1 from public.addon_trial_email_registry r
+   where r.first_user_id=u.id or r.email_normalized=lower(btrim(u.email))) as was_used
+ ) tr on true
+ left join lateral (
+  select max(l.expires_at) as latest_expiry
+  from public.addon_package_lots l where l.user_id=u.id and l.grant_kind='trial'
+ ) trial_lot on true
  left join lateral (
   select coalesce(sum(l.quantity),0)::bigint as purchased,
          coalesce(sum(l.remaining),0)::bigint as remaining,

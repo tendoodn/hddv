@@ -208,32 +208,94 @@ $('tendooSettingsCancel').addEventListener('click',()=>{
  updateTendooUi();summarize();
 });
 function mapUnknownTendoo(message){
- const id=message.requestId,names=message.names||[];
- tendooMappingRequest=id;
+ const requestId=message.requestId,names=message.names||[];
+ tendooMappingRequest=requestId;
  const box=$('tendooMissingList');box.replaceChildren();
- const list=document.createElement('datalist');list.id='tendooSkuList';
- for(const product of tendooCatalog||[]){
-  const opt=document.createElement('option');opt.value=product.sku;opt.label=product.name;list.append(opt);
+ for(const [index,entry] of names.entries()){
+   const row=document.createElement('div');row.className='tendoo-missing-row';
+
+   // Left: original product name read directly from the purchase invoice.
+   const original=document.createElement('div');original.className='tendoo-original-product';
+   const sourceLabel=document.createElement('span');sourceLabel.className='tendoo-field-label';
+   sourceLabel.textContent='Sản phẩm gốc · HĐ mua vào';
+   const originalName=document.createElement('strong');originalName.textContent=entry.name;
+   original.append(sourceLabel,originalName);
+
+   // Right: a searchable and explicitly selected product from BC_San_Pham.
+   const target=document.createElement('div');target.className='tendoo-linked-product';
+   const label=document.createElement('label');label.className='tendoo-field-label';
+   const searchId='tendoo-product-search-'+index;
+   label.htmlFor=searchId;label.textContent='Sản phẩm liên kết · file BC_San_Pham';
+   const search=document.createElement('input');search.type='search';
+   search.id=searchId;search.className='tendoo-product-search';
+   search.placeholder='Tìm tên sản phẩm hoặc SKU...';search.autocomplete='off';
+   search.setAttribute('aria-label','Tìm sản phẩm BC_San_Pham liên kết với '+entry.name);
+   const hidden=document.createElement('input');hidden.type='hidden';
+   hidden.dataset.key=entry.key;
+   const selected=document.createElement('div');selected.className='tendoo-selected-product';
+   selected.textContent='Chưa chọn sản phẩm liên kết.';
+   selected.setAttribute('aria-live','polite');
+   const results=document.createElement('div');results.className='tendoo-search-results';
+   results.setAttribute('role','listbox');
+   results.setAttribute('aria-label','Kết quả tìm sản phẩm cho '+entry.name);
+   const showResults=term=>{
+     results.replaceChildren();
+     const matched=TendooImport.searchCatalog(tendooCatalog||[],term,12);
+     if(!matched.length){
+       const empty=document.createElement('small');
+       empty.textContent='Không tìm thấy sản phẩm phù hợp trong BC_San_Pham.';
+       results.append(empty);return;
+     }
+     for(const product of matched){
+       const option=document.createElement('button');option.type='button';
+       option.className='tendoo-product-option';
+       const productName=document.createElement('strong');productName.textContent=product.name;
+       const sku=document.createElement('span');
+       sku.textContent='SKU: '+product.sku+(product.unit?' · '+product.unit:'');
+       option.append(productName,sku);
+       option.addEventListener('click',()=>{
+         hidden.value=product.sku;
+         search.value=product.name+' · '+product.sku;
+         selected.textContent='Đã liên kết: '+product.name+' ('+product.sku+')';
+         selected.classList.add('tendoo-selected-valid');
+         results.replaceChildren();
+       });
+       results.append(option);
+     }
+   };
+   search.addEventListener('focus',()=>showResults(search.value));
+   search.addEventListener('input',()=>{
+     hidden.value='';selected.textContent='Chưa chọn sản phẩm liên kết.';
+     selected.classList.remove('tendoo-selected-valid');
+     showResults(search.value);
+   });
+   search.addEventListener('keydown',event=>{
+     if(event.key==='ArrowDown'){
+       const first=results.querySelector('button');
+       if(first){event.preventDefault();first.focus()}
+     }else if(event.key==='Enter'){
+       // Enter inside search selects the first match, not the entire form.
+       event.preventDefault();results.querySelector('button')?.click();
+     }
+   });
+   target.append(label,search,hidden,selected,results);
+   row.append(original,target);
+   box.append(row);
  }
- box.append(list);
- for(const entry of names){
-  const row=document.createElement('div');row.className='tendoo-missing-row';
-  const name=document.createElement('strong');name.textContent=entry.name;
-  const input=document.createElement('input');input.type='text';input.setAttribute('list','tendooSkuList');
-  input.placeholder='Nhập/chọn SKU trong BC_San_Pham';
-  input.dataset.key=entry.key;input.setAttribute('aria-label','SKU cho '+entry.name);
-  row.append(name,input);box.append(row);
- }
- const dlg=$('tendooMatchDialog');if(!dlg.open)dlg.showModal();
- if(names.length)box.querySelector('input')?.focus();
+ const dialog=$('tendooMatchDialog');
+ if(!dialog.open)dialog.showModal();
+ box.querySelector('.tendoo-product-search')?.focus();
 }
 $('tendooMatchForm').addEventListener('submit',e=>{
  e.preventDefault();if(!tendooMappingRequest)return;
- const inputs=[...$('tendooMissingList').querySelectorAll('input[data-key]')];
+ const inputs=[...$('tendooMissingList').querySelectorAll('input[type="hidden"][data-key]')];
  const known=new Set((tendooCatalog||[]).map(p=>p.sku)),mapping={};
  for(const input of inputs){
   const sku=input.value.trim();
-  if(!sku||!known.has(sku)){input.focus();return log('Hãy chọn SKU có trong BC_San_Pham cho từng sản phẩm.','warn')}
+  if(!sku||!known.has(sku)){
+    input.closest('.tendoo-missing-row')?.querySelector('.tendoo-product-search')?.focus();
+    return log('Hãy tìm và chọn sản phẩm liên kết trong file BC_San_Pham cho từng tên hàng trên hóa đơn.','warn');
+  }
   mapping[input.dataset.key]=sku;
  }
  port?.postMessage({type:'tendoo-map-response',requestId:tendooMappingRequest,mapping});

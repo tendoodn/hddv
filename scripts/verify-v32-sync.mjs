@@ -48,7 +48,8 @@ const migrationNames=[
  '024_five_minute_qr_realtime_order_status.sql',
  '025_admin_revoke_restore_compensation_and_transaction_codes.sql',
  '026_hide_inactive_package_history.sql',
- '027_admin_order_search.sql'
+ '027_admin_order_search.sql',
+ '028_mst_12_digit_trial_and_authorization.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -99,6 +100,25 @@ assert(customerHtml.includes('#paymentArea #paymentQr{display:block;margin:14px 
 assert(customerJs.includes('"loginForm").addEventListener("submit"'),'Enter login handler missing');
 assert(customerJs.includes('scrollIntoView({behavior:reducedMotion'),'Buying must center scroll on QR');
 assert(!customerHtml.includes('href="https://github.com/'), 'Customer UI must not expose GitHub source links');
+const panelHtml=load('autotax/src/sidepanel/index.html');
+const panelJs=load('autotax/src/sidepanel/panel.js');
+const panelCss=load('autotax/src/sidepanel/panel.css');
+const licenseJs=load('autotax/src/license/license.js');
+assert(panelHtml.includes('id="lic-gift-open"') && panelHtml.includes('id="lic-unlock-dialog"'),'Missing gift button/dialog');
+assert(panelHtml.includes('id="lic-unlock-form"'),'Gift code requires Enter-submit form');
+assert(licenseJs.includes("dialog.showModal()") && licenseJs.includes("dialog.close()"),'Gift code popup open and close handlers missing');
+assert(licenseJs.includes('trialActivationConfirmed=true'),'Trial panel must hide immediately after activation');
+assert(panelHtml.includes('Nhập MST 10 hoặc 12 chữ số'),'Wrong MST trial hint');
+assert(licenseJs.includes('Nhập MST 10 hoặc 12 chữ số hợp lệ.'),'Wrong MST trial error text');
+assert(customerJs.includes('MST phải có 10 hoặc 12 chữ số.'),'Customer portal MST error mismatch');
+assert(panelCss.includes('--accent:#e60012') && panelCss.includes('--accent-strong:#b80010'),'Missing Tendoo/Viettel red palette');
+assert(panelCss.includes('grid-template-columns:repeat(5,minmax(0,1fr))'),'Five date preset buttons must stay on one row');
+assert(panelCss.includes('.sheet-opts .sheet-grid'),'Excel sheets must form two columns');
+assert(panelJs.includes("key: 'thisYear', label: 'Cả năm'"),'Missing current-year preset');
+const orderedSheets=['reduction','hdkd','risk','seller','gtgt','adjust'];
+const listedSheets=[...panelHtml.matchAll(/name="sheet" value="([^"]+)"/g)].map(m=>m[1]);
+assert.deepEqual(listedSheets,orderedSheets,'Incorrect Excel sheet ordering');
+assert(!panelHtml.includes('Cập nhật mới:')&&!panelHtml.includes('Phiên bản sử dụng nội bộ'),'Obsolete extension notices must be removed');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
 assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');

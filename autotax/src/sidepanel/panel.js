@@ -281,35 +281,36 @@ chrome.storage.local.get([STOCK_SETTINGS_KEY,'autotax_misa_last_document_v1']).t
   refreshPlatformFields();
 }).catch(()=>{});
 async function openTendooMatchTab(){
- if(!tendooMappingRequest||!tendooPendingNames.length)return;
- const sessionKey='autotax-tendoo-request-'+tendooMappingRequest;
- await chrome.storage.session.set({[sessionKey]:{names:tendooPendingNames,products:tendooCatalog||[]}});
- await chrome.tabs.create({url:chrome.runtime.getURL(
-  'src/sidepanel/tendoo-match.html?rid='+encodeURIComponent(tendooMappingRequest)),active:true});
+  if(!tendooMappingRequest||!tendooPendingNames.length)return;
+  const sessionKey='autotax-tendoo-request-'+tendooMappingRequest;
+  await chrome.storage.session.set({[sessionKey]:{names:tendooPendingNames,
+    products:tendooCatalog||[],portalTabId:tabId}});
+  await chrome.tabs.create({url:chrome.runtime.getURL(
+    'src/sidepanel/tendoo-match.html?rid='+encodeURIComponent(tendooMappingRequest)),active:true});
+  port?.postMessage({type:'tendoo-mapping-tab-open',requestId:tendooMappingRequest});
 }
 $('tendooOpenMatchTab').addEventListener('click',()=>{
  openTendooMatchTab().catch(error=>log('Không mở được tab liên kết: '+error.message,'warn'));
 });
 async function finishTendooMapping(requestId,mapping){
- if(!port||requestId!==tendooMappingRequest)throw Error('Phiên liên kết đã kết thúc.');
- if(!mapping||typeof mapping!=='object')throw Error('Chưa có liên kết sản phẩm.');
- const known=new Set((tendooCatalog||[]).map(p=>p.sku));
- for(const entry of tendooPendingNames){
-  if(!known.has(mapping[entry.key]))throw Error('Thiếu SKU hợp lệ cho: '+entry.name);
- }
- await keepTendooLinks(mapping);
- port.postMessage({type:'tendoo-map-response',requestId,mapping:{...tendooSavedLinks,...mapping}});
- tendooMappingRequest=null;tendooPendingNames=[];
- const dialog=$('tendooMatchDialog');
- if(dialog.open)dialog.close();
- log('Đã lưu '+Object.keys(mapping).length+' liên kết SKU; tiếp tục xuất ZIP nhập kho.','ok');
+  if(!port||requestId!==tendooMappingRequest)throw Error('Phiên liên kết đã kết thúc.');
+  if(!mapping||typeof mapping!=='object')throw Error('Dữ liệu liên kết không hợp lệ.');
+  const known=new Set((tendooCatalog||[]).map(p=>p.sku));
+  const accepted=Object.fromEntries(Object.entries(mapping).filter(([,sku])=>!!sku));
+  for(const [key,sku] of Object.entries(accepted)){
+    if(!tendooPendingNames.some(entry=>entry.key===key)||!known.has(sku))
+      throw Error('Mã sản phẩm không hợp lệ: '+key);
+  }
+  const skipped=tendooPendingNames.length-Object.keys(accepted).length;
+  await keepTendooLinks(accepted);
+  port.postMessage({type:'tendoo-map-response',requestId,
+    mapping:{...tendooSavedLinks,...accepted}});
+  tendooMappingRequest=null;tendooPendingNames=[];
+  const dialog=$('tendooMatchDialog');
+  if(dialog.open)dialog.close();
+  log('Đã ghép '+Object.keys(accepted).length+' sản phẩm; '+
+    skipped+' sản phẩm chưa khớp sẽ ghi THIẾU MÃ.','ok');
 }
-chrome.runtime.onMessage.addListener((message,_sender,respond)=>{
- if(message?.type!=='tendoo-tab-mapping')return;
- finishTendooMapping(message.requestId,message.mapping)
-  .then(()=>respond({ok:true}),error=>respond({ok:false,error:error.message}));
- return true;
-});
 function mapUnknownTendoo(message){
  const requestId=message.requestId,names=message.names||[];
  tendooMappingRequest=requestId;tendooPendingNames=names;
@@ -328,7 +329,7 @@ function mapUnknownTendoo(message){
    const target=document.createElement('div');target.className='tendoo-linked-product';
    const label=document.createElement('label');label.className='tendoo-field-label';
    const searchId='tendoo-product-search-'+index;
-   label.htmlFor=searchId;label.textContent='Sản phẩm liên kết · file BC_San_Pham';
+   label.htmlFor=searchId;label.textContent='Sản phẩm liên kết · danh mục '+stockPlatform.toUpperCase();
    const search=document.createElement('input');search.type='search';
    search.id=searchId;search.className='tendoo-product-search';
    search.placeholder='Tìm tên sản phẩm hoặc SKU...';search.autocomplete='off';
@@ -336,7 +337,7 @@ function mapUnknownTendoo(message){
    const hidden=document.createElement('input');hidden.type='hidden';
    hidden.dataset.key=entry.key;
    const selected=document.createElement('div');selected.className='tendoo-selected-product';
-   selected.textContent='Chưa chọn sản phẩm liên kết.';
+   selected.textContent='Chưa liên kết: sẽ ghi THIẾU MÃ nếu bỏ qua.';
    selected.setAttribute('aria-live','polite');
    const results=document.createElement('div');results.className='tendoo-search-results';
    results.setAttribute('role','listbox');
@@ -346,7 +347,7 @@ function mapUnknownTendoo(message){
      const matched=TendooImport.searchCatalog(tendooCatalog||[],term,12);
      if(!matched.length){
        const empty=document.createElement('small');
-       empty.textContent='Không tìm thấy sản phẩm phù hợp trong BC_San_Pham.';
+       empty.textContent='Không tìm thấy sản phẩm. Bỏ qua để xuất với mã THIẾU MÃ.';
        results.append(empty);return;
      }
      for(const product of matched){
@@ -368,7 +369,7 @@ function mapUnknownTendoo(message){
    };
    search.addEventListener('focus',()=>showResults(search.value));
    search.addEventListener('input',()=>{
-     hidden.value='';selected.textContent='Chưa chọn sản phẩm liên kết.';
+     hidden.value='';selected.textContent='Chưa liên kết: sẽ ghi THIẾU MÃ nếu bỏ qua.';
      selected.classList.remove('tendoo-selected-valid');
      showResults(search.value);
    });
@@ -396,12 +397,10 @@ $('tendooMatchForm').addEventListener('submit',async e=>{
  const inputs=[...$('tendooMissingList').querySelectorAll('input[type="hidden"][data-key]')];
  const known=new Set((tendooCatalog||[]).map(p=>p.sku)),mapping={};
  for(const input of inputs){
-  const sku=input.value.trim();
-  if(!sku||!known.has(sku)){
-    input.closest('.tendoo-missing-row')?.querySelector('.tendoo-product-search')?.focus();
-    return log('Hãy tìm và chọn sản phẩm liên kết trong file BC_San_Pham cho từng tên hàng trên hóa đơn.','warn');
-  }
-  mapping[input.dataset.key]=sku;
+   const sku=input.value.trim();
+   if(!sku)continue;
+   if(!known.has(sku))return log('Mã SKU không hợp lệ; vui lòng chọn lại.','warn');
+   mapping[input.dataset.key]=sku;
  }
  try{await finishTendooMapping(tendooMappingRequest,mapping)}catch(error){log('Không lưu được SKU: '+error.message,'warn')}
  // Popup closed by finishTendooMapping on success.

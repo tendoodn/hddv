@@ -116,36 +116,14 @@ grant execute on function public.addon_verify_session_mst_v33(text) to authentic
 -- Self-service removal works even when the paid package expires.
 -- Audit and old invoice/trial history remain intact.
 create or replace function public.addon_remove_mst_profile_v33(p_mst text)
-returns jsonb language plpgsql security definer set search_path='' as $
+returns jsonb language plpgsql security definer set search_path='' as $$
 declare
  v_user uuid:=auth.uid();
  v_mst text:=regexp_replace(coalesce(p_mst,''),'[^0-9]','','g');
  v_count int;
 begin
  if v_user is null then raise exception 'authentication_required'; end if;
- if v_mst !~ '^([0-9]{10}|[0-9]{12}|[0-9]{13})
--- The V3.2 12-digit migration may already have expanded either function.
-do $extend_mst$
-declare
- v_fn text;
- v_def text;
- v_old text := '^[0-9]{10}([0-9]{3})?$';
- v_new text := '^([0-9]{10}|[0-9]{12}|[0-9]{13})$';
- v_already_expanded text := '^[0-9]{10}([0-9]{2}|[0-9]{3})?$';
-begin
- foreach v_fn in array array['addon_start_mst_trial(text)','addon_authorize_mst(text)'] loop
-  select pg_get_functiondef(('public.'||v_fn)::regprocedure) into v_def;
-  if position(v_old in v_def)>0 then
-    execute replace(v_def,v_old,v_new);
-  elsif position(v_new in v_def)>0 or position(v_already_expanded in v_def)>0 then
-    null; -- Previous additive migration already added 12-digit support.
-  else
-    raise exception 'mst_validation_pattern_not_found_in_%',v_fn;
-  end if;
- end loop;
-end $extend_mst$;
-notify pgrst,'reload schema';
- then
+ if v_mst !~ '^([0-9]{10}|[0-9]{12}|[0-9]{13})$' then
   raise exception 'invalid_mst'; end if;
  perform pg_advisory_xact_lock(hashtextextended(v_user::text,0));
  delete from public.addon_mst_assignments where user_id=v_user and mst=v_mst;
@@ -154,7 +132,7 @@ notify pgrst,'reload schema';
  insert into public.addon_audit_logs(actor_id,target_user_id,action,details)
  values(v_user,v_user,'mst_profile_removed_v33',jsonb_build_object('mst',v_mst));
  return jsonb_build_object('success',true,'mst',v_mst);
-end $;
+end $$;
 revoke all on function public.addon_remove_mst_profile_v33(text)
  from public,anon,authenticated;
 grant execute on function public.addon_remove_mst_profile_v33(text) to authenticated;

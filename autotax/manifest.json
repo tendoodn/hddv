@@ -54,6 +54,7 @@
       "js": [
         "src/content/zip.js",
         "src/content/xlsx.js",
+        "src/content/tendoo-import.js",
         "src/content/captcha-svg-templates.js",
         "src/content/captcha-svg.js",
         "src/content/hddt-api.js",

@@ -64,13 +64,25 @@ button:hover:not(:disabled){filter:brightness(.97)}
 input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 .license-token{color:#b00014}
 
+
+/* Portal shares the compact red account layout from the extension. */
+.extension-download-link{display:inline-flex;align-items:center;padding:10px 13px;border-radius:9px;background:var(--tendoo);color:#fff;text-decoration:none;font-size:13px;font-weight:750}
+.extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+.portal-mode-toolbar{margin:12px 0;border-top:1px solid var(--tendoo-line);padding-top:10px}
+#modeSection{display:grid;grid-template-columns:auto minmax(130px,250px);align-items:center;gap:6px 12px}
+#modeSection label{margin:0;font-weight:750;color:#9f1239}
+#modeSection p{grid-column:1/-1;font-size:12px;margin:0 0 4px}
+.portal-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.portal-quick-actions button{min-width:0;white-space:nowrap;padding:9px 5px}
+#passwordPanel{border-color:var(--tendoo-line)}
+@media(max-width:450px){.portal-quick-actions{gap:5px}.portal-quick-actions button{font-size:11px;padding:8px 3px}}
 </style>
 </head>
 <body>
 <main class="wrap">
 <header>
   <div class="brand">TENDOO <span>AUTOTAX V3.2</span></div>
-  <div class="actions"><a href="admin.html" id="adminLink" hidden>Quản trị</a></div>
+  <div class="actions"><a id="extensionDownloadBtn" class="extension-download-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Tải Chrome Extension</a><a href="admin.html" id="adminLink" hidden>Quản trị</a></div>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
@@ -87,11 +99,14 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
  <div class="panel">
   <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><div class="actions"><button id="refreshBtn" class="secondary" title="Làm mới">↻ Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
+  <div class="portal-mode-toolbar">
+   <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><p class="muted">Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</p></div>
+   <div class="portal-quick-actions"><button id="renewWebBtn" type="button">Gia hạn</button><button id="giftWebBtn" type="button" class="secondary">🎁 Quà tặng</button><button id="passwordOpenBtn" type="button" class="secondary">Đổi mật khẩu</button></div>
+  </div>
   <div class="grid">
    <div class="plan stat"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
    <div class="plan stat"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
   </div>
-  <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Theo MST</option><option value="invoice">Theo số lượt hóa đơn</option></select><p class="muted">Hai chế độ không chạy đồng thời; gói còn lại được bảo lưu.</p></div>
   <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
  </div>
  <div class="activation-grid">
@@ -122,12 +137,12 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
  </div>
  <div class="panel" id="planSection">
-  <div class="row"><h2>Mua gói mới</h2><div class="actions"><button id="renewWebBtn" type="button" class="secondary">Gia hạn</button><button id="giftWebBtn" type="button" class="secondary">🎁 Mã quà tặng</button></div></div><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
+  <div class="row"><h2>Mua gói mới</h2></div><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
   <div id="packageList" class="grid package-grid"></div>
  </div>
 
- <div class="panel">
-  <h2>Đổi mật khẩu</h2><label for="newPassword">Mật khẩu mới</label>
+ <div class="panel" id="passwordPanel" hidden>
+  <div class="row"><h2>Đổi mật khẩu</h2><button id="passwordCloseBtn" type="button" class="secondary">Đóng</button></div><label for="newPassword">Mật khẩu mới</label>
   <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
   <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
  </div>

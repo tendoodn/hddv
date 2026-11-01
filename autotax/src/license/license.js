@@ -20,6 +20,7 @@
   $('lic-header-email').hidden=!active;$('lic-header-email').textContent=active?(session?.user?.email||''):'';
   $('lic-logout').hidden=!active;$('lic-manage-account').hidden=!active;
   $('lic-auth').hidden=active;$('lic-account').hidden=!active;
+  $('lic-account-quick-actions').hidden=!active;
   const rows=license?.packages||{},inv=rows.invoice||{},mst=rows.mst||{};
   const invLeft=Number(inv.remaining||0),invBought=Number(inv.purchased||0),mstCount=Number(mst.active_quantity||0);
   const both=(invLeft>0||!!license?.can_reread_charged_invoices)&&mstCount>0;

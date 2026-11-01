@@ -239,8 +239,8 @@ function showDone(m) {
 
 // Chưa đăng nhập hoặc đang chạy → khóa nút Tìm kiếm
 function syncRun() {
-  $('run').disabled = busy || !connected;
-  $('run').title = connected ? '' : 'Hãy đăng nhập hoadondientu trước';
+  $('run').disabled = busy || !connected || !licenseAllowed;
+  $('run').title = !licenseAllowed ? 'Đăng nhập AutoTax và kích hoạt dùng thử hoặc gói sử dụng' : (connected ? '' : 'Hãy đăng nhập hoadondientu trước');
 }
 
 function setBusy(on) {
@@ -253,6 +253,7 @@ function setBusy(on) {
 
 async function run() {
   if (busy) return;
+  if (!License.canUse()) { log('Tài khoản AutoTax chưa có quyền sử dụng còn hiệu lực. Hãy đăng nhập/kích hoạt tại mục Quản lý bản quyền.', 'warn'); return; }
   if (!tabId || !connected) return init();
   if (!checkRange()) { $('toText').focus(); return; }
   // Hình thức: hóa đơn điện tử (query, chia tháng) và/hoặc máy tính tiền (sco-query, đoạn 10 ngày + captcha)

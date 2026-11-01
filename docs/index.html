@@ -31,6 +31,14 @@ button.secondary{background:#eaf0f9;color:#172033}button:disabled{opacity:.55;cu
 .mst-row{padding:11px 0;border-bottom:1px solid #e2e8f0}.mst-row small{display:block;margin-top:4px}
 .stat strong{display:block;font-size:23px;margin:8px 0}.stat small{display:block}
 #paymentQr{width:min(100%,270px);border:1px solid #e2e8f0;border-radius:12px}
+.activation-grid{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
+.activation-grid>.panel{flex:1 1 360px;min-width:0;margin:14px 0}
+#paymentArea{text-align:center;scroll-margin-block:24px}
+#paymentArea #paymentQr{display:block;margin:14px auto}
+#paymentArea #paymentInfo{margin-left:auto;margin-right:auto;max-width:680px;overflow-wrap:anywhere}
+#paymentArea .actions{justify-content:center}
+#paymentArea small{display:block;margin:0 auto;max-width:650px;line-height:1.5}
+@media(max-width:700px){.activation-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0}.activation-grid>.panel{width:100%}}
 footer{padding:16px 0 28px;color:#64748b;font-size:12px}
 .payment-success-modal{max-width:min(460px,92vw);padding:26px;border-radius:16px;border:1px solid #d1fae5;background:#fff;color:#172033;box-shadow:0 24px 80px #0f172a44}
 .payment-success-modal::backdrop{background:#0f172a99}
@@ -50,11 +58,13 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
 <section id="authSection" class="panel">
+ <form id="loginForm">
  <h2>Đăng nhập / tạo tài khoản</h2>
  <label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="email@example.com">
  <label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
- <div class="actions"><button id="loginBtn">Đăng nhập</button><button id="signupBtn" class="secondary">Tạo tài khoản</button><button id="resetBtn" class="secondary">Quên mật khẩu</button></div>
+ <div class="actions"><button id="loginBtn" type="submit">Đăng nhập</button><button id="signupBtn" class="secondary" type="button">Tạo tài khoản</button><button id="resetBtn" class="secondary" type="button">Quên mật khẩu</button></div>
  <div id="authMessage" class="notice" hidden></div>
+ </form>
 </section>
 <section id="dashboard" hidden>
  <div class="panel">
@@ -67,6 +77,7 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
   <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Theo MST</option><option value="invoice">Theo số lượt hóa đơn</option></select><p class="muted">Hai chế độ không chạy đồng thời; gói còn lại được bảo lưu.</p></div>
   <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
  </div>
+ <div class="activation-grid">
  <div id="trialArea" class="panel" hidden>
   <h2>Dùng thử 7 ngày · 1 MST</h2>
   <p class="muted">Email và MST chỉ được dùng thử một lần. Tài khoản đã mua gói vẫn được quản lý MST theo hạn mức đã mua.</p>
@@ -74,18 +85,17 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
   <div class="actions"><button id="trialBtn">Kích hoạt dùng thử</button></div>
  </div>
  <div class="panel">
-  <h2>MST đã liên kết</h2><p class="muted">Bạn có thể tự gỡ MST khi còn gói MST hiệu lực. Gói đã hết hạn cần admin hỗ trợ.</p>
-  <div id="mstList"></div>
- </div>
- <div class="panel">
   <h2>Kích hoạt mã unlock</h2><p class="muted">Mỗi mã chỉ sử dụng một lần và cộng đúng quyền theo gói được cấp.</p>
   <label for="unlockCode">Mã unlock</label><input id="unlockCode" autocomplete="off" placeholder="UNLOCK-...">
   <div class="actions"><button id="redeemBtn">Kích hoạt</button></div>
  </div>
- <div class="panel">
-  <h2>Mua gói mới</h2><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
-  <div id="packageList" class="grid package-grid"></div>
  </div>
+
+ <div class="panel">
+  <h2>MST đã liên kết</h2><p class="muted">Bạn có thể tự gỡ MST khi còn gói MST hiệu lực. Gói đã hết hạn cần admin hỗ trợ.</p>
+  <div id="mstList"></div>
+ </div>
+
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
   <p id="paymentInfo" class="notice"></p>
@@ -94,6 +104,11 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
   <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
   <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
  </div>
+ <div class="panel">
+  <h2>Mua gói mới</h2><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
+  <div id="packageList" class="grid package-grid"></div>
+ </div>
+
  <div class="panel">
   <h2>Đổi mật khẩu</h2><label for="newPassword">Mật khẩu mới</label>
   <input type="password" id="newPassword" autocomplete="new-password" minlength="8">

@@ -47,7 +47,34 @@
  }
  async function status(){if(!session?.access_token){license={allowed:false,reason:'Đăng nhập để xem gói sử dụng.'};emit();return license}license=await rpc('addon_my_entitlements');emit();return license}
  async function check(){if(checking)return license;checking=true;try{await status()}catch(e){license={allowed:false,offline:true,reason:e.message};emit();message('Không xác minh được gói: '+e.message,true)}finally{checking=false}render();if(session?.access_token&&license?.mode==='mst')await loadMyMst();return license}
- async function auth(kind){const email=$('lic-email').value.trim().toLowerCase(),password=$('lic-password').value;if(!email||!password)return message('Nhập email và mật khẩu.',true);$('lic-login').disabled=$('lic-register').disabled=true;try{session=kind==='register'?await request('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password})},null):await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})},null);if(!session.access_token)return message('Đã tạo tài khoản. Hãy xác minh email rồi đăng nhập.');await save();$('lic-password').value='';await check();message('Đăng nhập thành công.')}catch(e){message(e.message,true)}finally{$('lic-login').disabled=$('lic-register').disabled=false}}
+ const DUPLICATE_EMAIL_MESSAGE='Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.';
+ function signupEmailExists(error){
+  return /user_already_exists|email_exists|identity_already_exists|user already registered|email already (registered|exists|in use)|already registered/i.test(String(error?.message||error||''));
+ }
+ async function auth(kind){
+  const email=$('lic-email').value.trim().toLowerCase(),password=$('lic-password').value;
+  if(!email||!password)return message('Nhập email và mật khẩu.',true);
+  $('lic-login').disabled=$('lic-register').disabled=true;
+  try{
+   if(kind==='register'){
+    const signup=await request('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password})},null);
+    // Supabase may return an obfuscated user with no identities instead of an error.
+    if(signup?.user && Array.isArray(signup.user.identities) && signup.user.identities.length===0)
+     return message(DUPLICATE_EMAIL_MESSAGE,true);
+    if(!signup?.access_token)
+     return message('Đã gửi email xác minh (nếu địa chỉ hợp lệ). Vui lòng kiểm tra email rồi trở lại đăng nhập.');
+    session=signup;
+   }else{
+    session=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})},null);
+   }
+   await save();$('lic-password').value='';await check();
+   message(kind==='register'?'Đăng ký và đăng nhập thành công.':'Đăng nhập thành công.');
+  }catch(e){
+   message(kind==='register'&&signupEmailExists(e)?DUPLICATE_EMAIL_MESSAGE:e.message,true);
+  }finally{
+   $('lic-login').disabled=$('lic-register').disabled=false;
+  }
+ }
  async function loadPackages(){try{packages=await rpc('addon_list_packages');$('lic-package-list').innerHTML=packages.map(p=>'<div class="license-package"><div><b>'+p.name+'</b><small>'+p.description+'</small><strong>'+money(p.price_vnd)+'</strong></div><button type="button" data-package="'+p.code+'">Chọn mua</button></div>').join('')||'<small>Hiện chưa có gói mở bán.</small>'}catch(e){message('Không tải được danh sách gói: '+e.message,true)}}
  async function buy(code,btn){btn.disabled=true;message('Đang tạo đơn thanh toán…');try{const d=await authed('/functions/v1/addon-create-order',{method:'POST',body:JSON.stringify({package_code:code})});if(!d.success||!d.payment?.qr_url)throw new Error(d.error||'Không tạo được đơn.');$('lic-qr').src=d.payment.qr_url;$('lic-payment-info').textContent=money(d.payment.amount_vnd)+' · '+d.payment.bank_name+' · '+d.payment.account_name+' · Nội dung: '+d.payment.transfer_content;$('lic-payment').hidden=false;message('Quét QR và chuyển khoản đúng nội dung.');clearInterval(timer);timer=setInterval(async()=>{try{const s=await rpc('addon_my_entitlements');if(s?.packages&&JSON.stringify(s.packages)!==JSON.stringify(license?.packages)){clearInterval(timer);await check();$('lic-payment').hidden=true;message('Thanh toán đã được ghi nhận.')}}catch{}},5000);setTimeout(()=>clearInterval(timer),900000)}catch(e){message(e.message,true)}finally{btn.disabled=false}}
  async function redeemUnlock(){const input=$('lic-unlock-code'),btn=$('lic-unlock-redeem'),code=input.value.trim().toUpperCase();if(!code)return message('Nhập mã unlock.',true);btn.disabled=true;try{const result=await rpc('addon_redeem_package_unlock',{p_code:code});input.value='';await check();message('Đã kích hoạt gói '+result.package_code+' · '+result.quantity+(result.family==='mst'?' MST':' lượt hóa đơn')+(result.expires_at?' · hết hạn '+new Date(result.expires_at).toLocaleDateString('vi-VN'):''));}catch(e){message(e.message,true)}finally{btn.disabled=false}}

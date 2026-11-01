@@ -13,6 +13,7 @@
       <div class="title-row">
         <h1 title="AutoTax - Công cụ tải HĐĐT">AutoTax - Công cụ tải HĐĐT</h1>
         <button id="reconnect" class="icon" title="Kiểm tra lại kết nối" aria-label="Kiểm tra lại kết nối">↻</button>
+        <button id="hideSidepanel" class="icon panel-hide" type="button" title="Ẩn bảng điều khiển (tác vụ vẫn tiếp tục)" aria-label="Ẩn bảng điều khiển">Ẩn</button>
       </div>
       <div class="sub-row">
         <div id="company" class="company" hidden></div>
@@ -150,11 +151,11 @@
           <label class="check" title="Thêm 2 cột vào DS hóa đơn: người bán (mua vào) / người mua (bán ra) có tên trong danh sách công khai người sử dụng hóa đơn không hợp pháp của cổng không (tra gộp, lưu kết quả trên máy)"><input type="checkbox" name="sheet" value="seller" checked />Kiểm tra rủi ro MST</label>
           <label id="gtgtOpt" class="check" title="Tờ khai 01/GTGT điền sẵn từ hóa đơn để đối chiếu – chỉ lập khi chọn trọn 1 tháng hoặc 1 quý"><input type="checkbox" name="sheet" value="gtgt" />Tờ khai 01/GTGT (tham khảo)</label>
           <label class="check" title="Đặt HĐ thay thế/điều chỉnh cạnh HĐ gốc, tô màu chỗ thay đổi"><input type="checkbox" name="sheet" value="adjust" checked />So sánh HĐ thay thế với HĐ gốc</label>
-          <label class="check" title="Ghép SKU với BC_San_Pham và xuất từng hóa đơn mua vào thành một file Excel trong ZIP"><input type="checkbox" name="sheet" value="tendoo" id="tendooSyncCheck" />Đồng bộ mua vào Tendoo</label>
+          <label class="check" title="Xuất ZIP nhập kho cho MISA hoặc Tendoo, cho phép thiếu mã hàng để sửa sau"><input type="checkbox" name="sheet" value="tendoo" id="tendooSyncCheck" />Xuất file nhập kho MISA / Tendoo</label>
         </div>
         <div id="tendooSummary" class="tendoo-summary" hidden>
-          <strong id="tendooSummaryText">Chưa tải dữ liệu SKU.</strong>
-          <button id="tendooConfigureBtn" type="button">Cấu hình SKU / mẫu nhập kho</button>
+          <strong id="tendooSummaryText">Chưa tải danh mục sản phẩm.</strong>
+          <button id="tendooConfigureBtn" type="button">Quản lý file mẫu</button>
         </div>
       </fieldset>
     </section>
@@ -180,28 +181,38 @@
   </footer>
 
   <dialog id="tendooSettingsDialog" class="tendoo-dialog" aria-labelledby="tendooSettingsTitle">
-    <h2 id="tendooSettingsTitle">Đồng bộ mua vào Tendoo</h2>
-    <p>Chọn <strong>BC_San_Pham_*.xlsx</strong> để đọc tên sản phẩm và SKU. Đồng thời chọn <strong>file mẫu nhập kho hóa đơn GTGT</strong> tải trực tiếp từ Tendoo để giữ đúng thứ tự và tên cột.</p>
-    <label for="tendooCatalogFile">1. Báo cáo sản phẩm BC_San_Pham</label>
+    <h2 id="tendooSettingsTitle">Quản lý file mẫu nhập kho</h2>
+    <label for="stockPlatform">1. Chọn phần mềm nhập kho</label>
+    <select id="stockPlatform">
+      <option value="tendoo">Tendoo</option>
+      <option value="misa">MISA eShop</option>
+    </select>
+    <p id="stockTemplateInfo">Tendoo: mẫu nhập kho GTGT 11 cột được tích hợp sẵn. Không cần tải file mẫu.</p>
+    <label for="tendooCatalogFile" id="stockCatalogLabel">2. Tải báo cáo sản phẩm BC_San_Pham_*.xlsx</label>
     <input id="tendooCatalogFile" type="file" accept=".xlsx,.csv">
-    <label for="tendooTemplateFile">2. File mẫu nhập kho hóa đơn GTGT</label>
-    <input id="tendooTemplateFile" type="file" accept=".xlsx">
-    <p id="tendooSetupStatus" class="tendoo-setup-status" role="status">Chưa chọn đủ hai file.</p>
+    <section id="misaStockSettings" hidden>
+      <label for="misaWarehouse">3. Mã kho trên MISA (*)</label>
+      <input id="misaWarehouse" type="text" autocomplete="off" placeholder="Ví dụ: KHO01" maxlength="60">
+      <label for="misaLastDoc">4. Mã chứng từ gần nhất trên phần mềm MISA (*)</label>
+      <input id="misaLastDoc" type="text" autocomplete="off" placeholder="Ví dụ: NK0001" maxlength="50">
+      <small>Nhập đúng mã của chứng từ mới nhất đã có trong MISA. AutoTax sẽ tăng phần số lên 1 cho hóa đơn đầu tiên, rồi tiếp tục tăng theo từng hóa đơn.</small>
+    </section>
+    <p id="tendooSetupStatus" class="tendoo-setup-status" role="status">Hãy tải danh mục sản phẩm để tiếp tục.</p>
     <div class="license-buttons">
       <button id="tendooSettingsApply" type="button" class="primary">Lưu cấu hình</button>
       <button id="tendooSettingsCancel" type="button">Đóng</button>
     </div>
-    <small>Chỉ đọc file cục bộ, không tải danh mục sản phẩm lên Supabase. Chưa xác nhận được mẫu riêng của Tendoo thì không tạo file nhập kho.</small>
+    <small>Chỉ tải danh mục sản phẩm lên giao diện để ánh xạ; không tải mẫu nhập kho lên Supabase. Mẫu MISA/Tendoo có sẵn ngay trong phần mềm. Sản phẩm chưa có mã vẫn được xuất với mã THIẾU MÃ để tự chỉnh.</small>
   </dialog>
   <dialog id="tendooMatchDialog" class="tendoo-dialog" aria-labelledby="tendooMatchTitle">
     <h2 id="tendooMatchTitle">Liên kết sản phẩm chưa khớp SKU</h2>
-    <p>Chọn sản phẩm có sẵn trong BC_San_Pham. Bạn có thể liên kết ngay tại đây hoặc mở trang riêng để xem danh sách rộng hơn.</p>
+    <p>Chọn mã có sẵn trong danh mục MISA/Tendoo. Không tìm thấy thì để trống và tiếp tục: file Excel giữ tên gốc, ghi THIẾU MÃ tại cột mã hàng.</p>
     <button id="tendooOpenMatchTab" type="button" class="tendoo-open-tab">↗ Mở tab riêng để liên kết SKU</button>
     <form id="tendooMatchForm">
       <div id="tendooMissingList" class="tendoo-missing-list"></div>
       <div class="license-buttons">
-        <button id="tendooMatchApply" type="submit" class="primary">Xác nhận liên kết</button>
-        <button id="tendooMatchCancel" type="button">Bỏ qua xuất Tendoo</button>
+        <button id="tendooMatchApply" type="submit" class="primary">Tiếp tục xuất (cho phép THIẾU MÃ)</button>
+        <button id="tendooMatchCancel" type="button">Hủy xuất file nhập kho</button>
       </div>
     </form>
   </dialog>

@@ -37,7 +37,15 @@
       </div>
       <button id="lic-trial-start" type="button">Kích hoạt dùng thử</button>
     </div>
-    <div id="lic-mst-assignments" class="license-entitlements" hidden aria-live="polite"></div>
+    <section id="lic-mst-manager" class="mst-manager" hidden aria-label="Quản lý hồ sơ MST">
+      <div class="mst-manager-head"><strong>Hồ sơ MST</strong><small>Chỉ MST đã thêm mới được tra cứu.</small></div>
+      <form id="lic-mst-add-form" class="mst-profile-add">
+        <input id="lic-mst-add-input" type="text" inputmode="numeric" autocomplete="off" maxlength="14"
+          placeholder="MST 10 / 12 / 13 số" aria-label="Thêm hồ sơ mã số thuế">
+        <button id="lic-mst-add-btn" type="submit">+ Thêm</button>
+      </form>
+      <div id="lic-mst-assignments" class="license-entitlements" aria-live="polite"></div>
+    </section>
     <div id="lic-mode-wrap" class="license-mode" hidden><label for="lic-mode">Chế độ sử dụng</label><select id="lic-mode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><small>Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</small></div>
     <div class="license-status-row"><span id="lic-state" class="lic-state locked">Đang kiểm tra…</span><button id="lic-logout" type="button">Đăng xuất</button></div>
     <div class="license-buttons license-main-actions"><button id="lic-renew" type="button" class="primary">Gia hạn</button><button id="lic-gift-open" type="button" title="Nhập mã quà tặng" aria-haspopup="dialog" aria-controls="lic-unlock-dialog">🎁 Quà tặng</button><button id="lic-password-open" type="button">Đổi mật khẩu</button></div>
@@ -47,15 +55,20 @@
   </div>
   <p id="lic-message" class="lic-message" hidden></p><p class="license-footnote">Quyền và số dư được xác minh trực tuyến. Hồ sơ MST và dữ liệu hóa đơn không bị xóa khi gói hết hạn.</p>
 </section>
+    <div id="mstGuardMessage" class="mst-guard" role="alert" hidden>
+      <strong>MST chưa được cấu hình</strong>
+      <span id="mstGuardReason">MST đang đăng nhập trên cổng Thuế không khớp danh sách hồ sơ MST của tài khoản AutoTax.</span>
+    </div>
 
     <details class="history-card" id="historyCard">
       <summary><span><strong>Theo dõi hóa đơn</strong><small id="historySummary">Đang tải lịch sử cục bộ…</small></span><span class="history-count" id="historyCount">0</span></summary>
       <div class="history-tools">
         <input id="historySearch" type="search" placeholder="Tìm số hóa đơn, MST, tên đơn vị…">
         <select id="historyFilter" aria-label="Lọc trạng thái"><option value="all">Tất cả</option><option value="searched">Đã tra cứu</option><option value="downloaded">Đã tải về</option><option value="notDownloaded">Chưa tải về</option></select>
+        <select id="historyMst" aria-label="Lọc lịch sử theo hồ sơ MST"><option value="">Tất cả MST</option></select>
       </div>
       <div class="history-table-wrap"><table class="history-table"><thead><tr><th>Ngày</th><th>Số / ký hiệu</th><th>Đối tác</th><th>Trạng thái</th></tr></thead><tbody id="historyRows"><tr><td colspan="4">Chưa có lịch sử.</td></tr></tbody></table></div>
-      <div class="history-foot"><span>Lịch sử lưu trên máy này, tối đa 20.000 hóa đơn.</span><button id="historyRefresh" type="button">Làm mới</button><button id="historyExport" type="button">Xuất CSV</button></div>
+      <div class="history-foot"><span>Lịch sử theo từng MST, lưu trên thiết bị này.</span><button id="historyRefresh" type="button">Làm mới</button><button id="historyExport" type="button">Xuất CSV</button></div>
     </details>
 
     <details class="privacy">

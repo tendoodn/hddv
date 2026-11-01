@@ -55,12 +55,14 @@ jobs:
       - name: Bootstrap test-only Supabase Auth
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/000_bootstrap_auth.sql
       - name: Install historical V1/V2 schema in isolated database
+        # Migration 002 revokes a payment function created in 003; the historical
+        # files must be loaded in dependency order for a clean CI fixture.
         run: |
           set -euo pipefail
           for f in \
             addon-portal/supabase/migrations/001_addon_license_portal.sql \
-            addon-portal/supabase/migrations/002_addon_pricing_and_order_creation.sql \
             addon-portal/supabase/migrations/003_sepay_webhook_processing.sql \
+            addon-portal/supabase/migrations/002_addon_pricing_and_order_creation.sql \
             addon-portal/supabase/migrations/004_admin_payment_details.sql \
             addon-portal/supabase/migrations/004_show_queued_renewals.sql \
             docs/sql/admin-gifts-pricing.sql; do

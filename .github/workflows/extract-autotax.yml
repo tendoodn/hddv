@@ -1,0 +1,36 @@
+name: Extract AutoTax source
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/extract-autotax.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract archive
+        run: |
+          python - <<'PY'
+          import zipfile, pathlib
+          z=zipfile.ZipFile('hoa-don-independent-v3.1.0.zip')
+          out=pathlib.Path('autotax-source')
+          out.mkdir(exist_ok=True)
+          z.extractall(out)
+          print('FILES')
+          for p in sorted(out.rglob('*')):
+              if p.is_file(): print(p.as_posix())
+          print('MANIFESTS')
+          for p in out.rglob('manifest.json'):
+              print('---',p,'---')
+              print(p.read_text(encoding='utf-8'))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: autotax-source-extracted
+          path: autotax-source/
+          retention-days: 7

@@ -7,27 +7,36 @@ Thư mục nền tảng web độc lập, phát triển trên nhánh `autotax-we
 - Lưu trữ cục bộ trên trình duyệt; chưa gửi dữ liệu hóa đơn lên máy chủ.
 - Có định hướng tương thích dữ liệu với AutoTax Chrome.
 
-## Chạy thử
-Mở `index.html` bằng trình duyệt hoặc phục vụ thư mục này qua static web server. Không cần build step.
-
-## Chức năng giai đoạn 1
+## Chức năng hiện có
 - Tạo và chuyển đổi hồ sơ MST.
-- Nhập nhiều tệp XML hóa đơn.
-- Phân loại sơ bộ mua vào/bán ra.
-- Chống nhập trùng theo định danh hóa đơn.
-- Tìm kiếm, lọc và xuất CSV.
-- Sao lưu/khôi phục dữ liệu JSON.
-- Lưu dữ liệu bằng localStorage trên thiết bị hiện tại.
+- Nhập nhiều tệp XML.
+- Nhận diện XML theo local-name, không phụ thuộc prefix/namespace.
+- Đọc sơ bộ thông tin người bán, người mua, MST, ký hiệu, số hóa đơn, ngày lập và tổng thanh toán.
+- Phân loại mua vào/bán ra khi MST hồ sơ trùng với MST người mua/người bán; để trạng thái chưa xác định nếu không đủ căn cứ.
+- Chống nhập trùng theo MST hồ sơ + MST người bán + ký hiệu + số hóa đơn + ngày lập.
+- Tìm kiếm, lọc, xuất CSV.
+- Sao lưu/khôi phục dữ liệu JSON và gộp hóa đơn trùng.
+- Lưu bằng localStorage trên trình duyệt hiện tại; thông báo nếu lưu thất bại.
+
+## Kiểm thử cần làm trước khi sử dụng thực tế
+Bộ phân tích hiện là parser nền tảng, chưa được xác nhận với các mẫu XML thực tế từ tài khoản của người dùng. Cần thử tối thiểu:
+1. XML hóa đơn mua vào.
+2. XML hóa đơn bán ra.
+3. Hóa đơn điều chỉnh/thay thế.
+4. Hóa đơn có ngoại tệ hoặc số tiền có phần thập phân.
+5. XML nhiều namespace hoặc cấu trúc từ các nhà cung cấp khác nhau.
+
+Không được dùng kết quả parser làm căn cứ kê khai/đối soát chính thức cho tới khi kiểm thử và đối chiếu với hóa đơn gốc.
 
 ## Giới hạn hiện tại
 - Chưa có kết nối trực tiếp tới cổng hóa đơn điện tử.
-- Chưa đọc tệp ZIP, PDF hoặc bảng kê Excel.
-- XML có nhiều biến thể cấu trúc; bộ phân tích hiện tại là nền tảng ban đầu, cần kiểm thử bằng các mẫu XML thực tế trước khi dùng cho nghiệp vụ.
-- Dữ liệu localStorage chỉ nằm trên trình duyệt và thiết bị đang sử dụng. Xóa dữ liệu trình duyệt có thể làm mất dữ liệu nếu chưa sao lưu.
-- Chưa có đồng bộ dữ liệu tự động với extension. Cần xây dựng bộ chuyển đổi schema và xác định định dạng xuất/nhập ổn định ở giai đoạn tiếp theo.
+- Chưa đọc ZIP, PDF hoặc bảng kê Excel.
+- Một số XML có thể đặt thông tin MST, ngày, số hóa đơn hoặc tổng tiền ở cấu trúc khác; khi đó cần bổ sung mapping.
+- localStorage có dung lượng giới hạn. Lưu XML gốc dài hạn có thể làm đầy bộ nhớ; cần chuyển kho hóa đơn sang IndexedDB trước khi mở rộng quy mô.
+- Dữ liệu chỉ nằm trên trình duyệt và thiết bị đang sử dụng. Xóa dữ liệu trang web/trình duyệt có thể làm mất dữ liệu nếu chưa sao lưu.
 
 ## Tương thích AutoTax Chrome
-Schema chuẩn hóa ban đầu giữ các trường nghiệp vụ phổ biến: `sellerTax`, `buyerTax`, `invoiceNo`, `series`, `date`, `total`, `kind`, `identity`, `rawXml`. Trước khi chốt adapter hai chiều, cần kiểm tra mẫu Excel/JSON thực tế mà extension đang tạo; không nên suy đoán schema từ giao diện.
+AutoTax Chrome hiện dùng các trường dữ liệu nội bộ như `nbmst`, `nbten`, `nmmst`, `nmten`, `khmshdon`, `khhdon`, `shdon`, `tdlap`, `tgtcthue`, `tgtthue`, `tgtphi`, `tgtttbso`, `kind`, `form`, `tthai`, `ttxly`. AutoTax Web đã có schema riêng để lưu các thông tin phổ biến, nhưng chưa có bộ chuyển đổi hai chiều đã kiểm thử. Bước tương thích tiếp theo cần có mẫu tệp xuất thực tế từ extension hoặc một định dạng JSON xuất chính thức được bổ sung vào extension trong một thay đổi riêng.
 
 ## Triển khai GitHub Pages
-Thư mục được thiết kế để phục vụ từ subpath: mọi tài nguyên dùng đường dẫn tương đối (`./styles.css`, `./app.js`). URL thực tế phụ thuộc repository đang được cấu hình làm nguồn GitHub Pages và cấu hình custom domain của Tendoo.
+Tài nguyên dùng đường dẫn tương đối (`./styles.css`, `./app.js`) để hỗ trợ subpath. URL thực tế phụ thuộc cấu hình GitHub Pages và custom domain của Tendoo.

@@ -28,7 +28,7 @@ declare u uuid:=auth.uid(); e text; m text;
 begin
  if u is null then raise exception 'authentication_required'; end if;
  select lower(btrim(email)) into e from auth.users where id=u;
- m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]]','','g'));
+ m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]-]','','g'));
  if e is null or e='' or m='' then raise exception 'trial_identity_required'; end if;
  perform pg_advisory_xact_lock(hashtextextended('trial:'||e,0));
  perform pg_advisory_xact_lock(hashtextextended('trial:'||m,1));
@@ -51,7 +51,7 @@ begin
  if coalesce((select mode from public.addon_usage_modes where user_id=u),'mst')<>'mst' then
   return jsonb_build_object('allowed',false,'reason','mst_mode_not_selected');
  end if;
- m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]]','','g'));
+ m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]-]','','g'));
  if m='' then raise exception 'mst_required'; end if;
  perform pg_advisory_xact_lock(hashtextextended(u::text,0));
  select coalesce(sum(quantity),0)::int into cap from public.addon_package_lots
@@ -110,7 +110,7 @@ begin
    raise exception 'mst_unlink_requires_active_package';
   end if;
  end if;
- m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]]','','g'));
+ m:=upper(regexp_replace(coalesce(p_mst,''),'[[:space:]-]','','g'));
  if m='' then raise exception 'mst_required'; end if;
  perform pg_advisory_xact_lock(hashtextextended(target::text,0));
  delete from public.addon_mst_assignments where user_id=target and mst=m;

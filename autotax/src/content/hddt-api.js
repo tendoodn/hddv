@@ -478,9 +478,22 @@
     return { source: 'detail', json: det, lines: linesFromDetail(det), fees: [], head: headFromDetail(det) };
   }
 
-  // Hóa đơn gốc của 1 HĐ thay thế / điều chỉnh (có thể nằm ngoài khoảng ngày đang tải): cùng nguồn tra cứu,
-  // chưa biết ttxly → thử XML gốc trước, không có thì API chi tiết.
-  const fetchOriginal = (row, shouldStop, onWait) => fetchInvoice({ ...row.gocRef, kind: row.kind, form: row.form, ttxly: null }, shouldStop, onWait);
+  // Hóa đơn gốc có thể thuộc hình thức khác với HĐ thay thế/điều chỉnh.
+  // Thử endpoint của hình thức hiện tại trước, nếu không tìm thấy mới thử endpoint còn lại; khóa MST + mẫu + ký hiệu + số giữ nguyên.
+  async function fetchOriginal(row, shouldStop, onWait) {
+    const forms = [row.form, ...Object.keys(FORMS).filter((form) => form !== row.form)];
+    let lastError;
+    for (const form of forms) {
+      if (shouldStop()) throw new Error(STOPPED);
+      try {
+        return await fetchInvoice({ ...row.gocRef, kind: row.kind, form, ttxly: null }, shouldStop, onWait);
+      } catch (e) {
+        if (shouldStop() || e.status === 401) throw e;
+        lastError = e;
+      }
+    }
+    throw lastError || new Error('Không tìm thấy hóa đơn gốc ở các hình thức tra cứu');
+  }
 
   // Tra cứu hóa đơn gốc (PDF của nhà cung cấp) để người dùng tự tải: { name, link, code } – cột Excel (khi chọn PDF) và chân trang PDF
   function originalLookup(row, head) {

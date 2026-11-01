@@ -85,6 +85,7 @@ function presets() {
     { key: 'lastMonth', label: 'Tháng trước', range: r(new Date(y, m - 1, 1), new Date(y, m, 0)) },
     { key: 'thisQuarter', label: 'Quý này', range: r(new Date(y, q * 3, 1), now) },
     { key: 'lastQuarter', label: 'Quý trước', range: r(new Date(y, (q - 1) * 3, 1), new Date(y, q * 3, 0)) },
+    { key: 'thisYear', label: 'Cả năm', range: r(new Date(y, 0, 1), now) },
   ];
 }
 let activePreset = null;

@@ -54,6 +54,10 @@ $$;
 revoke all on function public.addon_my_order_status(uuid) from public,anon,authenticated;
 grant execute on function public.addon_my_order_status(uuid) to authenticated;
 
+-- pgcrypto lives in extensions on production, including for admin unlock creation.
+alter function public.addon_admin_create_package_unlock(text,timestamptz)
+ set search_path=public,auth,extensions;
+
 -- Allow a subscriber to learn promptly when its OWN order is paid.
 -- Existing RLS policy on addon_orders filters other customers' order rows.
 do $realtime$

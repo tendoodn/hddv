@@ -294,3 +294,18 @@ input.date.bad { border-color:var(--err); }
 .quick-link-copy strong { color:var(--accent-strong); font-size:12.5px; }
 .quick-link-copy span { color:var(--muted); font-size:11px; }
 .quick-link-arrow { flex:none; color:var(--accent-strong); font-size:16px; font-weight:700; }
+\n
+/* AutoTax license card */
+.license-card{margin:10px 0;padding:12px;border:1px solid var(--accent-line);border-radius:var(--radius);background:var(--surface)}
+.license-head,.license-status-row,.license-user{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.license-caption,.license-user span,.license-footnote{color:var(--muted);font-size:11px}.license-refresh{width:28px;height:28px;padding:0;font-size:17px}
+.license-card label{display:block;margin:9px 0 4px;font-size:12px;font-weight:600}
+.license-card input{width:100%;min-width:0;height:34px;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:var(--field);color:var(--fg)}
+.license-buttons{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.license-buttons button{flex:1 1 125px;min-height:34px;height:auto;padding:7px 9px;font-size:12px}.license-buttons button.primary{min-height:34px;height:auto;font-size:12px}
+.license-user{margin-top:10px;font-size:12px}.license-user strong{overflow-wrap:anywhere;text-align:right}
+.lic-state{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:750}.lic-state.active{background:#dcfce7;color:#166534}.lic-state.locked{background:#fee2e2;color:#991b1b}
+.license-status-row{margin-top:10px}.license-status-row button,.license-payment button{height:28px;font-size:11px}
+.license-detail{margin:7px 0 0;color:var(--muted);font-size:11.5px;line-height:1.45}
+.lic-message{margin:9px 0 0;padding:8px;border-radius:7px;background:var(--accent-soft);color:var(--accent-strong);font-size:11.5px;line-height:1.45;overflow-wrap:anywhere}.lic-message.error{background:var(--err-soft);color:var(--err)}
+.license-footnote{margin:9px 0 0;line-height:1.4}.license-payment{margin-top:10px;padding:9px;border:1px dashed var(--accent-line);border-radius:8px;text-align:center}
+.license-payment p{font-size:11px;line-height:1.45;overflow-wrap:anywhere}.license-payment img{display:block;width:min(220px,100%);margin:8px auto;border-radius:8px;border:1px solid var(--line)}

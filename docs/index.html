@@ -91,8 +91,10 @@ async function checkPaymentConfirmation(){
    paymentBaselineEndsAt=license.ends_at;
    await refresh();
    message("dashMsg","🎉 Gia hạn thành công! Gói "+license.plan_code+" đã được cập nhật. Thời hạn mới đến "+date(license.ends_at)+".");
+   return true;
   }
- }catch(e){console.warn("Payment status check failed:",e?.message||e)}
+  return false;
+ }catch(e){console.warn("Payment status check failed:",e?.message||e);return false}
  finally{paymentConfirmationInFlight=false}
 }
 function startPaymentPolling(){
@@ -167,9 +169,8 @@ $("closePaymentBtn").onclick=()=>closePaymentQr();
 $("checkPaymentBtn").onclick=async()=>{
  const btn=$("checkPaymentBtn");btn.disabled=true;
  try{
-  await checkPaymentConfirmation();
-  const {data:license}=await client.rpc("addon_my_license");
-  if(!(license?.active && license.ends_at!==paymentBaselineEndsAt)){message("dashMsg","Chưa nhận được xác nhận thanh toán. Hệ thống sẽ tự kiểm tra lại mỗi 5 giây.");startPaymentPolling();}
+  const confirmed=await checkPaymentConfirmation();
+  if(!confirmed){message("dashMsg","Chưa nhận được xác nhận thanh toán. Hệ thống sẽ tự kiểm tra lại mỗi 5 giây.");startPaymentPolling();}
  }finally{btn.disabled=false}
 };
 

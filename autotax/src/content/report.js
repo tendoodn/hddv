@@ -73,7 +73,8 @@
       return row;
     });
     return {
-      name, columns: [...INVOICE_COLS, ...(withPdf ? PDF_COLS : []), ...(mstCheck ? MST_COLS : [])], totalRow: true,
+      name, columns: [...INVOICE_COLS, ...(withPdf ? PDF_COLS : []), ...(mstCheck ? MST_COLS : [])],
+      boldRows: new Set(totals.map((_, i) => list.length + i)),
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
           String(r.shdon), productCodes(details, r), dateVN(r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte || 'VND',

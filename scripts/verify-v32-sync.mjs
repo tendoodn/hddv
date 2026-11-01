@@ -40,7 +40,8 @@ const migrationNames=[
  '016_admin_customer_v32_snapshot.sql',
  '017_shared_catalog_and_admin_logs.sql',
  '018_remove_legacy_plan_order_dependency.sql',
- '019_bounded_invoice_claims_and_reread_mode.sql'
+ '019_bounded_invoice_claims_and_reread_mode.sql',
+ '020_mst_one_year_collapsible_admin_history.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -67,6 +68,11 @@ const webhook=load('addon-portal/supabase/functions/addon-sepay-webhook/index.ts
 assert(webhook.includes('X-SePay-Signature') && webhook.includes('X-SePay-Timestamp'),
  'Webhook must verify SePay request signatures before payment processing');
 assert(webhook.includes('safeEqual('),'Webhook signature comparison missing');
+const adminHtml=load('docs/admin.html');
+assert(adminHtml.includes('id="packageHistoryBody" class="hidden"'), 'Admin package history must be collapsed by default');
+assert(adminHtml.includes('aria-expanded="false"'), 'History expand button must be accessible');
+assert(adminHtml.includes('Thu gọn lịch sử'), 'Missing history collapse control');
+assert(adminHtml.includes('days=family==="mst"?365:null'), 'MST family must default to 365 days in admin');
 const candidate=load('addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql');
 for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);
 const truncate=candidate.split('truncate table')[1]?.split('restart identity restrict')[0]||'';

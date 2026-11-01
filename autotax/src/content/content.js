@@ -125,7 +125,7 @@ async function assertPackageAccessForMst(mst) {
   }
   return {mode:result.mode||'mst',remaining:null};
 }
-async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly, sheets = {} }, send) {
+async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly, sheets = {}, tendoo = null }, send, linkSku) {
   stopFlag = false;
   const shouldStop = () => stopFlag;
   const profile = await HDDT.getSessionInfo();
@@ -303,6 +303,35 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     for (const note of book.notes || []) send({ type: 'log', level: 'warn', text: note });
     saved++;
   }
+  // Tendoo stock import: one purchase invoice = one Excel in an offline ZIP.
+  // Only create the ZIP after the user links every unknown invoice line to an SKU.
+  if(sheets.tendoo&&formats.excel&&!stopFlag&&!res.stopped){
+    try{
+      if(!tendoo?.products?.length||!tendoo?.template?.headers?.length)
+        throw new Error('Thiếu báo cáo sản phẩm hoặc mẫu nhập kho Tendoo.');
+      const purchases=rows.filter(r=>r.kind==='purchase');
+      if(!purchases.length)throw new Error('Không có hóa đơn mua vào trong khoảng ngày này.');
+      const unknown=TendooImport.missing(purchases,details,tendoo.products);
+      let skuLinks={};
+      if(unknown.length){
+        send({type:'log',level:'warn',text:'Có '+unknown.length+
+          ' tên hàng chưa tồn tại trong BC_San_Pham, cần liên kết SKU.'});
+        const match=await linkSku(unknown);
+        if(match?.cancel)throw new Error('Đã hủy liên kết; không xuất file Tendoo.');
+        skuLinks=match?.mapping||{};
+      }
+      const packageFile=TendooImport.makePackage(purchases,details,tendoo.products,
+        tendoo.template,skuLinks);
+      await save(packageFile.zip,'application/zip',dir+'/Tendoo_NhapKho_'+
+        isoOf(tuNgay)+'_'+isoOf(denNgay)+'.zip');
+      saved++;
+      send({type:'log',level:'ok',text:'Tendoo: đã xuất '+packageFile.count+
+        ' file nhập kho Excel, mỗi hóa đơn một file trong ZIP.'});
+      if(packageFile.skipped)send({type:'log',level:'warn',text:
+        packageFile.skipped+' hóa đơn không có chi tiết hàng, chưa xuất nhập kho.'});
+    }catch(e){errors++;send({type:'log',level:'warn',
+      text:'Không tạo được ZIP nhập kho Tendoo: '+e.message})}
+  }
   send({ type: 'done', total: rows.length, saved, errors, stopped: stopFlag || res.stopped, dir });
 }
 
@@ -317,20 +346,33 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
 });
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== 'job') return;
-  const send = (m) => { try { port.postMessage(m); } catch { /* panel đã đóng – job vẫn chạy tiếp */ } };
-  port.onMessage.addListener(async (msg) => {
-    if (busy) return send({ type: 'log', level: 'warn', text: 'Đang có tác vụ chạy, hãy đợi hoặc bấm Dừng.' });
-    busy = true;
-    try {
-      if (msg.type === 'run') {
-        await runJob(msg, send);
-      }
-    } catch (e) {
-      send({ type: 'error', text: e.message });
-    } finally {
-      busy = false;
-      send({ type: 'idle' });
+  if(port.name!=='job')return;
+  const pending=new Map();
+  const send=m=>{try{port.postMessage(m)}catch{/* Sidepanel closed */}};
+  port.onDisconnect.addListener(()=>{
+    for(const entry of pending.values()){clearTimeout(entry.timeout);entry.reject(new Error('Sidepanel đã đóng khi liên kết SKU.'))}
+    pending.clear();
+  });
+  const linkSku=names=>new Promise((resolve,reject)=>{
+    const requestId='tendoo-map-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+    const timeout=setTimeout(()=>{
+      pending.delete(requestId);reject(new Error('Hết thời gian chọn SKU.'))
+    },180000);
+    pending.set(requestId,{resolve,reject,timeout});
+    send({type:'tendoo-map-request',requestId,names});
+  });
+  port.onMessage.addListener(async msg=>{
+    if(msg.type==='tendoo-map-response'){
+      const task=pending.get(msg.requestId);
+      if(task){clearTimeout(task.timeout);pending.delete(msg.requestId);task.resolve(msg)}
+      return;
     }
+    if(busy)return send({type:'log',level:'warn',
+      text:'Đang có tác vụ chạy, hãy đợi hoặc bấm Dừng.'});
+    busy=true;
+    try{
+      if(msg.type==='run')await runJob(msg,send,linkSku);
+    }catch(e){send({type:'error',text:e.message})}
+    finally{busy=false;send({type:'idle'})}
   });
 });

@@ -1,6 +1,6 @@
 # AutoTax V3.2 — tiến độ dữ liệu dùng chung
 
-**Code: đã đồng bộ source GitHub. Database production: CHƯA chuyển đổi.**
+**Code: đã đồng bộ source GitHub. Database production: người sở hữu xác nhận đã chuyển đổi thành công ngày 01/11/2026 (3 tài khoản, 1 admin, 10 sản phẩm, 0 MST lots). Edge Functions/SePay/Chrome production: chưa xác minh hoặc triển khai thông qua công cụ.**
 
 Các thư mục đều thuộc https://github.com/tendoodn/hddv:
 
@@ -8,7 +8,7 @@ Các thư mục đều thuộc https://github.com/tendoodn/hddv:
 - `docs/admin.html` + `docs/admin-mst.js`: web admin (tài khoản V3.2, giá gói, hạn MST, mã unlock, MST liên kết, nhật ký).
 - `autotax/src/sidepanel/index.html` + `autotax/src/license/license.js`: Chrome Extension (cùng tính năng theo vai trò khách hàng).
 - `autotax/src/content/content.js`: gọi kiểm tra MST, RPC trừ hóa đơn nguyên tử. Bản XML/PDF/Excel giữ trên máy.
-- `addon-portal/supabase/migrations/001`–`018`: logic backend, trừ lượt, gói, dùng thử và bảng admin.
+- `addon-portal/supabase/migrations/001`–`019`: logic backend, trừ lượt, gói, dùng thử và bảng admin.
 
 **Single source of truth:** Supabase project `ucqqjdsoyvvaxswzbhaw`. Không ghi bản sao dữ liệu khách hàng lên GitHub. Mỗi UI lấy dữ liệu mới nhất qua RPC, sau khi đổi gói hoặc ấn Làm mới.
 
@@ -22,11 +22,14 @@ Các thư mục đều thuộc https://github.com/tendoodn/hddv:
 - Web khách hàng không còn phụ thuộc gói thuê bao tháng/năm cũ; admin chuyển sang RPC khách hàng V3.2.
 - `docs/sql/*.sql` được gắn cảnh báo legacy để tránh triển khai nhầm.
 
-## Chưa hoàn tất trước khi yêu cầu SQL production
+## Các việc tiếp theo sau SQL production
 
-1. Kiểm tra phụ thuộc DB ngoài các bảng `addon_*`; tránh `DROP ... CASCADE` tác động ngoài phạm vi.
-2. Xây dựng và kiểm thử kịch bản reset an toàn **bảo toàn cả 3 tài khoản auth và quyền 1 admin**.
-3. Kiểm thử thực tế Supabase/RPC/SePay/Chrome cho trả phí, dùng thử, trừ lượt và quá hạn.
-4. Chỉ sau các bước này mới gửi **bản SQL production nguyên văn trong chat** để người sở hữu dự án tự chạy.
+1. **Không chạy lại** SQL one-time. Sao lưu gốc còn trong `autotax_backup_20261101`.
+2. Chạy `RELEASE_READINESS_V32_READ_ONLY.sql` để xác minh tình trạng gói, backup và số tài khoản.
+3. Admin xác định thời hạn cho 5 gói MST và giá bán trước khi mở checkout.
+4. Triển khai hai Edge Functions và cấu hình Secrets/HMAC SePay; SQL không tự làm việc này.
+5. Kiểm tra mua gói, mã unlock, trừ lượt, đọc lại, log và Chrome extension thật.
 
-**KHÔNG CHẠY** `REBUILD_V32_DRAFT_DO_NOT_RUN.sql`. Các file frontend có thể đã được publish bởi GitHub Pages, nhưng các RPC V3.2 chưa có trên production sẽ chưa hoạt động; cần chạy SQL production trước khi hệ thống mới dùng được hoàn toàn.
+Hướng dẫn browser-only: [AFTER_UPGRADE_V32_BROWSER_DEPLOY.md](./AFTER_UPGRADE_V32_BROWSER_DEPLOY.md).
+
+**Không chạy** `REBUILD_V32_DRAFT_DO_NOT_RUN.sql` hoặc `PRODUCTION_UPGRADE_V32_ONE_TIME.sql` lần nữa.

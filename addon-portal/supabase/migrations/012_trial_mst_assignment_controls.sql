@@ -18,7 +18,9 @@ alter table public.addon_trial_email_registry enable row level security;
 alter table public.addon_trial_mst_registry enable row level security;
 -- No direct table policies. Only SECURITY DEFINER RPCs may access registries.
 
--- A trial issuer MUST call this inside the same transaction as issuing a trial lot.
+-- Reserved for a future trusted trial issuer. A service-role caller needs an explicit
+-- target-user implementation; do NOT expose this auth.uid()-based function as a public RPC.
+-- A trial issuer MUST reserve identity atomically with issuing a trial lot.
 -- Records survive removal of an assignment; neither registry is cascaded on user deletion.
 create or replace function public.addon_reserve_trial_identity(p_mst text)
 returns void language plpgsql security definer set search_path=public,auth as $$
@@ -125,7 +127,8 @@ revoke all on function public.addon_authorize_mst(text) from public,anon;
 revoke all on function public.addon_list_my_mst_assignments() from public,anon;
 revoke all on function public.addon_admin_list_mst_assignments(uuid) from public,anon;
 revoke all on function public.addon_unlink_mst(text,uuid) from public,anon;
-grant execute on function public.addon_reserve_trial_identity(text) to authenticated;
+-- Trial issuance must be a trusted server-side operation; never expose reservation to end users.
+grant execute on function public.addon_reserve_trial_identity(text) to service_role;
 grant execute on function public.addon_authorize_mst(text) to authenticated;
 grant execute on function public.addon_list_my_mst_assignments() to authenticated;
 grant execute on function public.addon_admin_list_mst_assignments(uuid) to authenticated;

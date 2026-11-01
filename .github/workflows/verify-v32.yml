@@ -79,6 +79,14 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$f"
           done
           psql -v ON_ERROR_STOP=1 -f tests/v32/sql/010_seed_old_data.sql
+      - name: Reject production upgrade when no snapshot is present
+        run: |
+          set -euo pipefail
+          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql >/tmp/v32-no-backup.log 2>&1; then
+            echo "ERROR: upgrade succeeded without required snapshot"
+            exit 1
+          fi
+          grep -q "v32_backup_required_missing_manifest" /tmp/v32-no-backup.log
       - name: Verify browser-only legacy snapshot creates 11 safe copies
         run: |
           psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/BACKUP_V32_BROWSER_ONLY.sql
@@ -110,6 +118,7 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$f"
           done
           psql -v ON_ERROR_STOP=1 -f tests/v32/sql/010_seed_old_data.sql
+          psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/BACKUP_V32_BROWSER_ONLY.sql
           psql -v ON_ERROR_STOP=1 -f tests/v32/sql/050_create_external_fk.sql
       - name: Verify dangerous dependency aborts without deleting old records
         run: |

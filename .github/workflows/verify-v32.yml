@@ -69,6 +69,8 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$f"
           done
           psql -v ON_ERROR_STOP=1 -f tests/v32/sql/010_seed_old_data.sql
+      - name: Validate read-only production preflight SQL syntax
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PREDEPLOY_V32_READ_ONLY.sql
       - name: Dry-run V3.2 upgrade against PostgreSQL 16
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql
       - name: Verify entitlements and paid/trial scenarios

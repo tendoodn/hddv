@@ -75,3 +75,36 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/030_assert_v32_upgrade.sql
       - name: Verify additive package lots and independent expiration
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/040_assert_package_lots.sql
+
+      - name: Prepare unrelated-FK rollback scenario in another isolated DB
+        run: |
+          set -euo pipefail
+          createdb autotax_abort_test
+          export PGDATABASE=autotax_abort_test
+          psql -v ON_ERROR_STOP=1 -f tests/v32/sql/000_bootstrap_auth.sql
+          for f in \
+            addon-portal/supabase/migrations/001_addon_license_portal.sql \
+            addon-portal/supabase/migrations/003_sepay_webhook_processing.sql \
+            addon-portal/supabase/migrations/002_addon_pricing_and_order_creation.sql \
+            addon-portal/supabase/migrations/004_admin_payment_details.sql \
+            addon-portal/supabase/migrations/004_show_queued_renewals.sql \
+            docs/sql/admin-gifts-pricing.sql; do
+            psql -v ON_ERROR_STOP=1 -f "$f"
+          done
+          psql -v ON_ERROR_STOP=1 -f tests/v32/sql/010_seed_old_data.sql
+          psql -v ON_ERROR_STOP=1 -f tests/v32/sql/050_create_external_fk.sql
+      - name: Verify dangerous dependency aborts without deleting old records
+        run: |
+          set -euo pipefail
+          export PGDATABASE=autotax_abort_test
+          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql >/tmp/v32-expected-abort.log 2>&1; then
+            cat /tmp/v32-expected-abort.log
+            echo "ERROR: Upgrade unexpectedly succeeded despite unrelated foreign key."
+            exit 1
+          fi
+          if ! grep -qi "cannot truncate a table referenced in a foreign key constraint" /tmp/v32-expected-abort.log; then
+            cat /tmp/v32-expected-abort.log
+            echo "ERROR: Upgrade failed for an unexpected reason."
+            exit 1
+          fi
+          psql -v ON_ERROR_STOP=1 -f tests/v32/sql/060_assert_rollback.sql

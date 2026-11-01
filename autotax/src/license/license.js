@@ -13,7 +13,7 @@
  function money(v){return Number(v||0).toLocaleString('vi-VN')+'đ'}
  function render(){
   if(!$('license-card'))return;
-  const active=!!session?.access_token;
+  const active=!!session?.access_token;const mstPanel=$('lic-mst-assignments');if(mstPanel)mstPanel.hidden=!active||license?.mode!=='mst';
   $('lic-auth').hidden=active;$('lic-account').hidden=!active;$('lic-email-label').textContent=session?.user?.email||'';
   const rows=license?.packages||{},inv=rows.invoice||{},mst=rows.mst||{};
   const invLeft=Number(inv.remaining||0),invBought=Number(inv.purchased||0),mstCount=Number(mst.active_quantity||0);

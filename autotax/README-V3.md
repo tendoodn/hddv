@@ -6,7 +6,7 @@ Chrome Manifest V3 side-panel extension for invoice lookup and download.
 
 AutoTax 3.2 replaces the legacy customer-facing trial/monthly/yearly display with two independent package families:
 
-- Invoice packages (T100, T200, T500, T1000, T5000): purchased quantities accumulate. Server-side remaining and purchased totals are stored. Successful invoice-file ZIP saves trigger a deduction request. Invoice identity is scoped to account + MST + direction + form/template + series + invoice number.
+- Invoice packages (T100, T200, T500, T1000, T5000): purchased quantities accumulate. Server-side remaining and purchased totals are stored. Successful invoice exports (Excel or invoice-file ZIP containing XML/HTML/PDF) trigger a deduction request. The server deduplicates by account + MST + direction + form/template + series + invoice number, so exporting the same invoice again in another format does not consume another quota unit. Invoice identity is scoped to account + MST + direction + form/template + series + invoice number.
 - MST packages (MST1, MST5, MST10, MST20, MST50): each paid order creates a separate entitlement lot. Validity is configurable in days. An MST package cannot be sold until an administrator configures that validity.
 - If both package families exist, the user selects one active mode. The other family remains preserved.
 - Package-specific unlock codes are one-time codes tied to a selected package; redemption grants that exact package lot and cannot be repurposed for another package.

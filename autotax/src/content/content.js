@@ -124,11 +124,13 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     // Cổng chậm: đếm giây ngay trên dòng trạng thái để người dùng biết vẫn đang chờ, không phải treo
     onWait: (w) => send({ type: 'status', text: `${w.label}: ${waitText(w)}${w.slow && !w.rate ? ' (tra máy tính tiền thường chậm, chờ tối đa 90 giây)' : ''}` }) });
   let rows = res.rows;
-  // Trong chế độ gói số tờ, giới hạn số hóa đơn xử lý chi tiết theo số lượt còn lại. Tra cứu/Excel đơn thuần không tiêu hao lượt.
-  if (packageAccess.mode === 'invoice' && (formats.xml || formats.html || formats.pdf)) {
+  // Gói số tờ: mỗi hóa đơn được đọc/xuất thành công (kể cả chỉ xuất Excel) tiêu hao 1 lượt.
+  // Máy chủ lưu khóa duy nhất MST + chiều + mẫu + ký hiệu mẫu + ký hiệu + số HĐ,
+  // nên quét/xuất lại cùng hóa đơn sẽ không trừ lần thứ hai.
+  if (packageAccess.mode === 'invoice') {
     const limit = Math.max(0, packageAccess.remaining || 0);
     if (rows.length > limit) {
-      send({ type:'log', level:'warn', text:`Gói còn ${limit} lượt; chỉ xử lý chi tiết tối đa ${limit} hóa đơn trong lượt chạy này.` });
+      send({ type:'log', level:'warn', text:`Gói còn ${limit} lượt; chỉ xử lý tối đa ${limit} hóa đơn trong lượt chạy này.` });
       rows = rows.slice(0, limit);
     }
   }
@@ -271,6 +273,12 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     const book = Report.buildSheets(rows, details, { withLines: formats.lines, withPdf: formats.pdf, sheets, originals, illegal, tuNgay, denNgay, mst: profile.mst, company: profile.company,
       kinds, adjOnly, skipped: res.skipped || [], stopped: stopFlag || res.stopped });
     await save(Xlsx.buildXlsx(book), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name);
+    // Excel cũng là một lần đọc/xuất hóa đơn. Gửi toàn bộ hóa đơn thực sự có trong bảng kê;
+    // backend dedupe theo MST + định danh hóa đơn nên không trừ trùng với ZIP ở bước trên.
+    if (packageAccess.mode === 'invoice' && rows.length) {
+      const excelKeys = new Set(rows.map(r => invoiceHistoryKey(r, profile.mst)));
+      await recordPackageInvoiceDownloads(rows, profile.mst, excelKeys);
+    }
     // 1 dòng: số sheet + tóm tắt rủi ro (chỉ nêu khi có cảnh báo / lưu ý)
     const risk = book.find((x) => x.summary)?.summary;
     const flags = risk ? [risk.bad && `${risk.bad} hóa đơn bị cảnh báo`, risk.warn && `${risk.warn} hóa đơn cần lưu ý`].filter(Boolean).join(', ') : '';

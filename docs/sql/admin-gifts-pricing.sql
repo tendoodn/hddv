@@ -1,3 +1,7 @@
+-- LEGACY V1/V2 ONLY — KHÔNG CHẠY TRÊN AUTOTAX V3.2.
+-- Đây là SQL của hệ thống thuê bao tháng/năm cũ và có thể ghi đè RPC mới.
+-- Logic V3.2 nằm tại addon-portal/supabase/migrations/; dùng bộ triển khai được duyệt.
+
 -- Tendoo Add-on: admin pricing, one-time gift codes and redemption history.
 -- Run in the dedicated Add-on Supabase project only.
 begin;

@@ -8,7 +8,7 @@ Các thư mục đều thuộc https://github.com/tendoodn/hddv:
 - `docs/admin.html` + `docs/admin-mst.js`: web admin (tài khoản V3.2, giá gói, hạn MST, mã unlock, MST liên kết, nhật ký).
 - `autotax/src/sidepanel/index.html` + `autotax/src/license/license.js`: Chrome Extension (cùng tính năng theo vai trò khách hàng).
 - `autotax/src/content/content.js`: gọi kiểm tra MST, RPC trừ hóa đơn nguyên tử. Bản XML/PDF/Excel giữ trên máy.
-- `addon-portal/supabase/migrations/001`–`017`: logic backend, trừ lượt, gói, dùng thử và bảng admin.
+- `addon-portal/supabase/migrations/001`–`018`: logic backend, trừ lượt, gói, dùng thử và bảng admin.
 
 **Single source of truth:** Supabase project `ucqqjdsoyvvaxswzbhaw`. Không ghi bản sao dữ liệu khách hàng lên GitHub. Mỗi UI lấy dữ liệu mới nhất qua RPC, sau khi đổi gói hoặc ấn Làm mới.
 

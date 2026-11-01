@@ -506,7 +506,7 @@
           const isLine = i >= INFO.length;
           let v = '', base = 'cell';
           if (!isLine) {
-            if (!j) { v = ri ? ri[key] : i === 0 ? (ambiguous ? `Không xác định duy nhất HĐ gốc ${r.goc} (trùng khóa định danh)` : `Chưa có dữ liệu HĐ gốc ${r.goc}`) : ''; if (right?.out) base = 'out'; }
+            if (!j) { v = ri ? ri[key] : i === 0 ? (ambiguous ? `Không xác định duy nhất HĐ gốc ${r.goc} (trùng khóa định danh)` : o?.error ? `Không tải được HĐ gốc ${r.goc}: ${o.error}` : `Chưa có dữ liệu HĐ gốc ${r.goc}`) : ''; if (right?.out) base = 'out'; }
           } else if (pr) { v = pr[key]; if (!pl) base = 'gone'; }
           cells[R0 + i] = { v: v ?? '', s: st(base, type) };
         });

@@ -109,6 +109,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/020_mst_one_year_collapsible_admin_history.sql
       - name: Add secure direct admin package grant RPC
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/021_admin_direct_package_grant.sql
+      - name: Add private server-paginated admin transaction history
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/022_admin_paginated_package_transactions.sql
       - name: Verify production readiness report is readable
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants
@@ -123,6 +125,9 @@ jobs:
 
       - name: Verify manual admin package grants and authorization
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/090_assert_admin_direct_grant.sql
+
+      - name: Verify purchase and admin grant history popup paging
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/100_assert_paged_package_transactions.sql
 
       - name: Prepare unrelated-FK rollback scenario in another isolated DB
         run: |

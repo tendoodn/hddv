@@ -1,0 +1,10 @@
+# AutoTax V3.2 Edge Function authentication
+# User-facing checkout requires a valid Supabase Auth JWT.
+[functions.addon-create-order]
+verify_jwt = true
+
+# SePay does not send Supabase user JWTs. The webhook must pass the
+# HMAC-SHA256 timestamp + raw body verification performed in index.ts.
+# It is unsafe to disable that application-level signature check.
+[functions.addon-sepay-webhook]
+verify_jwt = false

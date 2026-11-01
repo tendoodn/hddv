@@ -19,7 +19,7 @@ function fmt(v){return v?new Date(v).toLocaleString("vi-VN"):"—"}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");if(!session)return;
 const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){await client.auth.signOut();msg("authMsg","Tài khoản này không có quyền quản trị.",true);$("auth").classList.remove("hidden");return}
-$("app").classList.remove("hidden");await Promise.all([loadUsers(),loadPlans(),loadUnlocks(),loadMstAssignments()]);}
+$("app").classList.remove("hidden");await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
 
 async function loadPlans(){const {data,error}=await client.rpc("addon_admin_list_packages");if(error)return msg("msg","Không tải được danh mục gói: "+error.message,true);$("packagePrices").innerHTML=(data||[]).map(p=>'<tr><td><b>'+esc(p.code)+'</b></td><td>'+(p.family==="invoice"?"Hóa đơn":"MST")+'</td><td>'+p.quantity+'</td><td><input type="number" min="0" value="'+p.price_vnd+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td><td><input type="number" min="1" max="3650" value="'+(p.validity_days||"")+'" data-days="'+esc(p.code)+'" '+(p.family==="invoice"?'disabled':'')+' style="width:85px;min-width:0"></td><td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td><td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button><button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button></div></td></tr>').join("")||'<tr><td colspan="7">Chưa có gói.</td></tr>';
 $("unlockPackage").innerHTML=(data||[]).filter(p=>p.active).map(p=>'<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' ('+p.quantity+')</option>').join("");
@@ -29,9 +29,23 @@ $("createPackage").onclick=async()=>{const code=$("newCode").value.trim().toUppe
 async function loadUnlocks(){const {data,error}=await client.rpc("addon_admin_list_package_unlocks");if(error)return msg("msg","Không tải được mã unlock: "+error.message,true);$("unlocks").innerHTML=(data||[]).map(u=>'<tr><td><b>'+esc(u.code)+'</b></td><td>'+esc(u.package_code)+' · '+u.quantity+(u.validity_days?' · '+u.validity_days+' ngày':'')+'</td><td>'+fmt(u.expires_at)+'</td><td>'+(u.redeemed_at?'<span class="pill off">Đã sử dụng</span>':u.active?'<span class="pill">Đang mở</span>':'<span class="pill off">Đã khóa</span>')+(u.redeemed_at?'<div class="sub">'+fmt(u.redeemed_at)+'</div>':'')+'</td><td>'+fmt(u.created_at)+'</td><td>'+(!u.redeemed_at?'<button class="secondary" data-unlock-toggle="'+u.id+'" data-active="'+(!u.active)+'">'+(u.active?'Khóa mã':'Mở lại')+'</button>':'—')+'</td></tr>').join("")||'<tr><td colspan="6">Chưa có mã unlock.</td></tr>'}
 $("createUnlock").onclick=async()=>{const code=$("unlockPackage").value;if(!code)return msg("msg","Chọn gói cần mở khóa.",true);const expiry=$("unlockExpiry").value?new Date($("unlockExpiry").value).toISOString():null;const {data,error}=await client.rpc("addon_admin_create_package_unlock",{p_package_code:code,p_expires_at:expiry});if(error)return msg("msg","Không tạo được mã unlock: "+error.message,true);$("unlockCreated").textContent="Mã unlock: "+data.code+" · Gói "+data.package_code+" · "+data.quantity+(data.family==="mst"?" MST":" lượt hóa đơn");$("unlockCreated").classList.remove("hidden");await loadUnlocks()};
 $("unlocks").onclick=async e=>{const b=e.target.closest("button[data-unlock-toggle]");if(!b)return;b.disabled=true;const {error}=await client.rpc("addon_admin_set_package_unlock_active",{p_id:b.dataset.unlockToggle,p_active:b.dataset.active==="true"});b.disabled=false;if(error)msg("msg","Không cập nhật được mã: "+error.message,true);else msg("msg","Đã cập nhật trạng thái mã unlock.");await loadUnlocks()};
-async function loadUsers(){const {data,error}=await client.rpc("addon_admin_list_users_v32",{p_search:$("search").value.trim()});if(error)return msg("msg","Không tải được danh sách: "+error.message,true);allUsers=data||[];renderUsers();}
+async function loadUsers(){
+ const args={p_search:$("search").value.trim()};
+ let {data,error}=await client.rpc("addon_admin_list_users_v32",args);
+ if(error && (error.code==="PGRST202"||/could not find the function/i.test(error.message||""))){
+  const fallback=await client.rpc("addon_admin_list_users",args);
+  if(!fallback.error){
+   allUsers=(fallback.data||[]).map(u=>({...u,legacy_pending:true}));
+   renderUsers();return;
+  }
+  error=fallback.error;
+ }
+ if(error)return msg("msg","Không tải được danh sách: "+error.message,true);
+ allUsers=data||[];renderUsers();
+}
 function renderUsers(){
  const rows=allUsers.map(u=>{
+  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">Đặt lại mật khẩu</button></td></tr>';
   const invoices='<b>'+Number(u.invoice_remaining||0).toLocaleString('vi-VN')+' / '+Number(u.invoice_purchased||0).toLocaleString('vi-VN')+'</b><div class="sub">Lượt còn lại / đã mua</div>'+(u.can_reread_charged_invoices?'<div class="sub">Được đọc lại hóa đơn đã trừ</div>':'');
   const mstQty=Number(u.mst_capacity||0);
   const mst='<b>'+mstQty+' MST</b><div class="sub">Hạn gần nhất: '+fmt(u.mst_nearest_expiry)+'</div><div class="sub">Hạn xa nhất: '+fmt(u.mst_farthest_expiry)+'</div>';

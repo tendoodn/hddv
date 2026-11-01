@@ -308,7 +308,7 @@ $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
  showMessage("Đã gửi hướng dẫn khôi phục nếu email hợp lệ.",false,"authMessage");
 }));
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
-$("refreshBtn").addEventListener("click",refresh);
+$("refreshBtn").addEventListener("click",()=>{void loadExtensionDownloadLink();void refresh()});
 $("webAddMstForm").addEventListener("submit",async e=>{
  e.preventDefault();const input=$("webAddMst"),mst=input.value.trim().replace(/[ -]/g,"");
  if(!/^(\d{10}|\d{12}|\d{13})$/.test(mst)){showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);return}

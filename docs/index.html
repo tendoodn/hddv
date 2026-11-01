@@ -2,182 +2,92 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tendoo Add-on — Cổng tài khoản</title>
+<title>Tendoo AutoTax V3.2 — Tài khoản và gói sử dụng</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f7fb}
-*{box-sizing:border-box}body{margin:0}.wrap{max-width:980px;margin:auto;padding:32px 18px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
-.brand{font-size:20px;font-weight:800;letter-spacing:.2px}.brand span{color:#2563eb}
-.panel{background:#fff;border:1px solid #e4eaf2;border-radius:18px;padding:24px;box-shadow:0 8px 28px #1e293b0a}
-.hero{margin-bottom:18px}.muted{color:#64748b}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-h1{font-size:28px;margin:8px 0}h2{font-size:18px;margin:0 0 14px}
-label{display:block;font-size:13px;font-weight:650;margin:12px 0 6px}
-input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}
-button{border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer;background:#2563eb;color:white}
-button.secondary{background:#eaf0f9;color:#1e293b}button:disabled{opacity:.5;cursor:not-allowed}
-.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.hidden{display:none!important}
-.plan{border:1px solid #e2e8f0;border-radius:14px;padding:18px}.price{font-size:25px;font-weight:800;margin:8px 0}
-.status{display:inline-block;border-radius:999px;padding:5px 10px;background:#dcfce7;color:#166534;font-size:12px;font-weight:750}
-.notice{padding:12px;border-radius:10px;background:#eff6ff;color:#1e40af;margin-top:14px;white-space:pre-wrap}
-.error{background:#fef2f2;color:#991b1b}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}
-small{font-size:12px}.foot{margin-top:22px;font-size:12px;color:#64748b}
-@media(max-width:560px){.wrap{padding:20px 12px}.panel{padding:18px}h1{font-size:24px}}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
+header,.row,.mst-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header{margin-bottom:24px}.brand{font-size:21px;font-weight:850}.brand span{color:#2563eb}
+h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:16px;margin:10px 0}
+.panel,.plan{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 20px #1e293b09}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.grid .plan{margin:0} .muted,small{color:#64748b}.price{font-size:21px;display:block;margin:12px 0}
+label{font-size:13px;font-weight:650;display:block;margin:12px 0 6px}
+input,select{font:inherit;padding:10px 12px;border-radius:9px;border:1px solid #cbd5e1;max-width:100%;min-width:0}
+input{width:100%}button{border:0;padding:11px 15px;border-radius:9px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button.secondary{background:#eaf0f9;color:#172033}button:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0}
+.notice{margin:12px 0;padding:12px;border-radius:9px;background:#eff6ff;color:#1d4ed8;white-space:pre-wrap}
+.error{background:#fef2f2;color:#991b1b}a{color:#2563eb}
+.mst-row{padding:11px 0;border-bottom:1px solid #e2e8f0}.mst-row small{display:block;margin-top:4px}
+.stat strong{display:block;font-size:23px;margin:8px 0}.stat small{display:block}
+#paymentQr{width:min(100%,270px);border:1px solid #e2e8f0;border-radius:12px}
+footer{padding:16px 0 28px;color:#64748b;font-size:12px}
+[hidden]{display:none!important}
+@media(max-width:540px){.wrap{padding:18px 12px}.panel{padding:14px}h1{font-size:22px}}
 </style>
 </head>
-<body><main class="wrap">
-<header><div class="brand">TENDOO <span>ADD-ON</span></div><small class="muted">Cổng tài khoản tra cứu hóa đơn</small></header>
-<section class="hero"><h1>Quản lý tài khoản Add-on</h1><div class="muted">Đăng nhập, theo dõi thời hạn và quản lý gói sử dụng.</div></section>
-<section id="auth" class="panel">
-<h2 id="authTitle">Đăng nhập</h2>
-<label>Email</label><input id="email" type="email" autocomplete="email" placeholder="email@example.com">
-<label>Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu">
-<div class="actions"><button id="loginBtn">Đăng nhập</button><button id="signupBtn" class="secondary">Tạo tài khoản</button><button id="resetBtn" class="secondary">Quên mật khẩu</button></div>
-<div id="authMsg" class="notice hidden"></div>
+<body>
+<main class="wrap">
+<header>
+  <div class="brand">TENDOO <span>AUTOTAX V3.2</span></div>
+  <div class="actions"><a href="admin.html" id="adminLink" hidden>Quản trị</a><a href="https://github.com/tendoodn/hddv/tree/main/autotax" rel="noopener">Mã nguồn Add-on</a></div>
+</header>
+<h1>Quản lý tài khoản và gói AutoTax</h1>
+<p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
+<section id="authSection" class="panel">
+ <h2>Đăng nhập / tạo tài khoản</h2>
+ <label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="email@example.com">
+ <label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
+ <div class="actions"><button id="loginBtn">Đăng nhập</button><button id="signupBtn" class="secondary">Tạo tài khoản</button><button id="resetBtn" class="secondary">Quên mật khẩu</button></div>
+ <div id="authMessage" class="notice" hidden></div>
 </section>
-<section id="dashboard" class="hidden">
-<div class="panel" style="margin-bottom:14px">
-<div class="row"><div><div class="muted">Tài khoản</div><strong id="userEmail"></strong></div><button id="logoutBtn" class="secondary">Đăng xuất</button></div>
-<div style="margin-top:20px"><div class="muted">Trạng thái gói</div><h1 id="licenseTitle">Đang kiểm tra…</h1><div id="licenseMeta" class="muted"></div></div>
-<div id="trialArea" class="actions hidden"><button id="trialBtn">Kích hoạt dùng thử 7 ngày</button></div>
-<div id="dashMsg" class="notice hidden"></div>
-<div class="panel" style="margin-top:14px"><h2>Đổi mã quà tặng</h2><label>Mã quà tặng</label><input id="giftCode" placeholder="TENDOO-XXXXXXXXXX" autocomplete="off"><div class="actions"><button id="redeemGiftBtn">Đổi mã</button></div><div class="muted" style="font-size:12px;margin-top:8px">Mỗi mã chỉ sử dụng được một lần trên toàn hệ thống.</div></div>
-<div id="paymentArea" class="panel hidden" style="margin-top:14px"><h2>Thanh toán chuyển khoản</h2><div id="paymentInfo" class="notice"></div><div id="qrCountdown" class="notice" style="text-align:center;font-weight:800;color:#92400e;background:#fffbeb">Mã QR tự đóng sau 05:00</div><div style="text-align:center;margin:16px 0"><img id="paymentQr" alt="Mã QR thanh toán" style="max-width:280px;width:100%;border:1px solid #e2e8f0;border-radius:12px"></div><div class="actions"><button id="checkPaymentBtn" class="secondary">Tôi đã chuyển khoản – kiểm tra gói</button><button id="closePaymentBtn" class="secondary">Đóng</button></div><small class="muted">Chỉ chuyển đúng số tiền và nội dung hiển thị. Không sửa nội dung chuyển khoản.</small></div>
-</div>
-<div class="grid">
-<div class="plan"><h2>Gói 1 tháng</h2><div class="price" id="monthlyPrice">20.000đ</div><p class="muted">Gia hạn thêm một tháng lịch.</p><button id="buyMonthlyBtn">Mua gói 1 tháng</button></div>
-<div class="plan"><h2>Gói 1 năm</h2><div class="price" id="yearlyPrice">200.000đ</div><p class="muted">Gia hạn thêm một năm lịch.</p><button id="buyYearlyBtn">Mua gói 1 năm</button></div>
-</div>
-<div id="adminArea" class="panel hidden" style="margin-top:14px">
-<h2>Quản trị cấp gói</h2><p class="muted">Chỉ tài khoản quản trị chính mới được cấp gói. Nhập UUID người dùng lấy từ hệ thống quản trị khi hoàn thiện.</p>
-<label>UUID người dùng</label><input id="targetUser" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-<label>Gói cấp</label><select id="grantPlan" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px"><option value="monthly">1 tháng</option><option value="yearly">1 năm</option></select>
-<div class="actions"><button id="grantBtn">Cấp / gia hạn</button></div>
-<div id="adminMsg" class="notice hidden"></div>
-</div>
+<section id="dashboard" hidden>
+ <div class="panel">
+  <div class="row"><div><small>Tài khoản</small><div><strong id="userEmail"></strong></div></div><div class="actions"><button id="refreshBtn" class="secondary">Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
+  <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
+  <div class="grid">
+   <div class="plan stat"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
+   <div class="plan stat"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
+  </div>
+  <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Theo MST</option><option value="invoice">Theo số lượt hóa đơn</option></select><p class="muted">Hai chế độ không chạy đồng thời; gói còn lại được bảo lưu.</p></div>
+  <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
+ </div>
+ <div id="trialArea" class="panel" hidden>
+  <h2>Dùng thử 7 ngày · 1 MST</h2>
+  <p class="muted">Email và MST chỉ được dùng thử một lần. Tài khoản đã mua gói vẫn được quản lý MST theo hạn mức đã mua.</p>
+  <label for="trialMst">MST muốn dùng thử</label><input id="trialMst" inputmode="numeric" autocomplete="off" placeholder="10 hoặc 13 chữ số">
+  <div class="actions"><button id="trialBtn">Kích hoạt dùng thử</button></div>
+ </div>
+ <div class="panel">
+  <h2>MST đã liên kết</h2><p class="muted">Bạn có thể tự gỡ MST khi còn gói MST hiệu lực. Gói đã hết hạn cần admin hỗ trợ.</p>
+  <div id="mstList"></div>
+ </div>
+ <div class="panel">
+  <h2>Kích hoạt mã unlock</h2><p class="muted">Mỗi mã chỉ sử dụng một lần và cộng đúng quyền theo gói được cấp.</p>
+  <label for="unlockCode">Mã unlock</label><input id="unlockCode" autocomplete="off" placeholder="UNLOCK-...">
+  <div class="actions"><button id="redeemBtn">Kích hoạt</button></div>
+ </div>
+ <div class="panel">
+  <h2>Mua gói mới</h2><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
+  <div id="packageList" class="grid"></div>
+ </div>
+ <div class="panel" id="paymentArea" hidden>
+  <h2>Thanh toán chuyển khoản</h2>
+  <p id="paymentInfo" class="notice"></p><img id="paymentQr" alt="QR thanh toán gói AutoTax">
+  <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
+  <small>Chỉ chuyển khoản đúng số tiền và nội dung. Chuyển khoản chưa tự động đồng nghĩa với kích hoạt thành công.</small>
+ </div>
+ <div class="panel">
+  <h2>Đổi mật khẩu</h2><label for="newPassword">Mật khẩu mới</label>
+  <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+  <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
+ </div>
 </section>
-<section id="passwordRecovery" class="panel hidden" style="margin-top:14px"><h2>Đặt mật khẩu mới</h2><label>Mật khẩu mới</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8"><div class="actions"><button id="saveNewPassword">Lưu mật khẩu mới</button></div><div id="passwordMsg" class="notice hidden"></div></section>
-<div class="foot">Thanh toán chuyển khoản MB Bank qua VietQR. Gói được kích hoạt tự động sau khi SePay xác nhận giao dịch hợp lệ.</div>
+<section id="passwordRecovery" class="panel" hidden><h2>Đặt mật khẩu mới</h2><p class="muted">Nếu bạn vừa mở liên kết khôi phục, đăng nhập bằng liên kết và đổi mật khẩu ở phía trên.</p></section>
+<footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a href="admin.html">Trang quản trị</a>.</footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-/* Configure with credentials from the dedicated Add-on Supabase project only. */
-const SUPABASE_URL = "https://ucqqjdsoyvvaxswzbhaw.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ";
-const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
-const client = configured ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY) : null;
-const $ = id => document.getElementById(id);
-function message(id,text,error=false){const el=$(id);el.textContent=text;el.classList.remove("hidden","error");if(error)el.classList.add("error")}
-function clear(id){$(id).classList.add("hidden")}
-function date(v){return new Date(v).toLocaleString("vi-VN")}
-function money(v){return Number(v).toLocaleString("vi-VN")+"đ"}
-function planName(code){return code==="monthly"?"Gói 1 tháng":code==="yearly"?"Gói 1 năm":String(code||"Gói sử dụng");}
-let paymentPollTimer=null;
-let paymentQrTimeout=null;
-let paymentQrCountdownTimer=null;
-let paymentQrExpiresAt=0;
-let paymentBaselineEndsAt=null;
-let paymentConfirmationInFlight=false;
-function stopPaymentPolling(){if(paymentPollTimer){clearInterval(paymentPollTimer);paymentPollTimer=null}}
-function stopPaymentQrTimeout(){if(paymentQrTimeout){clearTimeout(paymentQrTimeout);paymentQrTimeout=null}if(paymentQrCountdownTimer){clearInterval(paymentQrCountdownTimer);paymentQrCountdownTimer=null}}
-function updatePaymentQrCountdown(){const remaining=Math.max(0,Math.ceil((paymentQrExpiresAt-Date.now())/1000));const mm=String(Math.floor(remaining/60)).padStart(2,"0");const ss=String(remaining%60).padStart(2,"0");$("qrCountdown").textContent=remaining>0?`Mã QR tự đóng sau ${mm}:${ss}`:"Mã QR đã hết thời gian hiển thị.";}
-function closePaymentQr(){stopPaymentQrTimeout();$("paymentArea").classList.add("hidden")}
-async function checkPaymentConfirmation(){
- if(paymentConfirmationInFlight)return;
- paymentConfirmationInFlight=true;
- try{
-  const {data:license,error}=await client.rpc("addon_my_license");
-  if(error)throw error;
-  if(license?.active && license.ends_at && license.ends_at!==paymentBaselineEndsAt){
-   stopPaymentPolling();stopPaymentQrTimeout();$("paymentArea").classList.add("hidden");
-   paymentBaselineEndsAt=license.ends_at;
-   await refresh();
-   message("dashMsg", "🎉 Gia hạn thành công! "+planName(license.plan_code)+" đã được cập nhật. Thời hạn mới đến "+date(license.ends_at)+".");
-   return true;
-  }
-  return false;
- }catch(e){console.warn("Payment status check failed:",e?.message||e);return false}
- finally{paymentConfirmationInFlight=false}
-}
-function startPaymentPolling(){
- stopPaymentPolling();
- paymentPollTimer=setInterval(checkPaymentConfirmation,5000);
-}
-async function refresh(options={}){
- const {data:{session}}=await client.auth.getSession();
- $("auth").classList.toggle("hidden",!!session);$("dashboard").classList.toggle("hidden",!session);
- if(!session)return;
- $("userEmail").textContent=session.user.email||"";
- const {data:plans}=await client.from("addon_plans").select("code,price_vnd").in("code",["monthly","yearly"]);for(const p of plans||[]){if(p.code==="monthly")$("monthlyPrice").textContent=money(p.price_vnd);if(p.code==="yearly")$("yearlyPrice").textContent=money(p.price_vnd)}
- const {data:license,error}=await client.rpc("addon_my_license");
- if(error){$("licenseTitle").textContent="Chưa xác định";message("dashMsg","Không kiểm tra được quyền sử dụng: "+error.message,true);return}
- if(license.active){
-  $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
-  $("licenseMeta").textContent=planName(license.plan_code)+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
-  $("trialArea").classList.add("hidden");
-  // Keep the QR visible until the five-minute display timeout or manual close.
- }else{
-  $("licenseTitle").textContent="Chưa có gói hoạt động";
-  $("licenseMeta").textContent="Tài khoản chưa có gói còn hiệu lực.";
-  const {data:claim,error:claimError}=await client.from("addon_trial_claims").select("id").eq("user_id",session.user.id).maybeSingle();
-  if(claimError){
-   $("trialArea").classList.add("hidden");
-   message("dashMsg","Không kiểm tra được trạng thái dùng thử: "+claimError.message,true);
-  }else{
-   $("trialArea").classList.toggle("hidden",!!claim);
-  }
- }
- const {data:isAdmin}=await client.rpc("addon_is_admin");
- $("adminArea").classList.toggle("hidden",!isAdmin);
-}
-
-$("redeemGiftBtn").onclick=async()=>{const code=$("giftCode").value.trim();if(!code)return message("dashMsg","Vui lòng nhập mã quà tặng.",true);const b=$("redeemGiftBtn");b.disabled=true;const {data,error}=await client.rpc("addon_redeem_gift",{p_code:code});b.disabled=false;if(error){message("dashMsg","Không đổi được mã: "+error.message,true);return}message("dashMsg","Đổi mã thành công! Đã cộng "+data.months+" tháng. Hạn mới: "+date(data.ends_at));$("giftCode").value="";await refresh()};
-$("saveNewPassword").onclick=async()=>{const password=$("newPassword").value;if(password.length<8)return message("passwordMsg","Mật khẩu cần ít nhất 8 ký tự.",true);const {error}=await client.auth.updateUser({password});if(error)message("passwordMsg","Không cập nhật được: "+error.message,true);else{$("passwordRecovery").classList.add("hidden");message("authMsg","Đã cập nhật mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.")}};
-
-$("loginBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else await refresh()};
-$("signupBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình URL và anon key của Supabase riêng.",true);const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error)message("authMsg",error.message,true);else message("authMsg",data.session?"Đăng ký thành công.":"Đã gửi email xác minh. Vui lòng xác minh email rồi đăng nhập.")};
-$("resetBtn").onclick=async()=>{if(!client)return message("authMsg","Chưa cấu hình Supabase.",true);const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.href.split("#")[0]});if(error)message("authMsg",error.message,true);else message("authMsg","Đã gửi hướng dẫn đặt lại mật khẩu nếu email hợp lệ.")};
-$("logoutBtn").onclick=async()=>{stopPaymentPolling();await client.auth.signOut();await refresh()};
-async function createPaymentOrder(planCode){
- clear("dashMsg");
- const button = planCode === "monthly" ? $("buyMonthlyBtn") : $("buyYearlyBtn");
- button.disabled = true;
- try{
-  const {data:before,error:beforeError}=await client.rpc("addon_my_license");
-  if(beforeError)throw beforeError;
-  paymentBaselineEndsAt=before?.ends_at||null;
-  const {data,error}=await client.functions.invoke("addon-create-order",{body:{plan_code:planCode}});
-  if(error || !data?.success) throw new Error(data?.error || error?.message || "Không tạo được đơn hàng.");
-  const p=data.payment;
-  $("paymentInfo").textContent="Số tiền: "+Number(p.amount_vnd).toLocaleString("vi-VN")+" đ\
-Ngân hàng: "+p.bank_name+"\
-Chủ tài khoản: "+p.account_name+"\
-Nội dung chuyển khoản: "+p.transfer_content;
-  $("paymentQr").src=p.qr_url;
-  $("paymentArea").classList.remove("hidden");
-  startPaymentPolling();
-  stopPaymentQrTimeout();
-  paymentQrExpiresAt=Date.now()+300000;
-  updatePaymentQrCountdown();
-  paymentQrCountdownTimer=setInterval(updatePaymentQrCountdown,1000);
-  paymentQrTimeout=setTimeout(()=>{stopPaymentQrTimeout();$("paymentArea").classList.add("hidden");message("dashMsg","Mã QR đã tự đóng sau 5 phút. Hệ thống vẫn tự kiểm tra giao dịch; nếu đã chuyển khoản, gói sẽ được cập nhật khi ngân hàng xác nhận.")},300000);
-  $("paymentArea").scrollIntoView({behavior:"smooth",block:"center"});
- }catch(e){message("dashMsg","Không tạo được đơn hàng: "+(e?.message||"Lỗi không xác định"),true)}
- finally{button.disabled=false}
-}
-$("buyMonthlyBtn").onclick=()=>createPaymentOrder("monthly");
-$("buyYearlyBtn").onclick=()=>createPaymentOrder("yearly");
-$("closePaymentBtn").onclick=()=>closePaymentQr();
-$("checkPaymentBtn").onclick=async()=>{
- const btn=$("checkPaymentBtn");btn.disabled=true;
- try{
-  const confirmed=await checkPaymentConfirmation();
-  if(!confirmed){message("dashMsg","Chưa nhận được xác nhận thanh toán. Hệ thống sẽ tự kiểm tra lại mỗi 5 giây.");startPaymentPolling();}
- }finally{btn.disabled=false}
-};
-
-$("trialBtn").onclick=async()=>{const b=$("trialBtn");b.disabled=true;try{const {error}=await client.rpc("addon_claim_trial");if(error)message("dashMsg",error.message,true);else message("dashMsg","Đã kích hoạt dùng thử 7 ngày.");await refresh()}finally{b.disabled=false}};
-$("grantBtn").onclick=async()=>{const {data,error}=await client.rpc("addon_admin_grant",{p_user_id:$("targetUser").value.trim(),p_plan_code:$("grantPlan").value,p_start_now:true});if(error)message("adminMsg",error.message,true);else message("adminMsg","Đã cấp/gia hạn thành công đến "+date(data.ends_at))};
-if(!configured){message("authMsg","Cần tạo dự án Supabase riêng, chạy migration SQL và điền SUPABASE_URL cùng SUPABASE_ANON_KEY vào tệp này.",true)}
-else{client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")$("passwordRecovery").classList.remove("hidden");setTimeout(refresh,0)});refresh()}
-</script>
-</body></html>
+<script src="./customer.js"></script>
+</body>
+</html>

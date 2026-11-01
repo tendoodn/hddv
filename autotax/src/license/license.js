@@ -75,7 +75,26 @@
    $('lic-login').disabled=$('lic-register').disabled=false;
   }
  }
- async function loadPackages(){try{packages=await rpc('addon_list_packages');$('lic-package-list').innerHTML=packages.map(p=>'<div class="license-package"><div><b>'+p.name+'</b><small>'+p.description+'</small><strong>'+money(p.price_vnd)+'</strong></div><button type="button" data-package="'+p.code+'">Chọn mua</button></div>').join('')||'<small>Hiện chưa có gói mở bán.</small>'}catch(e){message('Không tải được danh sách gói: '+e.message,true)}}
+ async function loadPackages(){
+  try{
+   packages=await rpc('addon_list_packages');
+   const holder=$('lic-package-list');holder.replaceChildren();
+   for(const p of packages||[]){
+    const card=document.createElement('div');card.className='license-package';
+    const details=document.createElement('div');
+    const name=document.createElement('b');name.textContent=p.name||p.code;
+    const description=document.createElement('small');
+    description.textContent=(p.description||'')+(p.family==='mst'?' · '+(p.validity_days?p.validity_days+' ngày':'Chưa cấu hình thời hạn'):'');
+    const price=document.createElement('strong');price.textContent=money(p.price_vnd);
+    details.append(name,description,price);
+    const button=document.createElement('button');button.type='button';button.textContent='Chọn mua';
+    button.dataset.package=p.code;
+    button.disabled=p.family==='mst'&&!p.validity_days;
+    card.append(details,button);holder.append(card);
+   }
+   if(!holder.childElementCount){const empty=document.createElement('small');empty.textContent='Hiện chưa có gói mở bán.';holder.append(empty)}
+  }catch(e){message('Không tải được danh sách gói: '+e.message,true)}
+ }
  async function buy(code,btn){btn.disabled=true;message('Đang tạo đơn thanh toán…');try{const d=await authed('/functions/v1/addon-create-order',{method:'POST',body:JSON.stringify({package_code:code})});if(!d.success||!d.payment?.qr_url)throw new Error(d.error||'Không tạo được đơn.');$('lic-qr').src=d.payment.qr_url;$('lic-payment-info').textContent=money(d.payment.amount_vnd)+' · '+d.payment.bank_name+' · '+d.payment.account_name+' · Nội dung: '+d.payment.transfer_content;$('lic-payment').hidden=false;message('Quét QR và chuyển khoản đúng nội dung.');clearInterval(timer);timer=setInterval(async()=>{try{const s=await rpc('addon_my_entitlements');if(s?.packages&&JSON.stringify(s.packages)!==JSON.stringify(license?.packages)){clearInterval(timer);await check();$('lic-payment').hidden=true;message('Thanh toán đã được ghi nhận.')}}catch{}},5000);setTimeout(()=>clearInterval(timer),900000)}catch(e){message(e.message,true)}finally{btn.disabled=false}}
  async function redeemUnlock(){const input=$('lic-unlock-code'),btn=$('lic-unlock-redeem'),code=input.value.trim().toUpperCase();if(!code)return message('Nhập mã unlock.',true);btn.disabled=true;try{const result=await rpc('addon_redeem_package_unlock',{p_code:code});input.value='';await check();message('Đã kích hoạt gói '+result.package_code+' · '+result.quantity+(result.family==='mst'?' MST':' lượt hóa đơn')+(result.expires_at?' · hết hạn '+new Date(result.expires_at).toLocaleDateString('vi-VN'):''));}catch(e){message(e.message,true)}finally{btn.disabled=false}}
  async function startMstTrial(){

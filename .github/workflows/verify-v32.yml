@@ -113,6 +113,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/022_admin_paginated_package_transactions.sql
       - name: Fix Supabase pgcrypto package-checkout function search path
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/023_fix_package_checkout_pgcrypto_schema.sql
+      - name: Mimic Supabase production pgcrypto installation in extensions schema
+        run: |
+          psql -v ON_ERROR_STOP=1 -c "create schema if not exists extensions"
+          psql -v ON_ERROR_STOP=1 -c "alter extension pgcrypto set schema extensions"
       - name: Add server-timed five-minute QR and private order-status RPC
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/024_five_minute_qr_realtime_order_status.sql
       - name: Verify production readiness report is readable

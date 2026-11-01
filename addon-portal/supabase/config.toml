@@ -1,0 +1,7 @@
+project_id = "ucqqjdsoyvvaxswzbhaw"
+
+[functions.addon-create-order]
+verify_jwt = true
+
+[functions.addon-sepay-webhook]
+verify_jwt = false

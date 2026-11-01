@@ -8,6 +8,11 @@ const PORTAL = 'https://hoadondientu.gdt.gov.vn/*';
 const isPortal = (url) => /^https:\/\/hoadondientu\.gdt\.gov\.vn\//.test(url || '');
 let tabId = null;
 let connected = false;
+let portalMst = '';
+let configuredMsts = [];
+let profilesLoaded = false;
+const normalizeMst = value => String(value || '').replace(/\D/g, '');
+const profileMatches = () => connected && !!portalMst && profilesLoaded && configuredMsts.includes(portalMst);
 let busy = false;
 let stopped = false;
 
@@ -51,6 +56,7 @@ function syncHousehold(info) {
 
 function setConnected(on, info = {}) {
   connected = on;
+  portalMst = on ? normalizeMst(info.mst) : '';
   syncHousehold(on ? info : {});
   const name = on ? [info.mst, info.company].filter(Boolean).join(' – ') : '';
   $('company').hidden = !name; $('company').textContent = name; $('company').title = name;
@@ -240,8 +246,20 @@ function showDone(m) {
 
 // Chưa đăng nhập hoặc đang chạy → khóa nút Tìm kiếm
 function syncRun() {
-  $('run').disabled = busy || !connected || !licenseAllowed;
-  $('run').title = !licenseAllowed ? 'Đăng nhập AutoTax và kích hoạt gói sử dụng' : (connected ? '' : 'Hãy đăng nhập hoadondientu trước');
+  const matched=profileMatches();
+  $('run').disabled = busy || !connected || !licenseAllowed || !matched;
+  const warning=$('mstGuardMessage');
+  const needsProfile=connected && licenseAllowed && !matched;
+  warning.hidden=!needsProfile;
+  if(needsProfile){
+    $('mstGuardReason').textContent=!profilesLoaded?
+      'Chưa tải được danh sách hồ sơ MST. Hãy làm mới gói AutoTax rồi thử lại.':
+      'MST đang đăng nhập cổng Thuế ('+(portalMst||'không xác định')+
+      ') chưa có trong danh sách hồ sơ MST AutoTax. Hãy thêm đúng MST ở trên rồi tìm kiếm lại.';
+  }
+  $('run').title=!licenseAllowed?'Đăng nhập AutoTax và kích hoạt gói sử dụng':
+   !connected?'Hãy đăng nhập hoadondientu trước':
+   !matched?'Chưa cấu hình MST đang đăng nhập trên cổng Thuế':'';
 }
 
 function setBusy(on) {
@@ -256,6 +274,11 @@ async function run() {
   if (busy) return;
   if (!License.canUse()) { log('Tài khoản AutoTax chưa có quyền sử dụng còn hiệu lực. Hãy đăng nhập/kích hoạt tại mục Quản lý bản quyền.', 'warn'); return; }
   if (!tabId || !connected) return init();
+  if (!profileMatches()) {
+    log('Chưa cấu hình MST '+(portalMst||'đang đăng nhập')+
+      ' trong danh sách hồ sơ AutoTax. Thêm MST rồi thử lại.', 'warn');
+    syncRun();return;
+  }
   if (!checkRange()) { $('toText').focus(); return; }
   // Hình thức: hóa đơn điện tử (query, chia tháng) và/hoặc máy tính tiền (sco-query, đoạn 10 ngày + captcha)
   const kinds = checked('kind'), forms = checked('form'), f = formats();
@@ -280,6 +303,11 @@ let licenseAllowed=false;
 function applyLicense(st){licenseAllowed=!!st?.allowed;syncRun()}
 document.addEventListener('autotax-license-change',e=>applyLicense(e.detail?.license));
 document.addEventListener('autotax-license-gate',e=>{licenseAllowed=!!e.detail?.allowed;syncRun()});
+document.addEventListener('autotax-mst-profiles',e=>{
+ configuredMsts=(e.detail?.msts||[]).map(normalizeMst);
+ profilesLoaded=!!e.detail?.userId;
+ syncRun();
+});
 
 const HISTORY_KEY = 'autotax_invoice_history_v1';
 let historyRecords = [];
@@ -287,9 +315,10 @@ const historyDate = value => { if(!value) return ''; const d=new Date(value); re
 function renderHistory() {
   const q=($('historySearch')?.value||'').trim().toLocaleLowerCase('vi');
   const f=$('historyFilter')?.value||'all';
+  const selectedMst=$('historyMst')?.value||'';
   const rows=historyRecords.filter(r=>{
     const text=[r.invoiceNo,r.series,r.template,r.mst,r.sellerTax,r.sellerName,r.buyerTax,r.buyerName].join(' ').toLocaleLowerCase('vi');
-    return (!q||text.includes(q)) && (f==='all'||(f==='searched'&&r.lastSearchedAt)||(f==='downloaded'&&r.downloadedAt)||(f==='notDownloaded'&&!r.downloadedAt));
+    return (!selectedMst||normalizeMst(r.mst)===selectedMst) && (!q||text.includes(q)) && (f==='all'||(f==='searched'&&r.lastSearchedAt)||(f==='downloaded'&&r.downloadedAt)||(f==='notDownloaded'&&!r.downloadedAt));
   }).slice(0,250);
   $('historyCount').textContent=historyRecords.length.toLocaleString('vi-VN');
   $('historySummary').textContent=historyRecords.length ? historyRecords.filter(r=>r.downloadedAt).length+' đã tải · '+historyRecords.filter(r=>r.lastSearchedAt).length+' đã tra cứu' : 'Chưa có dữ liệu lịch sử';
@@ -306,10 +335,18 @@ function renderHistory() {
 async function loadHistory(){
   const data=await chrome.storage.local.get(HISTORY_KEY);
   historyRecords=Object.values(data[HISTORY_KEY]?.records||{}).sort((a,b)=>(b.lastSearchedAt||b.firstSeenAt||'').localeCompare(a.lastSearchedAt||a.firstSeenAt||''));
+  const mstFilter=$('historyMst');
+  const previous=mstFilter.value;
+  const ids=[...new Set(historyRecords.map(r=>normalizeMst(r.mst)).filter(Boolean))].sort();
+  mstFilter.replaceChildren();
+  const all=document.createElement('option');all.value='';all.textContent='Tất cả MST';mstFilter.append(all);
+  for(const mst of ids){const option=document.createElement('option');option.value=mst;option.textContent=mst;mstFilter.append(option)}
+  mstFilter.value=ids.includes(previous)?previous:'';
   renderHistory();
 }
 $('historySearch')?.addEventListener('input',renderHistory);
 $('historyFilter')?.addEventListener('change',renderHistory);
+$('historyMst')?.addEventListener('change',renderHistory);
 $('historyRefresh')?.addEventListener('click',()=>loadHistory().catch(e=>log('Không đọc được lịch sử: '+e.message,'error')));
 $('historyExport')?.addEventListener('click',()=>{
   const cols=['mst','kind','form','date','series','invoiceNo','template','sellerTax','sellerName','buyerTax','buyerName','lastSearchedAt','searchedCount','downloadedAt','downloadedFormats'];

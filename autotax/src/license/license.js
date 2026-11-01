@@ -13,7 +13,7 @@
  function money(v){return Number(v||0).toLocaleString('vi-VN')+'đ'}
  function render(){
   if(!$('license-card'))return;
-  const active=!!session?.access_token;const mstPanel=$('lic-mst-assignments');if(mstPanel)mstPanel.hidden=!active||license?.mode!=='mst';
+  const active=!!session?.access_token;const mstPanel=$('lic-mst-assignments');if(mstPanel)mstPanel.hidden=!active;
   $('lic-auth').hidden=active;$('lic-account').hidden=!active;$('lic-email-label').textContent=session?.user?.email||'';
   const rows=license?.packages||{},inv=rows.invoice||{},mst=rows.mst||{};
   const invLeft=Number(inv.remaining||0),invBought=Number(inv.purchased||0),mstCount=Number(mst.active_quantity||0);
@@ -42,11 +42,11 @@
   card.append(info,value);holder.append(card);
   $('lic-state').textContent=mode==='invoice'&&invLeft===0&&license?.can_reread_charged_invoices?'Hết lượt mới · được đọc lại hóa đơn cũ':license?.allowed?'Đã kích hoạt':'Chưa có quyền sử dụng';
   $('lic-state').className='lic-state '+(license?.allowed?'active':'locked');
-  const trialPanel=$('lic-trial-panel');if(trialPanel)trialPanel.hidden=!active||!!license?.allowed||Number(invBought)>0||mstCount>0;
+  const trialPanel=$('lic-trial-panel');if(trialPanel)trialPanel.hidden=!active||!!license?.allowed||!!license?.ever_had_package||!!license?.trial_used;
   gate();
  }
  async function status(){if(!session?.access_token){license={allowed:false,reason:'Đăng nhập để xem gói sử dụng.'};emit();return license}license=await rpc('addon_my_entitlements');emit();return license}
- async function check(){if(checking)return license;checking=true;try{await status()}catch(e){license={allowed:false,offline:true,reason:e.message};emit();message('Không xác minh được gói: '+e.message,true)}finally{checking=false}render();if(session?.access_token&&license?.mode==='mst')await loadMyMst();return license}
+ async function check(){if(checking)return license;checking=true;try{await status()}catch(e){license={allowed:false,offline:true,reason:e.message};emit();message('Không xác minh được gói: '+e.message,true)}finally{checking=false}render();if(session?.access_token)await loadMyMst();return license}
  const DUPLICATE_EMAIL_MESSAGE='Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.';
  function signupEmailExists(error){
   return /user_already_exists|email_exists|identity_already_exists|user already registered|email already (registered|exists|in use)|already registered/i.test(String(error?.message||error||''));
@@ -92,7 +92,7 @@
   finally{btn.disabled=false}
  }
  function ensureTrialPanel(){
-  if($('lic-trial-start')||!$('lic-entitlements'))return;
+  if($('lic-trial-start')){if(!$('lic-trial-start').dataset.bound){$('lic-trial-start').addEventListener('click',startMstTrial);$('lic-trial-start').dataset.bound='1'}return;}if(!$('lic-entitlements'))return;
   const wrapper=document.createElement('div');wrapper.id='lic-trial-panel';wrapper.className='license-entitlement';
   const content=document.createElement('div');
   const title=document.createElement('b');title.textContent='Dùng thử miễn phí 7 ngày · 1 MST';
@@ -103,7 +103,7 @@
   content.append(title,hint,input);wrapper.append(content,button);
   $('lic-entitlements').insertAdjacentElement('afterend',wrapper);
  }
- async function loadMyMst(){const target=$('lic-mst-assignments');if(!target||!session?.access_token)return;try{const rows=await rpc('addon_list_my_mst_assignments');target.replaceChildren();const title=document.createElement('b');title.textContent='MST đã liên kết';target.append(title);for(const row of rows||[]){const line=document.createElement('div');line.className='license-entitlement';const name=document.createElement('span');name.textContent=row.mst;const button=document.createElement('button');button.type='button';button.textContent='Gỡ MST';button.disabled=!license?.allowed||license?.mode!=='mst';button.title=button.disabled?'Cần gói MST còn hiệu lực để tự gỡ':'Gỡ MST khỏi tài khoản';button.addEventListener('click',async()=>{if(!confirm('Gỡ liên kết MST '+row.mst+'?'))return;button.disabled=true;try{await rpc('addon_unlink_mst',{p_mst:row.mst});message('Đã gỡ MST '+row.mst);await loadMyMst()}catch(e){message(e.message,true);button.disabled=false}});line.append(name,button);target.append(line)}if(!rows?.length){const empty=document.createElement('small');empty.textContent='Chưa có MST liên kết.';target.append(empty)}}catch(e){message('Không tải được MST: '+e.message,true)}}
+ async function loadMyMst(){const target=$('lic-mst-assignments');if(!target||!session?.access_token)return;try{const rows=await rpc('addon_list_my_mst_assignments');target.replaceChildren();const title=document.createElement('b');title.textContent='MST đã liên kết';target.append(title);for(const row of rows||[]){const line=document.createElement('div');line.className='license-entitlement';const name=document.createElement('span');name.textContent=row.mst;const button=document.createElement('button');button.type='button';button.textContent='Gỡ MST';button.disabled=Number(license?.packages?.mst?.active_quantity||0)<=0;button.title=button.disabled?'Cần gói MST còn hiệu lực để tự gỡ':'Gỡ MST khỏi tài khoản';button.addEventListener('click',async()=>{if(!confirm('Gỡ liên kết MST '+row.mst+'?'))return;button.disabled=true;try{await rpc('addon_unlink_mst',{p_mst:row.mst});message('Đã gỡ MST '+row.mst);await loadMyMst()}catch(e){message(e.message,true);button.disabled=false}});line.append(name,button);target.append(line)}if(!rows?.length){const empty=document.createElement('small');empty.textContent='Chưa có MST liên kết.';target.append(empty)}}catch(e){message('Không tải được MST: '+e.message,true)}}
  function ensureMstPanel(){if($('lic-mst-assignments'))return;const anchor=$('lic-entitlements');if(!anchor)return;const panel=document.createElement('div');panel.id='lic-mst-assignments';panel.style.marginTop='12px';anchor.insertAdjacentElement('afterend',panel)}
  async function changePassword(){const current=$('lic-current-password').value,password=$('lic-new-password').value;if(!current)return message('Nhập mật khẩu hiện tại để xác minh.',true);if(password.length<8)return message('Mật khẩu mới cần ít nhất 8 ký tự.',true);if(current===password)return message('Mật khẩu mới phải khác mật khẩu hiện tại.',true);const btn=$('lic-password-save');btn.disabled=true;try{const verified=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:session?.user?.email,password:current})},null);if(!verified?.access_token)throw new Error('Không xác minh được mật khẩu hiện tại.');session=verified;await save();await authed('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})});$('lic-current-password').value='';$('lic-new-password').value='';$('lic-password-box').hidden=true;message('Đã cập nhật mật khẩu.')}catch(e){message(e.message,true)}finally{btn.disabled=false}}
  async function logout(){try{await request('/auth/v1/logout',{method:'POST'})}catch{}session=null;license={allowed:false};await save();clearInterval(timer);render();message('Đã đăng xuất.')}

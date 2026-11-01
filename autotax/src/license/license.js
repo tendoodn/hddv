@@ -1,6 +1,6 @@
 (() => {
  const BASE='https://ucqqjdsoyvvaxswzbhaw.supabase.co',KEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ',STORE='autotax_license_session_v1';
- let session=null,license=null,timer=null,checking=false,packages=[];
+ let session=null,license=null,timer=null,checking=false,packages=[],trialActivationConfirmed=false;
  const $=id=>document.getElementById(id),emit=()=>document.dispatchEvent(new CustomEvent('autotax-license-change',{detail:{license,session}}));
  const headers=token=>({apikey:KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})});
  async function request(path,options={},token=session?.access_token){const res=await fetch(BASE+path,{...options,headers:{...headers(token),...(options.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.msg||data.message||data.error_description||data.error||'Máy chủ trả về lỗi '+res.status);return data}
@@ -42,7 +42,7 @@
   card.append(info,value);holder.append(card);
   $('lic-state').textContent=mode==='invoice'&&invLeft===0&&license?.can_reread_charged_invoices?'Hết lượt mới · được đọc lại hóa đơn cũ':license?.allowed?'Đã kích hoạt':'Chưa có quyền sử dụng';
   $('lic-state').className='lic-state '+(license?.allowed?'active':'locked');
-  const trialPanel=$('lic-trial-panel');if(trialPanel)trialPanel.hidden=!active||!!license?.allowed||!!license?.ever_had_package||!!license?.trial_used;
+  const trialPanel=$('lic-trial-panel');if(trialPanel)trialPanel.hidden=!active||!!license?.allowed||!!license?.ever_had_package||!!license?.trial_used||trialActivationConfirmed;
   gate();
  }
  async function status(){if(!session?.access_token){license={allowed:false,reason:'Đăng nhập để xem gói sử dụng.'};emit();return license}license=await rpc('addon_my_entitlements');emit();return license}
@@ -96,15 +96,32 @@
   }catch(e){message('Không tải được danh sách gói: '+e.message,true)}
  }
  async function buy(code,btn){btn.disabled=true;message('Đang tạo đơn thanh toán…');try{const d=await authed('/functions/v1/addon-create-order',{method:'POST',body:JSON.stringify({package_code:code})});if(!d.success||!d.payment?.qr_url)throw new Error(d.error||'Không tạo được đơn.');$('lic-qr').src=d.payment.qr_url;$('lic-payment-info').textContent=money(d.payment.amount_vnd)+' · '+d.payment.bank_name+' · '+d.payment.account_name+' · Nội dung: '+d.payment.transfer_content;$('lic-payment').hidden=false;message('Quét QR và chuyển khoản đúng nội dung.');clearInterval(timer);timer=setInterval(async()=>{try{const s=await rpc('addon_my_entitlements');if(s?.packages&&JSON.stringify(s.packages)!==JSON.stringify(license?.packages)){clearInterval(timer);await check();$('lic-payment').hidden=true;message('Thanh toán đã được ghi nhận.')}}catch{}},5000);setTimeout(()=>clearInterval(timer),900000)}catch(e){message(e.message,true)}finally{btn.disabled=false}}
- async function redeemUnlock(){const input=$('lic-unlock-code'),btn=$('lic-unlock-redeem'),code=input.value.trim().toUpperCase();if(!code)return message('Nhập mã unlock.',true);btn.disabled=true;try{const result=await rpc('addon_redeem_package_unlock',{p_code:code});input.value='';await check();message('Đã kích hoạt gói '+result.package_code+' · '+result.quantity+(result.family==='mst'?' MST':' lượt hóa đơn')+(result.expires_at?' · hết hạn '+new Date(result.expires_at).toLocaleDateString('vi-VN'):''));}catch(e){message(e.message,true)}finally{btn.disabled=false}}
+ async function redeemUnlock(){
+  const input=$('lic-unlock-code'),btn=$('lic-unlock-redeem'),code=input.value.trim().toUpperCase();
+  if(!code){message('Nhập mã quà tặng.',true);input.focus();return}
+  btn.disabled=true;
+  try{
+   const result=await rpc('addon_redeem_package_unlock',{p_code:code});
+   input.value='';
+   const dialog=$('lic-unlock-dialog');
+   if(dialog.open)dialog.close();
+   await check();
+   message('Đã kích hoạt gói '+result.package_code+' · '+result.quantity+
+     (result.family==='mst'?' MST':' lượt hóa đơn')+
+     (result.expires_at?' · hết hạn '+new Date(result.expires_at).toLocaleDateString('vi-VN'):''));
+  }catch(e){message('Mã quà tặng không hợp lệ: '+e.message,true)}
+  finally{btn.disabled=false}
+ }
  async function startMstTrial(){
   const input=$('lic-trial-mst'),btn=$('lic-trial-start');
-  const mst=(input?.value||'').trim();
-  if(!/^[0-9]{10}(-?[0-9]{3})?$/.test(mst))return message('Nhập MST 10 hoặc 13 chữ số hợp lệ.',true);
+  const mst=(input?.value||'').trim().replace(/[ -]/g,'');
+  if(!/^[0-9]{10}([0-9]{2})?$/.test(mst))return message('Nhập MST 10 hoặc 12 chữ số hợp lệ.',true);
   btn.disabled=true;
   try{
    const result=await rpc('addon_start_mst_trial',{p_mst:mst});
    input.value='';
+   trialActivationConfirmed=true;
+   $('lic-trial-panel').hidden=true;
    await check();
    message('Đã kích hoạt dùng thử MST '+result.mst+' đến '+new Date(result.expires_at).toLocaleDateString('vi-VN')+'.');
   }catch(e){message('Không kích hoạt được dùng thử: '+e.message,true)}
@@ -116,7 +133,7 @@
   const content=document.createElement('div');
   const title=document.createElement('b');title.textContent='Dùng thử miễn phí 7 ngày · 1 MST';
   const hint=document.createElement('small');hint.textContent='Mỗi email và MST chỉ được dùng thử một lần. Gói trả phí không bị giới hạn trùng MST.';
-  const input=document.createElement('input');input.id='lic-trial-mst';input.placeholder='Nhập mã số thuế';input.inputMode='numeric';input.maxLength=14;
+  const input=document.createElement('input');input.id='lic-trial-mst';input.placeholder='Nhập MST 10 hoặc 12 chữ số';input.inputMode='numeric';input.maxLength=13;
   const button=document.createElement('button');button.id='lic-trial-start';button.type='button';button.textContent='Kích hoạt dùng thử';
   button.addEventListener('click',startMstTrial);
   content.append(title,hint,input);wrapper.append(content,button);
@@ -127,6 +144,12 @@
  async function changePassword(){const current=$('lic-current-password').value,password=$('lic-new-password').value;if(!current)return message('Nhập mật khẩu hiện tại để xác minh.',true);if(password.length<8)return message('Mật khẩu mới cần ít nhất 8 ký tự.',true);if(current===password)return message('Mật khẩu mới phải khác mật khẩu hiện tại.',true);const btn=$('lic-password-save');btn.disabled=true;try{const verified=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:session?.user?.email,password:current})},null);if(!verified?.access_token)throw new Error('Không xác minh được mật khẩu hiện tại.');session=verified;await save();await authed('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})});$('lic-current-password').value='';$('lic-new-password').value='';$('lic-password-box').hidden=true;message('Đã cập nhật mật khẩu.')}catch(e){message(e.message,true)}finally{btn.disabled=false}}
  async function logout(){try{await request('/auth/v1/logout',{method:'POST'})}catch{}session=null;license={allowed:false};await save();clearInterval(timer);render();message('Đã đăng xuất.')}
  async function init(){ensureTrialPanel();ensureMstPanel();const stored=await chrome.storage.local.get(STORE);session=stored[STORE]||null;if(session?.expires_at&&session.expires_at*1000<Date.now()+60000)await refreshToken();await check();setInterval(check,60000)}
- document.addEventListener('DOMContentLoaded',()=>{$('lic-login').addEventListener('click',()=>auth('login'));$('lic-register').addEventListener('click',()=>auth('register'));$('lic-logout').addEventListener('click',logout);$('lic-refresh').addEventListener('click',check);$('lic-renew').addEventListener('click',()=>{$('lic-packages').hidden=!$('lic-packages').hidden});$('lic-packages-close').addEventListener('click',()=>$('lic-packages').hidden=true);$('lic-package-list').addEventListener('click',e=>{const b=e.target.closest('[data-package]');if(b)buy(b.dataset.package,b)});$('lic-unlock-redeem').addEventListener('click',redeemUnlock);$('lic-unlock-code').addEventListener('keydown',e=>{if(e.key==='Enter')redeemUnlock()});$('lic-password-open').addEventListener('click',()=>$('lic-password-box').hidden=!$('lic-password-box').hidden);$('lic-password-save').addEventListener('click',changePassword);$('lic-mode').addEventListener('change',async e=>{try{await rpc('addon_set_usage_mode',{p_mode:e.target.value});license.mode=e.target.value;await check();message('Đã đổi chế độ.')}catch(err){message(err.message,true);e.target.value=license?.mode||'mst'}});$('lic-close-qr').addEventListener('click',()=>{$('lic-payment').hidden=true;clearInterval(timer)});init().catch(e=>message(e.message,true))});
+ document.addEventListener('DOMContentLoaded',()=>{$('lic-login').addEventListener('click',()=>auth('login'));$('lic-register').addEventListener('click',()=>auth('register'));$('lic-logout').addEventListener('click',logout);$('lic-refresh').addEventListener('click',check);$('lic-renew').addEventListener('click',()=>{$('lic-packages').hidden=!$('lic-packages').hidden});$('lic-packages-close').addEventListener('click',()=>$('lic-packages').hidden=true);$('lic-package-list').addEventListener('click',e=>{const b=e.target.closest('[data-package]');if(b)buy(b.dataset.package,b)});$('lic-gift-open').addEventListener('click',()=>{
+  const dialog=$('lic-unlock-dialog');
+  if(!dialog.open)dialog.showModal();
+  $('lic-unlock-code').focus();
+ });
+ $('lic-unlock-close').addEventListener('click',()=>$('lic-unlock-dialog').close());
+ $('lic-unlock-form').addEventListener('submit',e=>{e.preventDefault();void redeemUnlock()});$('lic-password-open').addEventListener('click',()=>$('lic-password-box').hidden=!$('lic-password-box').hidden);$('lic-password-save').addEventListener('click',changePassword);$('lic-mode').addEventListener('change',async e=>{try{await rpc('addon_set_usage_mode',{p_mode:e.target.value});license.mode=e.target.value;await check();message('Đã đổi chế độ.')}catch(err){message(err.message,true);e.target.value=license?.mode||'mst'}});$('lic-close-qr').addEventListener('click',()=>{$('lic-payment').hidden=true;clearInterval(timer)});init().catch(e=>message(e.message,true))});
  globalThis.License={status,check,canUse:()=>!!license?.allowed,getState:()=>license};
 })();

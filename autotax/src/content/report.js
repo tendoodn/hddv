@@ -32,7 +32,7 @@
   const INVOICE_COLS = [
     { header: 'STT', width: 6, type: N }, { header: 'Loại', width: 9 }, { header: 'Hình thức', width: 15 },
     { header: 'Kết quả kiểm tra', width: 22 }, { header: 'Mẫu số', width: 8 }, { header: 'Ký hiệu', width: 10 },
-    { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Ngày lập', width: 11 },
+    { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Mã hàng hóa', width: 24 }, { header: 'Ngày lập', width: 11 },
     { header: 'MST người bán', width: 15, type: T }, { header: 'Tên người bán', width: 40 },
     { header: 'MST người mua', width: 15, type: T }, { header: 'Tên người mua', width: 40 },
     { header: 'Tiền chưa thuế', width: 16, type: N }, { header: 'Tiền thuế', width: 14, type: N },
@@ -46,6 +46,12 @@
   const PDF_COLS = [{ header: 'Link tra cứu HĐ gốc', width: 30 }];
   // Thông tin chỉ có khi đã tải chi tiết (XML): ngày ký số, hình thức thanh toán, mã + link tra cứu của nhà cung cấp
   const headOf = (details, r) => details.get(r.key)?.head || null;
+  // Một hóa đơn có thể có nhiều mã hàng: lấy mã từ XML/JSON chi tiết, bỏ trùng và ghép trong cùng ô.
+  const productCodes = (details, r) => {
+    const lines = details.get(r.key)?.lines || [];
+    const codes = [...new Set(lines.map((line) => String(line.ma || '').trim()).filter(Boolean))];
+    return codes.join('; ').slice(0, 32767);
+  };
   const signDate = (h) => (h?.seller?.time ? dateVN(h.seller.time) : '');
   const xmlState = (details, r) => {
     const d = details.get(r.key);
@@ -62,7 +68,7 @@
     const totals = currencies.map((currency) => {
       const group = list.filter(({ r }) => (r.dvtte || 'VND') === currency);
       const sum = (k) => total(group, (x) => x.m[k]);
-      const row = ['', currencies.length > 1 ? `Tổng (${currency})` : 'Tổng', '', '', '', '', '', '', '', '', '', '',
+      const row = ['', currencies.length > 1 ? `Tổng (${currency})` : 'Tổng', '', '', '', '', '', '', '', '', '', '', '',
         sum('cthue'), sum('thue'), sum('phi'), sum('tong'), currency];
       return row;
     });
@@ -70,7 +76,7 @@
       name, columns: [...INVOICE_COLS, ...(withPdf ? PDF_COLS : []), ...(mstCheck ? MST_COLS : [])], totalRow: true,
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
-          String(r.shdon), dateVN(r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte || 'VND',
+          String(r.shdon), productCodes(details, r), dateVN(r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte || 'VND',
           r.dvtte && r.dvtte !== 'VND' ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
           ...((o) => [o.name, o.code, ...(withPdf ? [linkCell(o)] : [])])(HDDT.originalLookup(r, headOf(details, r))),

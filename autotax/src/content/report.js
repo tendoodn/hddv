@@ -131,35 +131,40 @@
   const withLinesOf = (details, r) => { const d = details.get(r.key); return d?.lines ? d : null; };
 
   function linesSheet(rows, details) {
-    const out = [];
-    let sThtien = 0, sThue = 0;
+    const out = [], sums = new Map();
     for (const r of sorted(rows)) {
       const d = withLinesOf(details, r);
       if (!d) continue;
-      const [mst, ten] = partner(r);
+      const [mst, ten] = partner(r), currency = String(r.dvtte || 'VND').trim().toUpperCase() || 'VND';
+      if (!sums.has(currency)) sums.set(currency, { amount: 0, tax: 0 });
+      const sum = sums.get(currency);
       for (const l of invoiceLines(r, d)) {
-        // Tiền thuế làm tròn đồng (hóa đơn có thể ghi lẻ, vd 1.755.555,56); thuế suất ghi số % để Excel tính được
+        // Không cộng gộp giá trị của các loại tiền tệ khác nhau.
         const p = pctOf(l.tsuat), thue = l.tthue === null ? null : roundVND(l.tthue);
         out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), dateVN(r.tdlap), mst, ten,
-          l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue]);
-        sThtien += l.thtien || 0; sThue += thue || 0;
+          l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue, currency]);
+        sum.amount += l.thtien || 0; sum.tax += thue || 0;
       }
     }
-    out.push(['', 'Tổng', '', '', '', '', '', '', '', '', '', '', '', '', round2(sThtien), '', round2(sThue)]);
+    const boldRows = new Set(), currencies = sums.size ? [...sums.keys()].sort() : ['VND'];
+    for (const currency of currencies) {
+      const sum = sums.get(currency) || { amount: 0, tax: 0 };
+      boldRows.add(out.length);
+      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency]);
+    }
     return {
-      name: 'Chi tiết sản phẩm', totalRow: true,
+      name: 'Chi tiết sản phẩm', boldRows,
       columns: [
         { header: 'STT', width: 6, type: N }, { header: 'Loại', width: 9 }, { header: 'Mẫu số', width: 8 }, { header: 'Ký hiệu', width: 10 },
         { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Ngày lập', width: 11 }, { header: 'MST đối tác', width: 15, type: T },
         { header: 'Tên đối tác', width: 36 }, { header: 'Tính chất', width: 18 }, { header: 'Tên hàng hóa, dịch vụ', width: 48 },
         { header: 'ĐVT', width: 9 }, { header: 'Số lượng', width: 11, type: D }, { header: 'Đơn giá', width: 14, type: D },
         { header: 'Chiết khấu', width: 12, type: N }, { header: 'Thành tiền', width: 16, type: N }, { header: 'Thuế suất', width: 10, type: P },
-        { header: 'Tiền thuế', width: 14, type: N },
+        { header: 'Tiền thuế', width: 14, type: N }, { header: 'Tiền tệ', width: 9 },
       ],
       rows: out,
     };
   }
-
   const KXD = 'Không xác định';
   // Hóa đơn không có bảng thuế suất (thttltsuat) nhưng có tiền thuế → suy ra thuế suất từ tỷ lệ thuế / chưa thuế
   function guessRate(m) {

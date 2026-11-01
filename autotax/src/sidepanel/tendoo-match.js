@@ -5,7 +5,7 @@
   const $=id=>document.getElementById(id);
   const requestId=new URLSearchParams(location.search).get('rid')||'';
   const sessionKey='autotax-tendoo-request-'+requestId;
-  let entries=[],products=[];
+  let entries=[],products=[],portalTabId=null;
   const choices=new Map();
   const norm=value=>TendooImport.normalize(value);
   function status(message,error=true){
@@ -13,7 +13,7 @@
     $('status').style.color=error?'#b91c1c':'#15803d';
   }
   function updateProgress(){
-    $('progress').textContent=choices.size+' / '+entries.length+' đã liên kết';
+    $('progress').textContent=choices.size+' / '+entries.length+' đã liên kết · '+(entries.length-choices.size)+' sẽ ghi THIẾU MÃ';
     $('save').disabled=!entries.length;
   }
   function optionFor(product,onPick){
@@ -41,7 +41,7 @@
     search.placeholder='Gõ tên, model hoặc SKU để tìm...';search.autocomplete='off';
     const results=document.createElement('div');results.className='results';
     const selected=document.createElement('div');selected.className='selection';
-    selected.textContent='Chưa chọn SKU';
+    selected.textContent='Chưa liên kết · sẽ ghi THIẾU MÃ';
     const choose=product=>{
       choices.set(entry.key,product.sku);
       search.value=product.name+' · '+product.sku;
@@ -55,14 +55,14 @@
       for(const p of matched)results.append(optionFor(p,choose));
       if(!matched.length){
         const empty=document.createElement('small');
-        empty.textContent='Không tìm thấy sản phẩm; thử từ khóa khác hoặc SKU.';
+        empty.textContent='Không tìm thấy: có thể bỏ qua, Excel sẽ ghi THIẾU MÃ.';
         results.append(empty);
       }
     }
     search.addEventListener('focus',()=>filter(search.value));
     search.addEventListener('input',()=>{
       choices.delete(entry.key);selected.classList.remove('ok');
-      selected.textContent='Chưa chọn SKU';updateProgress();filter(search.value);
+      selected.textContent='Chưa liên kết · sẽ ghi THIẾU MÃ';updateProgress();filter(search.value);
     });
     search.addEventListener('keydown',e=>{
       if(e.key==='Enter'){e.preventDefault();results.querySelector('button')?.click()}
@@ -76,7 +76,7 @@
     const saved=await chrome.storage.session.get(sessionKey);
     const payload=saved[sessionKey];
     if(!payload||!Array.isArray(payload.names)||!Array.isArray(payload.products))throw Error('Phiên liên kết đã hết hạn. Vui lòng mở lại từ sidepanel AutoTax.');
-    entries=payload.names;products=payload.products;
+    entries=payload.names;products=payload.products;portalTabId=payload.portalTabId;
     if(!products.length||!entries.length)throw Error('Không có sản phẩm cần liên kết.');
     $('overview').textContent=entries.length+' tên hàng chưa khớp · '+products.length+' SKU có trong danh mục';
     for(const [index,entry] of entries.entries())addRow(entry,index);
@@ -84,18 +84,13 @@
   }
   $('linkForm').addEventListener('submit',async event=>{
     event.preventDefault();
-    if(choices.size!==entries.length){
-      status('Vui lòng liên kết tất cả '+entries.length+' tên hàng trước khi xuất ZIP.');
-      $('rows').querySelectorAll('.pair')[entries.findIndex(e=>!choices.has(e.key))]?.querySelector('input')?.focus();
-      return;
-    }
     const mapping=Object.fromEntries(choices);
     $('save').disabled=true;status('Đang gửi kết quả liên kết...',false);
     try{
-      const answer=await chrome.runtime.sendMessage({type:'tendoo-tab-mapping',requestId,mapping});
-      if(!answer?.ok)throw Error(answer?.error||'Không tìm thấy sidepanel đang chờ. Hãy giữ sidepanel AutoTax mở khi liên kết.');
+      const answer=await chrome.runtime.sendMessage({type:'stock-tab-mapping',portalTabId,requestId,mapping});
+      if(!answer?.ok)throw Error(answer?.error||'Trang hóa đơn đã đóng hoặc phiên liên kết hết hạn.');
       await chrome.storage.session.remove(sessionKey);
-      status('Đã liên kết. Tiếp tục tải ZIP trong AutoTax.',false);
+      status('Đã lưu các mã đã chọn. Những mã còn thiếu sẽ được đánh dấu THIẾU MÃ.',false);
       const tab=await chrome.tabs.getCurrent();
       if(tab?.id)await chrome.tabs.remove(tab.id);
     }catch(error){status(error.message);$('save').disabled=false}

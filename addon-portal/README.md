@@ -34,7 +34,7 @@ Không đồng bộ trạng thái bằng localStorage hoặc bằng bản sao JS
 - **Chưa triển khai SQL V3.2 trên Supabase production.** REBUILD_V32_DRAFT_DO_NOT_RUN.sql là bản nháp không được chạy.
 - Dữ liệu đăng nhập auth.users và quyền addon_admins phải được bảo toàn.
 - Các file docs/sql/*.sql là mã legacy của gói tháng/năm. **Không chạy cho V3.2.**
-- Migration 001–004 còn phụ thuộc lược đồ cũ. Migration 005–017 là các cập nhật V3.2. Chưa có một lệnh reset an toàn đã được kiểm thử.
+- Migration 001–004 còn phụ thuộc lược đồ cũ. Migration 005–018 là các cập nhật V3.2. Chưa có một lệnh reset an toàn đã được kiểm thử.
 - Không được lưu Supabase service-role key, secret SePay hay mật khẩu trong GitHub.
 - Việc cập nhật mã nguồn GitHub Pages không tự cập nhật extension đã cài; người dùng phải cài/cập nhật phiên bản extension mới.
 

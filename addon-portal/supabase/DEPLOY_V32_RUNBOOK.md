@@ -52,6 +52,26 @@ GitHub Actions đã kiểm tra V3.2 dưới cả role `authenticated` và `anon`
 
 All tests run on isolated mock databases. They **do not** prove compatibility with unknown external dependencies or live providers.
 
+## Supabase Edge Functions và SePay (bắt buộc sau SQL)
+
+Mã nguồn đã có `addon-portal/supabase/config.toml`:
+
+- `addon-create-order`: `verify_jwt = true`, người mua phải đăng nhập Supabase.
+- `addon-sepay-webhook`: `verify_jwt = false`, vì SePay không gửi Supabase JWT; thay vào đó code kiểm tra HMAC-SHA256 qua `X-SePay-Timestamp` và `X-SePay-Signature` trước khi cộng gói. **Tuyệt đối không tắt kiểm tra HMAC trong code.**
+
+Phải triển khai lại **cả hai Edge Functions** từ `addon-portal/` bằng Supabase CLI hoặc cập nhật tương ứng trong dashboard; commit GitHub **không tự triển khai** Edge Functions. Với CLI từ thư mục `addon-portal/` sau khi đã đăng nhập và liên kết đúng dự án:
+
+```sh
+supabase functions deploy addon-create-order --project-ref ucqqjdsoyvvaxswzbhaw
+supabase functions deploy addon-sepay-webhook --project-ref ucqqjdsoyvvaxswzbhaw --no-verify-jwt
+```
+
+Lệnh `--no-verify-jwt` trên webhook chỉ bỏ kiểm tra JWT của Supabase gateway, **không bỏ kiểm tra chữ ký HMAC** trong handler. SePay dashboard phải được cấu hình chế độ **HMAC-SHA256**, với secret trùng `SEPAY_WEBHOOK_SECRET` lưu tại Supabase Secrets. Cấu hình tài khoản nhận `SEPAY_BANK_ACCOUNT`, `MB_BANK_ACCOUNT` và `MB_ACCOUNT_NAME` phải khớp tài khoản thực tế. Không đưa bất kỳ secret nào vào GitHub hoặc chat.
+
+Tài liệu:
+- https://supabase.com/docs/guides/functions/function-configuration
+- https://developer.sepay.vn/vi/sepay-webhooks/xac-thuc
+
 ## After owner-approved production SQL
 1. Confirm new `addon_my_entitlements`, `addon_admin_list_users_v32`, `addon_start_mst_trial` RPCs work for logged-in users.
 2. Configure `validity_days` on each MST package via admin before accepting orders. Admin may adjust package prices.

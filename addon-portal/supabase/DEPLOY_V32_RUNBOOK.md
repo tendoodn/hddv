@@ -2,6 +2,21 @@
 
 **Status: awaiting read-only Supabase dependency preflight and verified backup. Do not execute production candidate yet.**
 
+## Production preflight đã xác nhận (01/11/2026)
+
+Người sở hữu dự án đã chạy `PREDEPLOY_V32_READ_ONLY.sql` trong Supabase SQL Editor và cung cấp kết quả:
+
+- `auth_accounts = 3`, `admin_accounts = 1`.
+- Đúng 11 bảng `public.addon_*` cũ; `addon_package_lots` chưa tồn tại.
+- `external_fk_dependencies = []`, `external_view_dependencies = []`.
+- Trigger `auth.users.addon_auth_user_profile` vẫn enabled.
+
+**Preflight đã đạt; chưa cấp phép chạy migration.** Bước bắt buộc còn thiếu: xác nhận bản sao lưu có thể phục hồi. Bản sao lưu cần lấy **trước** khi chạy SQL thay dữ liệu cấp phép cũ.
+
+Để sao lưu: vào Supabase Dashboard → Database → Backups nếu dự án hỗ trợ daily backups. Với Free plan hoặc cần bản sao riêng, dùng `supabase db dump` / `pg_dump` theo tài liệu chính thức: https://supabase.com/docs/guides/platform/backups và https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore. Không đưa mật khẩu kết nối, database dump hoặc secret lên GitHub hoặc vào chat.
+
+GitHub Actions đã kiểm tra V3.2 dưới cả role `authenticated` và `anon`: các API người dùng hoạt động, người dùng không có quyền xem admin, anon không có quyền dùng thử hay xử lý thanh toán. Điều này là kiểm thử trên PostgreSQL giả lập, không thay thế rà soát môi trường Supabase thật.
+
 ## Architecture
 - Single GitHub repo: https://github.com/tendoodn/hddv
 - Customer portal: docs/index.html, docs/customer.js

@@ -30,10 +30,11 @@ assert.equal(td.searchCatalog(products,'No such product').length,0);
 assert.equal(td.searchCatalog(products,'',1).length,1);
 const template={
  fileName:'File mẫu nhập kho hoá đơn GTGT.xlsx',headers:[
-  'Mã sản phẩm / nguyên liệu','Loại hàng','Tên sản phẩm/nguyên liệu',
-  'Đơn vị tính','Số lượng','Đơn giá','Giảm giá','Thuế GTGT'
+  'Mã sản phẩm/nvl (*)','Loại hàng','Tên sản phẩm/nvl',
+  'Đơn vị tính','Số lượng (*)','Đơn giá (*)','Giảm giá sản phẩm %',
+   'Giảm giá sản phẩm VNĐ','Thuế GTGT','Tổng giảm giá sản phẩm VNĐ','Tiền thuế'
  ],
- columns:{sku:0,type:1,name:2,unit:3,quantity:4,price:5,discount:6,tax:7},
+ columns:{sku:0,type:1,name:2,unit:3,quantity:4,price:5,discount:6,discountAmount:7,tax:8,discountTotal:9,taxAmount:10},
  preRows:[]
 };
 const invoice=[
@@ -42,7 +43,7 @@ const invoice=[
  {kind:'sold',form:'hddt',key:'c'}
 ];
 const details=new Map([
- ['a',{lines:[{ten:'Thịt heo',dvt:'kg',sl:3,dgia:85000,ck:0,tsuat:'8%'}]}],
+ ['a',{lines:[{ten:'Thịt heo',dvt:'kg',sl:3,dgia:85000,ck:0.03,tsuat:'8%',tthue:20400}]}],
  ['b',{lines:[{ten:'Rau chợ',dvt:'kg',sl:4,dgia:12000,ck:0,tsuat:'10%'}]}],
  ['c',{lines:[{ten:'Không xuất',sl:1,dgia:9}]}]
 ]);
@@ -56,8 +57,16 @@ assert.equal(result.count,2);
 assert.equal(result.skipped,0);
 assert.equal(books.length,2);
 assert.equal(books[0][0].rows[1][0],'SKU-01');
-assert.equal(books[0][0].rows[1][7],'8%');
+assert.equal(books[0][0].rows[1][6],0.03);
+assert.equal(books[0][0].rows[1][8],0.08);
+assert.equal(books[0][0].rows[1][10],20400);
 assert.equal(books[1][0].rows[1][0],'SKU-02');
-assert.equal(books[1][0].rows[1][7],'KCT');
+assert.equal(books[1][0].rows[1][8],'Không chịu thuế');
+assert.equal(books[1][0].rows[1][10],'');
 assert.equal(captured[captured.length-1].filter(x=>x.name.endsWith('.xlsx')).length,2);
-console.log('Tendoo CSV SKU mapping, unresolved-name guard, MTT-KCT and 1-invoice-per-file ZIP: PASS');
+assert.equal(books[0][0].rows[0].length,11);
+assert.equal(td.missing(invoice,details,products,mapped).length,0);
+assert.equal(td.missing([{kind:'purchase',key:'d'}],new Map([
+ ['d',{lines:[{ten:'Bất kỳ',ma:'SKU-01',sl:1,dgia:100,tsuat:'0%'}]}]
+]),products,{}).length,0);
+console.log('Tendoo 11-column template, numeric VAT, MTT-KCT, mapped SKU and ZIP: PASS');

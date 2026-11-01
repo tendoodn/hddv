@@ -107,6 +107,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql
       - name: Configure fixed 365-day MST products and admin history RPC
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/020_mst_one_year_collapsible_admin_history.sql
+      - name: Add secure direct admin package grant RPC
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/021_admin_direct_package_grant.sql
       - name: Verify production readiness report is readable
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants
@@ -118,6 +120,9 @@ jobs:
 
       - name: Verify fixed MST expiry and private on-demand full package history
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/080_assert_mst_one_year_admin_history.sql
+
+      - name: Verify manual admin package grants and authorization
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/090_assert_admin_direct_grant.sql
 
       - name: Prepare unrelated-FK rollback scenario in another isolated DB
         run: |

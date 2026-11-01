@@ -24,7 +24,13 @@
     </div>
   </header>
 
-  <main>
+  <main>\n    <section id="license-card" class="license-card" aria-label="Quản lý bản quyền AutoTax">
+      <div class="license-head"><div><strong>Quản lý bản quyền</strong><div class="license-caption">Tài khoản và gói sử dụng AutoTax</div></div><button id="lic-refresh" type="button" class="license-refresh" title="Kiểm tra bản quyền">↻</button></div>
+      <div id="lic-auth"><label for="lic-email">Email tài khoản</label><input id="lic-email" type="email" autocomplete="username" placeholder="email@example.com"><label for="lic-password">Mật khẩu</label><input id="lic-password" type="password" autocomplete="current-password" placeholder="Mật khẩu tài khoản"><div class="license-buttons"><button id="lic-login" type="button" class="primary">Đăng nhập</button><button id="lic-register" type="button">Tạo tài khoản</button></div></div>
+      <div id="lic-account" hidden><div class="license-user"><span>Tài khoản</span><strong id="lic-email-label"></strong></div><div class="license-status-row"><span id="lic-state" class="lic-state locked">Đang kiểm tra…</span><button id="lic-logout" type="button">Đăng xuất</button></div><p id="lic-detail" class="license-detail">Đang kiểm tra quyền sử dụng…</p><div class="license-buttons"><button id="lic-trial" type="button" class="primary" hidden>Kích hoạt dùng thử 7 ngày</button></div><div id="lic-buy" class="license-buttons" hidden><button id="lic-buy-month" type="button">Gói 1 tháng · 20.000đ</button><button id="lic-buy-year" type="button">Gói 1 năm · 200.000đ</button></div><div id="lic-payment" class="license-payment" hidden><p id="lic-payment-info"></p><img id="lic-qr" alt="QR thanh toán AutoTax"><button id="lic-close-qr" type="button">Đóng mã QR</button></div></div>
+      <p id="lic-message" class="lic-message" hidden></p><p class="license-footnote">Quyền sử dụng được xác minh trực tuyến. Khi hết hạn, chức năng tải hóa đơn sẽ tự khóa.</p>
+    </section>
+
     <!-- Thông báo cập nhật (0.1.10): cổng đổi cách tra hóa đơn máy tính tiền. Liên hệ qua trang tổng hợp tiện ích (có Zalo, Facebook, email) -->
     <div id="notice" class="notice" role="status">
       <span class="notice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></span>
@@ -181,26 +187,7 @@
     <form method="dialog"><button class="primary">Đóng</button></form>
   </dialog>
 
-  <!-- Kích hoạt bản quyền: kiểm tra chữ ký ngay trên máy, không gửi gì ra ngoài -->
-  <dialog id="licModal" class="modal lic-modal" aria-labelledby="licTitle">
-    <button type="button" class="lic-close" id="licClose" aria-label="Đóng" hidden>×</button>
-    <div class="modal-icon" aria-hidden="true">🔑</div>
-    <h3 id="licTitle">Kích hoạt tiện ích</h3>
-    <p class="modal-text">Nhận mã kích hoạt từ tác giả qua 2 bước dưới đây.</p>
-    <p class="lic-reason" id="licReason"></p>
-    <div class="lic-step">
-      <div class="lic-step-head"><span class="lic-num">1</span><span>Gửi <strong>Mã máy</strong> cho tác giả</span></div>
-      <div class="mid-row"><code id="machineId">…</code><button id="copyMid" type="button">Sao chép</button></div>
-      <a class="lic-contact" href="#">Hỗ trợ quản trị nội bộ</a>
-    </div>
-    <div class="lic-step">
-      <div class="lic-step-head"><span class="lic-num">2</span><span>Dán <strong>Mã kích hoạt</strong> nhận được</span></div>
-      <textarea id="licInput" rows="3" spellcheck="false" aria-label="Mã kích hoạt" placeholder="HDDT1.…"></textarea>
-      <p id="licMsg" class="lic-msg"></p>
-    </div>
-    <button id="licSubmit" class="primary" type="button">Kích hoạt</button>
-    <p class="lic-note">Mã được kiểm tra ngay trên máy, không gửi đi đâu.</p>
-  </dialog>
+
 
   <script src="../license/license.js"></script>
   <script type="module" src="panel.js"></script>

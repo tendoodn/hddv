@@ -102,9 +102,15 @@ begin
  end loop;
 end $backup_check$;
 
-create temp table autotax_v32_baseline on commit drop as
-select (select count(*)::bigint from auth.users) as auth_count,
-       (select count(*)::bigint from public.addon_admins) as admin_count;
+-- Store baseline counters as transaction-local configuration values, not a
+-- temporary table. This avoids exposing any new table without RLS.
+do $baseline$
+begin
+ perform set_config('autotax_v32.auth_count',
+   (select count(*)::text from auth.users), true);
+ perform set_config('autotax_v32.admin_count',
+   (select count(*)::text from public.addon_admins), true);
+end $baseline$;
 
 
 -- =========== 005_package_entitlements_v32.sql ===========
@@ -1286,12 +1292,12 @@ revoke all on function public.addon_set_usage_mode(text) from public,anon;
 grant execute on function public.addon_set_usage_mode(text) to authenticated;
 
 do $finalcheck$
-declare b record;
 begin
- select * into b from autotax_v32_baseline;
- if b.auth_count <> (select count(*) from auth.users)
+ if current_setting('autotax_v32.auth_count',true)::bigint
+    is distinct from (select count(*) from auth.users)
  then raise exception 'auth_count_changed_rollback'; end if;
- if b.admin_count <> (select count(*) from public.addon_admins)
+ if current_setting('autotax_v32.admin_count',true)::bigint
+    is distinct from (select count(*) from public.addon_admins)
  then raise exception 'admin_count_changed_rollback'; end if;
  if exists(select 1 from public.addon_orders where package_code is null)
  then raise exception 'legacy_orders_remain_rollback'; end if;

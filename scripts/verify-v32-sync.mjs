@@ -67,12 +67,15 @@ const webhook=load('addon-portal/supabase/functions/addon-sepay-webhook/index.ts
 assert(webhook.includes('X-SePay-Signature') && webhook.includes('X-SePay-Timestamp'),
  'Webhook must verify SePay request signatures before payment processing');
 assert(webhook.includes('safeEqual('),'Webhook signature comparison missing');
-const candidate=load('addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql');
+const candidate=load('addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql');
 for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);
 const truncate=candidate.split('truncate table')[1]?.split('restart identity restrict')[0]||'';
 assert(!truncate.includes('auth.users'),'auth.users is in truncate');
 assert(!truncate.includes('addon_admins'),'admin roles are in truncate');
 assert(candidate.includes('v32_already_installed_or_partial_state_stop'),'Missing one-time migration guard');
+assert(candidate.includes('v32_backup_stale_content_for_'),'Production reset must verify all snapshot data');
+assert(candidate.includes('v32_backup_required_missing_manifest'),'Production reset must refuse missing snapshots');
+assert(candidate.includes('v32_backup_rls_or_grant_invalid'),'Production reset must reject exposed backups');
 assert(!/drop\s+table\s+[^;]*cascade/i.test(candidate),'Unsafe drop table cascade');
 assert.equal((candidate.match(/\$\$/g)||[]).length%2,0,'Unbalanced upgrade $$');
 console.log('V3.2 sync source checks passed: UI IDs, JS syntax, RPCs, SQL quote balance, legacy guards and account preservation.');

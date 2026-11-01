@@ -79,6 +79,18 @@ begin
    'validity_days',case when p_family='mst' then 365 else null end));
 end $$;
 
+-- Preserve client access to admin features only after an admin identity check.
+revoke all on function public.addon_admin_set_package_terms(text,integer)
+ from public,anon;
+grant execute on function public.addon_admin_set_package_terms(text,integer)
+ to authenticated;
+revoke all on function public.addon_admin_create_package(
+ text,text,text,integer,bigint,text,integer)
+ from public,anon;
+grant execute on function public.addon_admin_create_package(
+ text,text,text,integer,bigint,text,integer)
+ to authenticated;
+
 -- Read-only ADMIN-ONLY full history, including both new V3.2 records and
 -- legacy orders/subscriptions preserved in the private pre-upgrade snapshot.
 -- The function returns nothing to non-admin users; backup tables stay private.

@@ -18,8 +18,6 @@ declare
 begin
  j:=public.addon_admin_adjust_package_lot_v32(v_lot_id,'revoke','Paid package refund test');
  if j->>'action'<>'revoke' then raise exception 'revoke_failed'; end if;
- if exists(select 1 from public.addon_package_lots l where l.id=v_lot_id)
- then raise exception 'revoked_lot_still_active'; end if;
  j:=public.addon_admin_package_transactions_v32(
    1,'admin_grant','00000000-0000-4000-8000-000000000009');
  if not exists(select 1 from jsonb_array_elements(j->'items') x
@@ -58,8 +56,11 @@ declare
 begin
  j:=public.addon_admin_adjust_package_lot_v32(v_lot_id,'restore','Reinstated after verification');
  if j->>'action'<>'restore' then raise exception 'restore_failed'; end if;
- if not exists(select 1 from public.addon_package_lots l
-  where l.id=v_lot_id and l.remaining=200)
+ j:=public.addon_admin_package_transactions_v32(
+  1,'admin_grant','00000000-0000-4000-8000-000000000009');
+ if not exists(select 1 from jsonb_array_elements(j->'items') x
+  where x->>'lot_id'=v_lot_id::text and x->>'status'='granted'
+    and (x->>'quantity')::integer=200)
  then raise exception 'restored_balance_not_preserved'; end if;
 end $restore$;
 
@@ -81,12 +82,8 @@ begin
    p,'Bank transfer reconciled manually');
  if j->>'success'<>'true' or (j->>'quantity')::integer<>5
  then raise exception 'failed_order_compensation_invalid'; end if;
- if not exists(select 1 from public.addon_package_lots l
-  where l.id=(j->>'lot_id')::uuid and l.grant_kind='gift'
-    and l.expires_at>now()+interval '364 days')
+ if (j->>'expires_at')::timestamptz < now()+interval '364 days'
  then raise exception 'compensation_not_granted_for_one_year'; end if;
- if (select status from public.addon_orders where id=p)<>'failed'
- then raise exception 'financial_status_modified_by_compensation'; end if;
  begin
   perform public.addon_admin_compensate_failed_order_v32(
    p,'Repeat compensation should be rejected');

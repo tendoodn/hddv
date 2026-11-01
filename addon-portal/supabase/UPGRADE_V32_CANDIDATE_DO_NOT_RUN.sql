@@ -54,6 +54,7 @@ declare
  v_manifest_original bigint;
  v_manifest_copy bigint;
  v_count integer;
+ v_different boolean;
 begin
  if to_regclass('autotax_backup_20261101._manifest') is null then
   raise exception 'v32_backup_required_missing_manifest';
@@ -84,6 +85,15 @@ begin
   into v_manifest_original,v_manifest_copy
   from autotax_backup_20261101._manifest
   where table_name=t;
+  -- Count equality alone is not enough: changes to prices/orders with the
+  -- same number of rows also invalidate the snapshot and must block reset.
+  execute format(
+   'select exists((select to_jsonb(x) from public.%1$I x except all select to_jsonb(y) from autotax_backup_20261101.%1$I y) union all (select to_jsonb(y) from autotax_backup_20261101.%1$I y except all select to_jsonb(x) from public.%1$I x)',
+   t
+  ) into v_different;
+  if v_different then
+   raise exception 'v32_backup_stale_content_for_%',t;
+  end if;
   if not found or v_original<>v_copy
    or v_copy is distinct from v_manifest_copy
    or v_original is distinct from v_manifest_original

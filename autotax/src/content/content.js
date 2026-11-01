@@ -95,7 +95,7 @@ async function assertPackageAccessForMst(mst) {
   if (!response.ok) throw new Error('Không xác minh được gói AutoTax. Vui lòng thử lại.');
   const state = await response.json();
   if (state.mode === 'invoice') {
-    if (Number(state.packages?.invoice?.remaining||0) <= 0) throw new Error('Gói hóa đơn đã hết lượt. Hãy gia hạn hoặc chuyển sang chế độ MST nếu còn gói.');
+    // Always let the server check invoice identities: already charged invoices are free to reread even at zero balance.
     return { mode:'invoice', remaining:Number(state.packages?.invoice?.remaining||0) };
   }
   const check = await fetch(base+'/rest/v1/rpc/addon_authorize_mst',{method:'POST',headers,body:JSON.stringify({p_mst:mst})});

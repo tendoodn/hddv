@@ -152,8 +152,99 @@ function formats() {
   f.lines = f.excel;
   return f;
 }
-const SHEETS = ['risk', 'seller', 'adjust', 'reduction', 'hdkd', 'gtgt'];
+const SHEETS = ['risk', 'seller', 'adjust', 'reduction', 'hdkd', 'gtgt', 'tendoo'];
 const sheets = () => Object.fromEntries(SHEETS.map((k) => [k, checked('sheet').includes(k)]));
+
+/* Optional Tendoo stock-import bridge: both Excel files are parsed locally. */
+let tendooCatalog=null,tendooTemplate=null,tendooMappingRequest=null;
+const tendooDialog=$('tendooSettingsDialog');
+function tendooStatus(message,error=false){
+ const el=$('tendooSetupStatus');el.textContent=message;
+ el.style.color=error?'#b91c1c':'#166534';
+}
+const tendooReady=()=>Array.isArray(tendooCatalog)&&tendooCatalog.length>0&&!!tendooTemplate;
+function updateTendooUi(){
+ const selected=$('tendooSyncCheck').checked;
+ $('tendooSummary').hidden=!selected;
+ $('tendooSummaryText').textContent=tendooReady()?
+  tendooCatalog.length+' SKU · mẫu: '+tendooTemplate.fileName:
+  'Cần file BC_San_Pham và mẫu nhập kho Tendoo.';
+}
+function openTendooSettings(){
+ if(!tendooDialog.open)tendooDialog.showModal();
+ tendooStatus(tendooReady()?
+  'Đã đọc '+tendooCatalog.length+' SKU và file mẫu '+tendooTemplate.fileName+'.':
+  'Hãy chọn đủ hai file .xlsx trước khi tiếp tục.');
+}
+$('tendooSyncCheck').addEventListener('change',()=>{
+ updateTendooUi();
+ if($('tendooSyncCheck').checked)openTendooSettings();
+ summarize();
+});
+$('tendooConfigureBtn').addEventListener('click',openTendooSettings);
+$('tendooCatalogFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ tendooCatalog=null;updateTendooUi();tendooStatus('Đang đọc báo cáo sản phẩm...');
+ try{tendooCatalog=await TendooImport.catalog(file);
+  tendooStatus('Đã đọc '+tendooCatalog.length+' sản phẩm / SKU.');
+ }catch(err){tendooStatus('File BC_San_Pham không hợp lệ: '+err.message,true)}
+ updateTendooUi();
+});
+$('tendooTemplateFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ tendooTemplate=null;updateTendooUi();tendooStatus('Đang đọc file mẫu...');
+ try{tendooTemplate=await TendooImport.template(file);
+  tendooStatus('Đã đọc '+tendooTemplate.headers.length+' cột mẫu nhập kho.');
+ }catch(err){tendooStatus('File mẫu nhập kho không hợp lệ: '+err.message,true)}
+ updateTendooUi();
+});
+$('tendooSettingsApply').addEventListener('click',()=>{
+ if(!tendooReady())return tendooStatus('Chưa đủ hai file đúng định dạng.',true);
+ tendooDialog.close();log('Tendoo: đã cấu hình '+tendooCatalog.length+' SKU và mẫu nhập kho.','ok');
+});
+$('tendooSettingsCancel').addEventListener('click',()=>{
+ tendooDialog.close();
+ if(!tendooReady())$('tendooSyncCheck').checked=false;
+ updateTendooUi();summarize();
+});
+function mapUnknownTendoo(message){
+ const id=message.requestId,names=message.names||[];
+ tendooMappingRequest=id;
+ const box=$('tendooMissingList');box.replaceChildren();
+ const list=document.createElement('datalist');list.id='tendooSkuList';
+ for(const product of tendooCatalog||[]){
+  const opt=document.createElement('option');opt.value=product.sku;opt.label=product.name;list.append(opt);
+ }
+ box.append(list);
+ for(const entry of names){
+  const row=document.createElement('div');row.className='tendoo-missing-row';
+  const name=document.createElement('strong');name.textContent=entry.name;
+  const input=document.createElement('input');input.type='text';input.setAttribute('list','tendooSkuList');
+  input.placeholder='Nhập/chọn SKU trong BC_San_Pham';
+  input.dataset.key=entry.key;input.setAttribute('aria-label','SKU cho '+entry.name);
+  row.append(name,input);box.append(row);
+ }
+ const dlg=$('tendooMatchDialog');if(!dlg.open)dlg.showModal();
+ if(names.length)box.querySelector('input')?.focus();
+}
+$('tendooMatchForm').addEventListener('submit',e=>{
+ e.preventDefault();if(!tendooMappingRequest)return;
+ const inputs=[...$('tendooMissingList').querySelectorAll('input[data-key]')];
+ const known=new Set((tendooCatalog||[]).map(p=>p.sku)),mapping={};
+ for(const input of inputs){
+  const sku=input.value.trim();
+  if(!sku||!known.has(sku)){input.focus();return log('Hãy chọn SKU có trong BC_San_Pham cho từng sản phẩm.','warn')}
+  mapping[input.dataset.key]=sku;
+ }
+ port?.postMessage({type:'tendoo-map-response',requestId:tendooMappingRequest,mapping});
+ tendooMappingRequest=null;$('tendooMatchDialog').close();
+});
+$('tendooMatchCancel').addEventListener('click',()=>{
+ if(tendooMappingRequest)port?.postMessage({
+  type:'tendoo-map-response',requestId:tendooMappingRequest,cancel:true});
+ tendooMappingRequest=null;$('tendooMatchDialog').close();
+});
+
 // Bỏ Excel thì nhóm Sheet thêm mờ đi, không tính
 function syncFormats(e) {
   const box = (v) => document.querySelector(`input[name=fmt][value=${v}]`);
@@ -227,6 +318,7 @@ function job(msg) {
 }
 
 function onJobMessage(m) {
+  if (m.type === 'tendoo-map-request')return mapUnknownTendoo(m);
   if (m.type === 'status') $('status').textContent = m.text;
   if (m.type === 'summary') { $('bar').max = Math.max(m.total, 1); $('bar').value = 0; }
   if (m.type === 'progress') { $('bar').max = m.total || 1; $('bar').value = m.done; $('status').textContent = `Đang tải chi tiết ${m.done}/${m.total} hóa đơn`; }
@@ -286,7 +378,14 @@ async function run() {
   if (!forms.length) return log('Hãy chọn hình thức hóa đơn (điện tử / máy tính tiền)', 'warn');
   if (!kinds.length) return log('Hãy chọn loại hóa đơn (mua vào / bán ra)', 'warn');
   if (!Object.values(f).some(Boolean)) return log('Hãy chọn ít nhất 1 loại file cần tải', 'warn');
-  const msg = { type: 'run', tuNgay: toVN($('from').value), denNgay: toVN($('to').value), kinds, forms, formats: f, sheets: sheets(), adjOnly: $('adjOnly').checked };
+  const options=sheets();
+  if(options.tendoo&&!kinds.includes('purchase'))return log('Đồng bộ Tendoo cần chọn Mua vào.','warn');
+  if(options.tendoo&&!tendooReady()){
+    openTendooSettings();return log('Cần tải báo cáo BC_San_Pham và file mẫu nhập kho trước khi tìm kiếm.','warn');
+  }
+  const msg = { type: 'run', tuNgay: toVN($('from').value), denNgay: toVN($('to').value),
+    kinds, forms, formats: f, sheets: options, adjOnly: $('adjOnly').checked,
+    ...(options.tendoo?{tendoo:{products:tendooCatalog,template:tendooTemplate}}:{}) };
   $('log').innerHTML = ''; $('bar').value = 0; $('status').textContent = '';
   stopped = false;
   job(msg);

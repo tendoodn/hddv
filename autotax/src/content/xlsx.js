@@ -5,7 +5,7 @@
 //   { f: 'D9+F9-H9' } là công thức, Excel tự tính khi mở file (calcPr fullCalcOnLoad).
 (() => {
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
-    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ''); // ký tự điều khiển làm hỏng XML
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\uFFFE\uFFFF]/g, ''); // ký tự không hợp lệ trong XML 1.0
   const colName = (i) => { let s = ''; for (i++; i; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + ((i - 1) % 26)) + s; return s; };
   // Style: 0 thường · 1 tiêu đề · 2 số #,##0 · 3 số #,##0.#### · 4 chữ đậm · 5 số đậm
   // Sheet theo mẫu HTKK (chữ 8pt, viền mảnh): 6 tiêu đề bảng · 7 tên mục (đậm 11pt) · 8 chữ · 9 số #,##0 · 10 STT · 11 số #,##0.0

@@ -239,6 +239,8 @@ async function buy(packageCode,button){
    " · Nội dung: "+result.payment.transfer_content;
   $("paymentQr").src=result.payment.qr_url;
   $("paymentArea").hidden=false;
+  const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("paymentArea").scrollIntoView({behavior:reducedMotion?"instant":"smooth",block:"center"});
   showMessage("Đã tạo đơn "+packageCode+". QR tự ẩn sau 5 phút; hệ thống theo dõi thanh toán tự động.");
   function tick(){
    if(paymentOrder!==order||order.completed||order.expired)return;
@@ -266,11 +268,15 @@ async function action(id,fn){
  try{await fn()}catch(error){showMessage(prettyError(error),true,$("dashboard").hidden?"authMessage":"accountMessage")}
  finally{button.disabled=false}
 }
-$("loginBtn").addEventListener("click",()=>action("loginBtn",async()=>{
+$("loginForm").addEventListener("submit",event=>{
+ event.preventDefault();
+ if($("loginBtn").disabled)return;
+ void action("loginBtn",async()=>{
  const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
  if(error)throw error;
  showMessage("");await refresh();
-}));
+ });
+});
 $("signupBtn").addEventListener("click",()=>action("signupBtn",async()=>{
  const {data,error}=await client.auth.signUp({email:$("email").value.trim().toLowerCase(),password:$("password").value});
  if(error){

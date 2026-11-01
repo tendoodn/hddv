@@ -100,7 +100,7 @@ jobs:
             exit 1
           fi
           grep -q "v32_backup_stale_content_for_addon_plans" /tmp/v32-stale-snapshot.log
-          psql -v ON_ERROR_STOP=1 -c "update public.addon_plans set price_vnd=0 where code='monthly'"
+          psql -v ON_ERROR_STOP=1 -c "update public.addon_plans p set price_vnd=b.price_vnd from autotax_backup_20261101.addon_plans b where p.code=b.code and p.code='monthly'"
       - name: Validate read-only production preflight SQL syntax
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PREDEPLOY_V32_READ_ONLY.sql
       - name: Dry-run V3.2 upgrade against PostgreSQL 16

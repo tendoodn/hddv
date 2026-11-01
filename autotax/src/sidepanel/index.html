@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tiện ích hỗ trợ tải hóa đơn</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <header class="topbar">
+    <img class="logo" src="../../icons/icon.svg" alt="" aria-hidden="true" />
+    <div class="titles">
+      <div class="title-row">
+        <h1 title="Tiện ích hỗ trợ tải hóa đơn">Tiện ích hỗ trợ tải hóa đơn</h1>
+        <button id="reconnect" class="icon" title="Kiểm tra lại kết nối" aria-label="Kiểm tra lại kết nối">↻</button>
+      </div>
+      <div class="sub-row">
+        <div id="company" class="company" hidden></div>
+        <div id="noCompany" class="company muted">Chưa đăng nhập hoadondientu</div>
+        <div class="session-row">
+          <span id="session" class="badge">Đang kết nối…</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Thông báo cập nhật (0.1.10): cổng đổi cách tra hóa đơn máy tính tiền. Liên hệ qua trang tổng hợp tiện ích (có Zalo, Facebook, email) -->
+    <div id="notice" class="notice" role="status">
+      <span class="notice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></span>
+      <p id="noticeUpdate">
+        <strong>Cập nhật mới:</strong> tính năng <b>tải hóa đơn máy tính tiền</b> đã được cập nhật theo những thay đổi mới của cổng thuế.
+        Nếu gặp vấn đề khi tải, hãy <a href="#">liên hệ quản trị nội bộ</a>.
+      </p>
+      <!-- Chỉ hiện khi đang dùng thử (bật thu phí, máy mới chưa kích hoạt) -->
+      <p id="noticeTrial" hidden>
+        <strong>Dùng thử:</strong> còn <b id="trialLeft">3</b> lượt Tìm kiếm. Hết lượt cần mã kích hoạt để dùng tiếp.
+        <a href="#" id="trialActivate">Kích hoạt ngay</a>
+      </p>
+      <!-- Chỉ hiện khi tác giả tắt thu phí (tier open), thay cho thông báo cập nhật -->
+      <div id="noticePrivate" class="notice-body" hidden>
+        <strong class="notice-title">Thông báo quan trọng</strong>
+        <p>Đây là bản sử dụng nội bộ.
+          </p>
+        <p></p>
+        <p>Nếu bạn muốn tiếp tục sử dụng, hãy liên hệ quản trị nội bộ qua Zalo, Gmail hoặc Facebook:</p>
+        <a class="notice-cta" href="#">Hỗ trợ nội bộ</a>
+        <p class="notice-thanks">Cảm ơn mọi người đã đồng hành cùng tiện ích. Mong tiện ích đã giúp bạn có trải nghiệm tốt và cùng nhau vượt qua kỳ báo cáo quý 3 này thật nhẹ nhàng ♥</p>
+      </div>
+    </div>
+
+    <details class="privacy">
+      <summary>
+        <span class="shield" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <span class="privacy-text">
+          <strong class="privacy-title">Không cần mật khẩu · Không gửi dữ liệu hóa đơn</strong>
+          <span class="privacy-sub">Chạy hoàn toàn trên máy bạn</span>
+        </span>
+      </summary>
+      <p>Tiện ích chỉ giúp bạn <strong>tra cứu và tải nhiều hóa đơn cùng lúc</strong> – những hóa đơn bạn vốn đã xem và tải được trên hoadondientu.gdt.gov.vn.</p>
+      <ul>
+        <li><strong>Không hỏi mật khẩu.</strong> Bạn tự đăng nhập hoadondientu như bình thường; tiện ích dùng phiên đăng nhập đó để gọi đúng các chức năng tra cứu, xuất XML của cổng.</li>
+        <li><strong>Không thu thập, không lưu trữ, không gửi</strong> dữ liệu hóa đơn hay thông tin doanh nghiệp (MST, tên, số tiền, khoảng ngày…) tới bất kỳ máy chủ nào khác. Không quảng cáo, không công cụ theo dõi của bên thứ ba.</li>        <li>Excel bảng kê và file zip được <strong>tạo ngay trên máy bạn</strong>, lưu thẳng vào thư mục Tải về (Downloads).</li>
+        <li>Danh sách hóa đơn chỉ nằm trong bộ nhớ tạm và <strong>mất khi đóng trang</strong>.</li>
+        <li>Tiện ích chỉ xin quyền truy cập <strong>hoadondientu.gdt.gov.vn</strong>, không đọc trang web nào khác.</li>
+      </ul>
+    </details>
+    <!-- Link sang trang tổng hợp tiện ích của tác giả: chỉ mở tab mới khi người dùng bấm, logo là ảnh tĩnh trong extension -->
+    <a hidden class="more-tools" href="#">
+      <span class="more-logos" aria-hidden="true"><img src="sister-logo.svg" alt="" /><span class="more-plus">+</span></span>
+      <span class="more-text">
+        <strong class="more-title">Phiên bản sử dụng nội bộ</strong>
+        <span class="more-sub">Dữ liệu được xử lý trên máy tính của bạn</span>
+      </span>
+      <span class="more-arrow" aria-hidden="true">→</span>
+    </a>
+
+    <!-- QR là ảnh tĩnh trong extension: không gọi mạng, người dùng tự quét bằng app ngân hàng -->
+    <details class="donate">
+      <summary class="donate-head">
+        <span class="heart" aria-hidden="true">♥</span>
+        <span class="donate-text">
+          <strong class="donate-title">Ủng hộ tác giả</strong>
+          <span class="donate-sub">Một ly cà phê của bạn giúp tiện ích được cập nhật khi cổng thuế thay đổi</span>
+        </span>
+      </summary>
+      <div class="donate-body">
+        <img class="donate-qr" src="donate-qr.svg" alt="Mã VietQR ủng hộ tác giả" />
+        <div>
+          <p class="hint">Quét mã bằng app ngân hàng bất kỳ, số tiền tùy tâm. Cảm ơn bạn!</p>
+        </div>
+      </div>
+    </details>
+    <section class="section">
+      <h2>Khoảng thời gian</h2>
+      <div id="dateRange" class="grid2 daterange">
+        <div class="field"><label for="fromText">Từ ngày</label><input id="fromText" class="date" autocomplete="off" /></div>
+        <div class="field"><label for="toText">Đến ngày</label><input id="toText" class="date" autocomplete="off" /></div>
+        <input id="from" type="hidden" /><input id="to" type="hidden" />
+      </div>
+      <div id="presets" class="presets" role="group" aria-label="Chọn nhanh khoảng ngày"></div>
+      <div id="rangeHint" class="hint">Không giới hạn tổng khoảng ngày; MTT tối đa 10 ngày/đợt</div>
+    </section>
+
+    <section class="section">
+      <h2>Loại hóa đơn</h2>
+      <div class="checks" role="group" aria-label="Loại hóa đơn">
+        <label class="check"><input type="checkbox" name="kind" value="purchase" checked />Mua vào</label>
+        <label class="check"><input type="checkbox" name="kind" value="sold" checked />Bán ra</label>
+      </div>
+      <label class="toggle-box">
+        <span class="toggle-text">
+          <strong>Chỉ tải HĐ thay thế / điều chỉnh / hủy</strong>
+          <span>Bỏ qua hóa đơn bình thường, chỉ lấy các hóa đơn này.</span>
+        </span>
+        <input id="adjOnly" type="checkbox" role="switch" />
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+    </section>
+
+    <section class="section">
+      <h2>Hình thức</h2>
+      <div class="checks" role="group" aria-label="Hình thức">
+        <label class="check"><input type="checkbox" name="form" value="hddt" checked />Hóa đơn điện tử</label>
+        <label class="check" title="Tra theo đoạn ngày, mỗi đoạn tự giải 1 captcha của cổng"><input type="checkbox" name="form" value="mtt" />Hóa đơn máy tính tiền</label>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Định dạng tải về (chọn nhiều)</h2>
+        <button id="clearFmt" type="button" class="link">Bỏ chọn</button>
+      </div>
+      <div class="tiles" role="group" aria-label="Định dạng tải về">
+        <label class="tile"><input type="checkbox" name="fmt" value="excel" checked /><span>Excel (DS hóa đơn, chi tiết...)</span></label>
+        <label class="tile"><input type="checkbox" name="fmt" value="xml" checked /><span>XML gốc</span></label>
+        <label class="tile"><input type="checkbox" name="fmt" value="html" /><span>HTML</span></label>
+        <label class="tile" title="Bản thể hiện dựng trên máy từ XML của cổng, không phải PDF gốc của nhà cung cấp. Cần bản gốc: xem cột Link tra cứu HĐ gốc trong Excel"><input type="checkbox" name="fmt" value="pdf" /><span>PDF (bản thể hiện)</span></label>
+      </div>
+      <!-- Sheet thêm trong file Excel (DS hóa đơn + Chi tiết sản phẩm luôn có) -->
+      <fieldset id="sheetOpts" class="sheet-opts">
+        <legend>Sheet thêm trong Excel</legend>
+        <div class="checks">
+          <label class="check" title="Hóa đơn hủy/thay thế, lệch số học, thanh toán tiền mặt từ 5 triệu, chữ ký số, ngày ký khác tháng"><input type="checkbox" name="sheet" value="risk" checked />Kiểm tra rủi ro HĐ</label>
+          <label class="check" title="Thêm 2 cột vào DS hóa đơn: người bán (mua vào) / người mua (bán ra) có tên trong danh sách công khai người sử dụng hóa đơn không hợp pháp của cổng không (tra gộp, lưu kết quả trên máy)"><input type="checkbox" name="sheet" value="seller" checked />Kiểm tra rủi ro MST (thêm cột vào DS hóa đơn)</label>
+          <label class="check" title="Đặt HĐ thay thế/điều chỉnh cạnh HĐ gốc, tô màu chỗ thay đổi"><input type="checkbox" name="sheet" value="adjust" checked />So sánh HĐ thay thế với HĐ gốc</label>
+          <label class="check" title="Mẫu bảng kê tải lên HTKK (NQ 142/2024/QH15)"><input type="checkbox" name="sheet" value="reduction" checked />Phụ lục giảm thuế GTGT</label>
+          <label id="hdkdOpt" class="check" title="Mẫu 01-2/BK-HĐKD cho hộ kinh doanh, lập từ hóa đơn mua vào" hidden><input type="checkbox" name="sheet" value="hdkd" />Bảng kê HĐKD (hộ KD)</label>
+          <label id="gtgtOpt" class="check" title="Tờ khai 01/GTGT điền sẵn từ hóa đơn để đối chiếu – chỉ lập khi chọn trọn 1 tháng hoặc 1 quý"><input type="checkbox" name="sheet" value="gtgt" />Tờ khai 01/GTGT (tham khảo)</label>
+        </div>
+      </fieldset>
+    </section>
+
+    <section id="jobArea" class="job">
+      <div class="job-title">Nhật ký</div>
+      <ol id="log"></ol>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <dl class="summary">
+      <div><dt>Khoảng ngày:</dt><dd id="sumRange">—</dd></div>
+      <div><dt>Hóa đơn tải về:</dt><dd id="sumKinds">—</dd></div>
+      <div><dt>Định dạng tải về:</dt><dd id="sumFmt">—</dd></div>
+    </dl>
+    <progress id="bar" value="0" max="1"></progress>
+    <div class="actions">
+      <button id="run" class="primary" disabled>Tìm kiếm</button>
+      <button id="stop" hidden>Dừng</button>
+    </div>
+    <div id="status" class="status"></div>
+  </footer>
+
+  <!-- Hiện khi tải xong (không hiện khi bấm Dừng) -->
+  <dialog id="doneModal" class="modal" aria-labelledby="doneTitle">
+    <div class="modal-icon" aria-hidden="true">✓</div>
+    <h3 id="doneTitle">Đã tải xong!</h3>
+    <p id="doneText" class="modal-text"></p>
+    <p class="modal-text">Chúc bạn một ngày mới tốt lành!</p>
+    <a class="modal-more" href="#">
+      <img src="sister-logo.svg" alt="" />
+      <span><strong>Thử thêm “Tải hồ sơ thuế hàng loạt”</strong><span>Miễn phí, cùng tác giả · Xem tất cả tiện ích →</span></span>
+    </a>
+    <form method="dialog"><button class="primary">Đóng</button></form>
+  </dialog>
+
+  <!-- Kích hoạt bản quyền: kiểm tra chữ ký ngay trên máy, không gửi gì ra ngoài -->
+  <dialog id="licModal" class="modal lic-modal" aria-labelledby="licTitle">
+    <button type="button" class="lic-close" id="licClose" aria-label="Đóng" hidden>×</button>
+    <div class="modal-icon" aria-hidden="true">🔑</div>
+    <h3 id="licTitle">Kích hoạt tiện ích</h3>
+    <p class="modal-text">Nhận mã kích hoạt từ tác giả qua 2 bước dưới đây.</p>
+    <p class="lic-reason" id="licReason"></p>
+    <div class="lic-step">
+      <div class="lic-step-head"><span class="lic-num">1</span><span>Gửi <strong>Mã máy</strong> cho tác giả</span></div>
+      <div class="mid-row"><code id="machineId">…</code><button id="copyMid" type="button">Sao chép</button></div>
+      <a class="lic-contact" href="#">Hỗ trợ quản trị nội bộ</a>
+    </div>
+    <div class="lic-step">
+      <div class="lic-step-head"><span class="lic-num">2</span><span>Dán <strong>Mã kích hoạt</strong> nhận được</span></div>
+      <textarea id="licInput" rows="3" spellcheck="false" aria-label="Mã kích hoạt" placeholder="HDDT1.…"></textarea>
+      <p id="licMsg" class="lic-msg"></p>
+    </div>
+    <button id="licSubmit" class="primary" type="button">Kích hoạt</button>
+    <p class="lic-note">Mã được kiểm tra ngay trên máy, không gửi đi đâu.</p>
+  </dialog>
+
+  <script src="../license/license.js"></script>
+  <script type="module" src="panel.js"></script>
+</body>
+</html>

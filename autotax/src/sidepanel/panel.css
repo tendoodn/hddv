@@ -283,3 +283,14 @@ input.date.bad { border-color:var(--err); }
 .lic-msg.error { color:var(--err); }
 .lic-modal button.primary { height:38px; margin-top:2px; }
 .lic-note { margin:8px 0 0; font-size:11px; color:var(--muted); }
+
+
+/* Liên kết nhanh tới công cụ Tendoo */
+.quick-links { display:grid; gap:7px; margin:10px 0 2px; }
+.quick-link { display:flex; align-items:center; gap:10px; min-width:0; padding:9px 10px; border:1px solid var(--accent-line); border-radius:var(--radius); background:var(--accent-soft); color:var(--fg); text-decoration:none; }
+.quick-link:hover { border-color:var(--accent); background:#dff3ef; }
+.quick-link-icon { flex:none; display:grid; place-items:center; width:30px; height:30px; border-radius:8px; background:var(--accent); color:#fff; font-size:15px; font-weight:800; }
+.quick-link-copy { display:flex; flex:1; flex-direction:column; min-width:0; }
+.quick-link-copy strong { color:var(--accent-strong); font-size:12.5px; }
+.quick-link-copy span { color:var(--muted); font-size:11px; }
+.quick-link-arrow { flex:none; color:var(--accent-strong); font-size:16px; font-weight:700; }

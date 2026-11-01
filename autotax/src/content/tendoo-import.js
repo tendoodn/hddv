@@ -93,6 +93,25 @@
   const cleanFile=v=>String(v||'').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,' ').trim().slice(0,90)||'HoaDon';
   const goods=lines=>(lines||[]).filter(l=>l?.ten&&l.tchat!=='Ghi chú, diễn giải'&&
     l.tchat!=='Phí, lệ phí'&&l.sl!=null&&Number(l.sl)>0);
+  // Fast lookup for the interactive link dialog: search both BC name and SKU,
+  // ignoring accents/case and ranking exact or prefix matches first.
+  function searchCatalog(products,query,limit=12){
+    const term=norm(query);
+    const max=Math.min(30,Math.max(1,Math.floor(Number(limit)||12)));
+    if(!term)return (products||[]).slice(0,Math.min(8,max));
+    const matches=[];
+    for(const product of products||[]){
+      const sku=norm(product.sku),name=norm(product.name);
+      if(!sku.includes(term)&&!name.includes(term))continue;
+      const rank=sku===term?0:name===term?1:sku.startsWith(term)?2:
+        name.startsWith(term)?3:sku.includes(term)?4:5;
+      matches.push({rank,product});
+    }
+    matches.sort((a,b)=>a.rank-b.rank||
+      a.product.name.localeCompare(b.product.name,'vi')||
+      a.product.sku.localeCompare(b.product.sku,'vi'));
+    return matches.slice(0,max).map(x=>x.product);
+  }
   function findProduct(line,items,links={}){
     const key=norm(line.ten),linked=links[key];
     if(linked)return items.find(p=>p.sku===linked)||null;
@@ -145,5 +164,5 @@
       (skipped?'Bo qua '+skipped+' hoa don thieu dong san pham.\n':'')});
     return {zip:Zip.writeZip(files),count,skipped};
   }
-  window.TendooImport={normalize:norm,workbook,catalog,template,missing,makePackage};
+  window.TendooImport={normalize:norm,workbook,catalog,template,searchCatalog,missing,makePackage};
 })();

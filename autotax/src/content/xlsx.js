@@ -106,7 +106,7 @@
 
   // Tên sheet Excel: tối đa 31 ký tự, loại ký tự cấm, không rỗng và không trùng.
   const cleanSheetName = (value) => {
-    let name = String(value || 'Sheet').replace(/[\\[\\]:*?\/\\\\]/g, ' ').trim();
+    let name = String(value || 'Sheet').replace(/[\[\]:*?\/\\]/g, ' ').trim();
     name = name.replace(/^'+|'+$/g, '').slice(0, 31).trim();
     return name || 'Sheet';
   };

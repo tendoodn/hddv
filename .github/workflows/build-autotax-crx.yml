@@ -28,6 +28,22 @@ jobs:
           node --check autotax/src/license/license.js
           node --check docs/customer.js
           node tests/v32/tendoo-import.test.mjs
+      - name: Produce minified Chrome-Web-Store-compliant release sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock --ignore-scripts terser@5.44.0
+          RELEASE="$RUNNER_TEMP/autotax-release"
+          mkdir -p "$RELEASE"
+          cp -a autotax/. "$RELEASE/"
+          while IFS= read -r -d '' FILE; do
+            node_modules/.bin/terser "$FILE" --compress --mangle \
+              --format comments=false --output "$FILE.min"
+            node --check "$FILE.min"
+            mv "$FILE.min" "$FILE"
+          done < <(find "$RELEASE" -type f -name '*.js' -print0)
+          echo "AUTOTAX_RELEASE=$RELEASE" >> "$GITHUB_ENV"
+          echo "Release JS minified without prohibited obfuscation."
       - name: Install Chrome packer if absent
         shell: bash
         run: |
@@ -65,11 +81,11 @@ jobs:
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
             --no-first-run --no-default-browser-check \
-            --pack-extension="$PWD/autotax" \
+            --pack-extension="$AUTOTAX_RELEASE" \
             --pack-extension-key="$RUNNER_TEMP/autotax-signing.pem"
           python3 - <<'PY'
           import json,pathlib,struct,zipfile,os
-          root=pathlib.Path("autotax")
+          root=pathlib.Path(os.environ["AUTOTAX_RELEASE"])
           version=json.loads((root/"manifest.json").read_text(encoding="utf8"))["version"]
           target=pathlib.Path("dist")
           output=target/f"autotax-v{version}.zip"
@@ -87,7 +103,7 @@ jobs:
                "src/background/service-worker.js",
                "src/content/tendoo-import.js"}.issubset(names), "Required sources missing"
               assert not any(name.endswith(".pem") for name in names), "Key leaked!"
-          packed=pathlib.Path("autotax.crx")
+          packed=pathlib.Path(os.environ["AUTOTAX_RELEASE"]+".crx")
           assert packed.exists() and packed.stat().st_size>10000,"Chrome did not output a CRX"
           with packed.open("rb") as crx:
               assert crx.read(4)==b"Cr24","Not a Chrome extension"
@@ -102,7 +118,8 @@ jobs:
               "For a stable production CRX update, store the permanent signing PEM\n"
               "as base64 in GitHub Actions secret AUTOTAX_CRX_PRIVATE_KEY_B64.\n"
               "Never commit or upload a private PEM in the artifact.\n"
-              "Browser may block off-store CRX install: use chrome://extensions,\n"
+              "Release JS is minified; browser-side code cannot be encrypted irreversibly.\\n"
+              "Browser may block off-store CRX install: use chrome://extensions,\\n"
               "Developer mode, Load unpacked with extracted ZIP for local testing.\n",
               encoding="utf8")
           print(f"Built {output} ({output.stat().st_size} bytes)")

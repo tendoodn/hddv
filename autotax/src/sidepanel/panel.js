@@ -80,6 +80,7 @@ async function init() {
   if (info.error) log(info.error, 'error');
   setConnected(!!info.ready, info);
   setBusy(!!info.busy);
+  if(info.busy)ensureJobPort().postMessage({type:'attach'});
 }
 
 // Khoảng chọn nhanh
@@ -449,6 +450,23 @@ function guard(btn, fn) {
     try { await fn(e); } finally { delete btn.dataset.running; }
   });
 }
+$('hideSidepanel').addEventListener('click',async()=>{
+  // An unfinished mapping becomes a valid import with THIẾU MÃ when hidden.
+  if(tendooMappingRequest&&port){
+    const mapping={};
+    for(const input of $('tendooMissingList').querySelectorAll('input[data-key]')){
+      if(input.value)mapping[input.dataset.key]=input.value;
+    }
+    try{await finishTendooMapping(tendooMappingRequest,mapping)}
+    catch(e){log('Không chuyển được ánh xạ hiện có: '+e.message,'warn')}
+  }
+  try{
+    if(typeof chrome.sidePanel.close!=='function')
+      throw Error('Chrome cần phiên bản 141 trở lên để dùng nút Ẩn.');
+    const window=await chrome.windows.getCurrent();
+    await chrome.sidePanel.close({windowId:window.id});
+  }catch(e){log('Không ẩn được sidepanel: '+e.message,'warn')}
+});
 guard($('reconnect'), async () => {
   const b = $('reconnect');
   b.classList.add('spin');
@@ -471,21 +489,28 @@ chrome.tabs.onUpdated.addListener((id, change, tab) => {
 $('run').addEventListener('click', run);
 $('stop').addEventListener('click', () => { stopped = true; if (tabId) ask({ type: 'stop' }); });
 
-let port = null;
-function job(msg) {
-  if (!port) {
-    port = chrome.tabs.connect(tabId, { name: 'job' });
-    port.onDisconnect.addListener(() => {
-      port = null;
-      if (busy) { log('Bị gián đoạn vì trang hoadondientu vừa tải lại/chuyển trang – hãy bấm Tìm kiếm lại', 'warn'); setBusy(false); }
-    });
-    port.onMessage.addListener(onJobMessage);
-  }
-  setBusy(true);
-  port.postMessage(msg);
+let port=null,portTabId=null;
+function ensureJobPort(){
+  if(port&&portTabId===tabId)return port;
+  if(port)try{port.disconnect()}catch{}
+  port=chrome.tabs.connect(tabId,{name:'job'});portTabId=tabId;
+  port.onDisconnect.addListener(()=>{
+    port=null;portTabId=null;
+    if(busy){
+      log('Kết nối trang Thuế bị ngắt. Nếu trang vừa tải lại thì tác vụ đã dừng.','warn');
+      setBusy(false);
+    }
+  });
+  port.onMessage.addListener(onJobMessage);
+  return port;
 }
-
+function job(msg){
+  const current=ensureJobPort();
+  setBusy(true);
+  current.postMessage(msg);
+}
 function onJobMessage(m) {
+  if (m.type === 'run-started')setBusy(true);
   if (m.type === 'tendoo-map-request')return mapUnknownTendoo(m);
   if (m.type === 'status') $('status').textContent = m.text;
   if (m.type === 'summary') { $('bar').max = Math.max(m.total, 1); $('bar').value = 0; }
@@ -547,13 +572,14 @@ async function run() {
   if (!kinds.length) return log('Hãy chọn loại hóa đơn (mua vào / bán ra)', 'warn');
   if (!Object.values(f).some(Boolean)) return log('Hãy chọn ít nhất 1 loại file cần tải', 'warn');
   const options=sheets();
-  if(options.tendoo&&!kinds.includes('purchase'))return log('Đồng bộ Tendoo cần chọn Mua vào.','warn');
+  if(options.tendoo&&!kinds.includes('purchase'))return log('Xuất nhập kho cần chọn Mua vào.','warn');
   if(options.tendoo&&!tendooReady()){
-    openTendooSettings();return log('Cần tải báo cáo BC_San_Pham và file mẫu nhập kho trước khi tìm kiếm.','warn');
+    openTendooSettings();return log('Cần tải danh mục sản phẩm và hoàn tất cấu hình nhập kho.','warn');
   }
   const msg = { type: 'run', tuNgay: toVN($('from').value), denNgay: toVN($('to').value),
     kinds, forms, formats: f, sheets: options, adjOnly: $('adjOnly').checked,
-    ...(options.tendoo?{tendoo:{products:tendooCatalog,template:tendooTemplate,links:tendooSavedLinks}}:{}) };
+    ...(options.tendoo?{tendoo:{products:tendooCatalog,template:tendooTemplate,
+      links:tendooSavedLinks,settings:misaSettings()}}:{}) };
   $('log').innerHTML = ''; $('bar').value = 0; $('status').textContent = '';
   stopped = false;
   job(msg);

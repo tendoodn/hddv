@@ -168,7 +168,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
       if (ambiguousRefs.has(k)) { originals.set(k, { ambiguous: true }); continue; }
       if (inRange ? details.get(inRange.key)?.lines || todo.some((t) => t.row === inRange) : originals.has(k)) continue;
       if (inRange) todo.push({ row: inRange, get: () => HDDT.fetchInvoice(inRange, shouldStop), put: (inv) => details.set(inRange.key, { source: inv.source, head: inv.head, lines: inv.lines, fees: inv.fees }) });
-      else { originals.set(k, null); todo.push({ row: r, gocOf: true, get: () => HDDT.fetchOriginal(r, shouldStop), put: (inv) => originals.set(k, inv) }); }
+      else { originals.set(k, null); todo.push({ row: r, gocOf: true, originalKey: k, get: () => HDDT.fetchOriginal(r, shouldStop), put: (inv) => originals.set(k, inv) }); }
     }
     let i = 0;
     for (const t of todo) {
@@ -177,6 +177,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
       try { t.put(await t.get()); } catch (e) {
         if (e.status === 401) throw e;
         if (stopFlag) break;
+        if (t.gocOf && t.originalKey) originals.set(t.originalKey, { error: e.message || 'Lỗi không xác định' });
         const ref = t.gocOf ? t.row.goc : `${t.row.khhdon}-${t.row.shdon}`;
         send({ type: 'log', level: 'warn', text: `Không tải được hóa đơn ${t.gocOf ? 'gốc ' : ''}${ref}: ${e.message}` });
       }

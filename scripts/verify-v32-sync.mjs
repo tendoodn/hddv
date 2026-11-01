@@ -49,7 +49,8 @@ const migrationNames=[
  '025_admin_revoke_restore_compensation_and_transaction_codes.sql',
  '026_hide_inactive_package_history.sql',
  '027_admin_order_search.sql',
- '028_mst_12_digit_trial_and_authorization.sql'
+ '028_mst_12_digit_trial_and_authorization.sql',
+ '028_explicit_mst_profiles_and_session_lock.sql'
 ];
 let sql='';
 for(const name of migrationNames){

@@ -5,6 +5,7 @@ on:
     branches:
       - feature/addon-license-portal
     paths:
+      - "addon-portal/supabase/config.toml"
       - "addon-portal/supabase/functions/addon-create-order/**"
       - "addon-portal/supabase/functions/addon-sepay-webhook/**"
       - ".github/workflows/deploy-addon-supabase.yml"

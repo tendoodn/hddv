@@ -20,6 +20,11 @@
 <dialog id="packageHistoryDialog" class="history-modal" aria-labelledby="packageHistoryTitle">
  <div class="row"><div><h2 id="packageHistoryTitle">Lịch sử mua và cấp gói</h2><p id="packageHistoryCount" class="muted"></p></div><button id="closePackageHistory" type="button" class="secondary" aria-label="Đóng lịch sử gói">Đóng ✕</button></div>
  <div class="row"><label>Loại giao dịch <select id="packageHistoryFilter"><option value="all">Tất cả giao dịch</option><option value="purchase">Khách mua gói</option><option value="admin_grant">Admin cấp gói</option></select></label><button id="refreshPackageHistory" type="button" class="secondary">Làm mới</button></div>
+ <form id="packageOrderSearchForm" class="row" role="search">
+ <label for="packageOrderSearch">Tìm mã đơn hoặc mã giao dịch
+ <input id="packageOrderSearch" type="search" placeholder="UUID đơn hàng / ADDON... / mã SePay" maxlength="128" autocomplete="off"></label>
+ <div class="actions"><button id="packageOrderSearchBtn" type="submit">Tìm kiếm</button><button id="packageOrderClearBtn" type="button" class="secondary">Xóa lọc</button></div>
+ </form>
  <div id="packageHistoryMessage" class="notice hidden" role="status"></div>
  <div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Khách hàng</th><th>Loại giao dịch</th><th>Gói</th><th>Số lượng</th><th>Trạng thái</th><th>Hết hạn</th><th>Số tiền</th><th>Mã đơn</th><th>Mã giao dịch</th><th>Thao tác</th></tr></thead><tbody id="packageHistoryRows"></tbody></table></div>
  <div class="row history-pages"><span id="packageHistoryPageInfo" class="muted">Trang 1/1</span><div class="actions"><button id="historyPrev" type="button" class="secondary">Trang trước</button><button id="historyNext" type="button" class="secondary">Trang sau</button></div></div>
@@ -76,16 +81,17 @@ function historyType(h){
 }
 async function loadPackageHistory(page=1){
  const dialog=$("packageHistoryDialog");if(!dialog.open)return;
- const prev=$("historyPrev"),next=$("historyNext"),refresh=$("refreshPackageHistory");
+ const prev=$("historyPrev"),next=$("historyNext"),refresh=$("refreshPackageHistory"),searchBtn=$("packageOrderSearchBtn");
  const requestPage=Math.max(1,Math.trunc(Number(page)||1));
- prev.disabled=true;next.disabled=true;refresh.disabled=true;
+ prev.disabled=true;next.disabled=true;refresh.disabled=true;searchBtn.disabled=true;
  $("packageHistoryCount").textContent="Đang tải giao dịch...";
  $("packageHistoryMessage").classList.add("hidden");
  $("packageHistoryRows").innerHTML='<tr><td colspan="11">Đang tải...</td></tr>';
  try{
-  const {data,error}=await client.rpc("addon_admin_package_transactions_v32",{
+  const {data,error}=await client.rpc("addon_admin_search_package_transactions_v32",{
    p_page:requestPage,p_kind:$("packageHistoryFilter").value,
-   p_user_id:packageHistoryCustomer
+   p_user_id:packageHistoryCustomer,
+   p_order_query:$("packageOrderSearch").value.trim()
   });
   if(error)throw error;
   const rows=Array.isArray(data?.items)?data.items:[];
@@ -126,12 +132,13 @@ async function loadPackageHistory(page=1){
   $("packageHistoryRows").innerHTML="";
   $("packageHistoryPageInfo").textContent="—";
   msg("packageHistoryMessage","Lỗi tải lịch sử: "+(error.message||error),true);
- }finally{refresh.disabled=false}
+ }finally{refresh.disabled=false;searchBtn.disabled=false}
 }
 function openPackageHistory(userId=null){
  packageHistoryCustomer=userId;
  packageHistoryPage=1;packageHistoryPages=1;
  $("packageHistoryFilter").value="all";
+ $("packageOrderSearch").value="";
  const customer=allUsers.find(u=>u.user_id===userId);
  $("packageHistoryTitle").textContent=customer?
   "Lịch sử gói · "+(customer.email||customer.user_id):
@@ -144,6 +151,8 @@ $("togglePackageHistory").onclick=()=>openPackageHistory();
 $("closePackageHistory").onclick=()=>$("packageHistoryDialog").close();
 $("refreshPackageHistory").onclick=()=>loadPackageHistory(packageHistoryPage);
 $("packageHistoryFilter").onchange=()=>loadPackageHistory(1);
+$("packageOrderSearchForm").onsubmit=event=>{event.preventDefault();void loadPackageHistory(1)};
+$("packageOrderClearBtn").onclick=()=>{$("packageOrderSearch").value="";void loadPackageHistory(1)};
 $("historyPrev").onclick=()=>{if(packageHistoryPage>1)void loadPackageHistory(packageHistoryPage-1)};
 $("historyNext").onclick=()=>{if(packageHistoryPage<packageHistoryPages)void loadPackageHistory(packageHistoryPage+1)};
 

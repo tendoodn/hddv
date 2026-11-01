@@ -248,11 +248,11 @@
   const isAdjusting = (r) => (Number(r.tthai) === 2 || Number(r.tthai) === 3) && !!r.gocRef;
   // Chuẩn hóa các trường số dạng chuỗi mà không ép Number (tránh mất chính xác nếu số hóa đơn dài).
   // Bỏ số 0 đầu ở mẫu/số; giữ nguyên ký hiệu chữ và chuẩn hóa hoa/thường, khoảng trắng.
-  const refDigits = (v) => String(v ?? '').trim().replace(/^0+(?=\\d)/, '');
+  const refDigits = (v) => String(v ?? '').trim().replace(/^0+(?=[0-9])/, '');
   const refKey = (x) => (x ? [
     String(x.nbmst || '').trim(),
     refDigits(x.khmshdon),
-    String(x.khhdon || '').trim().toUpperCase().replace(/\\s+/g, ''),
+    String(x.khhdon || '').trim().toUpperCase().replace(/[ \t\r\n]+/g, ''),
     refDigits(x.shdon),
   ].join('|') : '');
   const monthOf = (iso) => { const d = new Date(iso); return d.getFullYear() * 12 + d.getMonth(); };

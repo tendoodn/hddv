@@ -47,7 +47,8 @@ const migrationNames=[
  '023_fix_package_checkout_pgcrypto_schema.sql',
  '024_five_minute_qr_realtime_order_status.sql',
  '025_admin_revoke_restore_compensation_and_transaction_codes.sql',
- '026_hide_inactive_package_history.sql'
+ '026_hide_inactive_package_history.sql',
+ '027_admin_order_search.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -110,6 +111,9 @@ assert(adminHtml.includes('id="packageAdjustmentDialog"'),'Missing audited packa
 assert(adminHtml.includes('addon_admin_adjust_package_lot_v32'),'Missing revoke/restore RPC hookup');
 assert(adminHtml.includes('addon_admin_compensate_failed_order_v32'),'Missing failed/refunded compensation RPC hookup');
 assert(adminHtml.includes('<th>Mã đơn</th><th>Mã giao dịch</th>'),'Missing order and transaction ID columns');
+assert(adminHtml.includes('id="packageOrderSearch"'),'Missing order search input');
+assert(adminHtml.includes('addon_admin_search_package_transactions_v32'), 'Admin history must filter on server');
+assert(adminHtml.includes('id="packageOrderClearBtn"'), 'Admin history must permit clearing order search');
 assert(adminHtml.includes('addon_admin_hide_package_history_v32'), 'Admin history hide RPC must be wired');
 assert(adminHtml.includes('data-adjust="hide"'), 'Admin history must provide hide button for eligible records');
 assert(adminHtml.includes('h.can_hide'), 'Admin hide button must depend on server authorization');

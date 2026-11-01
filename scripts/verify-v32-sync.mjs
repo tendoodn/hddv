@@ -100,6 +100,13 @@ assert(crxPanel.includes('id="tendooSyncCheck"'),'Missing Tendoo option');
 assert(crxPanel.includes('id="tendooCatalogFile"')&&crxPanel.includes('id="tendooTemplateFile"'),
  'Tendoo import must require SKU and template files');
 assert(crxPanel.includes('id="tendooMatchDialog"'),'Missing SKU mapping dialog');
+assert(crxJs.includes('Sản phẩm gốc · HĐ mua vào') &&
+ crxJs.includes('Sản phẩm liên kết · file BC_San_Pham'),
+ 'SKU mapping must distinguish invoice product and linked BC product');
+assert(crxJs.includes('TendooImport.searchCatalog'),
+ 'SKU link popup must support fast name-or-code search');
+assert(bridge.includes('function searchCatalog('),
+ 'Tendoo catalog search must be implemented in shared offline helper');
 assert(crxPanel.includes('id="lic-mst-add-form"'),'Missing MST profile add form');
 assert(crxPanel.includes('id="mstGuardMessage"'),'Missing MST mismatch warning');
 assert(crxPanel.includes('id="historyMst"'),'Invoice history must filter by MST');

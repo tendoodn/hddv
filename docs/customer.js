@@ -294,7 +294,7 @@ $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePa
 $("refreshBtn").addEventListener("click",refresh);
 $("webAddMstForm").addEventListener("submit",async e=>{
  e.preventDefault();const input=$("webAddMst"),mst=input.value.trim().replace(/[ -]/g,"");
- if(!/^(\\d{10}|\\d{12}|\\d{13})$/.test(mst)){showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);return}
+ if(!/^(\d{10}|\d{12}|\d{13})$/.test(mst)){showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);return}
  const submit=$("webAddMstForm").querySelector('button[type="submit"]');submit.disabled=true;
  try{await rpc("addon_add_mst_profile_v33",{p_mst:mst});input.value="";await loadMstAssignments();showMessage("Đã thêm hồ sơ MST "+mst)}
  catch(e){showMessage(prettyError(e),true)}

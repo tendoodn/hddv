@@ -105,6 +105,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PREDEPLOY_V32_READ_ONLY.sql
       - name: Dry-run V3.2 upgrade against PostgreSQL 16
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql
+      - name: Verify production readiness report is readable
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/070_assert_role_permissions.sql
       - name: Verify entitlements and paid/trial scenarios

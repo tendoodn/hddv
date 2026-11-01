@@ -1,16 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- Nền xanh ngọc (khác nền xanh dương của "Tải hồ sơ thuế hàng loạt") -->
-  <rect x="4" y="4" width="120" height="120" rx="28" fill="#0f766e"/>
-  <!-- Tờ hóa đơn phía sau (nhiều hóa đơn) -->
-  <path d="M40 22h44a6 6 0 0 1 6 6v66H34V28a6 6 0 0 1 6-6z" fill="#5eead4" transform="rotate(-8 62 58)"/>
-  <!-- Hóa đơn chính, mép dưới răng cưa -->
-  <path d="M38 18h48a6 6 0 0 1 6 6v78l-6-5-6 5-6-5-6 5-6-5-6 5-6-5-6 5-6-5-6 5V24a6 6 0 0 1 6-6z" fill="#ffffff"/>
-  <!-- Dòng chữ trên hóa đơn -->
-  <rect x="44" y="30" width="26" height="6" rx="3" fill="#0f766e"/>
-  <rect x="44" y="44" width="36" height="5" rx="2.5" fill="#99f6e4"/>
-  <rect x="44" y="55" width="30" height="5" rx="2.5" fill="#99f6e4"/>
-  <rect x="44" y="66" width="20" height="5" rx="2.5" fill="#99f6e4"/>
-  <!-- Nút tải xuống -->
-  <circle cx="88" cy="88" r="22" fill="#f97316" stroke="#0f766e" stroke-width="5"/>
-  <path d="M88 76v20M79 88l9 9 9-9" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="128.000000pt" height="128.000000pt" viewBox="0 0 128.000000 128.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,128.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M750 1061 c0 -29 14 -41 50 -41 39 0 129 -42 172 -80 48 -41 82 -99
+98 -167 10 -42 12 -43 50 -43 35 0 40 3 40 23 0 83 -71 203 -156 263 -54 39
+-157 74 -215 74 -36 0 -39 -2 -39 -29z"/>
+<path d="M762 948 c-7 -7 -12 -22 -12 -35 0 -18 8 -24 40 -33 54 -15 107 -63
+121 -111 11 -37 15 -39 51 -39 43 0 46 7 27 71 -15 49 -62 105 -107 128 -51
+25 -105 34 -120 19z"/>
+<path d="M357 845 c-95 -26 -140 -56 -167 -110 -23 -45 -25 -62 -25 -175 0
+-149 18 -202 82 -244 104 -69 383 -74 520 -9 81 38 94 67 100 221 6 137 -3
+192 -38 236 -25 32 -85 64 -154 82 -63 17 -254 17 -318 -1z m263 -96 c25 -6
+55 -20 68 -31 21 -20 22 -29 22 -159 l0 -137 -31 -26 c-29 -25 -35 -26 -157
+-26 -197 0 -207 11 -200 219 3 94 6 113 23 130 34 34 186 51 275 30z"/>
+</g>
 </svg>

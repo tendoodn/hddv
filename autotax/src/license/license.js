@@ -17,7 +17,7 @@
   $('lic-auth').hidden=active;$('lic-account').hidden=!active;$('lic-email-label').textContent=session?.user?.email||'';
   const rows=license?.packages||{},inv=rows.invoice||{},mst=rows.mst||{};
   const invLeft=Number(inv.remaining||0),invBought=Number(inv.purchased||0),mstCount=Number(mst.active_quantity||0);
-  const both=invLeft>0&&mstCount>0;
+  const both=(invLeft>0||!!license?.can_reread_charged_invoices)&&mstCount>0;
   const mode=license?.mode||(invLeft>0?'invoice':'mst');
   $('lic-mode-wrap').hidden=!both;$('lic-mode').value=mode;
   const holder=$('lic-entitlements');holder.replaceChildren();

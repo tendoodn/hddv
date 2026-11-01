@@ -15,7 +15,7 @@ AutoTax 3.2 replaces the legacy customer-facing trial/monthly/yearly display wit
 
 ## Supabase deployment
 
-Production currently retains the old licensing schema. **Do not run historical migrations or the destructive draft on production.** The V3.2 source set now includes migrations 001–017; a safe, verified migration/reset procedure is not yet released. Preserve auth.users and addon_admins. See addon-portal/README.md and addon-portal/supabase/BUILD_STATUS_V32.md.
+Production currently retains the old licensing schema. **Do not run historical migrations or the destructive draft on production.** The V3.2 source set now includes migrations 001–018; a safe, verified migration/reset procedure is not yet released. Preserve auth.users and addon_admins. See addon-portal/README.md and addon-portal/supabase/BUILD_STATUS_V32.md.
 
 Deploy Edge Functions from addon-portal/supabase/functions and configure the required Supabase/SePay secrets. Do not deploy this schema to an unrelated Tendoo project.
 

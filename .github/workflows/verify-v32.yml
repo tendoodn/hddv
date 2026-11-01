@@ -1,0 +1,28 @@
+name: AutoTax V3.2 sync checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "autotax/**"
+      - "addon-portal/**"
+      - "scripts/verify-v32-sync.mjs"
+      - ".github/workflows/verify-v32.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "autotax/**"
+      - "addon-portal/**"
+      - "scripts/verify-v32-sync.mjs"
+      - ".github/workflows/verify-v32.yml"
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/verify-v32-sync.mjs

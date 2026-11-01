@@ -570,3 +570,24 @@ button.chip{width:100%;min-width:0;min-height:34px;height:auto;padding:4px 2px;f
 .tendoo-dialog select,.tendoo-dialog input[type=text]{display:block;width:100%;min-width:0;padding:9px 10px;border:1px solid #f3b9c0;border-radius:8px;background:#fff;font-size:12px;box-sizing:border-box}
 #misaStockSettings[hidden]{display:none!important}
 #misaStockSettings small{display:block;margin-top:8px;line-height:1.6}
+
+/* V3.3 compact license header: mode + exactly three quick actions. */
+.license-head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:7px}
+.license-primary{order:2;flex:1 1 100%;width:100%;min-width:0}
+.license-primary>strong{display:block;font-size:13px;color:var(--accent-strong)}
+.license-head-actions{order:1;flex:1 1 100%;justify-content:flex-end}
+.license-primary .license-mode{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:8px;row-gap:3px;margin-top:6px}
+.license-primary .license-mode[hidden],.license-main-actions[hidden]{display:none!important}
+.license-primary .license-mode label{margin:0;white-space:nowrap;font-weight:750}
+.license-primary .license-mode select{width:100%;min-width:0;max-width:100%;font-size:11px}
+.license-primary .license-mode small{grid-column:1/-1;font-size:10px;line-height:1.35}
+.license-primary .license-main-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
+.license-primary .license-main-actions button,.license-primary .license-main-actions #lic-password-open{grid-column:auto;min-width:0;padding:6px 3px;font-size:10px;line-height:1.25;white-space:nowrap}
+.sheet-opts .sheet-more{grid-column:1/-1;width:100%;min-width:0;border-top:1px dashed var(--line);margin-top:4px;padding-top:5px}
+.sheet-opts .sheet-more summary{cursor:pointer;font-size:11px;color:var(--accent-strong);font-weight:750;list-style:revert}
+.sheet-opts .sheet-more-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px 0 2px}
+.sheet-opts .sheet-more-inner .check{min-width:0;font-size:11px}
+#tendooMatchDialog .license-buttons{display:grid;grid-template-columns:1.7fr 1fr 0.75fr;gap:6px}
+#tendooMatchDialog .license-buttons button{min-width:0;padding:8px 4px;font-size:11px}
+@media(max-width:390px){#tendooMatchDialog .license-buttons{grid-template-columns:1fr 1fr}
+#tendooMatchApply{grid-column:1/-1}}

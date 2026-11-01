@@ -91,6 +91,16 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/BACKUP_V32_BROWSER_ONLY.sql
           psql -v ON_ERROR_STOP=1 -Atc "select count(*) from autotax_backup_20261101._manifest where rows_original=rows_copied" | grep -x 11
+      - name: Reject changed legacy data even when snapshot row counts match
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -c "update public.addon_plans set price_vnd=777 where code='monthly'"
+          if psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql >/tmp/v32-stale-snapshot.log 2>&1; then
+            echo "ERROR: upgrade accepted stale content with unchanged row count"
+            exit 1
+          fi
+          grep -q "v32_backup_stale_content_for_addon_plans" /tmp/v32-stale-snapshot.log
+          psql -v ON_ERROR_STOP=1 -c "update public.addon_plans set price_vnd=0 where code='monthly'"
       - name: Validate read-only production preflight SQL syntax
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PREDEPLOY_V32_READ_ONLY.sql
       - name: Dry-run V3.2 upgrade against PostgreSQL 16

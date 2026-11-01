@@ -50,23 +50,72 @@ const details=new Map([
 const misses=td.missing(invoice,details,products,{});
 assert.equal(misses.length,1);
 assert.equal(misses[0].name,'Rau chợ');
-assert.throws(()=>td.makePackage(invoice,details,products,template,{}),/Chưa ghép SKU/);
+// An unmapped stock item must not block ZIP export.
+const fallback=td.makePackage(invoice,details,products,template,{});
+assert.equal(fallback.count,2);
+assert.equal(fallback.missing,1);
+assert.equal(books[1][0].rows[1][0],'THIẾU MÃ');
+assert.equal(books[1][0].rows[1][2],'Rau chợ');
+
 const mapped={[td.normalize('Rau chợ')]:'SKU-02'};
 const result=td.makePackage(invoice,details,products,template,mapped);
 assert.equal(result.count,2);
 assert.equal(result.skipped,0);
-assert.equal(books.length,2);
-assert.equal(books[0][0].rows[1][0],'SKU-01');
-assert.equal(books[0][0].rows[1][6],0.03);
-assert.equal(books[0][0].rows[1][8],0.08);
-assert.equal(books[0][0].rows[1][10],20400);
-assert.equal(books[1][0].rows[1][0],'SKU-02');
-assert.equal(books[1][0].rows[1][8],'Không chịu thuế');
-assert.equal(books[1][0].rows[1][10],'');
+assert.equal(books.length,4);
+assert.equal(books[2][0].rows[1][0],'SKU-01');
+assert.equal(books[2][0].rows[1][6],0.03);
+assert.equal(books[2][0].rows[1][8],0.08);
+assert.equal(books[2][0].rows[1][10],20400);
+assert.equal(books[3][0].rows[1][0],'SKU-02');
+assert.equal(books[3][0].rows[1][8],'Không chịu thuế');
+assert.equal(books[3][0].rows[1][10],'');
 assert.equal(captured[captured.length-1].filter(x=>x.name.endsWith('.xlsx')).length,2);
-assert.equal(books[0][0].rows[0].length,11);
+assert.equal(books[2][0].rows[0].length,11);
 assert.equal(td.missing(invoice,details,products,mapped).length,0);
 assert.equal(td.missing([{kind:'purchase',key:'d'}],new Map([
  ['d',{lines:[{ten:'Bất kỳ',ma:'SKU-01',sl:1,dgia:100,tsuat:'0%'}]}]
 ]),products,{}).length,0);
-console.log('Tendoo 11-column template, numeric VAT, MTT-KCT, mapped SKU and ZIP: PASS');
+// Bundled Tendoo template matches the 11-column reference without an upload.
+const builtT=td.builtinTemplate('tendoo');
+assert.equal(builtT.headers.length,11);
+assert.equal(builtT.headers[0],'Mã sản phẩm/nvl (*)');
+assert.equal(builtT.headers[8],'Thuế GTGT');
+
+// MISA: validate the user's actual 22-column eShop nhập kho layout.
+const builtM=td.builtinTemplate('misa');
+assert.equal(builtM.headers.length,22);
+assert.equal(builtM.headers[2],'Số chứng từ (*)');
+assert.equal(builtM.headers[7],'Mã hàng (*)');
+assert.equal(builtM.headers[11],'Mã kho (*)');
+assert.equal(builtM.preRows.length,7);
+assert.equal(td.nextDocumentNumber('NK0009',1),'NK0010');
+assert.equal(td.nextDocumentNumber('NK-2026-0099',2),'NK-2026-0101');
+assert.throws(()=>td.nextDocumentNumber('SAI',1),/Mã chứng từ/);
+
+// MISA catalog has header row 3: Mã hàng hóa, Tên hàng hóa, Đơn vị tính.
+const misaFile={name:'Danh sách hàng hóa MISA.csv',size:180,
+  text:async()=>'STT,Mã hàng hóa,Tên hàng hóa,Giá bán,Đơn vị tính,Loại hàng hóa,Trạng thái\n1,Tsptess,test,12000,Chiếc,Hàng hóa thường,Đang theo dõi\n'};
+const misaCatalog=await td.catalog(misaFile);
+assert.equal(misaCatalog[0].sku,'Tsptess');
+assert.equal(misaCatalog[0].name,'test');
+const misaInvoice=[{kind:'purchase',form:'hddt',key:'a',nbten:'Nhà cung cấp',
+    nbmst:'0123456789',shdon:'001',khhdon:'C26AAA',tdlap:'2026-11-01T02:00:00Z'},
+  {kind:'purchase',form:'mtt',key:'b',shdon:'002',khhdon:'C26BBB',
+    tdlap:'2026-11-01T05:00:00Z'}];
+const misaResult=td.makePackage(misaInvoice,details,misaCatalog,builtM,{},{
+  warehouse:'KHO01',lastDocNumber:'NK0008'});
+assert.equal(misaResult.count,2);
+assert.equal(misaResult.missing,2);
+assert.equal(misaResult.lastIssued,'NK0010');
+const misaBooks=books.slice(-2);
+assert.equal(misaBooks[0][0].rows[8][0],'Nhập kho mua hàng');
+assert.equal(misaBooks[0][0].rows[8][1],'01/11/2026');
+assert.equal(misaBooks[0][0].rows[8][2],'NK0009');
+assert.equal(misaBooks[1][0].rows[8][2],'NK0010');
+assert.equal(misaBooks[0][0].rows[8][7],'THIẾU MÃ');
+assert.equal(misaBooks[0][0].rows[8][8],'Thịt heo');
+assert.equal(misaBooks[0][0].rows[8][11],'KHO01');
+assert.equal(misaBooks[1][0].rows[8][19],'KCT');
+assert.throws(()=>td.makePackage(misaInvoice,details,misaCatalog,builtM,{},{
+  warehouse:'',lastDocNumber:'NK0008'}),/Mã kho/);
+console.log('Stock import Tendoo/MISA: embedded templates, mapping fallback, document sequence and ZIP PASS');

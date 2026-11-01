@@ -88,7 +88,7 @@ begin
   -- Count equality alone is not enough: changes to prices/orders with the
   -- same number of rows also invalidate the snapshot and must block reset.
   execute format(
-   'select exists((select to_jsonb(x) from public.%1$I x except all select to_jsonb(y) from autotax_backup_20261101.%1$I y) union all (select to_jsonb(y) from autotax_backup_20261101.%1$I y except all select to_jsonb(x) from public.%1$I x)',
+   'select exists((select to_jsonb(x) from public.%1$I x except all select to_jsonb(y) from autotax_backup_20261101.%1$I y) union all (select to_jsonb(y) from autotax_backup_20261101.%1$I y except all select to_jsonb(x) from public.%1$I x))',
    t
   ) into v_different;
   if v_different then

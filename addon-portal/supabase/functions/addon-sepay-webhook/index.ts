@@ -6,8 +6,14 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const WEBHOOK_SECRET = Deno.env.get("SEPAY_WEBHOOK_SECRET")!;
 const SEPAY_BANK_ACCOUNT = Deno.env.get("SEPAY_BANK_ACCOUNT")!;
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-sepay-timestamp, x-sepay-signature",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 const json = (body: Record<string, unknown>, status = 200) =>
-  Response.json(body, { status, headers: { "Content-Type": "application/json" } });
+  Response.json(body, { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
 function safeEqual(a: string, b: string): boolean {
   const aa = new TextEncoder().encode(a);
@@ -27,7 +33,7 @@ async function hmacHex(secret: string, message: string): Promise<string> {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok");
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
   if (req.method !== "POST") return json({ success: false, error: "method_not_allowed" }, 405);
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !WEBHOOK_SECRET || !SEPAY_BANK_ACCOUNT) {
     console.error("Missing webhook environment configuration");

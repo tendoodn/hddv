@@ -2,11 +2,22 @@
 
 **SQL production đã chạy. Không chạy lại** `PRODUCTION_UPGRADE_V32_ONE_TIME.sql`. Người sở hữu xác nhận kết quả: `auth_accounts = 3`, `addon_admins = 1`, `package_products = 10`, `active_mst_lots = 0`.
 
+## Bổ sung ngày 01/11/2026: MST cố định 1 năm và lịch sử gói thu gọn
+
+Sau khi SQL V3.2 chính thức đã chạy, mở **SQL Editor → New query** và chỉ chạy file:
+`migrations/020_mst_one_year_collapsible_admin_history.sql`.
+
+Đây là SQL cập nhật an toàn, **không chạy lại file reset**, không xóa tài khoản, đơn hàng hay bản sao cũ. File này đặt thời hạn **365 ngày** cho toàn bộ gói MST hiện có, khóa quy tắc 365 ngày ở database cho các gói MST thêm sau này và bổ sung RPC quản trị chỉ dành cho admin.
+
+Trang admin có nút **Xem toàn bộ lịch sử gói**. Nội dung được ẩn khi mở trang; bấm nút mới truy vấn, hiển thị tất cả bản ghi V3.2 và lịch sử đơn hàng/thuê bao cũ từ `autotax_backup_20261101`. Bấm **Thu gọn lịch sử** để đóng lại. Người dùng thường không truy cập được dữ liệu lịch sử quản trị.
+
+Nếu trang admin đã cập nhật mà chưa chạy SQL 020, nút lịch sử sẽ báo thiếu hàm RPC. Chỉ chạy SQL 020 **một lần**, tuyệt đối không chạy SQL nâng cấp production 80KB lần thứ hai.
+
 ## Bước 1 — kiểm tra backend (chỉ đọc)
-Trong SQL Editor của đúng dự án Supabase `ucqqjdsoyvvaxswzbhaw`, chạy toàn bộ `RELEASE_READINESS_V32_READ_ONLY.sql`. Đây là SELECT, không có lệnh sửa dữ liệu. Khi chưa cấu hình thời hạn 5 gói MST, dòng `mst_packages_terms_configured` sẽ là `CHUA_DAT`; đó là trạng thái dự kiến, phải cấu hình trước khi mở bán.
+Trong SQL Editor của đúng dự án Supabase `ucqqjdsoyvvaxswzbhaw`, chạy toàn bộ `RELEASE_READINESS_V32_READ_ONLY.sql`. Đây là SELECT, không có lệnh sửa dữ liệu. Trước khi chạy SQL 020, dòng `mst_packages_terms_configured` là `CHUA_DAT`; sau SQL 020, cả 5 gói MST phải có `validity_days = 365` và dòng đó phải thành `DAT`.
 
 ## Bước 2 — cấu hình thời hạn sản phẩm
-Mở trang admin https://tendoodn.github.io/hddv/admin.html, đăng nhập bằng tài khoản đang nằm trong `addon_admins`. Trong **Giá và cấu hình gói AutoTax**, xem 5 gói MST1/MST5/MST10/MST20/MST50, nhập **thời hạn tính bằng ngày do chủ doanh nghiệp quyết định** và bấm Lưu. Không tự ý giả định gói nào cũng 365 ngày. Dùng `addon_admin_set_package_terms` thông qua giao diện để ghi audit log. Các gói T100...T5000 không có hạn sử dụng ngày. Giá bán có thể thay đổi từ giao diện admin.
+Mở trang admin https://tendoodn.github.io/hddv/admin.html, đăng nhập bằng tài khoản đang nằm trong `addon_admins`. Trong **Giá và cấu hình gói AutoTax**, xem 5 gói MST1/MST5/MST10/MST20/MST50, tất cả hiển thị **1 năm (365 ngày)**. Giá bán vẫn có thể được admin điều chỉnh, nhưng thời hạn MST không còn chỉnh sửa. Dùng `addon_admin_set_package_terms` thông qua giao diện để ghi audit log. Các gói T100...T5000 không có hạn sử dụng ngày. Giá bán có thể thay đổi từ giao diện admin.
 
 Kiểm tra cổng khách hàng: https://tendoodn.github.io/hddv/. Chế độ hóa đơn và MST cùng truy cập Supabase, không phải hai bộ dữ liệu riêng.
 

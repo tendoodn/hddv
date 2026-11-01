@@ -1,30 +1,26 @@
-# HoaDon Nội Bộ – V3.1.0
+# AutoTax 3.2.0
 
-Bản phát triển nội bộ kế thừa mã nguồn HoaDon Extension V3.0.0.
+Chrome Manifest V3 side-panel extension for invoice lookup and download.
 
-## Nguyên tắc hoạt động
-- Không gọi máy chủ Vercel hoặc API cấp phép/thử nghiệm/thống kê của tác giả cũ.
-- Không gửi mã máy, lựa chọn tra cứu, MST, thông tin doanh nghiệp hay dữ liệu hóa đơn tới máy chủ bên thứ ba.
-- Xử lý báo cáo và tạo file trên máy tính; file tải về lưu trong Downloads.
-- Chỉ kết nối `https://hoadondientu.gdt.gov.vn/` để người dùng đăng nhập và tra cứu bằng phiên đăng nhập chính thức.
-- Không chứa backend hoặc thông tin bí mật của tác giả cũ; không tìm cách truy cập các hệ thống đó.
+## Package access model
 
-## Quy tắc tra cứu hiện có
-- Hóa đơn điện tử thông thường: chia theo tháng dương lịch, không giới hạn tổng khoảng ngày.
-- Hóa đơn máy tính tiền (MTT): chia các đợt liên tiếp, tối đa 10 ngày/đợt.
-- Nếu chọn cả hai hình thức: từng hình thức được xử lý độc lập.
-- Giữ CAPTCHA, tải chi tiết và các module xuất Excel/XML/HTML/PDF/ZIP của mã nguồn nền.
+AutoTax 3.2 replaces the legacy customer-facing trial/monthly/yearly display with two independent package families:
 
-## Cài đặt
-1. Giải nén ZIP.
-2. Mở Chrome tại `chrome://extensions`.
-3. Bật **Chế độ dành cho nhà phát triển**.
-4. Chọn **Tải tiện ích đã giải nén** và chọn thư mục có `manifest.json`.
-5. Mở `https://hoadondientu.gdt.gov.vn/`, tự đăng nhập, sau đó mở side panel.
+- Invoice packages (T100, T200, T500, T1000, T5000): purchased quantities accumulate. Server-side remaining and purchased totals are stored. Successful invoice-file ZIP saves trigger a deduction request. Invoice identity is scoped to account + MST + direction + form/template + series + invoice number.
+- MST packages (MST1, MST5, MST10, MST20, MST50): each paid order creates a separate entitlement lot. Validity is configurable in days. An MST package cannot be sold until an administrator configures that validity.
+- If both package families exist, the user selects one active mode. The other family remains preserved.
+- Password changes use Supabase Auth; passwords are not stored by the extension.
+- Package price changes and activation state are server-checked and audited. Pending orders retain the price captured at order creation.
 
-## Giới hạn và lưu ý
-- Bản 3.1.0 đã loại bỏ các kết nối máy chủ cũ và luồng bản quyền/dùng thử/thống kê từ mã nguồn nền.
-- Bản này chưa bổ sung cơ chế phục hồi tiến trình sau khi Chrome hoặc tab Cổng Thuế bị đóng; hiện tại tác vụ có thể bị gián đoạn nếu trang tải lại.
-- Không lưu mật khẩu. Phiên đăng nhập vẫn do Cổng Thuế quản lý.
-- Nếu Cổng Thuế thay đổi API, cấu trúc phản hồi hoặc CAPTCHA, module `src/content/hddt-api.js` và các module CAPTCHA có thể cần cập nhật.
-- Chưa xác nhận hoạt động trên tài khoản thật; cần chạy thử nội bộ trước khi dùng cho dữ liệu kế toán quan trọng.
+## Supabase deployment
+
+On the dedicated Add-on Supabase project, apply migrations in order: 001_addon_license_portal.sql, 002_addon_pricing_and_order_creation.sql, 003_sepay_webhook_processing.sql, 004_admin_payment_details.sql, 004_show_queued_renewals.sql, 005_package_entitlements_v32.sql, 006_package_admin_and_expiry_hardening.sql.
+
+Deploy Edge Functions from addon-portal/supabase/functions and configure the required Supabase/SePay secrets. Do not deploy this schema to an unrelated Tendoo project.
+
+## Current implementation caveats
+
+- The package schema and checkout functions are committed but must be deployed before package purchase works.
+- Configure the validity of each MST package in Admin before opening it for sale; no arbitrary duration is assumed.
+- Final production enforcement of MST profile assignment must be connected to the GDT download start path before selling MST packages.
+- Chrome runtime, real payment and GDT download tests have not been executed as part of this repository update.

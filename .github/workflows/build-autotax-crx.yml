@@ -1,4 +1,4 @@
-name: Build AutoTax 3.2 CRX and ZIP
+name: Build AutoTax installable ZIP (optional enterprise CRX)
 on:
   push:
     branches: [main]
@@ -64,27 +64,28 @@ jobs:
           KEY="$RUNNER_TEMP/autotax-signing.pem"
           if [[ -n "$CRX_KEY_B64" ]]; then
             printf '%s' "$CRX_KEY_B64" | base64 -d > "$KEY"
-            echo "SIGNING_MODE=STABLE" >> "$GITHUB_ENV"
-            echo "Signing with configured reusable private key"
+            openssl pkey -in "$KEY" -check -noout >/dev/null
+            chmod 600 "$KEY"
+            echo "SIGNING_MODE=STABLE_ENTERPRISE" >> "$GITHUB_ENV"
+            echo "::notice::Using permanent signing key. CRX is for managed Chrome / supported Linux, not ordinary Windows installation."
           else
-            openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$KEY" >/dev/null 2>&1
-            echo "SIGNING_MODE=TEMPORARY_TEST_ONLY" >> "$GITHUB_ENV"
-            echo "::warning::No AUTOTAX_CRX_PRIVATE_KEY_B64 secret. CRX ID will change on each build. Do not deploy as production update."
+            echo "SIGNING_MODE=UNPACKED_ONLY" >> "$GITHUB_ENV"
+            echo "::notice::No permanent signing key: distribute the verified unpacked ZIP only. Do not generate a misleading CRX."
           fi
-          openssl pkey -in "$KEY" -check -noout >/dev/null
-          chmod 600 "$KEY"
-      - name: Build installable ZIP and signed CRX3
+      - name: Build and verify installable ZIP (optional enterprise CRX3)
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
-            --no-first-run --no-default-browser-check \
-            --pack-extension="$AUTOTAX_RELEASE" \
-            --pack-extension-key="$RUNNER_TEMP/autotax-signing.pem"
+          if [[ "$SIGNING_MODE" == "STABLE_ENTERPRISE" ]]; then
+            "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+              --no-first-run --no-default-browser-check \
+              --pack-extension="$AUTOTAX_RELEASE" \
+              --pack-extension-key="$RUNNER_TEMP/autotax-signing.pem"
+          fi
           python3 - <<'PY'
-          import json,pathlib,struct,zipfile,os
+          import json, pathlib, struct, zipfile, os
           root=pathlib.Path(os.environ["AUTOTAX_RELEASE"])
           version=json.loads((root/"manifest.json").read_text(encoding="utf8"))["version"]
           target=pathlib.Path("dist")
@@ -96,37 +97,55 @@ jobs:
                   info.compress_type=zipfile.ZIP_DEFLATED
                   info.external_attr=0o644<<16
                   z.writestr(info,p.read_bytes(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+          # Validate every ZIP member checksum and every resource referenced by the manifest.
           with zipfile.ZipFile(output) as z:
+              assert z.testzip() is None, "ZIP checksum failure"
               names=set(z.namelist())
               assert {"manifest.json","src/sidepanel/index.html","src/sidepanel/panel.js",
                "src/license/license.js","src/content/content.js","src/content/hddt-api.js",
-               "src/background/service-worker.js",
-               "src/content/tendoo-import.js"}.issubset(names), "Required sources missing"
-              assert not any(name.endswith(".pem") for name in names), "Key leaked!"
-          packed=pathlib.Path(os.environ["AUTOTAX_RELEASE"]+".crx")
-          assert packed.exists() and packed.stat().st_size>10000,"Chrome did not output a CRX"
-          with packed.open("rb") as crx:
-              assert crx.read(4)==b"Cr24","Not a Chrome extension"
-              assert struct.unpack("<I",crx.read(4))[0]==3,"Not CRX3"
-          crx_target=target/f"autotax-v{version}.crx"
-          packed.replace(crx_target)
-          mode=os.environ.get("SIGNING_MODE","UNKNOWN")
-          (target/"README_BUILD.txt").write_text(
-              f"AutoTax {version}\nPackage: CRX3 + load-unpacked ZIP\n"
-              f"Signing: {mode}\n"
-              "If TEMPORARY_TEST_ONLY, CRX uses a NEW extension ID on each build.\n"
-              "For a stable production CRX update, store the permanent signing PEM\n"
-              "as base64 in GitHub Actions secret AUTOTAX_CRX_PRIVATE_KEY_B64.\n"
-              "Never commit or upload a private PEM in the artifact.\n"
-              "Release JS is minified; browser-side code cannot be encrypted irreversibly.\\n"
-              "Browser may block off-store CRX install: use chrome://extensions,\\n"
-              "Developer mode, Load unpacked with extracted ZIP for local testing.\n",
+               "src/background/service-worker.js","src/content/tendoo-import.js"}.issubset(names), "Required extension files missing"
+              assert not any(name.endswith((".pem",".min.js")) for name in names), "Private key or temporary file leaked!"
+              manifest=json.loads(z.read("manifest.json").decode("utf-8"))
+              assert manifest["manifest_version"]==3
+              assert "update_url" not in manifest, "Unpacked release must not claim Chrome Web Store updates"
+              referenced=[
+               manifest["background"]["service_worker"],
+               manifest["side_panel"]["default_path"],
+               *manifest.get("icons",{}).values(),
+               *manifest.get("action",{}).get("default_icon",{}).values()
+              ]
+              for script in manifest.get("content_scripts",[]):
+                  referenced+=script.get("js",[])
+              missing=[p for p in referenced if p not in names]
+              assert not missing,"Manifest references missing packaged files: "+str(missing)
+          mode=os.environ.get("SIGNING_MODE","UNPACKED_ONLY")
+          if mode=="STABLE_ENTERPRISE":
+              packed=pathlib.Path(os.environ["AUTOTAX_RELEASE"]+".crx")
+              assert packed.exists() and packed.stat().st_size>10000,"Chrome did not output CRX"
+              with packed.open("rb") as crx:
+                  assert crx.read(4)==b"Cr24","Not a Chrome extension"
+                  assert struct.unpack("<I",crx.read(4))[0]==3,"Not CRX3"
+              crx_target=target/f"autotax-v{version}-enterprise-linux-only.crx"
+              packed.replace(crx_target)
+              print(f"Built {crx_target} ({crx_target.stat().st_size} bytes) for enterprise/Linux only")
+          (target/"HUONG_DAN_CAI_DAT.txt").write_text(
+              f"AutoTax {version} - ban cai dat ZIP da kiem tra checksum va tai nguyen.\n\n"
+              "CAI CHO CHROME TREN WINDOWS / MAC:\n"
+              "1. Giai nen file autotax-v*.zip vao mot thu muc rieng.\n"
+              "2. Mo Chrome, nhap chrome://extensions tren thanh dia chi.\n"
+              "3. Bat Che do danh cho nha phat trien (Developer mode).\n"
+              "4. Chon Tai tien ich da giai nen (Load unpacked).\n"
+              "5. Chon thu muc CHUA file manifest.json, khong chon file ZIP/CRX.\n"
+              "6. Giu nguyen thu muc da giai nen de tien ich hoat dong.\n\n"
+              "Luu y: Chrome Windows/Mac thuong khong cho cai file CRX ngoai Chrome Web Store.\n"
+              "De phan phoi cho khach hang khong can Developer mode, hay xuat ban tren Chrome Web Store.\n"
+              "Chi khi cau hinh signing key on dinh moi co the dong goi CRX cho Chrome Enterprise / Linux.\n"
+              f"Build mode: {mode}.\n",
               encoding="utf8")
-          print(f"Built {output} ({output.stat().st_size} bytes)")
-          print(f"Built {crx_target} ({crx_target.stat().st_size} bytes) mode={mode}")
+          print(f"ZIP passed CRC/resource checks: {output} ({output.stat().st_size} bytes)")
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: autotax-crx3-and-unpacked-zip
+          name: autotax-verified-zip-optional-enterprise-crx
           path: dist/*
           retention-days: 30

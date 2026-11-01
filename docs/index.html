@@ -112,7 +112,7 @@ async function refresh(options={}){
  if(error){$("licenseTitle").textContent="Chưa xác định";message("dashMsg","Không kiểm tra được quyền sử dụng: "+error.message,true);return}
  if(license.active){
   $("licenseTitle").innerHTML='<span class="status">Đang hoạt động</span>';
-  $("licenseMeta").textContent="+planName(license.plan_code)+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
+  $("licenseMeta").textContent=planName(license.plan_code)+" · Hết hạn: "+date(license.ends_at)+" · Còn "+license.days_left+" ngày";
   $("trialArea").classList.add("hidden");
   // Keep the QR visible until the five-minute display timeout or manual close.
  }else{

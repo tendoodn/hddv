@@ -20,7 +20,7 @@ begin
  then raise exception 'invoice_lots_did_not_accumulate'; end if;
 
  perform set_config('request.jwt.claim.sub',admin_id::text,false);
- perform public.addon_admin_set_package_terms('MST5',10);
+ perform public.addon_admin_set_package_terms('MST5',365);
  unlock:=public.addon_admin_create_package_unlock('MST5');
  if unlock->>'code' is null then raise exception 'unlock_creation_failed'; end if;
  perform set_config('request.jwt.claim.sub',trial_user::text,false);

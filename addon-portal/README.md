@@ -1,46 +1,43 @@
-# Tendoo Add-on License Portal
+# AutoTax V3.2 — Quy tắc đồng bộ dữ liệu
 
-A separate account and licensing service for the invoice-lookup Chrome Add-on. This project is intentionally isolated from the Tendoo K application and its Supabase project.
+Repository: https://github.com/tendoodn/hddv
 
-## Decisions
-- Dedicated Supabase project; do not reuse Tendoo K credentials or database.
-- Plans: 7-day trial (once per normalized email), one calendar month (20,000 VND), one calendar year (200,000 VND).
-- Paid subscriptions can be granted manually by the sole owner-admin or activated automatically after verified payment.
-- VietQR is the payment presentation/transfer format. Automatic reconciliation requires a bank transaction feed/webhook provider (for example a supported bank webhook intermediary); a QR image alone cannot confirm that money arrived.
-- Server time is authoritative for all expiry checks.
-- The extension must call a server-side license-check endpoint/RPC. Never embed the Supabase service-role key or payment webhook secret in extension/browser code.
+## Một nguồn dữ liệu duy nhất
 
-## Repository layout
-- `supabase/migrations/001_addon_license_portal.sql`: initial isolated schema, RLS, trial claim, license status and admin grant RPCs.\n- `supabase/migrations/002_addon_pricing_and_order_creation.sql`: agreed prices, authenticated order creation, and service-role-only payment activation RPC.
-- `public/`: customer portal frontend (to be added after project URL/anon key are configured).
-- `supabase/functions/`: payment order creation, signed payment webhook adapter, and extension license validation (to be added for the chosen bank-feed provider).
+Tất cả tài khoản, quyền admin, gói, số dư hóa đơn, MST đã liên kết, dấu vết dùng thử và đơn hàng đều lưu ở **Supabase project ucqqjdsoyvvaxswzbhaw**. GitHub lưu mã nguồn, không chứa bản sao dữ liệu hay mật khẩu khách hàng.
 
-## Initial setup
-1. Create a brand-new Supabase project dedicated to the Add-on.
-2. In its SQL Editor, run `supabase/migrations/001_addon_license_portal.sql`.
-3. Register the first user account through Supabase Auth.
-4. Using the Supabase SQL Editor as project owner, insert that account's UUID into `public.addon_admins`:
-   ```sql
-   insert into public.addon_admins(user_id)
-   select id from auth.users where lower(email) = lower('YOUR_ADMIN_EMAIL');
-   ```
-   Run this once only for the single primary administrator.
-5. Run `supabase/migrations/002_addon_pricing_and_order_creation.sql` to set the monthly price to 20,000 VND, yearly price to 200,000 VND, and add secure order creation.
-6. Configure SMTP/email verification and password reset in Supabase Auth.
-7. Configure a VietQR-compatible bank transaction notification provider. Store provider secrets only as Supabase Edge Function secrets. Webhook processing must verify the provider signature, match the exact transfer reference and amount, and use a unique provider event ID to prevent duplicate activation.
-8. Deploy the portal and Edge Functions only after configuring the new Supabase project values and payment provider.
+- docs/index.html và docs/customer.js: cổng khách hàng GitHub Pages.
+- docs/admin.html và docs/admin-mst.js: cổng quản trị.
+- autotax/src/sidepanel/index.html và autotax/src/license/license.js: tiện ích Chrome dùng cùng tài khoản và bộ RPC.
+- autotax/src/content/content.js: tra cứu/tải hóa đơn và kiểm tra quyền qua Supabase.
+- supabase/functions: tạo đơn và xử lý thanh toán có xác thực.
+- supabase/migrations: quy tắc cấp phép chạy phía máy chủ.
 
-## Payment lifecycle
-- Create a pending order server-side with a random, unique `payment_reference`.
-- Display a dynamic VietQR payment instruction containing the exact amount and reference.
-- A verified bank-feed webhook records an idempotent payment event and marks the matching order paid.
-- In the same database transaction, activate the purchased plan. If the user already has an unexpired subscription, append the new period to its latest expiry; otherwise start now.
-- Never activate a plan from a browser redirect, screenshot, client-supplied "paid" flag, or unverified webhook.
+## API đồng bộ quan trọng
 
-## Important security notes
-- RLS is enabled on all tables. Client write policies are intentionally absent for licenses, orders, payment events, admin roles, and audit logs.
-- The first admin is bootstrapped manually in SQL Editor; do not expose an admin self-registration endpoint.
-- Trial claim uniqueness is enforced by both user ID and normalized email. This prevents deleting/recreating an account with the same email from receiving another trial, provided the claim table is retained.
-- Email-only trial limits cannot reliably stop a person from using a different email address. Device fingerprinting is not a substitute for account security and should be treated as a secondary abuse signal, not a definitive identity.
-- Add stronger controls before public launch: rate limits, CAPTCHA on sign-up, email verification, session revocation, payment webhook signature verification, and monitoring.
-- This migration is an initial foundation, not a production-ready payment integration. Prices, bank provider, webhook signature format, hosting and secrets still need configuration.
+| Dữ liệu | RPC |
+|---|---|
+| Gói, quyền, dùng thử | addon_my_entitlements |
+| Danh sách giá, thời hạn | addon_list_packages |
+| Dùng thử một MST | addon_start_mst_trial |
+| Chế độ MST / số tờ | addon_set_usage_mode |
+| Liên kết/xóa MST | addon_authorize_mst; addon_list_my_mst_assignments; addon_unlink_mst |
+| Đếm lượt hóa đơn chống trùng | addon_claim_invoice_quota |
+| Mã unlock theo gói | addon_redeem_package_unlock |
+| Admin khách hàng và MST | addon_admin_list_users_v32; addon_admin_list_mst_assignments |
+| Admin giá/gói/nhật ký | addon_admin_list_packages; addon_admin_set_package_price; addon_admin_set_package_terms; addon_admin_list_logs |
+
+Không đồng bộ trạng thái bằng localStorage hoặc bằng bản sao JSON trong GitHub. Giao diện luôn đọc số dư và hạn hiệu lực từ RPC; lịch sử tải hóa đơn lưu cục bộ trong Chrome Storage.
+
+## Trạng thái triển khai và bảo mật
+
+- **Chưa triển khai SQL V3.2 trên Supabase production.** REBUILD_V32_DRAFT_DO_NOT_RUN.sql là bản nháp không được chạy.
+- Dữ liệu đăng nhập auth.users và quyền addon_admins phải được bảo toàn.
+- Các file docs/sql/*.sql là mã legacy của gói tháng/năm. **Không chạy cho V3.2.**
+- Migration 001–004 còn phụ thuộc lược đồ cũ. Migration 005–017 là các cập nhật V3.2. Chưa có một lệnh reset an toàn đã được kiểm thử.
+- Không được lưu Supabase service-role key, secret SePay hay mật khẩu trong GitHub.
+- Việc cập nhật mã nguồn GitHub Pages không tự cập nhật extension đã cài; người dùng phải cài/cập nhật phiên bản extension mới.
+
+## Kiểm thử trước phát hành
+
+Đăng ký trùng email; một MST thử trên nhiều email; email thử nhiều lần; khách đã mua gói không bị chặn MST cũ; người dùng/admin gỡ MST; gói MST hết hạn từng đợt; T100+T200; hóa đơn đọc lại miễn phí khi số dư 0; Excel và ZIP chung một lượt; thanh toán không cộng trùng; mọi giao diện sau khi refresh phải khớp số dư.

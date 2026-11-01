@@ -45,7 +45,8 @@ const migrationNames=[
  '021_admin_direct_package_grant.sql',
  '022_admin_paginated_package_transactions.sql',
  '023_fix_package_checkout_pgcrypto_schema.sql',
- '024_five_minute_qr_realtime_order_status.sql'
+ '024_five_minute_qr_realtime_order_status.sql',
+ '025_admin_revoke_restore_compensation_and_transaction_codes.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -88,6 +89,13 @@ assert(!customerJs.includes('900000'),'Obsolete fifteen-minute QR remains');
 const qrMigration=load('addon-portal/supabase/migrations/024_five_minute_qr_realtime_order_status.sql');
 assert(qrMigration.includes("interval '5 minutes'"),'Backend QR expiry must be five minutes');
 assert(qrMigration.includes('security invoker'),'Order status RPC must enforce row-level security');
+assert(customerHtml.includes('id="loginForm"'),'Customer login must use a native Enter-submit form');
+assert(customerHtml.includes('class="activation-grid"'),'Trial and unlock must share responsive row');
+assert(customerHtml.includes('grid-template-columns:minmax(0,1fr)'),'Activation panels must stack on phones');
+assert(customerHtml.indexOf('id="paymentArea"')<customerHtml.indexOf('id="packageList"'),'QR must appear above package prices');
+assert(customerHtml.includes('#paymentArea #paymentQr{display:block;margin:14px auto}'),'QR should be centered');
+assert(customerJs.includes('"loginForm").addEventListener("submit"'),'Enter login handler missing');
+assert(customerJs.includes('scrollIntoView({behavior:reducedMotion'),'Buying must center scroll on QR');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
 assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');
@@ -96,6 +104,10 @@ assert(adminHtml.includes('addon_admin_package_transactions_v32'), 'Admin histor
 assert(adminHtml.includes('id="historyPrev"') && adminHtml.includes('id="historyNext"'), 'Missing history pager');
 assert(adminHtml.includes('data-history='), 'Missing customer-specific history shortcut');
 assert(!adminHtml.includes('id="packageHistoryBody"'), 'Old inline expanded history must not be present');
+assert(adminHtml.includes('id="packageAdjustmentDialog"'),'Missing audited package revocation dialog');
+assert(adminHtml.includes('addon_admin_adjust_package_lot_v32'),'Missing revoke/restore RPC hookup');
+assert(adminHtml.includes('addon_admin_compensate_failed_order_v32'),'Missing failed/refunded compensation RPC hookup');
+assert(adminHtml.includes('<th>Mã đơn</th><th>Mã giao dịch</th>'),'Missing order and transaction ID columns');
 assert(adminHtml.includes('days=family==="mst"?365:null'), 'MST family must default to 365 days in admin');
 const candidate=load('addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql');
 for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);

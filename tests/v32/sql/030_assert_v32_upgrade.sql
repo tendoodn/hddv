@@ -70,6 +70,10 @@ begin
  j:=public.addon_claim_invoice_quota(k);
  if (j->>'previously_deducted')::integer<>1 or (j->>'deducted')::integer<>0
  then raise exception 'duplicate_invoice_charged'; end if;
+ -- A change in purchase/sale classification is not a new invoice.
+ j:=public.addon_claim_invoice_quota(jsonb_build_array((k->0)||jsonb_build_object('direction','sold')));
+ if (j->>'previously_deducted')::integer<>1 or (j->>'deducted')::integer<>0
+ then raise exception 'invoice_double_charged_after_direction_change'; end if;
  update public.addon_package_lots set remaining=0 where user_id=u and family='invoice';
  j:=public.addon_my_entitlements();
  if j->>'allowed'<>'true' or j->>'can_reread_charged_invoices'<>'true'

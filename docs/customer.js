@@ -121,25 +121,22 @@ async function loadPackages(){
 async function loadMstAssignments(){
  const list=$("mstList");list.replaceChildren();
  const rows=await rpc("addon_list_my_mst_assignments");
- const capacity=Number(state?.packages?.mst?.active_quantity||0);
+ $("mstWebCount").textContent=String((rows||[]).length);
  for(const a of rows||[]){
   const line=document.createElement("div");line.className="mst-row";
   const name=document.createElement("div");
   addText(name,"strong",a.mst);
   addText(name,"small","Liên kết: "+vnDate(a.assigned_at),"muted");
-  const button=addText(line,"button","Gỡ MST");
-  button.className="secondary";
-  button.disabled=capacity===0;
-  button.title=capacity===0?"Gói MST hết hạn; liên hệ admin để gỡ.":"";
+  const button=addText(line,"button","Xóa MST");button.className="secondary";
   button.addEventListener("click",async()=>{
-   if(!confirm("Gỡ MST "+a.mst+"? Lịch sử dùng thử vẫn được giữ."))return;
+   if(!confirm("Xóa hồ sơ MST "+a.mst+"? Lịch sử cũ và dùng thử vẫn được giữ."))return;
    button.disabled=true;
-   try{await rpc("addon_unlink_mst",{p_mst:a.mst});showMessage("Đã gỡ MST "+a.mst);await loadMstAssignments()}
+   try{await rpc("addon_remove_mst_profile_v33",{p_mst:a.mst});showMessage("Đã xóa hồ sơ "+a.mst);await loadMstAssignments()}
    catch(e){showMessage(prettyError(e),true);button.disabled=false}
   });
   line.prepend(name);list.append(line);
  }
- if(!list.children.length)addText(list,"p","Chưa liên kết MST nào.","muted");
+ if(!list.children.length)addText(list,"p","Chưa có hồ sơ MST nào. Hãy thêm MST của phiên cổng Thuế.","muted");
 }
 // Bank QR is displayed for five minutes, based on the server-issued deadline.
 // A transfer cannot be technically revoked at the bank; late confirmation
@@ -295,6 +292,17 @@ $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
 }));
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
 $("refreshBtn").addEventListener("click",refresh);
+$("webAddMstForm").addEventListener("submit",async e=>{
+ e.preventDefault();const input=$("webAddMst"),mst=input.value.trim().replace(/[ -]/g,"");
+ if(!/^(\d{10}|\d{12}|\d{13})$/.test(mst)){showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);return}
+ const submit=$("webAddMstForm").querySelector('button[type="submit"]');submit.disabled=true;
+ try{await rpc("addon_add_mst_profile_v33",{p_mst:mst});input.value="";await loadMstAssignments();showMessage("Đã thêm hồ sơ MST "+mst)}
+ catch(e){showMessage(prettyError(e),true)}
+ finally{submit.disabled=false}
+});
+$("giftWebBtn").addEventListener("click",()=>{$("giftWebDialog").showModal();$("unlockCode").focus()});
+$("closeGiftWebBtn").addEventListener("click",()=>$("giftWebDialog").close());
+$("renewWebBtn").addEventListener("click",()=>$("planSection").scrollIntoView({behavior:"smooth",block:"center"}));
 $("trialBtn").addEventListener("click",()=>action("trialBtn",async()=>{
  const mst=$("trialMst").value.trim().replace(/[ -]/g,"");
  if(!/^\d{10}(\d{2})?$/.test(mst))throw Error("MST phải có 10 hoặc 12 chữ số.");
@@ -307,7 +315,7 @@ $("redeemBtn").addEventListener("click",()=>action("redeemBtn",async()=>{
  if(!code)throw Error("Vui lòng nhập mã unlock.");
  const granted=await rpc("addon_redeem_package_unlock",{p_code:code});
  $("unlockCode").value="";
- await refresh();showMessage("Đã kích hoạt gói "+granted.package_code+".");
+ await refresh();$("giftWebDialog").close();showMessage("Đã kích hoạt gói "+granted.package_code+".");
 }));
 $("usageMode").addEventListener("change",async e=>{
  const selected=e.target.value;

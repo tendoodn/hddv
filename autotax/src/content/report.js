@@ -366,7 +366,7 @@
         { header: 'Chi tiết', width: 60 }, { header: 'Loại', width: 9 }, { header: 'Hình thức', width: 15 }, { header: 'Mẫu số', width: 8 },
         { header: 'Ký hiệu', width: 10 }, { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Ngày lập', width: 11 }, { header: 'Ngày ký', width: 11 },
         { header: 'MST người bán', width: 15, type: T }, { header: 'Tên người bán', width: 36 }, { header: 'MST người mua', width: 15, type: T },
-        { header: 'Tên người mua', width: 36 }, { header: 'Tổng thanh toán', width: 16, type: N }, { header: 'Hình thức thanh toán', width: 14 },
+        { header: 'Tên người mua', width: 36 }, { header: 'Tổng thanh toán', width: 16, type: N }, { header: 'Tiền tệ', width: 9 }, { header: 'Hình thức thanh toán', width: 14 },
         { header: 'Trạng thái', width: 22 }, { header: 'Kết quả kiểm tra', width: 22 }, { header: 'Đối chiếu số học', width: 22 },
         { header: 'Chữ ký số (có trong XML)', width: 24 }, { header: 'Đơn vị ký số', width: 40 },
       ],
@@ -374,7 +374,7 @@
         const h = headOf(details, r);
         return [i + 1, LEVEL[x.level], x.notes.join('; ') || 'Không phát hiện vấn đề', HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label,
           r.khmshdon, r.khhdon, String(r.shdon), dateVN(r.tdlap), signDate(h), r.nbmst, r.nbten, r.nmmst, r.nmten, money(r).tong,
-          h?.httt || r.httt || '', HDDT.TTHAI[r.tthai] || '', HDDT.TTXLY[r.ttxly] || '', x.math, x.sig, x.signer];
+          r.dvtte || 'VND', h?.httt || r.httt || '', HDDT.TTHAI[r.tthai] || '', HDDT.TTXLY[r.ttxly] || '', x.math, x.sig, x.signer];
       }),
     };
   }

@@ -517,3 +517,39 @@ button.chip{width:100%;min-width:0;min-height:34px;height:auto;padding:4px 2px;f
 .tendoo-missing-row{border-bottom:1px solid var(--line);padding:8px 0}
 .tendoo-missing-row strong{display:block;overflow-wrap:anywhere;font-size:11px}
 .tendoo-missing-row select{display:block;width:100%;font-size:11px;margin-top:5px}
+
+/* Searchable invoice-original => BC_San_Pham product mapping */
+#tendooMatchDialog{width:min(740px,96vw)}
+.tendoo-missing-row{
+  display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+  gap:14px;padding:12px 4px;border-bottom:1px solid var(--line);
+}
+.tendoo-original-product,.tendoo-linked-product{min-width:0}
+.tendoo-field-label{display:block;margin:0 0 7px;font-weight:700;font-size:11px;color:var(--accent-strong)}
+.tendoo-original-product strong{
+  display:block;font-size:12px;font-weight:700;overflow-wrap:anywhere;
+  padding:9px 10px;border-radius:8px;background:#fff1f2;color:#881337;
+}
+.tendoo-product-search{
+  display:block;width:100%;min-width:0;padding:9px 10px;
+  border:1px solid #f9a8b4;border-radius:8px;font-size:12px;
+}
+.tendoo-product-search:focus{outline:2px solid #e6001240;border-color:#e60012}
+.tendoo-search-results{
+  display:flex;flex-direction:column;gap:4px;max-height:190px;
+  overflow:auto;margin-top:6px;
+}
+.tendoo-search-results small{padding:7px;color:var(--muted)}
+.tendoo-product-option{
+  display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  width:100%;text-align:left;padding:8px 9px;border-radius:8px;
+  background:#fff;border:1px solid #e2e8f0;color:var(--fg);cursor:pointer;
+}
+.tendoo-product-option:hover,.tendoo-product-option:focus{
+  background:#fff1f2;border-color:#e60012;
+}
+.tendoo-product-option strong{font-size:11px;overflow-wrap:anywhere}
+.tendoo-product-option span{font-size:10px;color:var(--muted);overflow-wrap:anywhere}
+.tendoo-selected-product{font-size:10px;color:var(--muted);margin:5px 0;overflow-wrap:anywhere}
+.tendoo-selected-product.tendoo-selected-valid{color:#15803d;font-weight:700}
+@media(max-width:550px){.tendoo-missing-row{grid-template-columns:minmax(0,1fr);gap:9px}}

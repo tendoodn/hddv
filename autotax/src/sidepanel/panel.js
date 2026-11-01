@@ -114,8 +114,7 @@ function renderPresets() {
   }));
 }
 
-// V3: không giới hạn tổng khoảng ngày. Hóa đơn điện tử tự chia theo tháng;
-// MTT tự chia thành các đợt tối đa 10 ngày ở tầng API.
+// Khoảng ngày người dùng chọn được chia thành các đợt tra cứu ở tầng API.
 const fullDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '') && +v.slice(0, 4) >= 2000;
 const limits = () => ({ min: '2018-01-01', max: iso(new Date()) });
 function maxTo(_from) { return limits().max; }

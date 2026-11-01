@@ -79,6 +79,10 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$f"
           done
           psql -v ON_ERROR_STOP=1 -f tests/v32/sql/010_seed_old_data.sql
+      - name: Verify browser-only legacy snapshot creates 11 safe copies
+        run: |
+          psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/BACKUP_V32_BROWSER_ONLY.sql
+          psql -v ON_ERROR_STOP=1 -Atc "select count(*) from autotax_backup_20261101._manifest where rows_original=rows_copied" | grep -x 11
       - name: Validate read-only production preflight SQL syntax
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/PREDEPLOY_V32_READ_ONLY.sql
       - name: Dry-run V3.2 upgrade against PostgreSQL 16

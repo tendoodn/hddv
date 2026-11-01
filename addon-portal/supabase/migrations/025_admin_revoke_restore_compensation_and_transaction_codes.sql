@@ -38,7 +38,7 @@ declare
  v_now timestamptz:=clock_timestamp();
 begin
  if v_actor is null or not public.addon_is_admin() then raise exception 'admin_required'; end if;
- if p_lot_id is null or p_action not in ('revoke','restore') then
+ if p_lot_id is null or p_action is null or p_action not in ('revoke','restore') then
   raise exception 'invalid_package_action';
  end if;
  if length(v_reason)<6 then raise exception 'adjustment_reason_required'; end if;

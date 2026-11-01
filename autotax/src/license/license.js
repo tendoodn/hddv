@@ -17,7 +17,9 @@
  function render(){
   if(!$('license-card'))return;
   const active=!!session?.access_token;const mstPanel=$('lic-mst-manager');if(mstPanel)mstPanel.hidden=!active;
-  $('lic-auth').hidden=active;$('lic-account').hidden=!active;$('lic-email-label').textContent=session?.user?.email||'';
+  $('lic-header-email').hidden=!active;$('lic-header-email').textContent=active?(session?.user?.email||''):'';
+  $('lic-logout').hidden=!active;$('lic-manage-account').hidden=!active;
+  $('lic-auth').hidden=active;$('lic-account').hidden=!active;
   const rows=license?.packages||{},inv=rows.invoice||{},mst=rows.mst||{};
   const invLeft=Number(inv.remaining||0),invBought=Number(inv.purchased||0),mstCount=Number(mst.active_quantity||0);
   const both=(invLeft>0||!!license?.can_reread_charged_invoices)&&mstCount>0;
@@ -148,6 +150,7 @@
   try{
    const rows=await rpc('addon_list_my_mst_assignments');
    profileMsts=(rows||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
+   $('lic-mst-count').textContent=String(profileMsts.length);
    target.replaceChildren();
    for(const row of rows||[]){
     const line=document.createElement('div');line.className='mst-profile-row';

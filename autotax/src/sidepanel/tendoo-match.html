@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Liên kết sản phẩm mua vào · Tendoo AutoTax</title>
+  <style>
+    :root{font:14px/1.5 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;color:#291b1f;background:#fff8f8;--accent:#e60012;--line:#f3b9c0}
+    *{box-sizing:border-box}body{margin:0}header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+    .wrap{max-width:1120px;margin:auto;padding:20px 24px}header .wrap{padding-top:16px;padding-bottom:16px}
+    h1{font-size:23px;margin:0 0 4px;color:#b80010}p{margin:4px 0;color:#6e6164}main{padding-top:12px;padding-bottom:100px}
+    .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:16px 0}
+    .counter{font-weight:750;color:#b80010}.pair{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;background:#fff;border:1px solid #efdfe1;border-radius:13px;padding:16px;margin:10px 0;box-shadow:0 2px 10px #80001207}
+    .caption{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#b80010;margin-bottom:6px}
+    .original{font-weight:700;overflow-wrap:anywhere;background:#fff1f2;border-radius:8px;padding:12px}
+    input[type=search]{width:100%;min-width:0;outline:none;padding:11px 12px;border:1px solid #f3b9c0;border-radius:9px;font:inherit}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #e6001222}
+    .results{max-height:165px;overflow:auto;margin-top:6px;display:grid;gap:4px}
+    .option{border:1px solid #e2e8f0;border-radius:7px;background:#fff;color:#291b1f;padding:8px 10px;text-align:left;cursor:pointer;font:inherit}
+    .option:hover,.option:focus{border-color:var(--accent);background:#fff1f2}
+    .option strong{display:block;font-size:12px}.option small{display:block;color:#74666a}
+    .selection{font-size:12px;color:#84757a;min-height:18px;margin-top:7px}
+    .selection.ok{color:#15803d;font-weight:700}
+    .actions{position:fixed;bottom:0;left:0;right:0;z-index:2;background:#fff;border-top:1px solid var(--line);box-shadow:0 -3px 14px #80001212}
+    .actions .wrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+    button.primary{border:0;border-radius:9px;background:var(--accent);color:#fff;padding:11px 17px;font:inherit;font-weight:700;cursor:pointer}
+    button.primary:disabled{opacity:.55;cursor:not-allowed}
+    #status{font-size:12px;color:#991b1b;flex:1}
+    [hidden]{display:none!important}
+    @media(max-width:650px){.wrap{padding-left:13px;padding-right:13px}.pair{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header><div class="wrap"><h1>Liên kết SKU sản phẩm mua vào</h1><p>Đối chiếu tên trên hóa đơn với danh mục BC_San_Pham. Dữ liệu chỉ được xử lý trong tiện ích AutoTax.</p></div></header>
+  <main class="wrap">
+    <div class="toolbar"><strong id="overview">Đang tải danh mục...</strong><span class="counter" id="progress">—</span></div>
+    <form id="linkForm"><div id="rows"></div></form>
+  </main>
+  <div class="actions"><div class="wrap"><button form="linkForm" type="submit" class="primary" id="save">Xác nhận liên kết và tiếp tục xuất ZIP</button><span role="status" id="status"></span></div></div>
+  <script src="../content/tendoo-import.js"></script>
+  <script src="tendoo-match.js"></script>
+</body>
+</html>

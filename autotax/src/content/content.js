@@ -33,7 +33,7 @@ async function updateInvoiceHistory(rows, mst, mode, formats = {}) {
       lastSearchedAt: mode === 'searched' ? now : (old.lastSearchedAt || ''),
       searchedCount: (old.searchedCount || 0) + (mode === 'searched' ? 1 : 0),
       downloadedAt: mode === 'downloaded' ? now : (old.downloadedAt || ''),
-      downloadedFormats: mode === 'downloaded' ? [...new Set([...(old.downloadedFormats || []), ...Object.keys(formats).filter(k => formats[k])])] : (old.downloadedFormats || []),
+      downloadedFormats: mode === 'downloaded' ? [...new Set([...(old.downloadedFormats || []), ...Object.keys(formats[invoiceHistoryKey(r, mst)] || formats).filter(k => (formats[invoiceHistoryKey(r, mst)] || formats)[k])])] : (old.downloadedFormats || []),
     };
     db.records[key] = rec;
   }
@@ -94,15 +94,16 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
   if (needDetail && !res.stopped) {
     const order = rows.filter((r) => formats.lines || formats.pdf || r.ttxly !== 6)
       .sort((a, b) => `${a.kind}|${a.month}|${a.form}`.localeCompare(`${b.kind}|${b.month}|${b.form}`));
-    let bucket = null, files = [], bytes = 0, part = 1, bucketInvoiceKeys = [];
+    let bucket = null, files = [], bytes = 0, part = 1, bucketInvoiceFormats = new Map();
     const flush = async (last) => {
       if (!bucket || !files.length) return;
       const [kind, month] = bucket.split('|');
       // Zip quá lớn (gói HTML ~300 KB/hóa đơn) → tách phần để không vượt giới hạn truyền dữ liệu của Chrome
       const suffix = part > 1 || !last ? `_phan${part}` : '';
       await save(Zip.writeZip(files), 'application/zip', `${dir}/${HDDT.KINDS[kind].folder}_${month}${suffix}.zip`);
-      if (bucketInvoiceKeys.length) await updateInvoiceHistory(rows.filter(r => bucketInvoiceKeys.includes(invoiceHistoryKey(r, profile.mst))), profile.mst, 'downloaded', { xml: !!formats.xml, html: !!formats.html, pdf: !!formats.pdf });
-      saved++; files = []; bytes = 0; bucketInvoiceKeys = []; part++;
+      const keys = new Set(bucketInvoiceFormats.keys());
+      if (keys.size) await updateInvoiceHistory(rows.filter(r => keys.has(invoiceHistoryKey(r, profile.mst))), profile.mst, 'downloaded', Object.fromEntries(bucketInvoiceFormats));
+      saved++; files = []; bytes = 0; bucketInvoiceFormats = new Map(); part++;
     };
     const add = (name, data) => { files.push({ name, data }); bytes += data.length; };
     for (const row of order) {
@@ -118,22 +119,27 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
           (w) => send({ type: 'status', text: `Đang tải chi tiết ${done + 1}/${order.length}: ${waitText(w)}` }));
         // head (chữ ký số, ngày ký, hình thức thanh toán…) dùng cho DS hóa đơn + Kiểm tra rủi ro HĐ; dòng hàng chỉ giữ khi cần
         details.set(row.key, { source: inv.source, head: inv.head, ...(formats.lines ? { lines: inv.lines, fees: inv.fees } : {}) });
-        const filesBeforeInvoice = files.length;
+        const invoiceFormats = {};
         if (inv.source === 'xml') {
           // Nguyên bytes gốc của cổng (không giải mã/mã hóa lại) để mở được bằng phần mềm của Cục Thuế
-          if (formats.xml) add(`XML/${sub}${base}.xml`, inv.xml);
-          // HTML: đủ bộ file trong zip của cổng (invoice.html cần details.js + ảnh nền/ảnh chữ ký cùng thư mục)
-          if (formats.html) for (const [n, data] of Object.entries(inv.files)) if (!/\.xml$/i.test(n)) add(`HTML/${sub}${base}/${n}`, data);
+          if (formats.xml && inv.xml) { add(`XML/${sub}${base}.xml`, inv.xml); invoiceFormats.xml = true; }
+          // HTML: chỉ ghi nhận khi thực sự thêm được ít nhất một tệp HTML/tài nguyên vào ZIP.
+          if (formats.html) for (const [n, data] of Object.entries(inv.files || {})) if (!/\\.xml$/i.test(n)) {
+            add(`HTML/${sub}${base}/${n}`, data); invoiceFormats.html = true;
+          }
         } else if (row.ttxly !== 6 && (formats.xml || formats.html)) {
           send({ type: 'log', level: 'warn', text: `${row.khhdon}-${row.shdon}: cổng không trả được XML gốc (chỉ có trong Excel${formats.pdf ? ', PDF' : ''})` });
         }
         if (formats.pdf) {
-          try { add(`PDF/${sub}${base}.pdf`, await Pdf.buildInvoicePdf(row, inv, HDDT.originalLookup(row, inv.head))); } catch (e) {
+          try {
+            const pdf = await Pdf.buildInvoicePdf(row, inv, HDDT.originalLookup(row, inv.head));
+            if (pdf) { add(`PDF/${sub}${base}.pdf`, pdf); invoiceFormats.pdf = true; }
+          } catch (e) {
             send({ type: 'log', level: 'warn', text: `${row.khhdon}-${row.shdon}: không dựng được PDF (${e.message})` });
           }
         }
-        // Chỉ đánh dấu đã tải khi hóa đơn thực sự đóng góp ít nhất một tệp vào ZIP.
-        if (files.length > filesBeforeInvoice) bucketInvoiceKeys.push(invoiceHistoryKey(row, profile.mst));
+        // Lưu chính xác các định dạng hóa đơn đã đóng góp tệp vào ZIP.
+        if (Object.values(invoiceFormats).some(Boolean)) bucketInvoiceFormats.set(invoiceHistoryKey(row, profile.mst), invoiceFormats);
       } catch (e) {
         if (e.status === 401) throw e;
         if (stopFlag) break; // Dừng: request đang chờ bị hủy, không tính là lỗi

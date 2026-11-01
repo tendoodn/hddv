@@ -19,6 +19,13 @@ jobs:
           node-version: "22"
       - name: Validate extension source and licensing API references
         run: node scripts/verify-v32-sync.mjs
+      - name: Test offline Tendoo SKU import and Excel ZIP logic
+        run: |
+          node --check autotax/src/content/tendoo-import.js
+          node --check autotax/src/content/content.js
+          node --check autotax/src/license/license.js
+          node --check docs/customer.js
+          node tests/v32/tendoo-import.test.mjs
       - name: Install Chrome packer if absent
         shell: bash
         run: |
@@ -75,7 +82,8 @@ jobs:
               names=set(z.namelist())
               assert {"manifest.json","src/sidepanel/index.html","src/sidepanel/panel.js",
                "src/license/license.js","src/content/content.js","src/content/hddt-api.js",
-               "src/background/service-worker.js"}.issubset(names), "Required sources missing"
+               "src/background/service-worker.js",
+               "src/content/tendoo-import.js"}.issubset(names), "Required sources missing"
               assert not any(name.endswith(".pem") for name in names), "Key leaked!"
           packed=pathlib.Path("autotax.crx")
           assert packed.exists() and packed.stat().st_size>10000,"Chrome did not output a CRX"

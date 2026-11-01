@@ -93,5 +93,22 @@ begin
  select count(*) into n from public.addon_package_lots l
  join public.addon_orders o on o.id=l.order_id where o.payment_reference=ref;
  if n<>1 then raise exception 'payment_granted_lot_multiple_times'; end if;
+ -- Switching away and back to invoice mode must not block rereads at zero credit.
+ perform set_config('request.jwt.claim.sub',u::text,false);
+ update public.addon_package_lots set remaining=0 where user_id=u and family='invoice';
+ perform public.addon_set_usage_mode('mst');
+ perform public.addon_set_usage_mode('invoice');
+ j:=public.addon_claim_invoice_quota(k);
+ if (j->>'previously_deducted')::integer<>1
+ then raise exception 'reread_blocked_after_mode_switch'; end if;
+ -- Prevent oversized user payloads from holding row locks for too long.
+ begin
+  perform public.addon_claim_invoice_quota(
+   (select jsonb_agg(k->0) from generate_series(1,251))
+  );
+  raise exception 'expected_batch_limit_rejection';
+ exception when others then
+  if sqlerrm<>'too_many_invoice_items' then raise; end if;
+ end;
 end $verify$;
 select 'smoke_test_passed' as status;

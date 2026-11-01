@@ -406,6 +406,16 @@ $('tendooMatchForm').addEventListener('submit',async e=>{
  try{await finishTendooMapping(tendooMappingRequest,mapping)}catch(error){log('Không lưu được SKU: '+error.message,'warn')}
  // Popup closed by finishTendooMapping on success.
 });
+// Hiding the popup must never leave a warehouse ZIP waiting forever.
+$('tendooMatchClose').addEventListener('click',async()=>{
+ if(!tendooMappingRequest){$('tendooMatchDialog').close();return}
+ const mapping={};
+ for(const input of $('tendooMissingList').querySelectorAll('input[data-key]')){
+   if(input.value)mapping[input.dataset.key]=input.value;
+ }
+ try{await finishTendooMapping(tendooMappingRequest,mapping)}
+ catch(error){log('Không đóng được popup ánh xạ: '+error.message,'warn')}
+});
 $('tendooMatchCancel').addEventListener('click',()=>{
  if(tendooMappingRequest){
   port?.postMessage({type:'tendoo-map-response',requestId:tendooMappingRequest,cancel:true});

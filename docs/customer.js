@@ -29,7 +29,7 @@ function prettyError(error){
   mst_unlink_requires_active_package:"Gói MST đã hết hạn, chỉ admin mới có quyền gỡ MST.",
   trial_mst_not_reserved:"MST chưa được đăng ký dùng thử hợp lệ.",
   invoice_mode_not_selected:"Vui lòng chọn chế độ sử dụng hóa đơn.",
-  invalid_mst:"MST phải có 10 hoặc 13 chữ số."
+  invalid_mst:"MST phải có 10 hoặc 12 chữ số."
  };
  return known[code]||known[msg]||msg;
 }
@@ -297,7 +297,7 @@ $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePa
 $("refreshBtn").addEventListener("click",refresh);
 $("trialBtn").addEventListener("click",()=>action("trialBtn",async()=>{
  const mst=$("trialMst").value.trim().replace(/[ -]/g,"");
- if(!/^\d{10}(\d{3})?$/.test(mst))throw Error("MST phải có 10 hoặc 13 chữ số.");
+ if(!/^\d{10}(\d{2})?$/.test(mst))throw Error("MST phải có 10 hoặc 12 chữ số.");
  const granted=await rpc("addon_start_mst_trial",{p_mst:mst});
  $("trialMst").value="";
  await refresh();showMessage("Dùng thử 1 MST đến "+vnDate(granted.expires_at));

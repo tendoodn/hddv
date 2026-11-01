@@ -11,11 +11,39 @@
  function message(t,error=false){const el=$('lic-message');el.textContent=t;el.className='lic-message'+(error?' error':'');el.hidden=!t}
  function gate(){document.dispatchEvent(new CustomEvent('autotax-license-gate',{detail:{allowed:!!license?.allowed}}))}
  function money(v){return Number(v||0).toLocaleString('vi-VN')+'đ'}
- function render(){if(!$('license-card'))return;const active=!!session?.access_token;$('lic-auth').hidden=active;$('lic-account').hidden=!active;$('lic-email-label').textContent=session?.user?.email||'';
- const rows=license?.packages||{};const inv=rows.invoice||{},mst=rows.mst||{};
- $('lic-entitlements').innerHTML='<div class="license-entitlement"><div><b>Số tờ hóa đơn còn lại</b><small>Đã mua cộng dồn</small></div><strong>'+Number(inv.remaining||0).toLocaleString('vi-VN')+' / '+Number(inv.purchased||0).toLocaleString('vi-VN')+'</strong></div><div class="license-entitlement"><div><b>Số MST được quản lý</b><small>Hạn xa nhất: '+(mst.farthest_expiry?new Date(mst.farthest_expiry).toLocaleDateString('vi-VN'):'—')+'</small>'+(mst.nearest_expiry?'<small>'+Number(mst.expiring_quantity||0)+' MST hết hạn ngày '+new Date(mst.nearest_expiry).toLocaleDateString('vi-VN')+'</small>':'')+'</div><strong>'+Number(mst.active_quantity||0)+' MST</strong></div>';
- $('lic-state').textContent=license?.allowed?'Đã kích hoạt':'Chưa có quyền sử dụng';$('lic-state').className='lic-state '+(license?.allowed?'active':'locked');
- $('lic-mode-wrap').hidden=!(Number(inv.remaining||0)>0&&Number(mst.active_quantity||0)>0);$('lic-mode').value=license?.mode||'mst';gate()}
+ function render(){
+  if(!$('license-card'))return;
+  const active=!!session?.access_token;
+  $('lic-auth').hidden=active;$('lic-account').hidden=!active;$('lic-email-label').textContent=session?.user?.email||'';
+  const rows=license?.packages||{},inv=rows.invoice||{},mst=rows.mst||{};
+  const invLeft=Number(inv.remaining||0),invBought=Number(inv.purchased||0),mstCount=Number(mst.active_quantity||0);
+  const both=invLeft>0&&mstCount>0;
+  const mode=license?.mode||(invLeft>0?'invoice':'mst');
+  $('lic-mode-wrap').hidden=!both;$('lic-mode').value=mode;
+  const holder=$('lic-entitlements');holder.replaceChildren();
+  const card=document.createElement('div');card.className='license-entitlement';
+  const info=document.createElement('div'),heading=document.createElement('b'),detail=document.createElement('small'),value=document.createElement('strong');
+  if(mode==='invoice'){
+   heading.textContent='Số tờ hóa đơn còn lại / đã mua';
+   detail.textContent='Các lần mua được cộng dồn';
+   value.textContent=invLeft.toLocaleString('vi-VN')+' / '+invBought.toLocaleString('vi-VN');
+  }else{
+   heading.textContent='Số MST được quản lý';
+   detail.textContent='Hạn xa nhất: '+(mst.farthest_expiry?new Date(mst.farthest_expiry).toLocaleDateString('vi-VN'):'—');
+   info.append(heading,detail);
+   if(mst.nearest_expiry){
+    const exp=document.createElement('small');
+    exp.textContent=Number(mst.expiring_quantity||0)+' MST hết hạn ngày '+new Date(mst.nearest_expiry).toLocaleDateString('vi-VN');
+    info.append(exp);
+   }
+   value.textContent=mstCount.toLocaleString('vi-VN')+' MST';
+  }
+  if(mode==='invoice')info.append(heading,detail);
+  card.append(info,value);holder.append(card);
+  $('lic-state').textContent=license?.allowed?'Đã kích hoạt':'Chưa có quyền sử dụng';
+  $('lic-state').className='lic-state '+(license?.allowed?'active':'locked');
+  gate();
+ }
  async function status(){if(!session?.access_token){license={allowed:false,reason:'Đăng nhập để xem gói sử dụng.'};emit();return license}license=await rpc('addon_my_entitlements');emit();return license}
  async function check(){if(checking)return license;checking=true;try{await status()}catch(e){license={allowed:false,offline:true,reason:e.message};emit();message('Không xác minh được gói: '+e.message,true)}finally{checking=false}render();return license}
  async function auth(kind){const email=$('lic-email').value.trim().toLowerCase(),password=$('lic-password').value;if(!email||!password)return message('Nhập email và mật khẩu.',true);$('lic-login').disabled=$('lic-register').disabled=true;try{session=kind==='register'?await request('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password})},null):await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})},null);if(!session.access_token)return message('Đã tạo tài khoản. Hãy xác minh email rồi đăng nhập.');await save();$('lic-password').value='';await check();message('Đăng nhập thành công.')}catch(e){message(e.message,true)}finally{$('lic-login').disabled=$('lic-register').disabled=false}}

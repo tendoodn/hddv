@@ -1,0 +1,25 @@
+name: Inspect Add-on source archive
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect source ZIP
+        run: |
+          python - <<'PY'
+          import zipfile, pathlib
+          z=zipfile.ZipFile('hoa-don-independent-v3.1.0.zip')
+          print('ARCHIVE FILES:')
+          for n in z.namelist():
+              if not n.endswith('/'):
+                  print(n)
+          print('--- MANIFESTS ---')
+          for n in z.namelist():
+              if pathlib.PurePosixPath(n).name == 'manifest.json':
+                  print('###', n)
+                  print(z.read(n).decode('utf-8', 'replace'))
+          PY

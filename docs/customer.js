@@ -53,7 +53,7 @@ async function refresh(){
   const signedIn=!!session;
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
-  if(!signedIn){state=null;closePayment();return}
+  if(!signedIn){state=null;$("adminLink").hidden=true;closePayment();return}
   $("userEmail").textContent=session.user.email||"";
   const license=await rpc("addon_my_entitlements");
   state=license;
@@ -63,7 +63,7 @@ async function refresh(){
   const invTotal=Number(invoice.purchased||0);
   const mstCapacity=Number(mst.active_quantity||0);
   const selected=license.mode||"mst";
-  $("licenseTitle").textContent=license.allowed?"Đã có quyền sử dụng":(selected==="invoice"&&license.can_reread_charged_invoices?"Chỉ được đọc lại hóa đơn cũ":"Chưa có gói hiệu lực");
+  $("licenseTitle").textContent=selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"Đã có quyền sử dụng":"Chưa có gói hiệu lực";
   $("invoiceBalance").textContent=invRemaining.toLocaleString("vi-VN")+" / "+invTotal.toLocaleString("vi-VN");
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
   $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);

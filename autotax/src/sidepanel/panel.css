@@ -464,3 +464,22 @@ button.chip{width:100%;min-width:0;min-height:34px;height:auto;padding:4px 2px;f
  button.chip{font-size:9px;padding:4px 1px}
  .sheet-opts .sheet-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* V3.3 explicit MST profiles and strict session lock */
+.mst-manager{margin-top:10px;padding:10px;border:1px solid var(--accent-line);border-radius:11px;background:#fff}
+.mst-manager-head{display:flex;justify-content:space-between;align-items:start;gap:8px;flex-wrap:wrap}
+.mst-manager-head strong{font-size:12px;color:var(--accent-strong)}
+.mst-manager-head small{font-size:10px;color:var(--muted);line-height:1.35}
+.mst-profile-add{display:flex;gap:6px;align-items:center;margin:8px 0}
+.mst-profile-add input{flex:1;min-width:0;width:100%;margin:0}
+.mst-profile-add button{flex:none;min-height:32px;height:32px;border-color:var(--accent);color:#fff;background:var(--accent);font-weight:700}
+.mst-profile-row{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:7px 0;border-bottom:1px solid var(--line)}
+.mst-profile-row:last-child{border-bottom:0}
+.mst-profile-row strong{font-size:11px;overflow-wrap:anywhere}
+.mst-profile-row small{font-size:9.5px;color:var(--muted)}
+.mst-profile-row button{flex:none;color:#b91c1c;border:1px solid #fecaca;background:#fff5f5}
+.mst-guard{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#9f1239;font-size:11px;line-height:1.45}
+.mst-guard strong{font-size:12px}
+.history-tools{grid-template-columns:repeat(2,minmax(0,1fr))}
+.history-tools #historySearch{grid-column:1/-1}
+.history-tools #historyMst{width:100%}

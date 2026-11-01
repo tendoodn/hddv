@@ -4,12 +4,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tendoo AutoTax V3.2 — Tài khoản và gói sử dụng</title>
 <style>
-:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f7fb}
+:root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#fff;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
 *{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
 header,.row,.mst-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-header{margin-bottom:24px}.brand{font-size:21px;font-weight:850}.brand span{color:#2563eb}
+header{margin-bottom:24px}.brand{font-size:21px;font-weight:850}.brand span{color:var(--tendoo)}
 h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:16px;margin:10px 0}
-.panel,.plan{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 20px #1e293b09}
+.panel,.plan{background:#fff;border:1px solid #f1c7cc;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 20px #1e293b09}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .grid .plan{margin:0}
 .package-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
@@ -23,11 +23,11 @@ h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:1
 @media(max-width:360px){.package-grid{grid-template-columns:1fr}} .muted,small{color:#64748b}.price{font-size:21px;display:block;margin:12px 0}
 label{font-size:13px;font-weight:650;display:block;margin:12px 0 6px}
 input,select{font:inherit;padding:10px 12px;border-radius:9px;border:1px solid #cbd5e1;max-width:100%;min-width:0}
-input{width:100%}button{border:0;padding:11px 15px;border-radius:9px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer}
-button.secondary{background:#eaf0f9;color:#172033}button:disabled{opacity:.55;cursor:not-allowed}
+input{width:100%}button{border:0;padding:11px 15px;border-radius:9px;background:var(--tendoo);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button.secondary{background:#fff1f2;color:#991b1b}button:disabled{opacity:.55;cursor:not-allowed}
 .actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0}
-.notice{margin:12px 0;padding:12px;border-radius:9px;background:#eff6ff;color:#1d4ed8;white-space:pre-wrap}
-.error{background:#fef2f2;color:#991b1b}a{color:#2563eb}
+.notice{margin:12px 0;padding:12px;border-radius:9px;background:var(--tendoo-soft);color:#9f1239;white-space:pre-wrap}
+.error{background:#fef2f2;color:#991b1b}a{color:var(--tendoo-dark)}
 .mst-row{padding:11px 0;border-bottom:1px solid #e2e8f0}.mst-row small{display:block;margin-top:4px}
 .stat strong{display:block;font-size:23px;margin:8px 0}.stat small{display:block}
 #paymentQr{width:min(100%,270px);border:1px solid #e2e8f0;border-radius:12px}
@@ -47,6 +47,23 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
 .payment-success-head h2{margin:0}
 [hidden]{display:none!important}
 @media(max-width:540px){.wrap{padding:18px 12px}.panel{padding:14px}h1{font-size:22px}}
+ 
+/* Đồng nhất với sidepanel Tendoo đỏ, không thay đổi API/nhật ký thanh toán */
+body{background:#fff}
+button:hover:not(:disabled){filter:brightness(.97)}
+.panel,.plan{box-shadow:0 3px 15px #8000120b}
+.portal-account-head{padding-bottom:8px;border-bottom:1px solid var(--tendoo-line)}
+.portal-account-head strong{color:#930013;overflow-wrap:anywhere}
+.mst-accordion{padding:0 16px}
+.mst-accordion summary{cursor:pointer;list-style:none;font-weight:800;color:#b00014;padding:15px 0;display:flex;gap:10px;align-items:center}
+.mst-accordion summary::-webkit-details-marker{display:none}
+.mst-accordion summary span{padding:1px 9px;border-radius:15px;background:#fff1f2}
+.mst-accordion summary small{margin-left:auto}
+#webAddMstForm input{width:auto;flex:1 1 200px}
+#webAddMstForm button{white-space:nowrap}
+input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
+.license-token{color:#b00014}
+
 </style>
 </head>
 <body>
@@ -68,7 +85,7 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
 </section>
 <section id="dashboard" hidden>
  <div class="panel">
-  <div class="row"><div><small>Tài khoản</small><div><strong id="userEmail"></strong></div></div><div class="actions"><button id="refreshBtn" class="secondary">Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
+  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><div class="actions"><button id="refreshBtn" class="secondary" title="Làm mới">↻ Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
   <div class="grid">
    <div class="plan stat"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
@@ -84,17 +101,17 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
   <label for="trialMst">MST muốn dùng thử</label><input id="trialMst" inputmode="numeric" autocomplete="off" placeholder="10 hoặc 12 chữ số">
   <div class="actions"><button id="trialBtn">Kích hoạt dùng thử</button></div>
  </div>
- <div class="panel">
-  <h2>Kích hoạt mã unlock</h2><p class="muted">Mỗi mã chỉ sử dụng một lần và cộng đúng quyền theo gói được cấp.</p>
-  <label for="unlockCode">Mã unlock</label><input id="unlockCode" autocomplete="off" placeholder="UNLOCK-...">
-  <div class="actions"><button id="redeemBtn">Kích hoạt</button></div>
- </div>
+
  </div>
 
- <div class="panel">
-  <h2>MST đã liên kết</h2><p class="muted">Bạn có thể tự gỡ MST khi còn gói MST hiệu lực. Gói đã hết hạn cần admin hỗ trợ.</p>
+ <details id="mstProfilesWeb" class="panel mst-accordion">
+  <summary>Hồ sơ MST <span id="mstWebCount">0</span><small>▾ Xem / quản lý</small></summary>
+  <form id="webAddMstForm" class="actions">
+    <input id="webAddMst" type="text" inputmode="numeric" autocomplete="off" maxlength="13" placeholder="MST 10 / 12 / 13 số" aria-label="Thêm MST" required>
+    <button type="submit">+ Thêm MST</button>
+  </form>
   <div id="mstList"></div>
- </div>
+ </details>
 
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
@@ -104,8 +121,8 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
   <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
   <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
  </div>
- <div class="panel">
-  <h2>Mua gói mới</h2><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
+ <div class="panel" id="planSection">
+  <div class="row"><h2>Mua gói mới</h2><div class="actions"><button id="renewWebBtn" type="button" class="secondary">Gia hạn</button><button id="giftWebBtn" type="button" class="secondary">🎁 Mã quà tặng</button></div></div><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
   <div id="packageList" class="grid package-grid"></div>
  </div>
 
@@ -115,6 +132,12 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
   <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
  </div>
 </section>
+<dialog id="giftWebDialog" class="payment-success-modal" aria-labelledby="giftWebTitle">
+ <h2 id="giftWebTitle">🎁 Kích hoạt mã quà tặng</h2>
+ <p class="muted">Mã quà tặng chỉ sử dụng một lần.</p>
+ <label for="unlockCode">Mã quà tặng</label><input id="unlockCode" autocomplete="off" placeholder="UNLOCK-...">
+ <div class="actions"><button id="redeemBtn" type="button">Kích hoạt</button><button id="closeGiftWebBtn" type="button" class="secondary">Đóng</button></div>
+</dialog>
 <dialog id="paymentSuccessDialog" class="payment-success-modal" aria-labelledby="paymentSuccessTitle">
  <div class="payment-success-head"><span aria-hidden="true">✓</span><h2 id="paymentSuccessTitle">Thanh toán thành công!</h2></div>
  <p id="paymentSuccessInfo"></p>

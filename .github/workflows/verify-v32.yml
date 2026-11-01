@@ -108,3 +108,44 @@ jobs:
             exit 1
           fi
           psql -v ON_ERROR_STOP=1 -f tests/v32/sql/060_assert_rollback.sql
+
+  package-extension-candidate:
+    needs: [validate, sql-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Manifest V3 and package installable extension
+        run: |
+          python - <<'PY'
+          import json, pathlib, zipfile
+          root = pathlib.Path('autotax')
+          manifest = json.loads((root/'manifest.json').read_text(encoding='utf-8'))
+          assert manifest['manifest_version'] == 3
+          files = [
+            manifest['background']['service_worker'],
+            manifest['side_panel']['default_path'],
+          ]
+          for script in manifest.get('content_scripts', []):
+              files.extend(script.get('js', []))
+              files.extend(script.get('css', []))
+          files.extend(manifest.get('icons', {}).values())
+          for path in files:
+              if not (root/path).is_file():
+                  raise SystemExit('Missing extension resource: '+path)
+          version=manifest['version']
+          output=pathlib.Path('autotax-v'+version+'-candidate.zip')
+          with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=7) as archive:
+              for p in sorted(root.rglob('*')):
+                  if p.is_file() and p.suffix not in {'.md'} and '__pycache__' not in p.parts:
+                      archive.write(p,p.relative_to(root).as_posix())
+          with zipfile.ZipFile(output) as archive:
+              assert 'manifest.json' in archive.namelist()
+              assert 'src/sidepanel/index.html' in archive.namelist()
+              assert 'src/license/license.js' in archive.namelist()
+          print('Created:',output,'version:',version,'items:',len(archive.namelist()))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: autotax-v32-extension-candidate
+          path: autotax-v*-candidate.zip
+          retention-days: 14

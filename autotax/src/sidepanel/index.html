@@ -28,7 +28,11 @@
   <main>
     <section id="license-card" class="license-card" aria-label="Tài khoản và gói AutoTax">
   <div class="license-head">
-    <div><strong>Gói sử dụng AutoTax</strong><div class="license-caption">Quản lý số hóa đơn hoặc số MST</div></div>
+    <div class="license-primary">
+      <strong>Gói sử dụng AutoTax</strong>
+      <div id="lic-mode-wrap" class="license-mode" hidden><label for="lic-mode">Chế độ sử dụng</label><select id="lic-mode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><small>Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</small></div>
+      <div id="lic-account-quick-actions" class="license-buttons license-main-actions" hidden><button id="lic-renew" type="button" class="primary">Gia hạn</button><button id="lic-gift-open" type="button" title="Nhập mã quà tặng" aria-haspopup="dialog" aria-controls="lic-unlock-dialog">🎁 Quà tặng</button><button id="lic-password-open" type="button">Đổi mật khẩu</button></div>
+    </div>
     <div class="license-head-actions">
       <span id="lic-header-email" class="license-header-email" hidden></span>
       <button id="lic-refresh" type="button" class="license-refresh" title="Làm mới">↻</button>
@@ -57,9 +61,7 @@
       <div id="lic-mst-assignments" class="license-entitlements" aria-live="polite"></div>
       </details>
     </section>
-    <div id="lic-mode-wrap" class="license-mode" hidden><label for="lic-mode">Chế độ sử dụng</label><select id="lic-mode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><small>Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</small></div>
     <div class="license-status-row"><span id="lic-state" class="lic-state locked">Đang kiểm tra…</span></div>
-    <div class="license-buttons license-main-actions"><button id="lic-renew" type="button" class="primary">Gia hạn</button><button id="lic-gift-open" type="button" title="Nhập mã quà tặng" aria-haspopup="dialog" aria-controls="lic-unlock-dialog">🎁 Quà tặng</button><button id="lic-password-open" type="button">Đổi mật khẩu</button></div>
     <div id="lic-password-box" hidden><label for="lic-current-password">Mật khẩu hiện tại</label><input id="lic-current-password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"><label for="lic-new-password">Mật khẩu mới</label><input id="lic-new-password" type="password" autocomplete="new-password" minlength="8" placeholder="Ít nhất 8 ký tự"><button id="lic-password-save" type="button">Cập nhật mật khẩu</button></div>
     <div id="lic-packages" class="license-packages" hidden><div class="license-package-head"><strong>Chọn gói muốn mua</strong><button id="lic-packages-close" type="button">Đóng</button></div><div id="lic-package-list"></div></div>
     <div id="lic-payment" class="license-payment" hidden><p id="lic-payment-info"></p><img id="lic-qr" alt="QR thanh toán AutoTax"><button id="lic-close-qr" type="button">Đóng mã QR</button></div>
@@ -136,22 +138,24 @@
         <button id="clearFmt" type="button" class="link">Bỏ chọn</button>
       </div>
       <div class="tiles" role="group" aria-label="Định dạng tải về">
-        <label class="tile"><input type="checkbox" name="fmt" value="excel" checked /><span>Excel (DS hóa đơn, chi tiết...)</span></label>
-        <label class="tile"><input type="checkbox" name="fmt" value="xml" checked /><span>XML gốc</span></label>
+        <label class="tile"><input type="checkbox" name="fmt" value="excel" checked /><span>Excel</span></label>
+        <label class="tile"><input type="checkbox" name="fmt" value="xml" checked /><span>XML</span></label>
+        <label class="tile" title="Bản thể hiện dựng trên máy từ XML của cổng, không phải PDF gốc của nhà cung cấp. Cần bản gốc: xem cột Link tra cứu HĐ gốc trong Excel"><input type="checkbox" name="fmt" value="pdf" /><span>PDF</span></label>
         <label class="tile"><input type="checkbox" name="fmt" value="html" /><span>HTML</span></label>
-        <label class="tile" title="Bản thể hiện dựng trên máy từ XML của cổng, không phải PDF gốc của nhà cung cấp. Cần bản gốc: xem cột Link tra cứu HĐ gốc trong Excel"><input type="checkbox" name="fmt" value="pdf" /><span>PDF (bản thể hiện)</span></label>
+
       </div>
       <!-- Sheet thêm trong file Excel (DS hóa đơn + Chi tiết sản phẩm luôn có) -->
       <fieldset id="sheetOpts" class="sheet-opts">
         <legend>Sheet thêm trong Excel</legend>
         <div class="checks sheet-grid">
-          <label class="check" title="Mẫu bảng kê tải lên HTKK (NQ 142/2024/QH15)"><input type="checkbox" name="sheet" value="reduction" checked />Phụ lục giảm thuế GTGT</label>
-          <label id="hdkdOpt" class="check" title="Mẫu 01-2/BK-HĐKD cho hộ kinh doanh, lập từ hóa đơn mua vào" hidden><input type="checkbox" name="sheet" value="hdkd" />Bảng kê HĐKD (hộ KD)</label>
+          <label class="check" title="Mẫu bảng kê tải lên HTKK (NQ 142/2024/QH15)"><input type="checkbox" name="sheet" value="reduction" checked />PL giảm thuế GTGT</label>
+          <label id="hdkdOpt" class="check" title="Mẫu 01-2/BK-HĐKD cho hộ kinh doanh, lập từ hóa đơn mua vào" hidden><input type="checkbox" name="sheet" value="hdkd" />Bảng kê HĐKD</label>
+          <details class="sheet-more"><summary>Tùy chọn khác</summary><div class="sheet-more-inner">
           <label class="check" title="Hóa đơn hủy/thay thế, lệch số học, thanh toán tiền mặt từ 5 triệu, chữ ký số, ngày ký khác tháng"><input type="checkbox" name="sheet" value="risk" checked />Kiểm tra rủi ro HĐ</label>
           <label class="check" title="Thêm 2 cột vào DS hóa đơn: người bán (mua vào) / người mua (bán ra) có tên trong danh sách công khai người sử dụng hóa đơn không hợp pháp của cổng không (tra gộp, lưu kết quả trên máy)"><input type="checkbox" name="sheet" value="seller" checked />Kiểm tra rủi ro MST</label>
           <label id="gtgtOpt" class="check" title="Tờ khai 01/GTGT điền sẵn từ hóa đơn để đối chiếu – chỉ lập khi chọn trọn 1 tháng hoặc 1 quý"><input type="checkbox" name="sheet" value="gtgt" />Tờ khai 01/GTGT (tham khảo)</label>
           <label class="check" title="Đặt HĐ thay thế/điều chỉnh cạnh HĐ gốc, tô màu chỗ thay đổi"><input type="checkbox" name="sheet" value="adjust" checked />So sánh HĐ thay thế với HĐ gốc</label>
-          <label class="check" title="Xuất ZIP nhập kho cho MISA hoặc Tendoo, cho phép thiếu mã hàng để sửa sau"><input type="checkbox" name="sheet" value="tendoo" id="tendooSyncCheck" />Xuất file nhập kho MISA / Tendoo</label>
+          <label class="check" title="Xuất ZIP nhập kho cho MISA hoặc Tendoo, cho phép thiếu mã hàng để sửa sau"><input type="checkbox" name="sheet" value="tendoo" id="tendooSyncCheck" />Xuất file nhập kho MISA / Tendoo</label></div></details>
         </div>
         <div id="tendooSummary" class="tendoo-summary" hidden>
           <strong id="tendooSummaryText">Chưa tải danh mục sản phẩm.</strong>
@@ -212,7 +216,7 @@
       <div id="tendooMissingList" class="tendoo-missing-list"></div>
       <div class="license-buttons">
         <button id="tendooMatchApply" type="submit" class="primary">Tiếp tục xuất (cho phép THIẾU MÃ)</button>
-        <button id="tendooMatchCancel" type="button">Hủy xuất file nhập kho</button>
+        <button id="tendooMatchCancel" type="button">Hủy xuất file</button><button id="tendooMatchClose" type="button" title="Đóng popup và xuất những sản phẩm chưa khớp với mã THIẾU MÃ">Tắt popup</button>
       </div>
     </form>
   </dialog>

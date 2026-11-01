@@ -75,7 +75,7 @@ assert(!truncate.includes('addon_admins'),'admin roles are in truncate');
 assert(candidate.includes('v32_already_installed_or_partial_state_stop'),'Missing one-time migration guard');
 assert(candidate.includes('v32_backup_stale_content_for_'),'Production reset must verify all snapshot data');
 assert(candidate.includes('v32_backup_required_missing_manifest'),'Production reset must refuse missing snapshots');
-assert(!/create\\s+temp(?:orary)?\\s+table/i.test(candidate),'Production upgrade must not create an RLS-less baseline table');
+assert(!/create\s+temp(?:orary)?\s+table/i.test(candidate),'Production upgrade must not create an RLS-less baseline table');
 assert(candidate.includes("set_config('autotax_v32.auth_count'"),'Production upgrade must record auth count transaction-locally');
 assert(candidate.includes("set_config('autotax_v32.admin_count'"),'Production upgrade must record admin count transaction-locally');
 assert(candidate.includes('v32_backup_rls_or_grant_invalid'),'Production reset must reject exposed backups');

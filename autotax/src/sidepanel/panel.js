@@ -157,6 +157,32 @@ const sheets = () => Object.fromEntries(SHEETS.map((k) => [k, checked('sheet').i
 
 /* Optional Tendoo stock-import bridge: both Excel files are parsed locally. */
 let tendooCatalog=null,tendooTemplate=null,tendooMappingRequest=null;
+let tendooPendingNames=[],tendooSavedLinks={};
+const TENDOO_LINKS_KEY='autotax_tendoo_sku_links_v1';
+function tendooCatalogKey(){
+ if(!tendooCatalog?.length)return '';
+ let hash=2166136261;
+ for(const product of tendooCatalog){
+  const value=product.sku+'|'+product.name+'\n';
+  for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619)>>>0;
+ }
+ return 'catalog-'+tendooCatalog.length+'-'+hash.toString(16);
+}
+async function loadTendooLinks(){
+ tendooSavedLinks={};
+ if(!tendooCatalog?.length)return;
+ const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
+ const known=new Set(tendooCatalog.map(p=>p.sku));
+ tendooSavedLinks=Object.fromEntries(Object.entries(data[tendooCatalogKey()]||{})
+  .filter(([name,sku])=>name&&known.has(sku)));
+}
+async function keepTendooLinks(mapping){
+ const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
+ tendooSavedLinks={...tendooSavedLinks,...mapping};
+ data[tendooCatalogKey()]=tendooSavedLinks;
+ await chrome.storage.local.set({[TENDOO_LINKS_KEY]:data});
+ updateTendooUi();
+}
 const tendooDialog=$('tendooSettingsDialog');
 function tendooStatus(message,error=false){
  const el=$('tendooSetupStatus');el.textContent=message;
@@ -167,7 +193,7 @@ function updateTendooUi(){
  const selected=$('tendooSyncCheck').checked;
  $('tendooSummary').hidden=!selected;
  $('tendooSummaryText').textContent=tendooReady()?
-  tendooCatalog.length+' SKU · mẫu: '+tendooTemplate.fileName:
+  tendooCatalog.length+' SKU · '+Object.keys(tendooSavedLinks).length+' liên kết đã lưu · mẫu: '+tendooTemplate.fileName:
   'Cần file BC_San_Pham và mẫu nhập kho Tendoo.';
 }
 function openTendooSettings(){
@@ -185,8 +211,8 @@ $('tendooConfigureBtn').addEventListener('click',openTendooSettings);
 $('tendooCatalogFile').addEventListener('change',async e=>{
  const file=e.target.files?.[0];if(!file)return;
  tendooCatalog=null;updateTendooUi();tendooStatus('Đang đọc báo cáo sản phẩm...');
- try{tendooCatalog=await TendooImport.catalog(file);
-  tendooStatus('Đã đọc '+tendooCatalog.length+' sản phẩm / SKU.');
+ try{tendooCatalog=await TendooImport.catalog(file);await loadTendooLinks();
+  tendooStatus('Đã đọc '+tendooCatalog.length+' SKU, '+Object.keys(tendooSavedLinks).length+' liên kết đã lưu.');
  }catch(err){tendooStatus('File BC_San_Pham không hợp lệ: '+err.message,true)}
  updateTendooUi();
 });
@@ -207,9 +233,39 @@ $('tendooSettingsCancel').addEventListener('click',()=>{
  if(!tendooReady())$('tendooSyncCheck').checked=false;
  updateTendooUi();summarize();
 });
+async function openTendooMatchTab(){
+ if(!tendooMappingRequest||!tendooPendingNames.length)return;
+ const sessionKey='autotax-tendoo-request-'+tendooMappingRequest;
+ await chrome.storage.session.set({[sessionKey]:{names:tendooPendingNames,products:tendooCatalog||[]}});
+ await chrome.tabs.create({url:chrome.runtime.getURL(
+  'src/sidepanel/tendoo-match.html?rid='+encodeURIComponent(tendooMappingRequest)),active:true});
+}
+$('tendooOpenMatchTab').addEventListener('click',()=>{
+ openTendooMatchTab().catch(error=>log('Không mở được tab liên kết: '+error.message,'warn'));
+});
+async function finishTendooMapping(requestId,mapping){
+ if(!port||requestId!==tendooMappingRequest)throw Error('Phiên liên kết đã kết thúc.');
+ if(!mapping||typeof mapping!=='object')throw Error('Chưa có liên kết sản phẩm.');
+ const known=new Set((tendooCatalog||[]).map(p=>p.sku));
+ for(const entry of tendooPendingNames){
+  if(!known.has(mapping[entry.key]))throw Error('Thiếu SKU hợp lệ cho: '+entry.name);
+ }
+ await keepTendooLinks(mapping);
+ port.postMessage({type:'tendoo-map-response',requestId,mapping:{...tendooSavedLinks,...mapping}});
+ tendooMappingRequest=null;tendooPendingNames=[];
+ const dialog=$('tendooMatchDialog');
+ if(dialog.open)dialog.close();
+ log('Đã lưu '+Object.keys(mapping).length+' liên kết SKU; tiếp tục xuất ZIP nhập kho.','ok');
+}
+chrome.runtime.onMessage.addListener((message,_sender,respond)=>{
+ if(message?.type!=='tendoo-tab-mapping')return;
+ finishTendooMapping(message.requestId,message.mapping)
+  .then(()=>respond({ok:true}),error=>respond({ok:false,error:error.message}));
+ return true;
+});
 function mapUnknownTendoo(message){
  const requestId=message.requestId,names=message.names||[];
- tendooMappingRequest=requestId;
+ tendooMappingRequest=requestId;tendooPendingNames=names;
  const box=$('tendooMissingList');box.replaceChildren();
  for(const [index,entry] of names.entries()){
    const row=document.createElement('div');row.className='tendoo-missing-row';
@@ -285,8 +341,10 @@ function mapUnknownTendoo(message){
  const dialog=$('tendooMatchDialog');
  if(!dialog.open)dialog.showModal();
  box.querySelector('.tendoo-product-search')?.focus();
+  openTendooMatchTab().catch(error=>
+   log('Không tự mở được tab riêng, có thể liên kết trong popup: '+error.message,'warn'));
 }
-$('tendooMatchForm').addEventListener('submit',e=>{
+$('tendooMatchForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!tendooMappingRequest)return;
  const inputs=[...$('tendooMissingList').querySelectorAll('input[type="hidden"][data-key]')];
  const known=new Set((tendooCatalog||[]).map(p=>p.sku)),mapping={};
@@ -298,8 +356,8 @@ $('tendooMatchForm').addEventListener('submit',e=>{
   }
   mapping[input.dataset.key]=sku;
  }
- port?.postMessage({type:'tendoo-map-response',requestId:tendooMappingRequest,mapping});
- tendooMappingRequest=null;$('tendooMatchDialog').close();
+ try{await finishTendooMapping(tendooMappingRequest,mapping)}catch(error){log('Không lưu được SKU: '+error.message,'warn')}
+ // Popup closed by finishTendooMapping on success.
 });
 $('tendooMatchCancel').addEventListener('click',()=>{
  if(tendooMappingRequest)port?.postMessage({
@@ -447,7 +505,7 @@ async function run() {
   }
   const msg = { type: 'run', tuNgay: toVN($('from').value), denNgay: toVN($('to').value),
     kinds, forms, formats: f, sheets: options, adjOnly: $('adjOnly').checked,
-    ...(options.tendoo?{tendoo:{products:tendooCatalog,template:tendooTemplate}}:{}) };
+    ...(options.tendoo?{tendoo:{products:tendooCatalog,template:tendooTemplate,links:tendooSavedLinks}}:{}) };
   $('log').innerHTML = ''; $('bar').value = 0; $('status').textContent = '';
   stopped = false;
   job(msg);

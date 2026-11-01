@@ -311,14 +311,14 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
         throw new Error('Thiếu báo cáo sản phẩm hoặc mẫu nhập kho Tendoo.');
       const purchases=rows.filter(r=>r.kind==='purchase');
       if(!purchases.length)throw new Error('Không có hóa đơn mua vào trong khoảng ngày này.');
-      const unknown=TendooImport.missing(purchases,details,tendoo.products);
-      let skuLinks={};
+      const skuLinks={...(tendoo.links||{})};
+      const unknown=TendooImport.missing(purchases,details,tendoo.products,skuLinks);
       if(unknown.length){
         send({type:'log',level:'warn',text:'Có '+unknown.length+
           ' tên hàng chưa tồn tại trong BC_San_Pham, cần liên kết SKU.'});
         const match=await linkSku(unknown);
         if(match?.cancel)throw new Error('Đã hủy liên kết; không xuất file Tendoo.');
-        skuLinks=match?.mapping||{};
+        Object.assign(skuLinks,match?.mapping||{});
       }
       const packageFile=TendooImport.makePackage(purchases,details,tendoo.products,
         tendoo.template,skuLinks);
@@ -357,7 +357,7 @@ chrome.runtime.onConnect.addListener((port) => {
     const requestId='tendoo-map-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
     const timeout=setTimeout(()=>{
       pending.delete(requestId);reject(new Error('Hết thời gian chọn SKU.'))
-    },180000);
+    },900000);
     pending.set(requestId,{resolve,reject,timeout});
     send({type:'tendoo-map-request',requestId,names});
   });

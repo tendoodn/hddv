@@ -15,7 +15,7 @@ AutoTax 3.2 replaces the legacy customer-facing trial/monthly/yearly display wit
 
 ## Supabase deployment
 
-On the dedicated Add-on Supabase project, apply migrations in order: 001_addon_license_portal.sql, 002_addon_pricing_and_order_creation.sql, 003_sepay_webhook_processing.sql, 004_admin_payment_details.sql, 004_show_queued_renewals.sql, 005_package_entitlements_v32.sql, 006_package_admin_and_expiry_hardening.sql, 007_mst_capacity_enforcement.sql, 008_order_snapshot_and_expiry_display.sql, 009_initial_entitlement_mode.sql, 010_package_unlock_codes.sql.
+On the dedicated Add-on Supabase project, apply migrations in order: 001_addon_license_portal.sql, 002_addon_pricing_and_order_creation.sql, 003_sepay_webhook_processing.sql, 004_admin_payment_details.sql, 004_show_queued_renewals.sql, 005_package_entitlements_v32.sql, 006_package_admin_and_expiry_hardening.sql, 007_mst_capacity_enforcement.sql, 008_order_snapshot_and_expiry_display.sql, 009_initial_entitlement_mode.sql, 010_package_unlock_codes.sql, 011_atomic_invoice_quota_claim.sql.
 
 Deploy Edge Functions from addon-portal/supabase/functions and configure the required Supabase/SePay secrets. Do not deploy this schema to an unrelated Tendoo project.
 
@@ -24,4 +24,4 @@ Deploy Edge Functions from addon-portal/supabase/functions and configure the req
 - The package schema and checkout functions are committed but must be deployed before package purchase works.
 - Configure the validity of each MST package in Admin before opening it for sale; no arbitrary duration is assumed.
 - MST profile capacity is checked server-side at the start of each GDT download job. Assigned MST profiles are retained when capacity expires; access is limited by the active lot capacity.
-- Chrome runtime, real payment and GDT download tests have not been executed as part of this repository update.
+- Invoice-mode jobs must deploy migration 011 first. The extension claims quota **before** processing the returned invoice list; previously charged invoice identities are allowed without another deduction, even if the package has zero remaining. Claims are serialized per account to prevent concurrent overspending. Each new invoice consumes one unit once, regardless of exported file format. A failed export after the claim does not automatically refund a unit; admin reconciliation is required if a refund policy is desired.\n- Chrome runtime, real payment and GDT download tests have not been executed as part of this repository update.

@@ -21,6 +21,13 @@ const products=await td.catalog(file);
 assert.equal(products.length,2);
 assert.equal(products[0].sku,'SKU-01');
 assert.equal(products[0].name,'Thịt heo');
+// Search by exact or partial SKU and accented/unaccented BC product name.
+assert.equal(td.searchCatalog(products,'rau')[0].sku,'SKU-02');
+assert.equal(td.searchCatalog(products,'RAU XANH')[0].sku,'SKU-02');
+assert.equal(td.searchCatalog(products,'sku-01')[0].name,'Thịt heo');
+assert.equal(td.searchCatalog(products,'HEO')[0].sku,'SKU-01');
+assert.equal(td.searchCatalog(products,'No such product').length,0);
+assert.equal(td.searchCatalog(products,'',1).length,1);
 const template={
  fileName:'File mẫu nhập kho hoá đơn GTGT.xlsx',headers:[
   'Mã sản phẩm / nguyên liệu','Loại hàng','Tên sản phẩm/nguyên liệu',

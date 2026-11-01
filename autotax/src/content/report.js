@@ -246,7 +246,15 @@
   const plain = (s) => ABBR.reduce((x, [re, to]) => x.replace(re, to), String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[đĐ]/g, 'D').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim());
   const isAdjusting = (r) => (Number(r.tthai) === 2 || Number(r.tthai) === 3) && !!r.gocRef;
-  const refKey = (x) => (x ? `${x.nbmst || ''}|${Number(x.khmshdon) || x.khmshdon || ''}|${String(x.khhdon || '').toUpperCase()}|${Number(x.shdon) || x.shdon || ''}` : '');
+  // Chuẩn hóa các trường số dạng chuỗi mà không ép Number (tránh mất chính xác nếu số hóa đơn dài).
+  // Bỏ số 0 đầu ở mẫu/số; giữ nguyên ký hiệu chữ và chuẩn hóa hoa/thường, khoảng trắng.
+  const refDigits = (v) => String(v ?? '').trim().replace(/^0+(?=\\d)/, '');
+  const refKey = (x) => (x ? [
+    String(x.nbmst || '').trim(),
+    refDigits(x.khmshdon),
+    String(x.khhdon || '').trim().toUpperCase().replace(/\\s+/g, ''),
+    refDigits(x.shdon),
+  ].join('|') : '');
   const monthOf = (iso) => { const d = new Date(iso); return d.getFullYear() * 12 + d.getMonth(); };
   // Luật thuế GTGT 2024 (từ 01/07/2025): hóa đơn mua vào từ 5 triệu đồng (gồm thuế) cần chứng từ thanh toán
   // không dùng tiền mặt để được khấu trừ; trước đó là 20 triệu.

@@ -127,6 +127,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/027_admin_order_search.sql
       - name: Allow twelve-digit MST in trial and GDT authorization
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/028_mst_12_digit_trial_and_authorization.sql
+      - name: Add explicit MST profiles and strict session lock
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/028_explicit_mst_profiles_and_session_lock.sql
       - name: Verify production readiness report is readable
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants
@@ -162,6 +164,9 @@ jobs:
 
       - name: Verify twelve-digit MST trial and authorization
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/160_assert_twelve_digit_mst.sql
+
+      - name: Verify 12-digit ID and profile lock without auto-enrollment
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/160_assert_mst_profile_lock.sql
 
       - name: Prepare unrelated-FK rollback scenario in another isolated DB
         run: |

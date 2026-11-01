@@ -1,5 +1,7 @@
 // Mở side panel khi bấm icon; ghi file qua chrome.downloads.
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+// Global panel stays available across tab switches; only a user action closes it.
+chrome.sidePanel.setOptions({path:'src/sidepanel/index.html',enabled:true}).catch(()=>{});
 
 // Chỉ báo thành công khi Chrome xác nhận tệp đã tải xong, không phải chỉ mới nhận lệnh.
 function waitForDownload(id) {

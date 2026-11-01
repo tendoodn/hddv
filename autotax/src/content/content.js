@@ -12,6 +12,36 @@ const isoOf = (vn) => vn.split('/').reverse().join('-'); // dd/mm/yyyy → yyyy-
 const DOWNLOAD_ROOT = 'HoaDon'; // Downloads/HoaDon/<MST – Tên công ty>/<từ ngày>_<đến ngày>/
 const ZIP_PART_BYTES = 40 * 1024 * 1024; // ~40 MB/zip: data URL base64 còn ~55 MB, dưới giới hạn 64 MB của tin nhắn Chrome
 
+const HISTORY_KEY = 'autotax_invoice_history_v1';
+const HISTORY_LIMIT = 20000;
+const invoiceHistoryKey = (r, mst) => [mst || '', r.kind || '', r.form || '', r.khmshdon || '', r.khhdon || '', r.shdon || ''].join('|');
+async function updateInvoiceHistory(rows, mst, mode, formats = {}) {
+  if (!rows?.length) return;
+  const stored = await chrome.storage.local.get(HISTORY_KEY);
+  const db = stored[HISTORY_KEY] || { version: 1, records: {} };
+  const now = new Date().toISOString();
+  for (const r of rows) {
+    const key = invoiceHistoryKey(r, mst);
+    const old = db.records[key] || {};
+    const rec = {
+      key, mst: mst || '', kind: r.kind || '', form: r.form || '',
+      invoiceNo: String(r.shdon ?? ''), series: r.khhdon || '', template: r.khmshdon || '',
+      sellerTax: r.nbmst || '', sellerName: r.nbten || '',
+      buyerTax: r.nmmst || '', buyerName: r.nmten || '',
+      date: r.tdlap || '', status: r.tthai ?? null, processing: r.ttxly ?? null,
+      firstSeenAt: old.firstSeenAt || now,
+      lastSearchedAt: mode === 'searched' ? now : (old.lastSearchedAt || ''),
+      searchedCount: (old.searchedCount || 0) + (mode === 'searched' ? 1 : 0),
+      downloadedAt: mode === 'downloaded' ? now : (old.downloadedAt || ''),
+      downloadedFormats: mode === 'downloaded' ? [...new Set([...(old.downloadedFormats || []), ...Object.keys(formats).filter(k => formats[k])])] : (old.downloadedFormats || []),
+    };
+    db.records[key] = rec;
+  }
+  const entries = Object.entries(db.records).sort((a,b) => (b[1].lastSearchedAt || b[1].firstSeenAt).localeCompare(a[1].lastSearchedAt || a[1].firstSeenAt));
+  db.records = Object.fromEntries(entries.slice(0, HISTORY_LIMIT));
+  await chrome.storage.local.set({ [HISTORY_KEY]: db });
+}
+
 function toDataUrl(bytes, mime) {
   return new Promise((ok, fail) => {
     const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail;
@@ -46,6 +76,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     rows = rows.filter((r) => r.tthai && Number(r.tthai) !== 1);
     send({ type: 'log', level: 'ok', text: `Chỉ lấy hóa đơn thay thế/điều chỉnh/hủy: ${rows.length}/${res.rows.length} hóa đơn` });
   }
+  await updateInvoiceHistory(rows, profile.mst, 'searched');
   const count = (k, f) => rows.filter((r) => r.kind === k && (!f || r.form === f)).length;
   // Mỗi loại 1 phần; chọn cả 2 hình thức thì tách thêm điện tử / máy tính tiền
   const byForm = (k) => (forms.length > 1 ? ` (${forms.map((f) => `${f === 'mtt' ? 'máy tính tiền' : 'điện tử'} ${count(k, f)}`).join(', ')})` : '');
@@ -63,14 +94,15 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
   if (needDetail && !res.stopped) {
     const order = rows.filter((r) => formats.lines || formats.pdf || r.ttxly !== 6)
       .sort((a, b) => `${a.kind}|${a.month}|${a.form}`.localeCompare(`${b.kind}|${b.month}|${b.form}`));
-    let bucket = null, files = [], bytes = 0, part = 1;
+    let bucket = null, files = [], bytes = 0, part = 1, bucketInvoiceKeys = [];
     const flush = async (last) => {
       if (!bucket || !files.length) return;
       const [kind, month] = bucket.split('|');
       // Zip quá lớn (gói HTML ~300 KB/hóa đơn) → tách phần để không vượt giới hạn truyền dữ liệu của Chrome
       const suffix = part > 1 || !last ? `_phan${part}` : '';
       await save(Zip.writeZip(files), 'application/zip', `${dir}/${HDDT.KINDS[kind].folder}_${month}${suffix}.zip`);
-      saved++; files = []; bytes = 0; part++;
+      if (bucketInvoiceKeys.length) await updateInvoiceHistory(rows.filter(r => bucketInvoiceKeys.includes(invoiceHistoryKey(r, profile.mst))), profile.mst, 'downloaded', formats);
+      saved++; files = []; bytes = 0; bucketInvoiceKeys = []; part++;
     };
     const add = (name, data) => { files.push({ name, data }); bytes += data.length; };
     for (const row of order) {
@@ -86,6 +118,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
           (w) => send({ type: 'status', text: `Đang tải chi tiết ${done + 1}/${order.length}: ${waitText(w)}` }));
         // head (chữ ký số, ngày ký, hình thức thanh toán…) dùng cho DS hóa đơn + Kiểm tra rủi ro HĐ; dòng hàng chỉ giữ khi cần
         details.set(row.key, { source: inv.source, head: inv.head, ...(formats.lines ? { lines: inv.lines, fees: inv.fees } : {}) });
+        bucketInvoiceKeys.push(invoiceHistoryKey(row, profile.mst));
         if (inv.source === 'xml') {
           // Nguyên bytes gốc của cổng (không giải mã/mã hóa lại) để mở được bằng phần mềm của Cục Thuế
           if (formats.xml) add(`XML/${sub}${base}.xml`, inv.xml);
@@ -163,6 +196,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     const book = Report.buildSheets(rows, details, { withLines: formats.lines, withPdf: formats.pdf, sheets, originals, illegal, tuNgay, denNgay, mst: profile.mst, company: profile.company,
       kinds, adjOnly, skipped: res.skipped || [], stopped: stopFlag || res.stopped });
     await save(Xlsx.buildXlsx(book), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name);
+    await updateInvoiceHistory(rows, profile.mst, 'downloaded', { excel: true });
     // 1 dòng: số sheet + tóm tắt rủi ro (chỉ nêu khi có cảnh báo / lưu ý)
     const risk = book.find((x) => x.summary)?.summary;
     const flags = risk ? [risk.bad && `${risk.bad} hóa đơn bị cảnh báo`, risk.warn && `${risk.warn} hóa đơn cần lưu ý`].filter(Boolean).join(', ') : '';

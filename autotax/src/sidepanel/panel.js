@@ -279,4 +279,42 @@ let licenseAllowed=false;
 function applyLicense(st){licenseAllowed=['trial','paid'].includes(st?.tier);syncRun()}
 document.addEventListener('autotax-license-change',e=>applyLicense(e.detail?.license));
 document.addEventListener('autotax-license-gate',e=>{licenseAllowed=!!e.detail?.allowed;syncRun()});
+
+const HISTORY_KEY = 'autotax_invoice_history_v1';
+let historyRecords = [];
+const historyDate = value => { if(!value) return ''; const d=new Date(value); return Number.isNaN(d.getTime()) ? String(value).slice(0,10) : d.toLocaleDateString('vi-VN'); };
+function renderHistory() {
+  const q=($('historySearch')?.value||'').trim().toLocaleLowerCase('vi');
+  const f=$('historyFilter')?.value||'all';
+  const rows=historyRecords.filter(r=>{
+    const text=[r.invoiceNo,r.series,r.template,r.mst,r.sellerTax,r.sellerName,r.buyerTax,r.buyerName].join(' ').toLocaleLowerCase('vi');
+    return (!q||text.includes(q)) && (f==='all'||(f==='searched'&&r.lastSearchedAt)||(f==='downloaded'&&r.downloadedAt)||(f==='notDownloaded'&&!r.downloadedAt));
+  }).slice(0,250);
+  $('historyCount').textContent=historyRecords.length.toLocaleString('vi-VN');
+  $('historySummary').textContent=historyRecords.length ? historyRecords.filter(r=>r.downloadedAt).length+' đã tải · '+historyRecords.filter(r=>r.lastSearchedAt).length+' đã tra cứu' : 'Chưa có dữ liệu lịch sử';
+  const body=$('historyRows'); body.replaceChildren();
+  if(!rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.textContent='Không có hóa đơn phù hợp.';tr.append(td);body.append(tr);return}
+  for(const r of rows){
+    const tr=document.createElement('tr');
+    const partner=r.kind==='purchase' ? (r.sellerName||r.sellerTax) : (r.buyerName||r.buyerTax);
+    const values=[historyDate(r.date),[r.series,r.invoiceNo].filter(Boolean).join(' / ')||'—',partner||'—',r.downloadedAt?'Đã tải về':'Đã tra cứu'];
+    for(let i=0;i<values.length;i++){const td=document.createElement('td');td.textContent=values[i];if(i===3)td.className=r.downloadedAt?'history-done':'history-seen';tr.append(td)}
+    body.append(tr);
+  }
+}
+async function loadHistory(){
+  const data=await chrome.storage.local.get(HISTORY_KEY);
+  historyRecords=Object.values(data[HISTORY_KEY]?.records||{}).sort((a,b)=>(b.lastSearchedAt||b.firstSeenAt||'').localeCompare(a.lastSearchedAt||a.firstSeenAt||''));
+  renderHistory();
+}
+$('historySearch')?.addEventListener('input',renderHistory);
+$('historyFilter')?.addEventListener('change',renderHistory);
+$('historyRefresh')?.addEventListener('click',()=>loadHistory().catch(e=>log('Không đọc được lịch sử: '+e.message,'error')));
+$('historyExport')?.addEventListener('click',()=>{
+  const cols=['mst','kind','form','date','series','invoiceNo','template','sellerTax','sellerName','buyerTax','buyerName','lastSearchedAt','searchedCount','downloadedAt','downloadedFormats'];
+  const csv=[cols.join(','),...historyRecords.map(r=>cols.map(k=>'"'+String(Array.isArray(r[k])?r[k].join('|'):(r[k]??'')).replace(/"/g,'""')+'"').join(','))];
+  const blob=new Blob(['\\uFEFF'+csv.join('\\r\\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='autotax-lich-su-hoa-don.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+loadHistory().catch(e=>log('Không đọc được lịch sử: '+e.message,'error'));
 init().catch((e) => log(e.message, 'error'));

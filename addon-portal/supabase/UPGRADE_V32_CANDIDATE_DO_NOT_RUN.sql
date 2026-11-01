@@ -35,6 +35,63 @@ begin
  if not exists (select 1 from public.addon_admins)
  then raise exception 'no_admin_found_refusing_to_modify'; end if;
 end $preflight$;
+-- Lock all legacy add-on tables before comparing them to the verified snapshot.
+-- A sale, gift or subscription created after snapshot MUST block this upgrade.
+set local lock_timeout = '10s';
+set local statement_timeout = '180s';
+lock table
+ public.addon_admins,public.addon_audit_logs,public.addon_device_sessions,
+ public.addon_gift_codes,public.addon_gift_redemptions,public.addon_orders,
+ public.addon_payment_events,public.addon_plans,public.addon_profiles,
+ public.addon_subscriptions,public.addon_trial_claims
+ in access exclusive mode;
+
+do $backup_check$
+declare
+ t text;
+ v_original bigint;
+ v_copy bigint;
+ v_manifest_original bigint;
+ v_manifest_copy bigint;
+ v_count integer;
+begin
+ if to_regclass('autotax_backup_20261101._manifest') is null then
+  raise exception 'v32_backup_required_missing_manifest';
+ end if;
+ if has_schema_privilege('anon','autotax_backup_20261101','USAGE')
+    or has_schema_privilege('authenticated','autotax_backup_20261101','USAGE')
+ then raise exception 'v32_backup_schema_exposed'; end if;
+ select count(*) into v_count from autotax_backup_20261101._manifest;
+ if v_count<>11 then raise exception 'v32_backup_incomplete_expected_11'; end if;
+ select count(*) into v_count
+ from pg_class c join pg_namespace n on n.oid=c.relnamespace
+ where n.nspname='autotax_backup_20261101' and c.relkind='r'
+  and (not c.relrowsecurity
+   or has_table_privilege('anon',c.oid,'SELECT')
+   or has_table_privilege('authenticated',c.oid,'SELECT'));
+ if v_count<>0 then raise exception 'v32_backup_rls_or_grant_invalid'; end if;
+ for t in
+  select tablename::text from pg_tables
+  where schemaname='public' and tablename like 'addon_%'
+  order by tablename
+ loop
+  if to_regclass(format('autotax_backup_20261101.%I',t)) is null then
+   raise exception 'v32_backup_table_missing: %',t;
+  end if;
+  execute format('select count(*) from public.%I',t) into v_original;
+  execute format('select count(*) from autotax_backup_20261101.%I',t) into v_copy;
+  select rows_original,rows_copied
+  into v_manifest_original,v_manifest_copy
+  from autotax_backup_20261101._manifest
+  where table_name=t;
+  if not found or v_original<>v_copy
+   or v_copy is distinct from v_manifest_copy
+   or v_original is distinct from v_manifest_original
+  then raise exception 'v32_backup_stale_or_mismatched_for_% (current=%, backed_up=%)',
+   t,v_original,v_copy; end if;
+ end loop;
+end $backup_check$;
+
 create temp table autotax_v32_baseline on commit drop as
 select (select count(*)::bigint from auth.users) as auth_count,
        (select count(*)::bigint from public.addon_admins) as admin_count;

@@ -113,6 +113,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/022_admin_paginated_package_transactions.sql
       - name: Fix Supabase pgcrypto package-checkout function search path
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/023_fix_package_checkout_pgcrypto_schema.sql
+      - name: Add server-timed five-minute QR and private order-status RPC
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/024_five_minute_qr_realtime_order_status.sql
       - name: Verify production readiness report is readable
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants
@@ -133,6 +135,9 @@ jobs:
 
       - name: Verify customer checkout works with pgcrypto in extensions schema
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/110_assert_package_checkout_pgcrypto.sql
+
+      - name: Verify five-minute QR and private order status
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/120_assert_five_minute_qr_status.sql
 
       - name: Prepare unrelated-FK rollback scenario in another isolated DB
         run: |

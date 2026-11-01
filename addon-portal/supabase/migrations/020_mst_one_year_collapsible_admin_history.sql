@@ -24,7 +24,7 @@ begin
  ) then
   alter table public.addon_package_catalog
    add constraint addon_package_catalog_mst_365_days_check
-   check (family <> 'mst' or validity_days=365);
+   check (family <> 'mst' or validity_days is not distinct from 365);
  end if;
 end $constraint$;
 

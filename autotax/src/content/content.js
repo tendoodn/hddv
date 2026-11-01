@@ -15,6 +15,33 @@ const ZIP_PART_BYTES = 40 * 1024 * 1024; // ~40 MB/zip: data URL base64 còn ~55
 const HISTORY_KEY = 'autotax_invoice_history_v1';
 const HISTORY_LIMIT = 20000;
 const invoiceHistoryKey = (r, mst) => [mst || '', r.kind || '', r.form || '', r.khmshdon || '', r.khhdon || '', r.shdon || ''].join('|');
+async function recordPackageInvoiceDownloads(rows, mst, downloadedKeys) {
+  if (!rows?.length || !downloadedKeys?.size) return;
+  try {
+    const stored = await chrome.storage.local.get('autotax_license_session_v1');
+    const token = stored.autotax_license_session_v1?.access_token;
+    if (!token) return;
+    const base = 'https://ucqqjdsoyvvaxswzbhaw.supabase.co';
+    const key = 'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
+    const headers = { apikey: key, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+    const state = await fetch(base + '/rest/v1/rpc/addon_my_entitlements', { method:'POST', headers, body:'{}' });
+    if (!state.ok) return;
+    const entitlement = await state.json();
+    if (entitlement?.mode !== 'invoice') return;
+    const items = rows.filter(r => downloadedKeys.has(invoiceHistoryKey(r, mst))).map(r => ({
+      mst: mst || '', direction: r.kind || '', form_code: [r.form || '', r.khmshdon || ''].join(':'),
+      series: r.khhdon || '', invoice_number: String(r.shdon ?? '')
+    }));
+    if (!items.length) return;
+    const res = await fetch(base + '/rest/v1/rpc/addon_record_invoice_download', {
+      method:'POST', headers, body:JSON.stringify({p_items:items})
+    });
+    if (!res.ok) throw new Error('Không ghi nhận được lượt tải gói hóa đơn.');
+    const result = await res.json();
+    if (result?.deducted) console.info('[AutoTax] Đã trừ ' + result.deducted + ' lượt hóa đơn.');
+  } catch (error) { console.warn('[AutoTax] Không thể đồng bộ lượt tải:', error); }
+}
+
 async function updateInvoiceHistory(rows, mst, mode, formats = {}) {
   if (!rows?.length) return;
   const stored = await chrome.storage.local.get(HISTORY_KEY);
@@ -102,7 +129,11 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
       const suffix = part > 1 || !last ? `_phan${part}` : '';
       await save(Zip.writeZip(files), 'application/zip', `${dir}/${HDDT.KINDS[kind].folder}_${month}${suffix}.zip`);
       const keys = new Set(bucketInvoiceFormats.keys());
-      if (keys.size) await updateInvoiceHistory(rows.filter(r => keys.has(invoiceHistoryKey(r, profile.mst))), profile.mst, 'downloaded', Object.fromEntries(bucketInvoiceFormats));
+      if (keys.size) {
+        const downloadedRows = rows.filter(r => keys.has(invoiceHistoryKey(r, profile.mst)));
+        await updateInvoiceHistory(downloadedRows, profile.mst, 'downloaded', Object.fromEntries(bucketInvoiceFormats));
+        await recordPackageInvoiceDownloads(downloadedRows, profile.mst, keys);
+      }
       saved++; files = []; bytes = 0; bucketInvoiceFormats = new Map(); part++;
     };
     const add = (name, data) => { files.push({ name, data }); bytes += data.length; };

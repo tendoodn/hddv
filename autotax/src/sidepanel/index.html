@@ -150,6 +150,11 @@
           <label class="check" title="Thêm 2 cột vào DS hóa đơn: người bán (mua vào) / người mua (bán ra) có tên trong danh sách công khai người sử dụng hóa đơn không hợp pháp của cổng không (tra gộp, lưu kết quả trên máy)"><input type="checkbox" name="sheet" value="seller" checked />Kiểm tra rủi ro MST</label>
           <label id="gtgtOpt" class="check" title="Tờ khai 01/GTGT điền sẵn từ hóa đơn để đối chiếu – chỉ lập khi chọn trọn 1 tháng hoặc 1 quý"><input type="checkbox" name="sheet" value="gtgt" />Tờ khai 01/GTGT (tham khảo)</label>
           <label class="check" title="Đặt HĐ thay thế/điều chỉnh cạnh HĐ gốc, tô màu chỗ thay đổi"><input type="checkbox" name="sheet" value="adjust" checked />So sánh HĐ thay thế với HĐ gốc</label>
+          <label class="check" title="Ghép SKU với BC_San_Pham và xuất từng hóa đơn mua vào thành một file Excel trong ZIP"><input type="checkbox" name="sheet" value="tendoo" id="tendooSyncCheck" />Đồng bộ mua vào Tendoo</label>
+        </div>
+        <div id="tendooSummary" class="tendoo-summary" hidden>
+          <strong id="tendooSummaryText">Chưa tải dữ liệu SKU.</strong>
+          <button id="tendooConfigureBtn" type="button">Cấu hình SKU / mẫu nhập kho</button>
         </div>
       </fieldset>
     </section>
@@ -174,6 +179,31 @@
     <div id="status" class="status"></div>
   </footer>
 
+  <dialog id="tendooSettingsDialog" class="tendoo-dialog" aria-labelledby="tendooSettingsTitle">
+    <h2 id="tendooSettingsTitle">Đồng bộ mua vào Tendoo</h2>
+    <p>Chọn <strong>BC_San_Pham_*.xlsx</strong> để đọc tên sản phẩm và SKU. Đồng thời chọn <strong>file mẫu nhập kho hóa đơn GTGT</strong> tải trực tiếp từ Tendoo để giữ đúng thứ tự và tên cột.</p>
+    <label for="tendooCatalogFile">1. Báo cáo sản phẩm BC_San_Pham</label>
+    <input id="tendooCatalogFile" type="file" accept=".xlsx,.csv">
+    <label for="tendooTemplateFile">2. File mẫu nhập kho hóa đơn GTGT</label>
+    <input id="tendooTemplateFile" type="file" accept=".xlsx">
+    <p id="tendooSetupStatus" class="tendoo-setup-status" role="status">Chưa chọn đủ hai file.</p>
+    <div class="license-buttons">
+      <button id="tendooSettingsApply" type="button" class="primary">Lưu cấu hình</button>
+      <button id="tendooSettingsCancel" type="button">Đóng</button>
+    </div>
+    <small>Chỉ đọc file cục bộ, không tải danh mục sản phẩm lên Supabase. Chưa xác nhận được mẫu riêng của Tendoo thì không tạo file nhập kho.</small>
+  </dialog>
+  <dialog id="tendooMatchDialog" class="tendoo-dialog" aria-labelledby="tendooMatchTitle">
+    <h2 id="tendooMatchTitle">Liên kết sản phẩm chưa khớp SKU</h2>
+    <p>Chọn sản phẩm có sẵn trong báo cáo BC_San_Pham cho từng tên hàng trên hóa đơn mua vào.</p>
+    <form id="tendooMatchForm">
+      <div id="tendooMissingList" class="tendoo-missing-list"></div>
+      <div class="license-buttons">
+        <button id="tendooMatchApply" type="submit" class="primary">Xác nhận liên kết</button>
+        <button id="tendooMatchCancel" type="button">Bỏ qua xuất Tendoo</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="lic-unlock-dialog" class="license-gift-dialog" aria-labelledby="lic-unlock-title">
     <form id="lic-unlock-form">
       <div class="gift-dialog-head"><span aria-hidden="true">🎁</span><h2 id="lic-unlock-title">Kích hoạt mã quà tặng</h2></div>
@@ -198,6 +228,8 @@
 
 
 
+  <script src="../content/zip.js"></script>
+  <script src="../content/tendoo-import.js"></script>
   <script src="../license/license.js"></script>
   <script type="module" src="panel.js"></script>
 </body>

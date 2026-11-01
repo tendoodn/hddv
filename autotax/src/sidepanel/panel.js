@@ -359,9 +359,11 @@ $('tendooMatchForm').addEventListener('submit',async e=>{
  // Popup closed by finishTendooMapping on success.
 });
 $('tendooMatchCancel').addEventListener('click',()=>{
- if(tendooMappingRequest)port?.postMessage({
-  type:'tendoo-map-response',requestId:tendooMappingRequest,cancel:true});
- tendooMappingRequest=null;$('tendooMatchDialog').close();
+ if(tendooMappingRequest){
+  port?.postMessage({type:'tendoo-map-response',requestId:tendooMappingRequest,cancel:true});
+  chrome.storage.session.remove('autotax-tendoo-request-'+tendooMappingRequest).catch(()=>{});
+ }
+ tendooMappingRequest=null;tendooPendingNames=[];$('tendooMatchDialog').close();
 });
 
 // Bỏ Excel thì nhóm Sheet thêm mờ đi, không tính

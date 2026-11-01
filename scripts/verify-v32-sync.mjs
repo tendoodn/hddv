@@ -60,6 +60,13 @@ for(const path of sourcePaths){
  }
  assert(!/addon_my_license|addon_claim_trial|addon_redeem_gift/.test(source),'Old RPC in '+path);
 }
+const edgeConfig=load('addon-portal/supabase/config.toml');
+assert.match(edgeConfig,/\\[functions\\.addon-create-order\\]\\s*verify_jwt\\s*=\\s*true/,'Checkout must require a user JWT');
+assert.match(edgeConfig,/\\[functions\\.addon-sepay-webhook\\]\\s*verify_jwt\\s*=\\s*false/,'SePay webhook must not require user JWT');
+const webhook=load('addon-portal/supabase/functions/addon-sepay-webhook/index.ts');
+assert(webhook.includes('X-SePay-Signature') && webhook.includes('X-SePay-Timestamp'),
+ 'Webhook must verify SePay request signatures before payment processing');
+assert(webhook.includes('safeEqual('),'Webhook signature comparison missing');
 const candidate=load('addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql');
 for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);
 const truncate=candidate.split('truncate table')[1]?.split('restart identity restrict')[0]||'';

@@ -31,6 +31,13 @@
   <div id="lic-account" hidden>
     <div class="license-user"><span>Tài khoản</span><strong id="lic-email-label"></strong></div>
     <div id="lic-entitlements" class="license-entitlements"><div class="license-empty">Đang tải quyền sử dụng…</div></div>
+    <div id="lic-trial-panel" class="license-entitlement" hidden>
+      <div><b>Dùng thử 7 ngày · 1 MST</b><small>Mỗi email và MST chỉ được dùng thử một lần.</small>
+        <input id="lic-trial-mst" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="Nhập MST 10 hoặc 13 chữ số" aria-label="MST muốn dùng thử">
+      </div>
+      <button id="lic-trial-start" type="button">Kích hoạt dùng thử</button>
+    </div>
+    <div id="lic-mst-assignments" class="license-entitlements" hidden aria-live="polite"></div>
     <div id="lic-mode-wrap" class="license-mode" hidden><label for="lic-mode">Chế độ sử dụng</label><select id="lic-mode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><small>Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</small></div>
     <div class="license-status-row"><span id="lic-state" class="lic-state locked">Đang kiểm tra…</span><button id="lic-logout" type="button">Đăng xuất</button></div>
     <div class="license-buttons"><button id="lic-renew" type="button" class="primary">Gia hạn</button><button id="lic-password-open" type="button">Đổi mật khẩu</button></div>
@@ -59,11 +66,7 @@
         <strong>Cập nhật mới:</strong> tính năng <b>tải hóa đơn máy tính tiền</b> đã được cập nhật theo những thay đổi mới của cổng thuế.
         Nếu gặp vấn đề khi tải, hãy <a href="#">liên hệ quản trị nội bộ</a>.
       </p>
-      <!-- Chỉ hiện khi đang dùng thử (bật thu phí, máy mới chưa kích hoạt) -->
-      <p id="noticeTrial" hidden>
-        <strong>Dùng thử:</strong> còn <b id="trialLeft">3</b> lượt Tìm kiếm. Hết lượt cần mã kích hoạt để dùng tiếp.
-        <a href="#" id="trialActivate">Kích hoạt ngay</a>
-      </p>
+
       <!-- Chỉ hiện khi tác giả tắt thu phí (tier open), thay cho thông báo cập nhật -->
       <div id="noticePrivate" class="notice-body" hidden>
         <strong class="notice-title">Thông báo quan trọng</strong>

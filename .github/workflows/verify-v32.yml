@@ -119,6 +119,8 @@ jobs:
           psql -v ON_ERROR_STOP=1 -c "alter extension pgcrypto set schema extensions"
       - name: Add server-timed five-minute QR and private order-status RPC
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/024_five_minute_qr_realtime_order_status.sql
+      - name: Add reversible package revocations and transaction identifiers
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/025_admin_revoke_restore_compensation_and_transaction_codes.sql
       - name: Verify production readiness report is readable
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants
@@ -142,6 +144,9 @@ jobs:
 
       - name: Verify five-minute QR and private order status
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/120_assert_five_minute_qr_status.sql
+
+      - name: Verify audited admin revoke restore compensation and history codes
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/130_assert_admin_revoke_restore_compensation.sql
 
       - name: Prepare unrelated-FK rollback scenario in another isolated DB
         run: |

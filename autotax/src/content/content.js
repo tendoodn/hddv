@@ -80,11 +80,36 @@ async function save(bytes, mime, filename) {
   if (r?.error) throw new Error(r.error);
 }
 
+async function assertPackageAccessForMst(mst) {
+  const stored = await chrome.storage.local.get('autotax_license_session_v1');
+  const token = stored.autotax_license_session_v1?.access_token;
+  if (!token) throw new Error('Vui lòng đăng nhập tài khoản AutoTax để kiểm tra gói sử dụng.');
+  const base = 'https://ucqqjdsoyvvaxswzbhaw.supabase.co';
+  const key = 'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
+  const headers = { apikey:key, Authorization:'Bearer '+token, 'Content-Type':'application/json' };
+  const response = await fetch(base+'/rest/v1/rpc/addon_my_entitlements',{method:'POST',headers,body:'{}'});
+  if (!response.ok) throw new Error('Không xác minh được gói AutoTax. Vui lòng thử lại.');
+  const state = await response.json();
+  if (state.mode === 'invoice') {
+    if (Number(state.packages?.invoice?.remaining||0) <= 0) throw new Error('Gói hóa đơn đã hết lượt. Hãy gia hạn hoặc chuyển sang chế độ MST nếu còn gói.');
+    return;
+  }
+  const check = await fetch(base+'/rest/v1/rpc/addon_authorize_mst',{method:'POST',headers,body:JSON.stringify({p_mst:mst})});
+  const result = await check.json().catch(()=>({}));
+  if (!check.ok || !result.allowed) {
+    const reason = result.reason === 'mst_capacity_reached' ? 'Đã sử dụng hết số MST trong gói.' :
+      result.reason === 'mst_capacity_reduced' ? 'Gói MST đã hết hạn một phần; MST này hiện vượt quá hạn mức còn hiệu lực.' :
+      'Chế độ MST chưa được kích hoạt hoặc không hợp lệ.';
+    throw new Error(reason+' Dữ liệu và hồ sơ MST vẫn được giữ nguyên.');
+  }
+}
+
 async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly, sheets = {} }, send) {
   stopFlag = false;
   const shouldStop = () => stopFlag;
   const profile = await HDDT.getSessionInfo();
   if (!profile.ready) throw new Error('Chưa đăng nhập hoadondientu – hãy đăng nhập rồi bấm ↻');
+  await assertPackageAccessForMst(profile.mst);
   const dir = `${DOWNLOAD_ROOT}/${safeName([profile.mst, profile.company].filter(Boolean).join(' – ')) || 'CongTy'}/${isoOf(tuNgay)}_${isoOf(denNgay)}`;
 
   // 1. Tra cứu

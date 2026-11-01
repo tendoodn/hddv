@@ -11,7 +11,16 @@ header{margin-bottom:24px}.brand{font-size:21px;font-weight:850}.brand span{colo
 h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:16px;margin:10px 0}
 .panel,.plan{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 20px #1e293b09}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-.grid .plan{margin:0} .muted,small{color:#64748b}.price{font-size:21px;display:block;margin:12px 0}
+.grid .plan{margin:0}
+.package-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.package-grid .plan{padding:14px;display:flex;flex-direction:column;min-width:0}
+.package-grid .plan h3{font-size:15px;margin:0 0 8px}
+.package-grid .plan p{font-size:12px;line-height:1.5;flex:1}
+.package-grid .plan .price{font-size:19px;margin:10px 0}
+.package-grid .plan button{width:100%;padding:9px 7px}
+@media(max-width:900px){.package-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.package-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:360px){.package-grid{grid-template-columns:1fr}} .muted,small{color:#64748b}.price{font-size:21px;display:block;margin:12px 0}
 label{font-size:13px;font-weight:650;display:block;margin:12px 0 6px}
 input,select{font:inherit;padding:10px 12px;border-radius:9px;border:1px solid #cbd5e1;max-width:100%;min-width:0}
 input{width:100%}button{border:0;padding:11px 15px;border-radius:9px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer}
@@ -23,6 +32,11 @@ button.secondary{background:#eaf0f9;color:#172033}button:disabled{opacity:.55;cu
 .stat strong{display:block;font-size:23px;margin:8px 0}.stat small{display:block}
 #paymentQr{width:min(100%,270px);border:1px solid #e2e8f0;border-radius:12px}
 footer{padding:16px 0 28px;color:#64748b;font-size:12px}
+.payment-success-modal{max-width:min(460px,92vw);padding:26px;border-radius:16px;border:1px solid #d1fae5;background:#fff;color:#172033;box-shadow:0 24px 80px #0f172a44}
+.payment-success-modal::backdrop{background:#0f172a99}
+.payment-success-head{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.payment-success-head span{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border-radius:50%;background:#dcfce7;color:#15803d;font-weight:800;font-size:26px}
+.payment-success-head h2{margin:0}
 [hidden]{display:none!important}
 @media(max-width:540px){.wrap{padding:18px 12px}.panel{padding:14px}h1{font-size:22px}}
 </style>
@@ -70,13 +84,15 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
  </div>
  <div class="panel">
   <h2>Mua gói mới</h2><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
-  <div id="packageList" class="grid"></div>
+  <div id="packageList" class="grid package-grid"></div>
  </div>
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
-  <p id="paymentInfo" class="notice"></p><img id="paymentQr" alt="QR thanh toán gói AutoTax">
+  <p id="paymentInfo" class="notice"></p>
+  <p class="muted" role="timer" aria-live="off">Thời gian hiển thị QR còn lại: <strong id="paymentCountdown">05:00</strong></p>
+  <img id="paymentQr" alt="QR thanh toán gói AutoTax">
   <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
-  <small>Chỉ chuyển khoản đúng số tiền và nội dung. Chuyển khoản chưa tự động đồng nghĩa với kích hoạt thành công.</small>
+  <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
  </div>
  <div class="panel">
   <h2>Đổi mật khẩu</h2><label for="newPassword">Mật khẩu mới</label>
@@ -84,6 +100,12 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
   <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
  </div>
 </section>
+<dialog id="paymentSuccessDialog" class="payment-success-modal" aria-labelledby="paymentSuccessTitle">
+ <div class="payment-success-head"><span aria-hidden="true">✓</span><h2 id="paymentSuccessTitle">Thanh toán thành công!</h2></div>
+ <p id="paymentSuccessInfo"></p>
+ <p id="paymentSuccessBalance" class="notice"></p>
+ <div class="actions"><button id="closePaymentSuccessBtn" type="button">Đã hiểu</button></div>
+</dialog>
 <section id="passwordRecovery" class="panel" hidden><h2>Đặt mật khẩu mới</h2><p class="muted">Nếu bạn vừa mở liên kết khôi phục, đăng nhập bằng liên kết và đổi mật khẩu ở phía trên.</p></section>
 <footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a href="admin.html">Trang quản trị</a>.</footer>
 </main>

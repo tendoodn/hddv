@@ -50,7 +50,7 @@ begin
  end;
  perform public.addon_admin_create_package(
   'MST99','mst','Test 99 MST',99,100000,'test 365-day default',null);
- if (select validity_days from public.addon_package_catalog where code='MST99')<>365
+ if not exists(select 1 from jsonb_array_elements(public.addon_admin_list_packages()) x where x->>'code'='MST99' and (x->>'validity_days')::int=365)
  then raise exception 'new_mst_package_missing_one_year_default'; end if;
 end $admin$;
 rollback;

@@ -8,6 +8,8 @@ const vnDate=value=>value?new Date(value).toLocaleString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
 const DUP_EMAIL="Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.";
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
+let paymentCountdownTimer=null,paymentChannel=null,paymentOrder=null;
+let paymentStatusPromise=null,postExpiryTimer=null;
 function showMessage(text,bad=false,target="accountMessage"){
  const el=$(target);el.textContent=text;el.hidden=!text;el.classList.toggle("error",bad);
 }
@@ -47,8 +49,13 @@ function setBusy(id,flag){$(id).disabled=!!flag}
 function closePayment(){
  if(ordersWatch)clearInterval(ordersWatch);
  if(paymentCloseTimer)clearTimeout(paymentCloseTimer);
- ordersWatch=null;paymentCloseTimer=null;
+ if(paymentCountdownTimer)clearInterval(paymentCountdownTimer);
+ if(postExpiryTimer)clearTimeout(postExpiryTimer);
+ if(paymentChannel){void client.removeChannel(paymentChannel);paymentChannel=null}
+ ordersWatch=null;paymentCloseTimer=null;paymentCountdownTimer=null;postExpiryTimer=null;
+ paymentOrder=null;
  $("paymentArea").hidden=true;
+ $("paymentQr").removeAttribute("src");
 }
 async function refresh(){
  if(checking)return;
@@ -134,34 +141,125 @@ async function loadMstAssignments(){
  }
  if(!list.children.length)addText(list,"p","Chưa liên kết MST nào.","muted");
 }
+// Bank QR is displayed for five minutes, based on the server-issued deadline.
+// A transfer cannot be technically revoked at the bank; late confirmation
+// continues to be accepted and reflected in the entitlement balance.
+function qrRemainingMilliseconds(order){
+ return Math.max(0,order.expiresAt-(Date.now()+order.serverOffset));
+}
+function qrCountdownText(ms){
+ const seconds=Math.ceil(ms/1000);
+ return String(Math.floor(seconds/60)).padStart(2,"0")+":"+
+  String(seconds%60).padStart(2,"0");
+}
+function expireQrDisplay(order){
+ if(paymentOrder!==order||order.expired||order.completed)return;
+ order.expired=true;
+ $("paymentArea").hidden=true;
+ $("paymentQr").removeAttribute("src");
+ if(paymentCountdownTimer){clearInterval(paymentCountdownTimer);paymentCountdownTimer=null}
+ if(ordersWatch){clearInterval(ordersWatch);ordersWatch=null}
+ // Retain reconciliation monitoring for a limited time if bank confirmation is slow.
+ ordersWatch=setInterval(()=>{void checkPaymentStatus()},10000);
+ postExpiryTimer=setTimeout(()=>{if(paymentOrder===order)closePayment()},600000);
+ showMessage("QR đã hết thời gian hiển thị (5 phút). Không nên chuyển khoản bằng mã QR cũ. Nếu đã chuyển khoản, hệ thống vẫn theo dõi xác nhận từ ngân hàng.",true);
+}
+async function finishPaidOrder(order){
+ if(paymentOrder!==order||order.completed)return;
+ order.completed=true;
+ closePayment();
+ let balancesText="Thông tin gói đã ghi nhận trên máy chủ.";
+ try{
+  await refresh();
+  const licenses=await rpc("addon_my_entitlements");
+  state=licenses;
+  const inv=licenses.packages?.invoice||{},mst=licenses.packages?.mst||{};
+  const remaining=Number(inv.remaining||0),purchased=Number(inv.purchased||0);
+  const capacity=Number(mst.active_quantity||0);
+  // Update the visible counters from the same authoritative response.
+  $("invoiceBalance").textContent=remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN");
+  $("mstCapacity").textContent=capacity.toLocaleString("vi-VN")+" MST";
+  $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
+  balancesText="Hóa đơn: "+remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN")+
+   " lượt\nMST hiện có: "+capacity.toLocaleString("vi-VN")+
+   (mst.nearest_expiry?"\nHạn gần nhất: "+vnDate(mst.nearest_expiry):"");
+ }catch(error){
+  balancesText="Thanh toán đã xác nhận. Không tải được số dư mới: "+prettyError(error)+". Bấm Làm mới để kiểm tra lại.";
+ }
+ $("paymentSuccessInfo").textContent="Đã nhận thanh toán cho gói "+order.packageCode+".";
+ $("paymentSuccessBalance").textContent=balancesText;
+ const dialog=$("paymentSuccessDialog");
+ if(!dialog.open)dialog.showModal();
+ showMessage("Thanh toán thành công! Đã cập nhật gói sử dụng.");
+}
+async function checkPaymentStatus(manual=false){
+ const order=paymentOrder;
+ if(!order)return;
+ if(paymentStatusPromise)return paymentStatusPromise;
+ paymentStatusPromise=(async()=>{
+  try{
+   const status=await rpc("addon_my_order_status",{p_order_id:order.id});
+   if(paymentOrder!==order||!status)return;
+   if(status.status==="paid"){await finishPaidOrder(order);return;}
+   if(["cancelled","failed","refunded"].includes(status.status)){
+    closePayment();
+    showMessage("Đơn hàng không còn chờ thanh toán (trạng thái: "+status.status+"). Vui lòng tạo đơn khác.",true);
+    return;
+   }
+   if(manual)showMessage(order.expired?"QR đã hết 5 phút, chưa ghi nhận thanh toán.":"Đơn hàng đang chờ ngân hàng xác nhận.");
+  }catch(error){
+   if(manual)showMessage("Không kiểm tra được thanh toán: "+prettyError(error),true);
+  }
+ })();
+ try{return await paymentStatusPromise}finally{paymentStatusPromise=null}
+}
 async function buy(packageCode,button){
  button.disabled=true;
  try{
   const {data:{session}}=await client.auth.getSession();
+  if(!session)throw Error("Vui lòng đăng nhập lại trước khi thanh toán.");
   const response=await fetch(BASE+"/functions/v1/addon-create-order",{
    method:"POST",headers:{apikey:PUBLIC_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
    body:JSON.stringify({package_code:packageCode})
   });
   const result=await response.json();
   if(!response.ok||!result.success||!result.payment?.qr_url)throw Error(result.error||"Không tạo được đơn hàng.");
-  $("paymentInfo").textContent=vnMoney(result.payment.amount_vnd)+" · "+result.payment.bank_name+" · "+result.payment.account_name+" · Nội dung: "+result.payment.transfer_content;
+  const expiresAt=Date.parse(result.payment.expires_at||result.order?.qr_expires_at);
+  if(!Number.isFinite(expiresAt))throw Error("Hệ thống chưa trả về hạn QR. Vui lòng tải lại trang và thử lại.");
+  closePayment();
+  const serverTime=Date.parse(result.server_time);
+  const order={
+   id:result.order.order_id,packageCode,
+   expiresAt,serverOffset:Number.isFinite(serverTime)?serverTime-Date.now():0,
+   completed:false,expired:false
+  };
+  paymentOrder=order;
+  $("paymentInfo").textContent=vnMoney(result.payment.amount_vnd)+" · "+
+   result.payment.bank_name+" · "+result.payment.account_name+
+   " · Nội dung: "+result.payment.transfer_content;
   $("paymentQr").src=result.payment.qr_url;
   $("paymentArea").hidden=false;
-  showMessage("Đã tạo đơn. Vui lòng chuyển khoản đúng nội dung.");
-  const previous=JSON.stringify(state?.packages||{});
-  closeTimersOnly();
-  ordersWatch=setInterval(async()=>{
-   try{const next=await rpc("addon_my_entitlements");if(JSON.stringify(next.packages)!==previous){closePayment();await refresh();showMessage("Đã ghi nhận gói mới.")}}
-   catch{/* Polling never changes package balances on the client. */}
-  },5000);
-  paymentCloseTimer=setTimeout(()=>{closePayment();showMessage("Mã QR đã đóng sau 15 phút. Có thể tạo đơn mới nếu cần.")},900000);
+  showMessage("Đã tạo đơn "+packageCode+". QR tự ẩn sau 5 phút; hệ thống theo dõi thanh toán tự động.");
+  function tick(){
+   if(paymentOrder!==order||order.completed||order.expired)return;
+   const remaining=qrRemainingMilliseconds(order);
+   $("paymentCountdown").textContent=qrCountdownText(remaining);
+   if(remaining<=0)void checkPaymentStatus().then(()=>{
+    if(paymentOrder===order&&!order.completed)expireQrDisplay(order);
+   });
+  }
+  tick();
+  paymentCountdownTimer=setInterval(tick,1000);
+  ordersWatch=setInterval(()=>{void checkPaymentStatus()},2500);
+  // Realtime is immediate when available; polling above remains the fallback.
+  paymentChannel=client.channel("autotax-order-"+order.id)
+   .on("postgres_changes",{
+    event:"UPDATE",schema:"public",table:"addon_orders",filter:"id=eq."+order.id
+   },()=>{void checkPaymentStatus()})
+   .subscribe();
+  void checkPaymentStatus();
  }catch(error){showMessage("Không tạo được đơn: "+prettyError(error),true)}
  finally{button.disabled=false}
-}
-function closeTimersOnly(){
- if(ordersWatch)clearInterval(ordersWatch);
- if(paymentCloseTimer)clearTimeout(paymentCloseTimer);
- ordersWatch=null;paymentCloseTimer=null;
 }
 async function action(id,fn){
  const button=$(id);button.disabled=true;
@@ -211,7 +309,8 @@ $("usageMode").addEventListener("change",async e=>{
  catch(error){showMessage(prettyError(error),true);e.target.value=state?.mode||"mst"}
 });
 $("closePaymentBtn").addEventListener("click",closePayment);
-$("checkPaymentBtn").addEventListener("click",refresh);
+$("checkPaymentBtn").addEventListener("click",()=>{void checkPaymentStatus(true)});
+$("closePaymentSuccessBtn").addEventListener("click",()=>$("paymentSuccessDialog").close());
 $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",async()=>{
  const password=$("newPassword").value;
  if(password.length<8)throw Error("Mật khẩu cần ít nhất 8 ký tự.");

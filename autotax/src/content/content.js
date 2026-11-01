@@ -303,76 +303,114 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     for (const note of book.notes || []) send({ type: 'log', level: 'warn', text: note });
     saved++;
   }
-  // Tendoo stock import: one purchase invoice = one Excel in an offline ZIP.
-  // Only create the ZIP after the user links every unknown invoice line to an SKU.
+  // Offline MISA/Tendoo warehouse export. Unmatched goods keep the invoice name
+  // and use THIẾU MÃ, so the user can correct the import before submitting it.
   if(sheets.tendoo&&formats.excel&&!stopFlag&&!res.stopped){
     try{
       if(!tendoo?.products?.length||!tendoo?.template?.headers?.length)
-        throw new Error('Thiếu báo cáo sản phẩm hoặc mẫu nhập kho Tendoo.');
+        throw new Error('Thiếu danh mục sản phẩm hoặc mẫu nhập kho tích hợp.');
       const purchases=rows.filter(r=>r.kind==='purchase');
       if(!purchases.length)throw new Error('Không có hóa đơn mua vào trong khoảng ngày này.');
       const skuLinks={...(tendoo.links||{})};
       const unknown=TendooImport.missing(purchases,details,tendoo.products,skuLinks);
       if(unknown.length){
         send({type:'log',level:'warn',text:'Có '+unknown.length+
-          ' tên hàng chưa tồn tại trong BC_San_Pham, cần liên kết SKU.'});
+          ' tên hàng chưa khớp danh mục. Có thể bỏ qua để Excel ghi THIẾU MÃ.'});
         const match=await linkSku(unknown);
-        if(match?.cancel)throw new Error('Đã hủy liên kết; không xuất file Tendoo.');
+        if(match?.cancel)throw new Error('Đã hủy xuất nhập kho.');
         Object.assign(skuLinks,match?.mapping||{});
       }
       const packageFile=TendooImport.makePackage(purchases,details,tendoo.products,
-        tendoo.template,skuLinks);
-      await save(packageFile.zip,'application/zip',dir+'/Tendoo_NhapKho_'+
+        tendoo.template,skuLinks,tendoo.settings||{});
+      const platform=tendoo.template.platform==='misa'?'MISA':'Tendoo';
+      await save(packageFile.zip,'application/zip',dir+'/'+platform+'_NhapKho_'+
         isoOf(tuNgay)+'_'+isoOf(denNgay)+'.zip');
+      if(platform==='MISA'&&packageFile.lastIssued)
+        await chrome.storage.local.set({autotax_misa_last_document_v1:packageFile.lastIssued});
       saved++;
-      send({type:'log',level:'ok',text:'Tendoo: đã xuất '+packageFile.count+
+      send({type:'log',level:'ok',text:platform+': đã xuất '+packageFile.count+
         ' file nhập kho Excel, mỗi hóa đơn một file trong ZIP.'});
+      if(packageFile.missing)send({type:'log',level:'warn',text:
+        packageFile.missing+' tên hàng chưa khớp: đã giữ tên và ghi THIẾU MÃ trong file.'});
       if(packageFile.skipped)send({type:'log',level:'warn',text:
         packageFile.skipped+' hóa đơn không có chi tiết hàng, chưa xuất nhập kho.'});
     }catch(e){errors++;send({type:'log',level:'warn',
-      text:'Không tạo được ZIP nhập kho Tendoo: '+e.message})}
+      text:'Không tạo được ZIP nhập kho: '+e.message})}
   }
   send({ type: 'done', total: rows.length, saved, errors, stopped: stopFlag || res.stopped, dir });
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
-  (async () => {
-    switch (msg.type) {
-      case 'info': return { ...await HDDT.getSessionInfo(), busy };
-      case 'stop': stopFlag = true; return { ok: true };
-    }
-  })().then(reply, (e) => reply({ error: e.message }));
-  return true;
-});
-
-chrome.runtime.onConnect.addListener((port) => {
-  if(port.name!=='job')return;
-  const pending=new Map();
-  const send=m=>{try{port.postMessage(m)}catch{/* Sidepanel closed */}};
-  port.onDisconnect.addListener(()=>{
-    for(const entry of pending.values()){clearTimeout(entry.timeout);entry.reject(new Error('Sidepanel đã đóng khi liên kết SKU.'))}
-    pending.clear();
-  });
-  const linkSku=names=>new Promise((resolve,reject)=>{
+// The job runs in the GDT page's content script, independent of sidepanel life.
+// Keep the GDT tab open during downloads; reloading it will terminate the job.
+const jobPorts=new Set(),pendingSku=new Map(),jobEvents=[];
+function sendJob(event){
+  if(event.type==='progress'||event.type==='status'){
+    for(let i=jobEvents.length-1;i>=0;i--)
+      if(jobEvents[i].type===event.type)jobEvents.splice(i,1);
+  }
+  jobEvents.push(event);
+  if(jobEvents.length>250)jobEvents.splice(0,jobEvents.length-250);
+  for(const port of [...jobPorts]){
+    try{port.postMessage(event)}catch{jobPorts.delete(port)}
+  }
+}
+function finishSkuMapping(msg){
+  const task=pendingSku.get(msg.requestId);
+  if(!task)return false;
+  clearTimeout(task.timeout);pendingSku.delete(msg.requestId);
+  task.resolve(msg);return true;
+}
+function linkSku(names){
+  if(!jobPorts.size)return Promise.resolve({mapping:{}});
+  return new Promise(resolve=>{
     const requestId='tendoo-map-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
     const timeout=setTimeout(()=>{
-      pending.delete(requestId);reject(new Error('Hết thời gian chọn SKU.'))
+      pendingSku.delete(requestId);resolve({mapping:{}});
+      sendJob({type:'log',level:'warn',text:'Hết thời gian ánh xạ; tiếp tục xuất với mã THIẾU MÃ.'});
     },900000);
-    pending.set(requestId,{resolve,reject,timeout});
-    send({type:'tendoo-map-request',requestId,names});
+    pendingSku.set(requestId,{resolve,timeout,keepTab:false});
+    sendJob({type:'tendoo-map-request',requestId,names});
+  });
+}
+chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+  (async()=>{
+    switch(msg.type){
+      case 'info':return {...await HDDT.getSessionInfo(),busy};
+      case 'stop':stopFlag=true;return {ok:true};
+      case 'tendoo-map-response':return {ok:finishSkuMapping(msg)};
+    }
+  })().then(reply,e=>reply({error:e.message}));
+  return true;
+});
+chrome.runtime.onConnect.addListener(port=>{
+  if(port.name!=='job')return;
+  jobPorts.add(port);
+  port.onDisconnect.addListener(()=>{
+    jobPorts.delete(port);
+    if(!jobPorts.size){
+      for(const [id,task] of pendingSku){
+        if(task.keepTab)continue;
+        clearTimeout(task.timeout);pendingSku.delete(id);task.resolve({mapping:{}});
+      }
+    }
   });
   port.onMessage.addListener(async msg=>{
-    if(msg.type==='tendoo-map-response'){
-      const task=pending.get(msg.requestId);
-      if(task){clearTimeout(task.timeout);pending.delete(msg.requestId);task.resolve(msg)}
+    if(msg.type==='attach'){
+      for(const event of jobEvents)try{port.postMessage(event)}catch{break}
       return;
     }
-    if(busy)return send({type:'log',level:'warn',
+    if(msg.type==='tendoo-mapping-tab-open'){
+      const task=pendingSku.get(msg.requestId);
+      if(task)task.keepTab=true;
+      return;
+    }
+    if(msg.type==='tendoo-map-response'){finishSkuMapping(msg);return}
+    if(msg.type!=='run')return;
+    if(busy)return sendJob({type:'log',level:'warn',
       text:'Đang có tác vụ chạy, hãy đợi hoặc bấm Dừng.'});
-    busy=true;
-    try{
-      if(msg.type==='run')await runJob(msg,send,linkSku);
-    }catch(e){send({type:'error',text:e.message})}
-    finally{busy=false;send({type:'idle'})}
+    busy=true;jobEvents.length=0;sendJob({type:'run-started'});
+    try{await runJob(msg,sendJob,linkSku)}
+    catch(e){sendJob({type:'error',text:e.message})}
+    finally{busy=false;sendJob({type:'idle'})}
   });
 });

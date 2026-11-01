@@ -52,7 +52,10 @@ const sourcePaths=['docs/customer.js','docs/admin.html','docs/admin-mst.js','aut
 for(const path of sourcePaths){
  const source=load(path);
  for(const match of source.matchAll(/(?:rpc\(\s*["']|\/rpc\/)(addon_[a-z0-9_]+)/gi)){
-  assert(defined.has(match[1]),'Unknown V3.2 RPC '+match[1]+' in '+path);
+  const legacyReadOnlyFallback=path==='docs/admin.html' &&
+   match[1]==='addon_admin_list_users' &&
+   source.includes('error.code==="PGRST202"');
+  assert(defined.has(match[1])||legacyReadOnlyFallback,'Unknown V3.2 RPC '+match[1]+' in '+path);
  }
  assert(!/addon_my_license|addon_claim_trial|addon_redeem_gift/.test(source),'Old RPC in '+path);
 }

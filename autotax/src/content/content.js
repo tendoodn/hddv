@@ -118,7 +118,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
           (w) => send({ type: 'status', text: `Đang tải chi tiết ${done + 1}/${order.length}: ${waitText(w)}` }));
         // head (chữ ký số, ngày ký, hình thức thanh toán…) dùng cho DS hóa đơn + Kiểm tra rủi ro HĐ; dòng hàng chỉ giữ khi cần
         details.set(row.key, { source: inv.source, head: inv.head, ...(formats.lines ? { lines: inv.lines, fees: inv.fees } : {}) });
-        bucketInvoiceKeys.push(invoiceHistoryKey(row, profile.mst));
+        const filesBeforeInvoice = files.length;
         if (inv.source === 'xml') {
           // Nguyên bytes gốc của cổng (không giải mã/mã hóa lại) để mở được bằng phần mềm của Cục Thuế
           if (formats.xml) add(`XML/${sub}${base}.xml`, inv.xml);
@@ -132,6 +132,8 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
             send({ type: 'log', level: 'warn', text: `${row.khhdon}-${row.shdon}: không dựng được PDF (${e.message})` });
           }
         }
+        // Chỉ đánh dấu đã tải khi hóa đơn thực sự đóng góp ít nhất một tệp vào ZIP.
+        if (files.length > filesBeforeInvoice) bucketInvoiceKeys.push(invoiceHistoryKey(row, profile.mst));
       } catch (e) {
         if (e.status === 401) throw e;
         if (stopFlag) break; // Dừng: request đang chờ bị hủy, không tính là lỗi

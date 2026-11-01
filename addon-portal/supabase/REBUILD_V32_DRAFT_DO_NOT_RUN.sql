@@ -1369,7 +1369,7 @@ declare
  inv jsonb; ms jsonb; v_mode text;
  v_invoice_remaining bigint; v_invoice_purchased bigint; v_mst_capacity bigint;
  v_nearest timestamptz; v_expiring bigint;
- v_has_history boolean;
+ v_has_history boolean; v_trial_used boolean; v_ever_had_package boolean; v_trial_expires timestamptz;
 begin
  if u is null then raise exception 'authentication_required'; end if;
  select jsonb_build_object('remaining',coalesce(sum(remaining),0),
@@ -1378,6 +1378,9 @@ begin
  from public.addon_package_lots where user_id=u and family='invoice';
  select exists(select 1 from public.addon_invoice_deductions where user_id=u)
  into v_has_history;
+ select exists(select 1 from public.addon_package_lots where user_id=u) into v_ever_had_package;
+ select exists(select 1 from public.addon_trial_email_registry where first_user_id=u or email_normalized=(select lower(btrim(email)) from auth.users where id=u)) into v_trial_used;
+ select max(expires_at) into v_trial_expires from public.addon_package_lots where user_id=u and grant_kind='trial';
  select min(expires_at) into v_nearest from public.addon_package_lots
  where user_id=u and family='mst' and (expires_at is null or expires_at>now());
  select coalesce(sum(quantity),0) into v_expiring from public.addon_package_lots
@@ -1398,6 +1401,9 @@ begin
    else v_mst_capacity>0 end,
  'can_download_new_invoices',v_invoice_remaining>0,
  'can_reread_charged_invoices',v_has_history,
+ 'trial_used',v_trial_used,
+ 'trial_expires_at',v_trial_expires,
+ 'ever_had_package',v_ever_had_package,
  'packages',jsonb_build_object('invoice',inv,'mst',ms),
  'mode',v_mode,
  -- updated_at is informational only; do not use as proof of an order.
@@ -1408,6 +1414,7 @@ end $$;
 -- Keep only the atomic, idempotent claim API introduced in 011.
 revoke all on function public.addon_record_invoice_download(jsonb)
  from public,anon,authenticated;
+
 
 -- ========== 015_invoice_mode_claim_hardening.sql ==========
 -- AutoTax V3.2: select invoice mode for invoice-only accounts and preserve atomic quota claims.
@@ -1476,6 +1483,123 @@ begin
 end $$;
 revoke all on function public.addon_claim_invoice_quota(jsonb) from public;
 grant execute on function public.addon_claim_invoice_quota(jsonb) to authenticated;
+
+
+-- ========== 016_admin_customer_v32_snapshot.sql ==========
+-- AutoTax V3.2: one admin-only customer snapshot for both extension and web admin.
+-- Deploy after migration 015. Read-only RPC; no legacy subscription data.
+create or replace function public.addon_admin_list_users_v32(p_search text default '')
+returns jsonb
+language plpgsql stable security definer set search_path = public, auth
+as $$
+declare
+ v_search text := lower(left(btrim(coalesce(p_search,'')),128));
+ v_result jsonb;
+begin
+ if auth.uid() is null or not public.addon_is_admin() then
+  raise exception 'admin_required';
+ end if;
+ select coalesce(jsonb_agg(
+  jsonb_build_object(
+   'user_id',u.id,
+   'email',u.email,
+   'created_at',u.created_at,
+   'mode',coalesce(um.mode,case when coalesce(inv.purchased,0)>0 and coalesce(ms.active_quantity,0)=0 then 'invoice' else 'mst' end),
+   'invoice_remaining',coalesce(inv.remaining,0),
+   'invoice_purchased',coalesce(inv.purchased,0),
+   'can_reread_charged_invoices',coalesce(inv.has_history,false),
+   'mst_capacity',coalesce(ms.active_quantity,0),
+   'mst_nearest_expiry',ms.nearest_expiry,
+   'mst_farthest_expiry',ms.farthest_expiry,
+   'mst_assignments',coalesce(assn.items,'[]'::jsonb),
+   'trial_used',tr.email_normalized is not null,
+   'trial_expires_at',ms.trial_expires_at,
+   'last_package_at',lots.last_package_at
+  ) order by u.created_at desc
+ ),'[]'::jsonb)
+ into v_result
+ from (
+  select id,email,created_at from auth.users
+  where v_search='' or strpos(lower(email),v_search)>0
+  order by created_at desc limit 500
+ ) u
+ left join public.addon_usage_modes um on um.user_id=u.id
+ left join public.addon_trial_email_registry tr
+  on tr.email_normalized=lower(btrim(u.email))
+ left join lateral (
+  select coalesce(sum(l.quantity),0)::bigint as purchased,
+         coalesce(sum(l.remaining),0)::bigint as remaining,
+         exists(select 1 from public.addon_invoice_deductions d where d.user_id=u.id) as has_history
+  from public.addon_package_lots l
+  where l.user_id=u.id and l.family='invoice'
+ ) inv on true
+ left join lateral (
+  select coalesce(sum(l.quantity),0)::bigint as active_quantity,
+         min(l.expires_at) as nearest_expiry,
+         max(l.expires_at) as farthest_expiry,
+         max(l.expires_at) filter (where l.grant_kind='trial') as trial_expires_at
+  from public.addon_package_lots l
+  where l.user_id=u.id and l.family='mst'
+    and (l.expires_at is null or l.expires_at>now())
+ ) ms on true
+ left join lateral (
+  select coalesce(jsonb_agg(jsonb_build_object('mst',a.mst,'assigned_at',a.assigned_at)
+    order by a.assigned_at,a.id),'[]'::jsonb) as items
+  from public.addon_mst_assignments a where a.user_id=u.id
+ ) assn on true
+ left join lateral (
+  select max(l.created_at) as last_package_at
+  from public.addon_package_lots l where l.user_id=u.id
+ ) lots on true;
+ return v_result;
+end $$;
+
+revoke all on function public.addon_admin_list_users_v32(text)
+ from public,anon,authenticated;
+grant execute on function public.addon_admin_list_users_v32(text) to authenticated;
+
+
+-- ========== 017_shared_catalog_and_admin_logs.sql ==========
+-- AutoTax V3.2: public package catalog and admin audit use shared backend data.
+-- Deploy after 016_admin_customer_v32_snapshot.sql.
+create or replace function public.addon_list_packages()
+returns jsonb
+language sql stable security definer
+set search_path=public,auth as $$
+ select coalesce(jsonb_agg(jsonb_build_object(
+  'code',code,'family',family,'name',name,'quantity',quantity,
+  'price_vnd',price_vnd,'description',description,
+  'validity_days',validity_days
+ ) order by family,quantity,code),'[]'::jsonb)
+ from public.addon_package_catalog where active;
+$$;
+revoke all on function public.addon_list_packages() from public,anon;
+grant execute on function public.addon_list_packages() to authenticated;
+
+create or replace function public.addon_admin_list_logs(p_limit integer default 100)
+returns jsonb language plpgsql stable security definer set search_path=public,auth
+as $$
+begin
+ if auth.uid() is null or not public.addon_is_admin() then raise exception 'admin_required'; end if;
+ return coalesce((
+  select jsonb_agg(jsonb_build_object(
+   'id',x.id,'action',x.action,'details',x.details,
+   'created_at',x.created_at,'actor_email',x.actor_email,
+   'target_email',x.target_email
+  ) order by x.created_at desc,x.id desc)
+  from (
+   select l.id,l.action,l.details,l.created_at,
+    a.email as actor_email,t.email as target_email
+   from public.addon_audit_logs l
+   left join auth.users a on a.id=l.actor_id
+   left join auth.users t on t.id=l.target_user_id
+   order by l.created_at desc,l.id desc
+   limit least(greatest(coalesce(p_limit,100),1),500)
+  ) x
+ ),'[]'::jsonb);
+end $$;
+revoke all on function public.addon_admin_list_logs(integer) from public,anon;
+grant execute on function public.addon_admin_list_logs(integer) to authenticated;
 
 -- Restore administrators; authentication accounts were never deleted.
 insert into public.addon_admins(user_id) select user_id from autotax_preserved_admins on conflict do nothing;

@@ -409,3 +409,58 @@ button.primary{border-radius:10px;font-size:13px;box-shadow:0 3px 8px rgba(8,127
 
 /* Package unlock code */
 .license-unlock{margin-top:12px;padding:10px;border:1px solid var(--line,#dbe3ee);border-radius:10px}.license-unlock label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.license-unlock .license-buttons{display:flex;gap:8px}.license-unlock input{flex:1;min-width:0;width:100%;text-transform:uppercase}.license-unlock small{display:block;margin-top:6px;color:var(--muted,#64748b)}
+
+/* AutoTax V3.2 Tendoo/Viettel red palette and compact five-choice layout.
+   Placed last to override the earlier 3.1 teal theme safely. */
+:root {
+  --bg:#fff8f8;--surface:#ffffff;--field:#ffffff;--fg:#291b1f;
+  --muted:#6e6164;--line:#efdfe1;--soft:#fff0f1;
+  --accent:#e60012;--accent-strong:#b80010;
+  --accent-soft:#fff0f1;--accent-line:#f3b9c0;
+}
+[hidden] { display:none !important; }
+.topbar{border-bottom-color:var(--accent-line);box-shadow:0 2px 12px rgba(174,0,15,.05)}
+.license-card{border-color:var(--accent-line);background:linear-gradient(135deg,#fff1f2,#fff 72%);box-shadow:0 3px 12px rgba(192,0,22,.05)}
+.license-entitlement{background:#fffafa}
+.license-packages{background:#fffafa}
+.privacy{background:#fff5f5;border-color:var(--accent-line)}
+.history-table th{background:#fff4f4}
+.footer{box-shadow:0 -4px 18px rgba(153,0,12,.05)}
+button.primary{box-shadow:0 3px 8px rgba(230,0,18,.17)}
+button.chip{background:var(--accent-soft)}
+.toggle-box{background:#fffafa}
+.quick-link-icon{color:var(--accent-strong)}
+/* Keep five short presets in a single row even for narrow side-panels. */
+.presets,.presets:not(:empty){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+button.chip{width:100%;min-width:0;min-height:34px;height:auto;padding:4px 2px;font-size:10px;line-height:1.15;white-space:normal;text-align:center}
+/* The six optional Excel sheets form two columns, with long labels wrapping. */
+.sheet-opts .sheet-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sheet-opts .sheet-grid .check{display:flex;align-items:flex-start;gap:6px;min-width:0;line-height:1.35;
+  padding:8px 7px;background:#fff;border:1px solid var(--line);border-radius:9px;overflow-wrap:anywhere}
+.sheet-opts .sheet-grid .check input{margin-top:1px;flex:none}
+.sheet-opts .sheet-grid .check[hidden]{display:none!important}
+.sheet-opts .sheet-grid .check:has(input:checked){background:var(--accent-soft);border-color:var(--accent-line)}
+/* Gia hạn + Quà tặng: deliberately adjacent on one row. */
+.license-main-actions{display:grid;grid-template-columns:1fr 1fr;margin-top:9px;gap:6px}
+.license-main-actions button{min-width:0;flex:auto}
+.license-main-actions #lic-password-open{grid-column:1/-1}
+.license-main-actions #lic-gift-open{border-color:var(--accent-line);background:#fff;color:var(--accent-strong);font-weight:700}
+/* Native modal, no inline unlock entry on the customer card. */
+.license-gift-dialog{box-sizing:border-box;width:min(400px,calc(100vw - 28px));max-width:calc(100vw - 28px);
+  padding:20px;border:1px solid var(--accent-line);border-radius:16px;background:var(--surface);color:var(--fg);
+  box-shadow:0 16px 60px rgba(35,0,5,.2)}
+.license-gift-dialog::backdrop{background:rgba(36,10,15,.6)}
+.license-gift-dialog .gift-dialog-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.license-gift-dialog .gift-dialog-head span{font-size:26px}
+.license-gift-dialog h2{margin:0;font-size:16px}
+.license-gift-dialog .gift-desc{font-size:12px;color:var(--muted);margin:5px 0 12px}
+.license-gift-dialog input{display:block;width:100%;height:40px;padding:8px 10px;border:1px solid var(--line);
+  border-radius:9px;text-transform:uppercase}
+.license-gift-dialog label{font-weight:700}
+.license-gift-dialog .license-buttons{display:grid;grid-template-columns:1fr 1fr}
+.license-gift-dialog button{min-height:36px;height:auto}
+@media(max-width:350px){
+ .presets{grid-template-columns:repeat(5,minmax(0,1fr))}
+ button.chip{font-size:9px;padding:4px 1px}
+ .sheet-opts .sheet-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

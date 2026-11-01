@@ -276,7 +276,7 @@ preset('lastMonth');
 
 // Gate the existing invoice workflow using the server-verified license.
 let licenseAllowed=false;
-function applyLicense(st){licenseAllowed=['trial','paid'].includes(st?.tier);syncRun()}
+function applyLicense(st){licenseAllowed=!!(st?.allowed||['trial','paid'].includes(st?.tier));syncRun()}
 document.addEventListener('autotax-license-change',e=>applyLicense(e.detail?.license));
 document.addEventListener('autotax-license-gate',e=>{licenseAllowed=!!e.detail?.allowed;syncRun()});
 

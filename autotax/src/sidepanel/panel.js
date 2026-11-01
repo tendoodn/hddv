@@ -128,7 +128,8 @@ function rangeError() {
 }
 function checkRange() {
   const err = rangeError();
-  $('rangeHint').textContent = err || `Không giới hạn tổng khoảng ngày. Hóa đơn điện tử tự chia theo tháng${checked('form').includes('mtt') ? ' · Hóa đơn máy tính tiền tự chia tối đa 10 ngày/đợt, mỗi đợt xử lý CAPTCHA riêng' : ''}`;
+  $('rangeHint').textContent = err || (checked('form').includes('mtt') ?
+    'HĐ máy tính tiền: tối đa 10 ngày/đợt, CAPTCHA mỗi đợt.' : '');
   $('rangeHint').classList.toggle('error', !!err);
   $('toText').classList.toggle('invalid', !!err);
   summarize();

@@ -240,7 +240,7 @@ function showDone(m) {
 // Chưa đăng nhập hoặc đang chạy → khóa nút Tìm kiếm
 function syncRun() {
   $('run').disabled = busy || !connected || !licenseAllowed;
-  $('run').title = !licenseAllowed ? 'Đăng nhập AutoTax và kích hoạt dùng thử hoặc gói sử dụng' : (connected ? '' : 'Hãy đăng nhập hoadondientu trước');
+  $('run').title = !licenseAllowed ? 'Đăng nhập AutoTax và kích hoạt gói sử dụng' : (connected ? '' : 'Hãy đăng nhập hoadondientu trước');
 }
 
 function setBusy(on) {
@@ -276,7 +276,7 @@ preset('lastMonth');
 
 // Gate the existing invoice workflow using the server-verified license.
 let licenseAllowed=false;
-function applyLicense(st){licenseAllowed=!!(st?.allowed||['trial','paid'].includes(st?.tier));syncRun()}
+function applyLicense(st){licenseAllowed=!!st?.allowed;syncRun()}
 document.addEventListener('autotax-license-change',e=>applyLicense(e.detail?.license));
 document.addEventListener('autotax-license-gate',e=>{licenseAllowed=!!e.detail?.allowed;syncRun()});
 

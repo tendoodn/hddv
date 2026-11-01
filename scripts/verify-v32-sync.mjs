@@ -97,11 +97,16 @@ const crxJs=load('autotax/src/sidepanel/panel.js');
 const crxContent=load('autotax/src/content/content.js');
 const crxLicense=load('autotax/src/license/license.js');
 assert(crxPanel.includes('id="tendooSyncCheck"'),'Missing Tendoo option');
-assert(crxPanel.includes('id="tendooCatalogFile"')&&crxPanel.includes('id="tendooTemplateFile"'),
- 'Tendoo import must require SKU and template files');
+assert(crxPanel.includes('id="tendooCatalogFile"')&&crxPanel.includes('id="stockPlatform"')&&
+ crxPanel.includes('id="misaWarehouse"')&&crxPanel.includes('id="misaLastDoc"'),
+ 'Warehouse import must support both catalog formats, warehouse and last voucher number');
+assert(!crxPanel.includes('id="tendooTemplateFile"')&&bridge.includes('builtinTemplate'),
+ 'Warehouse templates must be bundled in AutoTax, not uploaded');
+assert(bridge.includes('THIẾU MÃ')&&bridge.includes('makeMisaPackage'),
+ 'Unmatched product lines must remain exportable in both formats');
 assert(crxPanel.includes('id="tendooMatchDialog"'),'Missing SKU mapping dialog');
 assert(crxJs.includes('Sản phẩm gốc · HĐ mua vào') &&
- crxJs.includes('Sản phẩm liên kết · file BC_San_Pham'),
+ crxJs.includes('Sản phẩm liên kết · danh mục '),
  'SKU mapping must distinguish invoice product and linked BC product');
 assert(crxJs.includes('TendooImport.searchCatalog'),
  'SKU link popup must support fast name-or-code search');

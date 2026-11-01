@@ -11,6 +11,11 @@ let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
 function showMessage(text,bad=false,target="accountMessage"){
  const el=$(target);el.textContent=text;el.hidden=!text;el.classList.toggle("error",bad);
 }
+function isPendingV32Backend(error){
+ const message=String(error?.message||error||"");
+ return String(error?.code||"")==="PGRST202" ||
+   /could not find the function|schema cache|function .* does not exist/i.test(message);
+}
 function prettyError(error){
  const code=String(error?.code||"");
  const msg=String(error?.message||error||"Không xác định");
@@ -74,7 +79,17 @@ async function refresh(){
   $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":(license.ever_had_package?"Tài khoản đã có lịch sử gói.":"");
   await Promise.all([loadMstAssignments(),loadPackages(),refreshAdminLink()]);
  }catch(error){
-  showMessage("Chưa đồng bộ được dữ liệu Supabase V3.2: "+prettyError(error),true);
+  state=null;
+  $("trialArea").hidden=true;
+  $("modeSection").hidden=true;
+  $("packageList").replaceChildren();
+  $("mstList").replaceChildren();
+  if(isPendingV32Backend(error)){
+   $("licenseTitle").textContent="Đang chuyển đổi sang AutoTax V3.2";
+   showMessage("Hệ thống cấp phép V3.2 chưa được triển khai trên Supabase. Đăng nhập vẫn hoạt động, nhưng mua gói, dùng thử và kích hoạt mã sẽ chỉ mở sau khi quản trị cập nhật SQL.",true);
+  }else{
+   showMessage("Chưa đồng bộ được dữ liệu Supabase V3.2: "+prettyError(error),true);
+  }
  }finally{checking=false}
 }
 async function refreshAdminLink(){

@@ -20,6 +20,7 @@ const admin=load('docs/admin.html');
 for(const match of admin.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))
  if(match[1].trim())testScript('admin-inline',match[1]);
 assert(admin.indexOf('./admin-mst.js') < admin.indexOf('const client='), 'admin MST module must load before inline boot');
+assert(!/\}\$\("unlockPackage"\)\.innerHTML/.test(admin),'Admin package selector must not run outside loadPlans scope');
 assert(!admin.includes('addon_admin_revoke_subscription'), 'admin must use V3.2 APIs');
 assert(!load('docs/index.html').includes('Gói 1 tháng'), 'legacy portal packages remain');
 assert(!load('autotax/src/sidepanel/index.html').includes('trialLeft'), 'obsolete 3-search trial remains');

@@ -113,27 +113,22 @@ revoke all on function public.addon_verify_session_mst_v33(text)
  from public,anon,authenticated;
 grant execute on function public.addon_verify_session_mst_v33(text) to authenticated;
 
--- The 12-digit personal identity number is used as a tax identifier.
--- Preserve acceptance for legacy 13-digit branch codes.
+-- Personal 12-digit IDs and legacy 13-digit branch MSTs stay supported.
+-- The V3.2 12-digit migration may already have expanded either function.
 do $extend_mst$
 declare
  v_fn text;
  v_def text;
  v_old text := '^[0-9]{10}([0-9]{3})?$';
  v_new text := '^([0-9]{10}|[0-9]{12}|[0-9]{13})$';
+ v_already_expanded text := '^[0-9]{10}([0-9]{2}|[0-9]{3})?$';
 begin
  foreach v_fn in array array['addon_start_mst_trial(text)','addon_authorize_mst(text)'] loop
   select pg_get_functiondef(('public.'||v_fn)::regprocedure) into v_def;
   if position(v_old in v_def)>0 then
     execute replace(v_def,v_old,v_new);
-  elsif position(v_new in v_def)>0
-     or position('^[0-9]{10}([0-9]{2}|[0-9]{3})?
- end loop;
-end $extend_mst$;
-notify pgrst,'reload schema';
- in v_def)>0 then
-    -- Another additive migration already expanded the rule, preserve it.
-    null;
+  elsif position(v_new in v_def)>0 or position(v_already_expanded in v_def)>0 then
+    null; -- Previous additive migration already added 12-digit support.
   else
     raise exception 'mst_validation_pattern_not_found_in_%',v_fn;
   end if;

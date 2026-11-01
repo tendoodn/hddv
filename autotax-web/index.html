@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>AutoTax Web – Quản lý hóa đơn</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="AutoTax Web"><span class="brand-mark">A</span><span><b>AutoTax</b><small>WEB · TENDOO</small></span></a>
+    <div class="top-actions"><span class="local-pill"><i></i> Dữ liệu lưu trên thiết bị</span><button id="exportBackup" class="btn btn-light">Sao lưu dữ liệu</button></div>
+  </header>
+  <main class="shell">
+    <section class="welcome">
+      <div><p class="eyebrow">TRUNG TÂM HÓA ĐƠN ĐIỆN TỬ</p><h1>Quản lý hóa đơn, <em>chủ động hơn.</em></h1><p class="muted">Tra cứu, nhập dữ liệu và quản lý hóa đơn tập trung. Giai đoạn đầu ưu tiên lưu trữ cục bộ, không gửi dữ liệu hóa đơn lên máy chủ.</p></div>
+      <div class="welcome-icon">▤</div>
+    </section>
+    <section class="stats" aria-label="Tổng quan">
+      <article class="stat-card"><span>Tổng hóa đơn</span><strong id="totalCount">0</strong><small>Trong hồ sơ đang chọn</small></article>
+      <article class="stat-card"><span>Hóa đơn mua vào</span><strong id="purchaseCount">0</strong><small>Đã nhập vào AutoTax</small></article>
+      <article class="stat-card"><span>Hóa đơn bán ra</span><strong id="salesCount">0</strong><small>Đã nhập vào AutoTax</small></article>
+      <article class="stat-card"><span>Hồ sơ MST</span><strong id="profileCount">0</strong><small>Lưu trên trình duyệt này</small></article>
+    </section>
+    <section class="workspace">
+      <aside class="sidebar panel">
+        <div class="section-heading"><div><p class="eyebrow">DANH MỤC</p><h2>Hồ sơ quản lý</h2></div><button id="addProfile" class="btn btn-primary btn-square" aria-label="Thêm hồ sơ">+</button></div>
+        <div id="profileList" class="profile-list"></div>
+        <div class="privacy-note"><b>Riêng tư ngay từ đầu</b><p>Hồ sơ và hóa đơn được lưu trong bộ nhớ trình duyệt trên thiết bị này. Hãy sao lưu định kỳ.</p></div>
+      </aside>
+      <section class="main-column">
+        <article class="panel import-panel">
+          <div class="section-heading"><div><p class="eyebrow">NHẬP DỮ LIỆU</p><h2>Thêm hóa đơn vào AutoTax</h2></div><span class="step-tag">GIAI ĐOẠN 1</span></div>
+          <div class="import-options">
+            <label class="import-option"><span class="option-icon">⇧</span><span><b>Chọn tệp XML</b><small>Chọn một hoặc nhiều hóa đơn XML</small></span><input id="xmlFiles" type="file" accept=".xml,text/xml,application/xml" multiple></label>
+            <label class="import-option"><span class="option-icon">▣</span><span><b>Khôi phục bản sao</b><small>Nhập tệp sao lưu AutoTax JSON</small></span><input id="backupFile" type="file" accept=".json,application/json"></label>
+          </div>
+          <p id="importStatus" class="status-line" role="status">Chưa có thao tác nhập dữ liệu.</p>
+          <div class="notice"><b>Đang phát triển:</b> kết nối trình duyệt và kết nối máy chủ sẽ được bổ sung ở các giai đoạn tiếp theo. Hiện tại, không yêu cầu mật khẩu trang thuế.</div>
+        </article>
+        <article class="panel invoice-panel">
+          <div class="section-heading"><div><p class="eyebrow">KHO HÓA ĐƠN</p><h2>Danh sách hóa đơn</h2></div><button id="exportCsv" class="btn btn-light">Xuất CSV</button></div>
+          <div class="filters">
+            <input id="searchInput" type="search" placeholder="Tìm MST, tên đơn vị, số hóa đơn…">
+            <select id="kindFilter" aria-label="Lọc loại hóa đơn"><option value="all">Tất cả loại</option><option value="purchase">Mua vào</option><option value="sales">Bán ra</option></select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Ngày hóa đơn</th><th>Số hóa đơn</th><th>Ký hiệu</th><th>Người bán</th><th>Người mua</th><th class="right">Tổng tiền</th><th>Loại</th></tr></thead><tbody id="invoiceRows"><tr><td colspan="7" class="empty">Chưa có hóa đơn. Hãy nhập tệp XML để bắt đầu.</td></tr></tbody></table></div>
+          <div class="table-footer"><span id="visibleCount">0 hóa đơn</span><button id="clearProfile" class="text-danger">Xóa dữ liệu hóa đơn hồ sơ này</button></div>
+        </article>
+      </section>
+    </section>
+    <footer>AutoTax Web · Bản nền tảng thử nghiệm · Dữ liệu cục bộ trên thiết bị</footer>
+  </main>
+  <dialog id="profileDialog"><form method="dialog" id="profileForm"><div class="dialog-head"><div><p class="eyebrow">HỒ SƠ MỚI</p><h2>Thêm mã số thuế</h2></div><button class="close-btn" value="cancel" aria-label="Đóng">×</button></div><label for="profileName">Tên hồ sơ / đơn vị</label><input id="profileName" maxlength="120" placeholder="Ví dụ: Công ty Tendoo" required><label for="profileTax">Mã số thuế</label><input id="profileTax" inputmode="numeric" maxlength="20" placeholder="Nhập mã số thuế" required><p id="profileError" class="form-error"></p><div class="dialog-actions"><button class="btn btn-light" value="cancel">Hủy</button><button id="saveProfile" class="btn btn-primary" value="default">Lưu hồ sơ</button></div></form></dialog>
+  <script src="./app.js"></script>
+</body>
+</html>

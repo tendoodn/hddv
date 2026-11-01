@@ -11,7 +11,7 @@
 <div class="panel"><h2>Tạo mã unlock theo gói</h2><p class="sub">Mỗi mã chỉ mở khóa đúng một gói đã chọn, sử dụng một lần cho một tài khoản. Số lượng và thời hạn MST được chốt tại lúc tạo mã.</p><div class="actions"><label>Chọn gói <select id="unlockPackage"></select></label><label>Hạn sử dụng mã <input id="unlockExpiry" type="datetime-local"></label><button id="createUnlock">Tạo mã unlock</button></div><div id="unlockCreated" class="notice hidden"></div><h3>Danh sách mã unlock</h3><div class="tablewrap"><table><thead><tr><th>Mã unlock</th><th>Gói được mở</th><th>Hạn mã</th><th>Trạng thái</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead><tbody id="unlocks"></tbody></table></div></div><div class="tabs"><button class="tab active" data-tab="customers">Khách hàng</button><button class="tab secondary" data-tab="logs">Nhật ký quản trị</button></div>
 <div id="logsPanel" class="panel hidden"><h2>Nhật ký thao tác</h2><div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Khách hàng</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody id="logs"></tbody></table></div></div>
 </section></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js"></script><script>
 const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
 const $=id=>document.getElementById(id);let allUsers=[];
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
@@ -50,4 +50,4 @@ $("users").onclick=async e=>{const b=e.target.closest("button");if(!b)return;if(
 };
 document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");const logs=b.dataset.tab==="logs";$("logsPanel").classList.toggle("hidden",!logs);$("search").parentElement.parentElement.classList.toggle("hidden",logs);if(logs)await loadLogs()});
 client.auth.onAuthStateChange(()=>setTimeout(boot,0));boot();
-</script><script src="./admin-mst.js"></script></body></html>
+</script></body></html>

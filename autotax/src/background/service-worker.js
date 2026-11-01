@@ -34,6 +34,30 @@ function waitForDownload(id) {
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+  if (msg.type === 'stock-tab-mapping') {
+    (async()=>{
+      const tabId=msg.portalTabId,requestId=String(msg.requestId||'');
+      if(!Number.isInteger(tabId)||!/^tendoo-map-[a-zA-Z0-9.-]+$/.test(requestId))
+        throw Error('Phiên liên kết không hợp lệ.');
+      const key='autotax-tendoo-request-'+requestId;
+      const payload=(await chrome.storage.session.get(key))[key];
+      if(!payload||payload.portalTabId!==tabId)
+        throw Error('Phiên ánh xạ đã hết hạn hoặc trang Thuế đã thay đổi.');
+      const validKeys=new Set(payload.names.map(n=>n.key));
+      const validCodes=new Set(payload.products.map(p=>p.sku));
+      for(const [name,sku] of Object.entries(msg.mapping||{})){
+        if(!validKeys.has(name)||!validCodes.has(sku))
+          throw Error('Tên sản phẩm hoặc mã SKU không hợp lệ.');
+      }
+      const result=await chrome.tabs.sendMessage(tabId,{
+        type:'tendoo-map-response',requestId,mapping:msg.mapping||{}
+      });
+      if(!result?.ok)throw Error('Không tìm thấy tác vụ nhập kho đang chờ trên tab Thuế.');
+      await chrome.storage.session.remove(key);
+      return {ok:true};
+    })().then(reply,e=>reply({ok:false,error:e.message}));
+    return true;
+  }
   if (msg.type === 'download') {
     // Tải lại cùng hóa đơn thì ghi đè, không sinh file trùng.
     chrome.downloads.download({ url: msg.url, filename: msg.filename, conflictAction: 'overwrite', saveAs: false })

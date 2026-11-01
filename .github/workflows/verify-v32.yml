@@ -27,6 +27,16 @@ jobs:
         with:
           node-version: "22"
       - run: node scripts/verify-v32-sync.mjs
+      - name: Parse Windows backup script without running it
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile('scripts/backup-supabase-v32.ps1', [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List | Out-String | Write-Error
+            exit 1
+          }
 
   sql-smoke:
     runs-on: ubuntu-latest

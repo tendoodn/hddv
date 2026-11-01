@@ -7,6 +7,7 @@ on:
       - "autotax/**"
       - "addon-portal/**"
       - "scripts/verify-v32-sync.mjs"
+      - "tests/v32/**"
       - ".github/workflows/verify-v32.yml"
   pull_request:
     paths:
@@ -26,3 +27,47 @@ jobs:
         with:
           node-version: "22"
       - run: node scripts/verify-v32-sync.mjs
+
+  sql-smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: autotax_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d autotax_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: autotax_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bootstrap test-only Supabase Auth
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/000_bootstrap_auth.sql
+      - name: Install historical V1/V2 schema in isolated database
+        run: |
+          set -euo pipefail
+          for f in \
+            addon-portal/supabase/migrations/001_addon_license_portal.sql \
+            addon-portal/supabase/migrations/002_addon_pricing_and_order_creation.sql \
+            addon-portal/supabase/migrations/003_sepay_webhook_processing.sql \
+            addon-portal/supabase/migrations/004_admin_payment_details.sql \
+            addon-portal/supabase/migrations/004_show_queued_renewals.sql \
+            docs/sql/admin-gifts-pricing.sql; do
+            psql -v ON_ERROR_STOP=1 -f "$f"
+          done
+          psql -v ON_ERROR_STOP=1 -f tests/v32/sql/010_seed_old_data.sql
+      - name: Dry-run V3.2 upgrade against PostgreSQL 16
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql
+      - name: Verify entitlements and paid/trial scenarios
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/030_assert_v32_upgrade.sql

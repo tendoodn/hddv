@@ -43,7 +43,9 @@ const migrationNames=[
  '019_bounded_invoice_claims_and_reread_mode.sql',
  '020_mst_one_year_collapsible_admin_history.sql',
  '021_admin_direct_package_grant.sql',
- '022_admin_paginated_package_transactions.sql'
+ '022_admin_paginated_package_transactions.sql',
+ '023_fix_package_checkout_pgcrypto_schema.sql',
+ '024_five_minute_qr_realtime_order_status.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -74,6 +76,18 @@ const adminGrant=load('addon-portal/supabase/migrations/021_admin_direct_package
 assert(adminGrant.includes("raise exception 'admin_required'"),'Manual package grant requires admin check');
 assert(adminGrant.includes("'admin_package_granted_v32'"),'Manual package grant requires audit');
 assert(adminGrant.includes("p_package_code"),'Manual package grant must bind one catalog package');
+const customerHtml=load('docs/index.html');
+const customerJs=load('docs/customer.js');
+assert(customerHtml.includes('repeat(5,minmax(0,1fr))'),'Desktop package grid must show 5 plans per row');
+assert(customerHtml.includes('id="paymentCountdown"'),'Missing five-minute QR countdown');
+assert(customerHtml.includes('id="paymentSuccessDialog"'),'Missing paid success popup');
+assert(customerJs.includes('addon_my_order_status'),'Payment completion must check exact order status');
+assert(customerJs.includes('postgres_changes'),'Payment completion must subscribe to immediate server updates');
+assert(customerJs.includes('finishPaidOrder('),'Paid QR must refresh license and show popup');
+assert(!customerJs.includes('900000'),'Obsolete fifteen-minute QR remains');
+const qrMigration=load('addon-portal/supabase/migrations/024_five_minute_qr_realtime_order_status.sql');
+assert(qrMigration.includes("interval '5 minutes'"),'Backend QR expiry must be five minutes');
+assert(qrMigration.includes('security invoker'),'Order status RPC must enforce row-level security');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
 assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');

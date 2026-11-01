@@ -41,7 +41,8 @@ const migrationNames=[
  '017_shared_catalog_and_admin_logs.sql',
  '018_remove_legacy_plan_order_dependency.sql',
  '019_bounded_invoice_claims_and_reread_mode.sql',
- '020_mst_one_year_collapsible_admin_history.sql'
+ '020_mst_one_year_collapsible_admin_history.sql',
+ '021_admin_direct_package_grant.sql'
 ];
 let sql='';
 for(const name of migrationNames){
@@ -68,7 +69,13 @@ const webhook=load('addon-portal/supabase/functions/addon-sepay-webhook/index.ts
 assert(webhook.includes('X-SePay-Signature') && webhook.includes('X-SePay-Timestamp'),
  'Webhook must verify SePay request signatures before payment processing');
 assert(webhook.includes('safeEqual('),'Webhook signature comparison missing');
+const adminGrant=load('addon-portal/supabase/migrations/021_admin_direct_package_grant.sql');
+assert(adminGrant.includes("raise exception 'admin_required'"),'Manual package grant requires admin check');
+assert(adminGrant.includes("'admin_package_granted_v32'"),'Manual package grant requires audit');
+assert(adminGrant.includes("p_package_code"),'Manual package grant must bind one catalog package');
 const adminHtml=load('docs/admin.html');
+assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
+assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');
 assert(adminHtml.includes('id="packageHistoryBody" class="hidden"'), 'Admin package history must be collapsed by default');
 assert(adminHtml.includes('aria-expanded="false"'), 'History expand button must be accessible');
 assert(adminHtml.includes('Thu gọn lịch sử'), 'Missing history collapse control');

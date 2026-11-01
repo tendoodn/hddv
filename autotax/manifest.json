@@ -1,10 +1,10 @@
 {
   "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
-  "name": "HoaDon Nội Bộ",
-  "short_name": "HoaDon Nội Bộ",
+  "name": "AutoTax - Công cụ tải HĐĐT",
+  "short_name": "AutoTax",
   "version": "3.1.0",
-  "description": "Công cụ nội bộ tra cứu và xử lý hóa đơn; dữ liệu xử lý cục bộ, chỉ kết nối Cổng Thuế chính thức khi tra cứu.",
+  "description": "AutoTax - Công cụ hỗ trợ tra cứu và tải hóa đơn điện tử.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -27,7 +27,7 @@
     "default_path": "src/sidepanel/index.html"
   },
   "action": {
-    "default_title": "Tiện ích hỗ trợ tải hóa đơn",
+    "default_title": "AutoTax - Công cụ tải HĐĐT",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",

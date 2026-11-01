@@ -159,7 +159,7 @@
   // 429 có lượt thử lại riêng (RATE_RETRIES); request kèm captcha (extra) thì ném ngay để searchGet chờ rồi lấy captcha mới.
   async function get(url, act, { shouldStop = () => false, timeout = TIMEOUT, retries = RETRIES, onWait, onRetry, auth, extra, endPoint } = {}) {
     for (let i = 0, rated = 0; ; i++) {
-      if (!token()) throw new HttpError('Chưa đăng nhập hoadondientu – hãy đăng nhập rồi bấm ↻', 401);
+      if (auth !== false && !token()) throw new HttpError('Chưa đăng nhập hoadondientu – hãy đăng nhập rồi bấm ↻', 401);
       const wait = lastAt + gap - Date.now();
       if (wait > 0) await sleep(wait);
       if (shouldStop()) throw new Error(STOPPED);

@@ -58,7 +58,7 @@
 
   function invoiceSheet(name, rows, details, withPdf, mstCheck, illegal) {
     const list = sorted(rows).map((r) => ({ r, m: money(r) }));
-    const currencies = [...new Set(list.map(({ r }) => r.dvtte || 'VND'))].sort();
+    const currencies = list.length ? [...new Set(list.map(({ r }) => r.dvtte || 'VND'))].sort() : ['VND'];
     const totals = currencies.map((currency) => {
       const group = list.filter(({ r }) => (r.dvtte || 'VND') === currency);
       const sum = (k) => total(group, (x) => x.m[k]);

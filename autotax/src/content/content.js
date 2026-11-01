@@ -15,31 +15,35 @@ const ZIP_PART_BYTES = 40 * 1024 * 1024; // ~40 MB/zip: data URL base64 còn ~55
 const HISTORY_KEY = 'autotax_invoice_history_v1';
 const HISTORY_LIMIT = 20000;
 const invoiceHistoryKey = (r, mst) => [mst || '', r.kind || '', r.form || '', r.khmshdon || '', r.khhdon || '', r.shdon || ''].join('|');
-async function recordPackageInvoiceDownloads(rows, mst, downloadedKeys) {
-  if (!rows?.length || !downloadedKeys?.size) return;
-  try {
-    const stored = await chrome.storage.local.get('autotax_license_session_v1');
-    const token = stored.autotax_license_session_v1?.access_token;
-    if (!token) return;
-    const base = 'https://ucqqjdsoyvvaxswzbhaw.supabase.co';
-    const key = 'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
-    const headers = { apikey: key, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
-    const state = await fetch(base + '/rest/v1/rpc/addon_my_entitlements', { method:'POST', headers, body:'{}' });
-    if (!state.ok) return;
-    const entitlement = await state.json();
-    if (entitlement?.mode !== 'invoice') return;
-    const items = rows.filter(r => downloadedKeys.has(invoiceHistoryKey(r, mst))).map(r => ({
-      mst: mst || '', direction: r.kind || '', form_code: [r.form || '', r.khmshdon || ''].join(':'),
-      series: r.khhdon || '', invoice_number: String(r.shdon ?? '')
-    }));
-    if (!items.length) return;
-    const res = await fetch(base + '/rest/v1/rpc/addon_record_invoice_download', {
-      method:'POST', headers, body:JSON.stringify({p_items:items})
-    });
-    if (!res.ok) throw new Error('Không ghi nhận được lượt tải gói hóa đơn.');
-    const result = await res.json();
-    if (result?.deducted) console.info('[AutoTax] Đã trừ ' + result.deducted + ' lượt hóa đơn.');
-  } catch (error) { console.warn('[AutoTax] Không thể đồng bộ lượt tải:', error); }
+// Reserve quota before any file is produced. Previously charged invoice identities
+// are returned as allowed without consuming another unit.
+async function claimInvoiceQuota(rows, mst) {
+  if (!rows?.length) return { rows: [], deducted: 0, previously: 0, denied: 0 };
+  const stored = await chrome.storage.local.get('autotax_license_session_v1');
+  const token = stored.autotax_license_session_v1?.access_token;
+  if (!token) throw new Error('Phiên đăng nhập AutoTax không hợp lệ. Vui lòng đăng nhập lại.');
+  const base = 'https://ucqqjdsoyvvaxswzbhaw.supabase.co';
+  const key = 'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
+  const headers = { apikey: key, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  const items = rows.map(r => ({
+    mst: mst || '', direction: r.kind || '',
+    form_code: [r.form || '', r.khmshdon || ''].join(':'),
+    series: r.khhdon || '', invoice_number: String(r.shdon ?? '')
+  }));
+  const res = await fetch(base + '/rest/v1/rpc/addon_claim_invoice_quota', {
+    method: 'POST', headers, body: JSON.stringify({ p_items: items })
+  });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(result.message || result.error || 'Không xác minh được lượt sử dụng. Hãy cập nhật SQL 011 trên Supabase.');
+  const allowed = new Set((result.allowed_items || []).map(item =>
+    [item.mst, item.direction, item.form_code, item.series, item.invoice_number].join('|')));
+  return {
+    rows: rows.filter(r => allowed.has([mst || '', r.kind || '',
+      [r.form || '', r.khmshdon || ''].join(':'), r.khhdon || '', String(r.shdon ?? '')].join('|'))),
+    deducted: Number(result.deducted || 0),
+    previously: Number(result.previously_deducted || 0),
+    denied: Number(result.denied || 0)
+  };
 }
 
 async function updateInvoiceHistory(rows, mst, mode, formats = {}) {
@@ -124,20 +128,20 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     // Cổng chậm: đếm giây ngay trên dòng trạng thái để người dùng biết vẫn đang chờ, không phải treo
     onWait: (w) => send({ type: 'status', text: `${w.label}: ${waitText(w)}${w.slow && !w.rate ? ' (tra máy tính tiền thường chậm, chờ tối đa 90 giây)' : ''}` }) });
   let rows = res.rows;
-  // Gói số tờ: mỗi hóa đơn được đọc/xuất thành công (kể cả chỉ xuất Excel) tiêu hao 1 lượt.
-  // Máy chủ lưu khóa duy nhất MST + chiều + mẫu + ký hiệu mẫu + ký hiệu + số HĐ,
-  // nên quét/xuất lại cùng hóa đơn sẽ không trừ lần thứ hai.
-  if (packageAccess.mode === 'invoice') {
-    const limit = Math.max(0, packageAccess.remaining || 0);
-    if (rows.length > limit) {
-      send({ type:'log', level:'warn', text:`Gói còn ${limit} lượt; chỉ xử lý tối đa ${limit} hóa đơn trong lượt chạy này.` });
-      rows = rows.slice(0, limit);
-    }
-  }
   // Chỉ HĐ thay thế / điều chỉnh / hủy: lọc theo tthai ngay sau tra cứu, trước khi tải chi tiết (tthai 1 = hóa đơn mới)
   if (adjOnly) {
     rows = rows.filter((r) => r.tthai && Number(r.tthai) !== 1);
     send({ type: 'log', level: 'ok', text: `Chỉ lấy hóa đơn thay thế/điều chỉnh/hủy: ${rows.length}/${res.rows.length} hóa đơn` });
+  }
+  // Filter selected invoices first, then reserve only what is actually eligible.
+  // Do not count already charged invoices against remaining quota.
+  if (packageAccess.mode === 'invoice') {
+    const claim = await claimInvoiceQuota(rows, profile.mst);
+    rows = claim.rows;
+    send({ type: 'log', level: claim.denied ? 'warn' : 'ok',
+      text: 'Đã ghi nhận '+claim.deducted+' lượt mới; '+claim.previously+
+        ' hóa đơn đã trừ từ trước được đọc lại miễn phí.'+
+        (claim.denied ? ' '+claim.denied+' hóa đơn không đủ lượt, đã bỏ qua.' : '') });
   }
   await updateInvoiceHistory(rows, profile.mst, 'searched');
   const count = (k, f) => rows.filter((r) => r.kind === k && (!f || r.form === f)).length;
@@ -168,7 +172,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
       if (keys.size) {
         const downloadedRows = rows.filter(r => keys.has(invoiceHistoryKey(r, profile.mst)));
         await updateInvoiceHistory(downloadedRows, profile.mst, 'downloaded', Object.fromEntries(bucketInvoiceFormats));
-        await recordPackageInvoiceDownloads(downloadedRows, profile.mst, keys);
+        // Quota was already reserved atomically before any invoice was read.
       }
       saved++; files = []; bytes = 0; bucketInvoiceFormats = new Map(); part++;
     };
@@ -273,12 +277,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     const book = Report.buildSheets(rows, details, { withLines: formats.lines, withPdf: formats.pdf, sheets, originals, illegal, tuNgay, denNgay, mst: profile.mst, company: profile.company,
       kinds, adjOnly, skipped: res.skipped || [], stopped: stopFlag || res.stopped });
     await save(Xlsx.buildXlsx(book), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name);
-    // Excel cũng là một lần đọc/xuất hóa đơn. Gửi toàn bộ hóa đơn thực sự có trong bảng kê;
-    // backend dedupe theo MST + định danh hóa đơn nên không trừ trùng với ZIP ở bước trên.
-    if (packageAccess.mode === 'invoice' && rows.length) {
-      const excelKeys = new Set(rows.map(r => invoiceHistoryKey(r, profile.mst)));
-      await recordPackageInvoiceDownloads(rows, profile.mst, excelKeys);
-    }
+    // Excel invoices were already included in the quota claim before export.
     // 1 dòng: số sheet + tóm tắt rủi ro (chỉ nêu khi có cảnh báo / lưu ý)
     const risk = book.find((x) => x.summary)?.summary;
     const flags = risk ? [risk.bad && `${risk.bad} hóa đơn bị cảnh báo`, risk.warn && `${risk.warn} hóa đơn cần lưu ý`].filter(Boolean).join(', ') : '';

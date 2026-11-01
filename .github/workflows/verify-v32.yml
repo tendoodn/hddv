@@ -73,3 +73,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/UPGRADE_V32_CANDIDATE_DO_NOT_RUN.sql
       - name: Verify entitlements and paid/trial scenarios
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/030_assert_v32_upgrade.sql
+      - name: Verify additive package lots and independent expiration
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/040_assert_package_lots.sql

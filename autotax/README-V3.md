@@ -14,7 +14,7 @@ AutoTax 3.2 replaces the legacy customer-facing trial/monthly/yearly display wit
 
 ## Supabase deployment
 
-On the dedicated Add-on Supabase project, apply migrations in order: 001_addon_license_portal.sql, 002_addon_pricing_and_order_creation.sql, 003_sepay_webhook_processing.sql, 004_admin_payment_details.sql, 004_show_queued_renewals.sql, 005_package_entitlements_v32.sql, 006_package_admin_and_expiry_hardening.sql, 007_mst_capacity_enforcement.sql.
+On the dedicated Add-on Supabase project, apply migrations in order: 001_addon_license_portal.sql, 002_addon_pricing_and_order_creation.sql, 003_sepay_webhook_processing.sql, 004_admin_payment_details.sql, 004_show_queued_renewals.sql, 005_package_entitlements_v32.sql, 006_package_admin_and_expiry_hardening.sql, 007_mst_capacity_enforcement.sql, 008_order_snapshot_and_expiry_display.sql.
 
 Deploy Edge Functions from addon-portal/supabase/functions and configure the required Supabase/SePay secrets. Do not deploy this schema to an unrelated Tendoo project.
 

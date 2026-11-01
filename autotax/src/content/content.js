@@ -396,7 +396,10 @@ chrome.runtime.onConnect.addListener(port=>{
   });
   port.onMessage.addListener(async msg=>{
     if(msg.type==='attach'){
-      for(const event of jobEvents)try{port.postMessage(event)}catch{break}
+      for(const event of jobEvents){
+        if(event.type==='tendoo-map-request'&&!pendingSku.has(event.requestId))continue;
+        try{port.postMessage(event)}catch{break}
+      }
       return;
     }
     if(msg.type==='tendoo-mapping-tab-open'){

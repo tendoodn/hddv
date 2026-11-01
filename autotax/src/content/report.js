@@ -255,6 +255,18 @@
     String(x.khhdon || '').trim().toUpperCase().replace(/[ \t\r\n]+/g, ''),
     refDigits(x.shdon),
   ].join('|') : '');
+  // Không chọn ngẫu nhiên khi cùng một khóa định danh xuất hiện ở nhiều bản ghi.
+  function indexByRef(rows) {
+    const unique = new Map(), ambiguous = new Set();
+    for (const row of rows) {
+      const key = refKey(row);
+      if (!key) continue;
+      if (ambiguous.has(key)) continue;
+      if (unique.has(key)) { unique.delete(key); ambiguous.add(key); }
+      else unique.set(key, row);
+    }
+    return { unique, ambiguous };
+  }
   const monthOf = (iso) => { const d = new Date(iso); return d.getFullYear() * 12 + d.getMonth(); };
   // Luật thuế GTGT 2024 (từ 01/07/2025): hóa đơn mua vào từ 5 triệu đồng (gồm thuế) cần chứng từ thanh toán
   // không dùng tiền mặt để được khấu trừ; trước đó là 20 triệu.
@@ -426,7 +438,7 @@
   function adjustSheet(rows, details, { originals = new Map(), tuNgay, denNgay }) {
     const adj = sorted(rows).filter(isAdjusting);
     if (!adj.length) return null;
-    const byRef = new Map(rows.map((r) => [refKey(r), r]));
+    const { unique: byRef, ambiguous: ambiguousRefs } = indexByRef(rows);
     const L0 = 1, R0 = L0 + LEFT.length + 1; // cột bắt đầu (0 = A)
     const col = (i) => { let s = ''; for (i++; i; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + ((i - 1) % 26)) + s; return s; };
     const out = [], rowProps = new Map(), merges = [];
@@ -451,7 +463,8 @@
     const st = (base, type) => (base === 'cell' ? (type ? `cell${type}` : 'cell') : `${base}${type || ''}`);
     adj.forEach((r, n) => {
       const ld = details.get(r.key), k = refKey(r.gocRef), inRange = byRef.get(k), o = inRange ? null : originals.get(k);
-      const right = inRange ? { row: inRange, d: details.get(inRange.key) } : o ? { row: rowFromHead(o.head, r), d: o, out: true } : null;
+      const ambiguous = ambiguousRefs.has(k);
+      const right = inRange ? { row: inRange, d: details.get(inRange.key) } : o && !o.ambiguous ? { row: rowFromHead(o.head, r), d: o, out: true } : null;
       const li = sideInfo(r, ld), ri = right ? sideInfo(right.row, right.d) : null;
       if (right?.out) ri.tthai = 'Ngoài khoảng ngày đang tải';
       const lines = (row, d) => (d?.lines ? invoiceLines(row, d) : []);
@@ -481,7 +494,7 @@
           const isLine = i >= INFO.length;
           let v = '', base = 'cell';
           if (!isLine) {
-            if (!j) { v = ri ? ri[key] : i === 0 ? `Chưa có dữ liệu HĐ gốc ${r.goc}` : ''; if (right?.out) base = 'out'; }
+            if (!j) { v = ri ? ri[key] : i === 0 ? (ambiguous ? `Không xác định duy nhất HĐ gốc ${r.goc} (trùng khóa định danh)` : `Chưa có dữ liệu HĐ gốc ${r.goc}`) : ''; if (right?.out) base = 'out'; }
           } else if (pr) { v = pr[key]; if (!pl) base = 'gone'; }
           cells[R0 + i] = { v: v ?? '', s: st(base, type) };
         });
@@ -740,5 +753,5 @@
   }
   const buildWorkbook = (rows, details, opts) => Xlsx.buildXlsx(buildSheets(rows, details, opts));
 
-  window.Report = { buildWorkbook, buildSheets, dateVN, isAdjusting, refKey };
+  window.Report = { buildWorkbook, buildSheets, dateVN, isAdjusting, refKey, indexByRef };
 })();

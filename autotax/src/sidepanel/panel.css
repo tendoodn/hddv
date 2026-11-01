@@ -498,3 +498,22 @@ button.chip{width:100%;min-width:0;min-height:34px;height:auto;padding:4px 2px;f
 .mst-manager summary span{background:var(--accent-soft);padding:1px 7px;border-radius:12px}
 .mst-manager summary small{margin-left:auto;font-weight:600;color:var(--muted)}
 .mst-manager details[open] .mst-manager-head,.mst-manager details[open] .mst-profile-add,.mst-manager details[open] #lic-mst-assignments{margin-left:10px;margin-right:10px}
+
+/* Tendoo import: explicit SKU catalog, original template, safe user mapping */
+.tendoo-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;padding:10px;background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;font-size:11px}
+.tendoo-summary strong{overflow-wrap:anywhere;color:#9f1239}
+.tendoo-summary button{border:1px solid var(--accent-line);background:#fff;color:var(--accent-strong);font-size:11px;padding:7px 9px}
+.tendoo-dialog{width:min(450px,95vw);max-width:95vw;max-height:85vh;overflow:auto;box-sizing:border-box;border:1px solid #fecdd3;border-radius:14px;padding:18px;background:#fff;color:var(--fg);box-shadow:0 16px 60px #30111733}
+.tendoo-dialog::backdrop{background:#22080b99}
+.tendoo-dialog h2{font-size:16px;color:var(--accent-strong);margin-bottom:9px}
+.tendoo-dialog p{font-size:12px;line-height:1.5;color:var(--muted);margin:8px 0 12px}
+.tendoo-dialog label{display:block;font-weight:700;font-size:11px;margin:12px 0 6px}
+.tendoo-dialog input[type=file]{display:block;width:100%;font-size:11px;max-width:100%}
+.tendoo-setup-status{background:#fff1f2;border-radius:7px;padding:8px}
+.tendoo-dialog .license-buttons{display:flex;gap:8px;margin:12px 0}
+.tendoo-dialog .license-buttons button{flex:1;min-width:0}
+.tendoo-dialog small{color:var(--muted);font-size:10px}
+.tendoo-missing-list{max-height:44vh;overflow:auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tendoo-missing-row{border-bottom:1px solid var(--line);padding:8px 0}
+.tendoo-missing-row strong{display:block;overflow-wrap:anywhere;font-size:11px}
+.tendoo-missing-row select{display:block;width:100%;font-size:11px;margin-top:5px}

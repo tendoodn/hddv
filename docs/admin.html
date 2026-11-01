@@ -89,6 +89,9 @@ async function loadPackageHistory(page=1){
   });
   if(error)throw error;
   const rows=Array.isArray(data?.items)?data.items:[];
+  if(!rows.length && requestPage>Number(data?.pages||1)){
+   await loadPackageHistory(Number(data?.pages||1));return;
+  }
   packageHistoryPage=Number(data?.page)||1;
   packageHistoryPages=Number(data?.pages)||1;
   $("packageHistoryCount").textContent=Number(data?.total||0).toLocaleString("vi-VN")+" giao dịch · tối đa 10 giao dịch/trang";
@@ -108,6 +111,12 @@ async function loadPackageHistory(page=1){
    if(canRevoke)controls='<button class="danger" data-adjust="revoke" data-lot="'+esc(h.lot_id)+'" data-code="'+esc(h.package_code)+'">Thu hồi gói</button>';
    if(canRestore)controls='<button data-adjust="restore" data-lot="'+esc(h.lot_id)+'" data-code="'+esc(h.package_code)+'">Khôi phục gói</button>';
    if(canCompensate)controls='<button data-adjust="compensate" data-order="'+esc(h.order_id)+'" data-code="'+esc(h.package_code)+'">Cấp bù gói</button>';
+   if(h.can_hide){
+    const deleteButton='<button type="button" class="secondary" data-adjust="hide" data-event-id="'+
+      esc(h.event_id)+'" data-event-type="'+esc(h.event_type)+
+      '" data-legacy="'+String(!!h.legacy)+'" data-code="'+esc(h.package_code||"—")+'">Xóa lịch sử</button>';
+    controls=(controls==="—"?"":controls)+deleteButton;
+   }
    return '<tr><td>'+fmt(h.occurred_at)+'</td><td>'+esc(h.customer_email||"—")+'</td><td>'+esc(historyType(h))+'</td><td><b>'+esc(h.package_code||"—")+'</b></td><td>'+esc(quantity)+'</td><td>'+esc(historyStatus(h))+'</td><td>'+fmt(h.expires_at)+'</td><td>'+esc(price)+'</td><td><code>'+esc(orderCode)+'</code></td><td><code>'+esc(transferCode)+'</code>'+extra+'</td><td><div class="action-compact">'+controls+'</div></td></tr>';
   }).join("")||'<tr><td colspan="11">Không có giao dịch nào.</td></tr>';
   prev.disabled=packageHistoryPage<=1;
@@ -143,17 +152,22 @@ $("packageHistoryRows").addEventListener("click",event=>{
  const button=event.target.closest("button[data-adjust]");
  if(!button)return;
  const action=button.dataset.adjust,code=button.dataset.code||"";
- if(!["revoke","restore","compensate"].includes(action))return;
+ if(!["revoke","restore","compensate","hide"].includes(action))return;
  pendingPackageAdjustment={action,lotId:button.dataset.lot||null,
-  orderId:button.dataset.order||null,code};
+  orderId:button.dataset.order||null,code,
+  eventId:button.dataset.eventId||null,
+  eventType:button.dataset.eventType||null,
+  legacy:button.dataset.legacy==="true"};
  const heading={revoke:"Thu hồi gói "+code,restore:"Khôi phục gói "+code,
-  compensate:"Cấp bù gói "+code}[action];
+  compensate:"Cấp bù gói "+code,hide:"Xóa lịch sử gói "+code}[action];
  $("packageAdjustmentTitle").textContent=heading;
  $("packageAdjustmentDescription").textContent=action==="revoke"?
   "Thu hồi toàn bộ quyền CHƯA sử dụng của lượt cấp này. Đơn thanh toán và mã giao dịch vẫn lưu để đối soát.":
   action==="restore"?
   "Khôi phục đúng số lượt còn lại và hạn sử dụng ban đầu. Không gia hạn thêm và không tạo thanh toán.":
-  "Chỉ dùng khi đã xác minh đơn lỗi, đã hủy hoặc đã hoàn tiền cần cấp bù. Tạo gói mới, giữ nguyên trạng thái tài chính của đơn gốc. Mỗi đơn chỉ được cấp bù một lần.";
+  action==="compensate"?
+  "Chỉ dùng khi đã xác minh đơn lỗi, đã hủy hoặc đã hoàn tiền cần cấp bù. Tạo gói mới, giữ nguyên trạng thái tài chính của đơn gốc. Mỗi đơn chỉ được cấp bù một lần.":
+  "Chỉ ẩn giao dịch đã hủy hoặc đã thu hồi khỏi lịch sử quản trị. KHÔNG xóa đơn hàng, chứng từ SePay hay nhật ký kiểm toán. Gói đang hoạt động không thể xóa.";
  $("packageAdjustmentReason").value="";
  $("packageAdjustmentMessage").classList.add("hidden");
  $("packageAdjustmentDialog").showModal();
@@ -169,21 +183,27 @@ $("packageAdjustmentConfirm").onclick=async()=>{
   "Xác nhận THU HỒI gói "+a.code+"? Quyền sử dụng sẽ bị giảm ngay lập tức.":
   a.action==="restore"?
   "Xác nhận KHÔI PHỤC gói "+a.code+" theo số dư và hạn gốc?":
-  "Xác nhận CẤP BÙ gói "+a.code+"? Hãy kiểm tra tình trạng thanh toán thực tế trước khi cấp.";
+  a.action==="compensate"?
+  "Xác nhận CẤP BÙ gói "+a.code+"? Hãy kiểm tra tình trạng thanh toán thực tế trước khi cấp.":
+  "Xác nhận XÓA gói "+a.code+" KHỎI DANH SÁCH LỊCH SỬ? Dữ liệu tài chính và nhật ký vẫn được lưu.";
  if(!confirm(confirmText))return;
  const submit=$("packageAdjustmentConfirm");submit.disabled=true;
  try{
   const fn=a.action==="compensate"?"addon_admin_compensate_failed_order_v32":
+   a.action==="hide"?"addon_admin_hide_package_history_v32":
    "addon_admin_adjust_package_lot_v32";
   const args=a.action==="compensate"?
    {p_order_id:a.orderId,p_reason:reason}:
+   a.action==="hide"?
+   {p_event_type:a.eventType,p_event_id:a.eventId,
+    p_legacy:a.legacy,p_reason:reason}:
    {p_lot_id:a.lotId,p_action:a.action,p_reason:reason};
   const {error}=await client.rpc(fn,args);
   if(error)throw error;
   $("packageAdjustmentDialog").close();
   await loadPackageHistory(packageHistoryPage);
   await loadUsers();
-  msg("packageHistoryMessage","Đã "+({revoke:"thu hồi",restore:"khôi phục",compensate:"cấp bù"}[a.action])+
+  msg("packageHistoryMessage","Đã "+({revoke:"thu hồi",restore:"khôi phục",compensate:"cấp bù",hide:"ẩn khỏi lịch sử"}[a.action])+
     " gói "+a.code+". Đã ghi nhật ký quản trị.");
  }catch(e){
   msg("packageAdjustmentMessage","Không thể điều chỉnh gói: "+(e.message||e),true);

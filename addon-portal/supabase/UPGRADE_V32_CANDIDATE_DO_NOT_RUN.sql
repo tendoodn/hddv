@@ -1052,7 +1052,7 @@ grant execute on function public.addon_create_package_order(text) to authenticat
 -- A user can switch to invoice mode even when remaining is zero IF they have already
 -- paid for and read invoices; this permits replay-free rereads across modes.
 create or replace function public.addon_set_usage_mode(p_mode text)
-returns jsonb language plpgsql security definer set search_path=public,auth as $
+returns jsonb language plpgsql security definer set search_path=public,auth as $$
 declare u uuid:=auth.uid();
 begin
  if u is null or p_mode not in ('invoice','mst') then raise exception 'invalid_mode'; end if;
@@ -1067,7 +1067,7 @@ begin
  insert into public.addon_usage_modes(user_id,mode) values(u,p_mode)
  on conflict(user_id) do update set mode=excluded.mode,updated_at=now();
  return jsonb_build_object('success',true,'mode',p_mode);
-end $;
+end $$;
 revoke all on function public.addon_set_usage_mode(text) from public,anon;
 grant execute on function public.addon_set_usage_mode(text) to authenticated;
 
@@ -1076,7 +1076,7 @@ grant execute on function public.addon_set_usage_mode(text) to authenticated;
 -- A successful claim reserves exactly one quota unit before exporting.
 -- Claims of previously charged invoices do not charge again.
 create or replace function public.addon_claim_invoice_quota(p_items jsonb)
-returns jsonb language plpgsql security definer set search_path=public,auth as $
+returns jsonb language plpgsql security definer set search_path=public,auth as $$
 declare
  u uuid := auth.uid();
  item jsonb;
@@ -1135,7 +1135,7 @@ begin
  end loop;
  return jsonb_build_object('deducted',v_new,'previously_deducted',v_seen,
    'denied',v_denied,'allowed_items',v_keys,'denied_items',v_denied_keys);
-end $;
+end $$;
 revoke all on function public.addon_claim_invoice_quota(jsonb) from public;
 grant execute on function public.addon_claim_invoice_quota(jsonb) to authenticated;
 

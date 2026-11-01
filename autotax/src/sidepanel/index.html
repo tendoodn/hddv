@@ -83,16 +83,16 @@
       <summary>
         <span class="shield" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
         <span class="privacy-text">
-          <strong class="privacy-title">Không cần mật khẩu · Không gửi dữ liệu hóa đơn</strong>
-          <span class="privacy-sub">Chạy hoàn toàn trên máy bạn</span>
+          <strong class="privacy-title">Xử lý hóa đơn trên máy · Xác thực lượt qua Supabase</strong>
+          <span class="privacy-sub">Tệp tải trên máy; mã hóa đơn dùng để chống trừ lượt trùng</span>
         </span>
       </summary>
       <p>Tiện ích chỉ giúp bạn <strong>tra cứu và tải nhiều hóa đơn cùng lúc</strong> – những hóa đơn bạn vốn đã xem và tải được trên hoadondientu.gdt.gov.vn.</p>
       <ul>
-        <li><strong>Không hỏi mật khẩu.</strong> Bạn tự đăng nhập hoadondientu như bình thường; tiện ích dùng phiên đăng nhập đó để gọi đúng các chức năng tra cứu, xuất XML của cổng.</li>
-        <li><strong>Không thu thập, không lưu trữ, không gửi</strong> dữ liệu hóa đơn hay thông tin doanh nghiệp (MST, tên, số tiền, khoảng ngày…) tới bất kỳ máy chủ nào khác. Không quảng cáo, không công cụ theo dõi của bên thứ ba.</li>        <li>Excel bảng kê và file zip được <strong>tạo ngay trên máy bạn</strong>, lưu thẳng vào thư mục Tải về (Downloads).</li>
-        <li>Danh sách hóa đơn chỉ nằm trong bộ nhớ tạm và <strong>mất khi đóng trang</strong>.</li>
-        <li>Tiện ích chỉ xin quyền truy cập <strong>hoadondientu.gdt.gov.vn</strong>, không đọc trang web nào khác.</li>
+        <li><strong>Không yêu cầu mật khẩu cổng thuế.</strong> Bạn tự đăng nhập hoadondientu. Tài khoản AutoTax dùng email và mật khẩu đăng nhập Supabase Auth riêng.</li>
+        <li><strong>Để quản lý lượt:</strong> tiện ích gửi MST, chiều hóa đơn, mẫu/ký hiệu và số hóa đơn đến Supabase để xác nhận một hóa đơn chỉ bị trừ một lần trên tài khoản. Không gửi nội dung XML/PDF/Excel của hóa đơn lên Supabase.</li>        <li>Excel bảng kê và file zip được <strong>tạo ngay trên máy bạn</strong>, lưu thẳng vào thư mục Tải về (Downloads).</li>
+        <li><strong>Lịch sử tra cứu/tải</strong> được lưu cục bộ bằng Chrome Storage, tối đa 20.000 hóa đơn, cho đến khi bạn xóa dữ liệu extension.</li>
+        <li>Tiện ích dùng quyền truy cập <strong>hoadondientu.gdt.gov.vn</strong> và máy chủ <strong>Supabase</strong> phục vụ đăng nhập, cấp phép, đếm lượt và liên kết MST.</li>
       </ul>
     </details>
     <section class="quick-links" aria-label="Liên kết tiện ích">

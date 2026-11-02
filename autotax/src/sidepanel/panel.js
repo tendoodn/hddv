@@ -50,6 +50,13 @@ function setConnected(on, info = {}) {
   connected = on;
   portalMst = on ? normalizeMst(info.mst) : '';
   syncHousehold(on ? info : {});
+  // getSessionInfo() only marks ready when the GDT JWT is valid.
+  globalThis.AutoTaxGdtProfile=on?
+   {mst:normalizeMst(info.mst),company:String(info.company||'').trim()}:null;
+  if(on&&info.company){
+   Promise.resolve().then(()=>globalThis.License?.autoNameFromGdt?.(
+    globalThis.AutoTaxGdtProfile)).catch(()=>{});
+  }
   const name = on ? [info.mst, info.company].filter(Boolean).join(' – ') : '';
   $('company').hidden = !name; $('company').textContent = name; $('company').title = name;
   $('noCompany').hidden = !!name;

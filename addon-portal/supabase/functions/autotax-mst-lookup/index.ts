@@ -66,6 +66,15 @@ async function vietqr(n:any){
  if(data?.code!=="00")return null;
  return normalizeResult(data,"VietQR — dữ liệu doanh nghiệp",n);
 }
+// Invoy publishes this anonymous business-tax lookup endpoint. Keep 12-digit
+// personal identifiers OFF this service: its documented public tool is for businesses.
+async function invoyPublic(n:any){
+ if(n.kind==='personal')return null;
+ const param=new URLSearchParams({mst:n.display});
+ const data=await fetchJson("https://invoy.io.vn/api/v1/public/lookup-mst?"+param,{},9000);
+ if(data?.success===false||data?.status===false)return null;
+ return normalizeResult(data,"Invoy — dữ liệu người nộp thuế công khai (không xác minh cá nhân)",n);
+}
 async function thongtindoanhnghiep(n:any){
  if(n.kind==="personal")return null; // Its API is for publicly registered companies.
  // Documented public REST route. No API key, redirects or arbitrary URLs.
@@ -77,7 +86,7 @@ async function thongtindoanhnghiep(n:any){
 }
 async function lookup(n:any){
  const problems:string[]=[];
- for(const source of [pay2s,vietqr,thongtindoanhnghiep]){
+ for(const source of [pay2s,vietqr,invoyPublic,thongtindoanhnghiep]){
   try{
    const got=await source(n);if(got)return got;
   }catch(e){problems.push(String(e instanceof Error?e.message:"upstream_error").slice(0,90))}

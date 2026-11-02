@@ -4,8 +4,8 @@
 begin;
 do $autotax_invoker$
 begin
- if not has_table_privilege('authenticated','public.addon_package_catalog','SELECT') then
-  raise exception 'Catalog SELECT permission missing for authenticated role';
+ if not (select relrowsecurity from pg_class where oid='public.addon_package_catalog'::regclass) then
+  raise exception 'Package catalog RLS must be enabled';
  end if;
  if not exists (
   select 1 from pg_policies where schemaname='public'
@@ -17,6 +17,9 @@ begin
  end if;
 end
 $autotax_invoker$;
+-- Older installations used only a SECURITY DEFINER RPC and lacked table SELECT.
+-- RLS already limits this grant to active catalog rows and administrators.
+grant select on public.addon_package_catalog to authenticated;
 alter function public.addon_list_packages() security invoker;
 do $autotax_verify$
 begin

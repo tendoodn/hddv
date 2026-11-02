@@ -2,10 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102">
-<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102">
-<title>Tendoo AutoTax V3.3.6 — Tài khoản và gói sử dụng</title>
+<link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
+<title>Tendoo AutoTax V3.4.0 — Tài khoản và gói sử dụng</title>
 <style>
 :root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#291b1f;background:#fff8f8;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
 *{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
@@ -58,7 +58,7 @@ button:hover:not(:disabled){filter:brightness(.97)}
 .portal-account-head{padding-bottom:8px;border-bottom:1px solid var(--tendoo-line)}
 .portal-account-head strong{color:#930013;overflow-wrap:anywhere}
 .mst-accordion{padding:0 16px}
-.mst-accordion summary{cursor:pointer;list-style:none;font-weight:800;color:#b00014;padding:15px 0;display:flex;gap:10px;align-items:center}
+.mst-accordion h2{font-size:19px;margin:0 0 8px}.mst-row .mst-name{color:#4b5563;font-size:12px;margin-top:4px;font-weight:600}.mst-row .mst-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mst-accordion summary{cursor:pointer;list-style:none;font-weight:800;color:#b00014;padding:15px 0;display:flex;gap:10px;align-items:center}
 .mst-accordion summary::-webkit-details-marker{display:none}
 .mst-accordion summary span{padding:1px 9px;border-radius:15px;background:#fff1f2}
 .mst-accordion summary small{margin-left:auto}
@@ -99,8 +99,8 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <body>
 <main class="wrap">
 <header>
-  <div class="brand">TENDOO <span>AUTOTAX V3.3.7</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./web.html" class="portal-admin-link">Tra cứu Web</a><a href="./admin.html?v=3.3.7" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
+  <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V3.4.0</span></div>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./web.html" class="portal-admin-link">Tra cứu Web</a><a href="./admin.html?v=3.4.0" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
@@ -137,14 +137,14 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 
  </div>
 
- <details id="mstProfilesWeb" class="panel mst-accordion">
-  <summary>Hồ sơ MST <span id="mstWebCount">0</span><small>▾ Xem / quản lý</small></summary>
+ <section id="mstProfilesWeb" class="panel mst-accordion mst-always-visible">
+  <h2>Hồ sơ MST đã liên kết <span id="mstWebCount">0</span></h2><p class="muted">Luôn hiển thị và đồng bộ theo tài khoản AutoTax trên Web, Add-on và Admin.</p>
   <form id="webAddMstForm" class="actions">
     <input id="webAddMst" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="MST 10 / 12 / 13 số (10-001)" aria-label="Thêm MST" required>
     <button type="submit">+ Thêm MST</button>
   </form>
   <div id="mstList"></div>
- </details>
+ </section>
 
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
@@ -181,6 +181,6 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a href="admin.html">Trang quản trị</a>.</footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./customer.js"></script>
+<script src="./customer.js?v=34"></script>
 </body>
 </html>

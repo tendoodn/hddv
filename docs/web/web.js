@@ -286,6 +286,7 @@ async function search(e){
  if(!start||!end||start>end)return show('Khoảng ngày chưa hợp lệ.');
  if(!selected('kind').length||!selected('form').length)return show('Chọn ít nhất một loại và một hình thức hóa đơn.');
  stopped=false;busyState(true);show('');
+ $('results').hidden=true;$('searchTotals').hidden=true;
  try{
   await ensurePermission(mst);
   if(govtMst!==mst||!govtToken)await signIntoTax(mst);
@@ -356,7 +357,7 @@ async function exportFile(kind){
     if(!det?.files)continue;
     for(const [name,data] of Object.entries(det.files)){
       if(!/\.xml$/i.test(name))continue;
-      z.push({name:safe(row.kind+'_'+row.khhdon+'_'+row.shdon)+'_'+safe(name)+'.xml'.replace(/\.xml\.xml$/i,'.xml'),data});
+      z.push({name:(safe(row.kind+'_'+row.khhdon+'_'+row.shdon)+'_'+safe(name)).replace(/\.xml$/i,'')+'.xml',data});
     }
    }
    if(!z.length)throw Error('Không tìm thấy XML gốc từ cổng Thuế trong danh sách hóa đơn. Không xuất dữ liệu giả.');

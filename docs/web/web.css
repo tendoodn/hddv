@@ -164,3 +164,21 @@ td.audit-info{color:#c6c6db}
 #issuerPdfLink{display:inline-flex;align-items:center;text-decoration:none;margin:0;padding:11px 14px}
 #issuerPdfLink[hidden]{display:none!important}
 @media(max-width:620px){.table-issuer-btn{display:block;margin:6px 0 0}}
+
+/* AutoTax v3.4 — account-based MST picker, no vault passphrase UI */
+.mst-hidden-select{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+.mst-picker-toggle{display:flex!important;align-items:center;justify-content:space-between;width:100%;min-height:46px;padding:10px 14px;border:1px solid #444957;border-radius:10px;background:#191d26;color:#f9fafb;font-weight:800;cursor:pointer;text-align:left}
+.mst-picker-toggle:hover,.mst-picker-toggle[aria-expanded="true"]{border-color:#57ccf7}
+.mst-picker-menu{display:flex;flex-direction:column;gap:4px;padding:8px;margin-top:5px;border-radius:12px;border:1px solid #393f4a;background:#0a0c11;max-height:300px;overflow-y:auto}
+.mst-picker-menu[hidden]{display:none!important}
+.mst-picker-card{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px;border-radius:10px;border:1px solid transparent}
+.mst-picker-card.selected{background:#22262d;border-color:#38485e}
+.mst-picker-choice{display:flex;flex:1;flex-direction:column;align-items:flex-start;min-width:0;gap:5px;background:transparent;border:0;color:#f7f8fa;padding:9px 10px;text-align:left;cursor:pointer}
+.mst-picker-choice strong{font-weight:850;font-size:15px;color:#fff}
+.mst-picker-choice small{color:#d1d5db;font-weight:650;font-size:12px;white-space:normal}
+.mst-picker-selected{display:inline-block;font-size:10px;border-radius:5px;background:#e9f4ff;color:#141b26;padding:2px 7px;font-weight:800}
+.mst-picker-remove{flex:none;color:#e5e7eb;background:transparent;border:0;border-radius:8px;font-size:16px;min-width:32px;min-height:32px;cursor:pointer}
+.mst-picker-remove:hover{background:#4b2028;color:#ffbfc0}
+.mst-picker-notice{color:#97c8d9;font-size:11px;line-height:1.5;margin-top:7px}
+.mst-picker-notice.error{color:#ff8693}
+.profile-sync-note{padding:9px 12px;border:1px solid #283744;border-radius:9px;background:#101b23;color:#b9d6e4;font-size:11px;line-height:1.5;margin-bottom:12px}

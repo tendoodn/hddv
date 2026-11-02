@@ -12,8 +12,10 @@ for(const id of ['issuerPdfFile','issuerPdfAttach','issuerPdfHelp','issuerPdfSta
  assert(page.includes('id="'+id+'"'), 'Missing issuer dialog control: '+id);
 }
 const downloaded=[];
+const session={user:{id:'account-1'}};
 const ctx={window:{
  WebInvoiceApp:{
+  getAccount:()=>session.user,
   progress:()=>{},
   async fetchDetail(){return {head:{}};},
   getMst:()=> '3600675874',
@@ -50,4 +52,7 @@ assert(files.some(f=>f.name.startsWith('PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH/')
 assert(files.some(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt'));
 assert(files.find(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt').data
  .includes('khong tu dong xac minh chu ky so'),'Provenance guide missing.');
+session.user={id:'account-2'};
+assert.equal(api.hasUserPdf(row),false,'Previously attached PDFs must not leak across signed-in accounts.');
+assert.throws(()=>api.attachUserPdf({...row,shdon:''},bytes,'unbound.pdf'),/hóa đơn/);
 console.log('Invoice issuer PDF local attachment, session scoping, validation and provenance tests passed.');

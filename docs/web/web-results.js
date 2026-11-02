@@ -32,11 +32,11 @@ function pickedRows(){
  const shown=filterRows();
  // Selection is preferred whenever the user ticked at least one currently visible invoice.
  const selected=shown.filter(r=>checked.has(keyOf(r)));
- return $('exportScope').value==='selected'&&selected.length?selected:shown;
+ return selected.length?selected:shown;
 }
 function exportSuffix(){
  const kind=$('visibleKind').value,month=$('visibleMonth').value;
- const amount=$('exportScope').value==='selected'&&pickedRows().length<filterRows().length?
+ const amount=pickedRows().length<filterRows().length?
   '_da_chon_'+pickedRows().length:'';
  return (kind==='all'?'':'_'+kind)+(month?'_thang_'+month.replace('-',''):'')+amount;
 }
@@ -47,7 +47,7 @@ function updateScope(){
  $('selectAllInvoices').indeterminate=!!page.length&&page.some(k=>checked.has(k))&&!page.every(k=>checked.has(k));
  $('selectionCount').textContent='Đã tick '+selected+'/'+shown.length+
   ' · sẽ xuất '+pickedRows().length+' hóa đơn ('+
-  (selected&&$('exportScope').value==='selected'?'đã tick':'toàn bộ đang hiển thị')+')';
+  (selected?'đã tick':'toàn bộ đang hiển thị')+')';
 }
 function totals(list){
  const active=list.filter(isActive);
@@ -76,7 +76,7 @@ function render(list,warnings=[]){
  checked.clear();visible=[];
  $('visibleKind').value='all';$('visibleMonth').value='';
  $('results').hidden=false;
- $('exportScope').value='selected';
+ // Selection mode is automatic: checked visible rows, otherwise all filtered rows.
  const st=totals(dataset);
  $('totalPayments').textContent=money(st.total);
  $('totalVat').textContent=money(st.vat);
@@ -353,7 +353,7 @@ function init(){
   for(const node of document.querySelectorAll('input.invoice-select'))node.checked=event.target.checked;
   updateScope();
  });
- $('exportScope').addEventListener('change',updateScope);
+ // No redundant export-scope selector: changes to filters/checkboxes update the export set.
  $('visibleKind').addEventListener('change',renderVisible);
  $('visibleMonth').addEventListener('change',renderVisible);
  $('clearVisibleMonth').addEventListener('click',()=>{$('visibleMonth').value='';renderVisible()});

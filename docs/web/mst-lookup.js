@@ -6,6 +6,7 @@ const $=id=>document.getElementById(id);
 const API='https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-mst-lookup';
 const state=[];
 let running=false,sequence=0,total=0,completed=0;
+let officialSelection=null,officialParsed=null;
 const columns=['STT','Mã số thuế','Loại mã','Thông tin người nộp thuế','Địa chỉ',
  'Cơ quan quản lý','Trạng thái','Kết quả','Nguồn dữ liệu'];
 function normalize(value){
@@ -67,37 +68,43 @@ function render(){
   address.className='mst-address';
   address.textContent=v.address||v.source||'—';
   info.append(tag,name,address);
-  if(v.type==='personal'&&!v.verified){
-   // Never send personal ID in a public URL. Only copy after user action.
-   const actions=document.createElement('div');
-   actions.className='mst-personal-actions';
-   const official=document.createElement('a');
-   official.href='https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp';
-   official.target='_blank';official.rel='noopener noreferrer';
-   official.textContent='Mở cổng Thuế cá nhân';
-   const copy=document.createElement('button');
-   copy.type='button';copy.className='mst-personal-copy';
-   copy.textContent='Sao chép 12 số';
-   copy.addEventListener('click',async()=>{
-    try{
-     await navigator.clipboard.writeText(v.mst);
-     status('Đã sao chép mã 12 số. Hãy xác minh qua cổng Thuế, eTax Mobile hoặc tài khoản định danh hợp lệ.');
-    }catch{
-     status('Trình duyệt không cho sao chép tự động. Hãy chọn mã 12 số trong bảng để sao chép thủ công.');
-    }
-   });
-   actions.append(official,copy);info.append(actions);
-  }
+  // Official portals require their own CAPTCHA session. We do not send tax IDs
+  // in query strings and we never claim that an arbitrary pasted row is verified.
+  const actions=document.createElement('div');
+  actions.className='mst-personal-actions';
+  const official=document.createElement('a');
+  official.href=window.MstOfficial.officialUrl(v.mst);
+  official.target='_blank';official.rel='noopener noreferrer';
+  official.textContent=v.type==='personal'?'Cổng Thuế cá nhân':'Cổng Thuế doanh nghiệp';
+  const copy=document.createElement('button');
+  copy.type='button';copy.className='mst-personal-copy';
+  copy.textContent='Sao chép mã';
+  copy.addEventListener('click',async()=>{
+   try{
+    await navigator.clipboard.writeText(v.mst);
+    status('Đã sao chép mã. Hãy dán vào cổng Thuế chính thức và nhập mã xác nhận trên trang đó.');
+   }catch{
+    status('Không thể sao chép tự động. Hãy chọn mã trong bảng và bấm Ctrl+C.');
+   }
+  });
+  const importButton=document.createElement('button');
+  importButton.type='button';importButton.className='mst-personal-copy';
+  importButton.textContent=v.manual?'Xem lại kết quả đã dán':'Nhập kết quả từ cổng Thuế';
+  importButton.addEventListener('click',()=>openOfficial(i));
+  actions.append(official,copy,importButton);info.append(actions);
   tr.append(info);
   createCell(tr,v.office||'Chưa có dữ liệu');
   const cell=document.createElement('td'),pill=document.createElement('span');
   pill.className='mst-pill '+(v.verified?'ok':'error');
-  pill.textContent=v.verified?
-   (v.status&&v.status!=='Chưa có dữ liệu trạng thái'?v.status:'✓ Có thông tin · Chưa xác minh trạng thái'):
-   '⚠ Chưa xác minh';
+  pill.textContent=v.manual?'Đã đối chiếu thủ công · chưa xác minh API':v.verified?
+   (v.status&&v.status!=='Chưa có dữ liệu trạng thái'?v.status:'Có dữ liệu · chưa xác minh trạng thái'):
+   '⚠ Chưa có dữ liệu xác minh';
   cell.append(pill);
   const small=document.createElement('div');small.className='mst-source';
-  small.textContent=v.verified?(v.source||'Nguồn không xác định'):
+  small.textContent=v.manual?
+   'Người dùng dán dữ liệu từ cổng Thuế; AutoTax KHÔNG xác minh máy chủ.'+
+    (v.status?' Trạng thái được dán: '+v.status:''):
+   v.verified?(v.source||'Nguồn tham khảo, không phải xác nhận của Cục Thuế'):
    (v.error==='personal_source_not_configured'?
     'Nguồn mã 12 số chưa được cấp quyền API. Xác minh qua cổng Thuế cá nhân.':
     v.error==='rate_limited'?'Nguồn giới hạn lượt; hãy thử lại sau.':
@@ -170,6 +177,7 @@ async function run(){
  if(!parsed.valid.length){status('Vui lòng nhập ít nhất một MST hợp lệ: 10 số, 10 số–3 số hoặc 12 số.');return}
  if(parsed.valid.length>20){status('Chỉ hỗ trợ tối đa 20 MST một lượt. Hãy giảm danh sách.');return}
  running=true;const stamp=++sequence;
+ if($('mstOfficialDialog').open)$('mstOfficialDialog').close();
  $('startMst').disabled=true;$('mstFilter').value='all';
  state.length=0;total=parsed.valid.length;completed=0;render();
  $('mstState').textContent='Đang truy xuất thông tin từ dịch vụ trung gian…';
@@ -214,7 +222,8 @@ function exportXlsx(){
  if(!rows.length||!window.Xlsx)return status('Chưa có kết quả để xuất Excel.');
  const array=rows.map((r,i)=>[i+1,r.mst,r.type==='personal'?'Cá nhân':r.type==='branch'?'Chi nhánh':'Tổ chức',
   r.name||'',r.address||'',r.office||'',r.status||'',
-  r.verified?'Có thông tin':'Chưa xác minh',r.source||'']);
+  r.manual?'Đối chiếu thủ công (chưa xác minh tự động)':
+   r.verified?'Có dữ liệu API tham khảo':'Chưa xác minh',r.source||'']);
  const book=[{name:'Tra cứu MST',columns:columns.map(header=>({header,width:32})),rows:array}];
  try{
   const data=window.Xlsx.buildXlsx(book),blob=new Blob([data],
@@ -224,6 +233,73 @@ function exportXlsx(){
   document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){status('Không xuất được Excel: '+(e.message||e))}
 }
+// Clipboard data is ephemeral. No localStorage and no server upload.
+function clearOfficial(){
+ officialSelection=null;officialParsed=null;
+ $('mstOfficialPaste').value='';
+ for(const id of ['mstOfficialName','mstOfficialAddress','mstOfficialOffice','mstOfficialStatus'])
+  $(id).value='';
+ $('mstOfficialConfirm').checked=false;
+ $('mstOfficialSave').disabled=true;
+ $('mstOfficialNotice').textContent='';
+}
+function openOfficial(index){
+ const v=state[index];
+ if(!v||running)return status('Chỉ đối chiếu khi kết quả tra cứu đã tải xong.');
+ clearOfficial();
+ officialSelection={index,code:v.mst,stamp:sequence};
+ const url=window.MstOfficial.officialUrl(v.mst);
+ $('mstOfficialCode').textContent=v.mst;
+ $('mstOfficialPortal').href=url;
+ $('mstOfficialType').textContent=v.type==='personal'?
+  'Chọn ô Số CMND/Thẻ căn cước tại mục người nộp thuế TNCN.':
+  'Chọn mục Thông tin người nộp thuế và nhập MST doanh nghiệp/chi nhánh.';
+ $('mstOfficialNotice').textContent='Mở cổng Thuế, nhập mã và CAPTCHA, tra cứu rồi sao chép CHỈ MỘT DÒNG kết quả trong bảng. Không dán cả trang.';
+ $('mstOfficialDialog').showModal();
+}
+function officialSaveState(){
+ $('mstOfficialSave').disabled=!officialSelection||!officialParsed?.ok||
+  !$('mstOfficialConfirm').checked||!$('mstOfficialName').value.trim();
+}
+$('mstOfficialParse').addEventListener('click',()=>{
+ if(!officialSelection)return;
+ const parsed=window.MstOfficial.parseCopiedRow(
+  $('mstOfficialPaste').value,officialSelection.code);
+ officialParsed=parsed.ok?parsed:null;
+ $('mstOfficialNotice').textContent=parsed.ok?
+  'Mã đã khớp với dòng dán. Hãy kiểm tra các trường trước khi lưu. KHÔNG phải xác minh qua API.':
+  parsed.reason;
+ for(const [id,key] of [['mstOfficialName','name'],['mstOfficialAddress','address'],
+  ['mstOfficialOffice','office'],['mstOfficialStatus','status']])
+  $(id).value=parsed.ok?parsed[key]||'':'';
+ $('mstOfficialConfirm').checked=false;
+ officialSaveState();
+});
+for(const id of ['mstOfficialName','mstOfficialAddress','mstOfficialOffice','mstOfficialStatus'])
+ $(id).addEventListener('input',officialSaveState);
+$('mstOfficialConfirm').addEventListener('change',officialSaveState);
+$('mstOfficialSave').addEventListener('click',()=>{
+ const s=officialSelection;
+ if(!s||!officialParsed?.ok||!$('mstOfficialConfirm').checked||
+  !String($('mstOfficialName').value||'').trim())return;
+ const row=state[s.index];
+ if(running||sequence!==s.stamp||!row||
+  normalize(row.mst)?.digits!==normalize(s.code)?.digits)
+  return $('mstOfficialNotice').textContent='Danh sách đã đổi. Hãy tra cứu và đối chiếu lại.';
+ state[s.index]={...row,name:$('mstOfficialName').value.trim().slice(0,250),
+  address:$('mstOfficialAddress').value.trim().slice(0,450),
+  office:$('mstOfficialOffice').value.trim().slice(0,250),
+  status:$('mstOfficialStatus').value.trim().slice(0,250),
+  verified:false,manual:true,error:'user_copied_official_row',
+  source:'Người dùng đối chiếu thủ công tại '+window.MstOfficial.officialUrl(s.code),
+  manuallyCheckedAt:new Date().toISOString()};
+ $('mstOfficialDialog').close();render();
+ status('Đã lưu kết quả do người dùng đối chiếu cho '+s.code+
+  ' trong tab hiện tại. AutoTax chưa xác minh độc lập thông tin này.');
+});
+$('mstOfficialClose').addEventListener('click',()=>$('mstOfficialDialog').close());
+$('mstOfficialDialog').addEventListener('close',clearOfficial);
+
 $('mstInput').addEventListener('input',()=>{
  const x=parseInput(),n=x.valid.length;
  $('mstInputCount').textContent=n+' mã'+(x.invalid.length?' · '+x.invalid.length+' sai định dạng':'');

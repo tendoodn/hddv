@@ -72,7 +72,20 @@
     </form>
   </section>
   <section id="results" class="result-card" hidden>
-    <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div>
+    <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
+    <div class="invoice-stats">
+      <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
+      <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
+      <div><span>Mua vào / Bán ra</span><strong id="purchaseSaleTotals">—</strong></div>
+      <div><span>Hệ số K (Bán / Mua)</span><strong id="kRatio">—</strong></div>
+    </div>
+    <div class="export-toolbar">
+      <label for="exportScope">Phạm vi xuất
+        <select id="exportScope"><option value="all">Tất cả hóa đơn</option><option value="selected">Chỉ hóa đơn đã tick</option><option value="month">Theo tháng</option></select>
+      </label>
+      <label id="exportMonthWrap" hidden for="exportMonth">Tháng xuất
+        <input id="exportMonth" type="month"></label>
+      <span id="selectionCount" class="selection-count">Đã chọn 0 hóa đơn</span>
       <div class="exports">
         <button id="exportExcel" type="button">Tải Excel</button>
         <button id="exportXml" type="button">Tải XML</button>
@@ -80,9 +93,44 @@
         <button id="exportPdf" type="button" class="outline">Liên kết PDF gốc</button>
       </div>
     </div>
-    <p class="result-help">File PDF gốc do nhà cung cấp hóa đơn phát hành, có thể cần mã tra cứu riêng. AutoTax không gọi bản thể hiện tự dựng là “PDF gốc”.</p>
-    <div class="table-wrap"><table><thead><tr><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Trạng thái</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+    <p class="result-help">Có thể tick từng hóa đơn hoặc chọn tất cả dòng đang hiển thị. Xuất theo tháng lọc trên ngày lập hóa đơn. Các tổng tiền là tổng của cả kỳ tra cứu, không thay đổi khi bạn tick. PDF gốc phụ thuộc đơn vị phát hành.</p>
+    <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+    <section id="stockExport" class="stock-export">
+      <h3>Xuất phiếu nhập kho · ánh xạ SKU (Tendoo / MISA)</h3>
+      <p>Chỉ áp dụng hóa đơn mua vào thuộc phạm vi xuất bên trên. Dữ liệu danh mục tải trên máy; biểu mẫu nhập kho dùng chung với AutoTax Extension.</p>
+      <div class="stock-grid">
+        <label>Nền tảng<select id="stockPlatform"><option value="tendoo">Tendoo</option><option value="misa">MISA eShop</option></select></label>
+        <label>Danh mục sản phẩm (.xlsx hoặc .csv)<input id="stockCatalog" type="file" accept=".xlsx,.csv"></label>
+        <label id="warehouseWrap" hidden>Mã kho MISA (*)<input id="stockWarehouse" placeholder="KHO01" maxlength="60"></label>
+        <label id="stockDocWrap" hidden>Số chứng từ MISA gần nhất (*)<input id="stockLastDoc" placeholder="NK0001" maxlength="50"></label>
+      </div>
+      <div class="stock-actions">
+        <button id="stockMapBtn" type="button" class="outline">Ánh xạ mã hàng</button>
+        <button id="stockDownloadBtn" type="button">Tải phiếu nhập kho ZIP</button>
+        <span id="stockStatus" role="status"></span>
+      </div>
+    </section>
   </section>
+  <dialog id="invoiceDetailDialog" class="invoice-detail-dialog" aria-labelledby="invoiceDetailTitle">
+    <div class="dialog-heading"><h2 id="invoiceDetailTitle">Chi tiết hóa đơn</h2><button id="closeInvoiceDetail" type="button" class="outline">Đóng</button></div>
+    <p id="invoiceDetailMeta"></p>
+    <div id="invoiceDetailStatus" class="muted"></div>
+    <div class="table-wrap"><table><thead><tr><th>STT</th><th>MST người bán</th><th>Tên người bán</th><th>Mã hàng hóa</th><th>Tên hàng hóa</th><th>Đơn vị tính</th><th>Thuế suất</th><th>Thành tiền chưa thuế</th><th>Thành tiền gồm thuế</th></tr></thead><tbody id="detailRows"></tbody></table></div>
+    <div class="invoice-detail-totals"><span>Tổng tiền thuế: <b id="detailTax">—</b></span><span>Tổng tiền hóa đơn: <b id="detailTotal">—</b></span></div>
+  </dialog>
+  <dialog id="skuMapDialog" class="stock-map-dialog" aria-labelledby="skuMapTitle">
+    <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
+    <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p>
+    <div id="skuMapList"></div>
+    <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất phiếu</button></div>
+  </dialog>
+  <dialog id="kWarningDialog" class="k-warning-dialog" aria-labelledby="kWarningTitle">
+    <h2 id="kWarningTitle">Cảnh báo rủi ro hệ số K</h2>
+    <p id="kWarningText"></p>
+    <label><input type="checkbox" id="disableKPopup"> Tắt popup cảnh báo hệ số K trên trình duyệt này</label>
+    <div class="stock-actions"><button id="closeKWarning" type="button">Đã hiểu</button></div>
+    <small>Hệ số K chỉ để tham khảo, không phải kết luận vi phạm thuế.</small>
+  </dialog>
   <footer><a href="./">Tài khoản AutoTax</a> · <a href="https://tendoodn.github.io/t/">Báo giá &amp; tiện ích</a> · <a href="https://tendoodn.github.io/t/k.html">Theo dõi hệ số K</a>
     <p>Tra cứu dựa trên dữ liệu cổng Thuế. Việc kết nối thực tế còn phụ thuộc phản hồi và cơ chế xác thực của cổng Thuế.</p>
   </footer>
@@ -94,5 +142,7 @@
 <script src="./web/captcha-svg.js?v=1"></script>
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
-<script src="./web/web.js?v=4"></script>
+<script src="./web/tendoo-import.js?v=1"></script>
+<script src="./web/web.js?v=5"></script>
+<script src="./web/web-results.js?v=1"></script>
 </body></html>

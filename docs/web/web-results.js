@@ -169,7 +169,7 @@ function fingerprint(items){
  let h=2166136261;
  for(const p of items){
   const text=p.sku+'|'+p.name+'\n';
-  for(const ch of text)h=Math.imul(h^ch.charCodeAt(0),16777619)>>>0;
+  for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619)>>>0;
  }
  return stockPlatform+'-catalog-'+items.length+'-'+h.toString(16);
 }

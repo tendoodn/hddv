@@ -566,6 +566,7 @@ function onJobMessage(m) {
   if (m.type === 'log') log(m.text, m.level);
   if (m.type === 'error') { log(m.text, 'error'); $('status').textContent = 'Lỗi – xem chi tiết bên dưới'; }
   if (m.type === 'done') {
+    void updateIssuerPending();
     $('status').textContent = m.stopped ? 'Đã dừng – đã lưu phần dữ liệu tải được' : `Hoàn tất. File nằm trong Downloads/${m.dir || 'HoaDon'}/`;
     if (!m.stopped && !stopped && m.total) showDone(m);
   }
@@ -707,6 +708,31 @@ $('historyExport')?.addEventListener('click',()=>{
 });
 // Explicit user gesture is required for optional publisher-domain access.
 // Permissions are not requested during startup, and no GDT password is sent.
+// Lookup queue is stored only in Chrome's session storage, without invoice
+// PDF bytes, and is opened one real supplier portal at a time on user click.
+async function updateIssuerPending(){
+ const button=$('issuerOpenNext');
+ if(!button)return;
+ try{
+  const r=await chrome.runtime.sendMessage({type:'issuer-queue-count'});
+  const n=r?.ok?Number(r.count||0):0;
+  button.hidden=n===0;
+  button.textContent='Tiếp tục lấy PDF gốc ('+n+' hóa đơn)';
+ }catch{button.hidden=true}
+}
+$('issuerOpenNext')?.addEventListener('click',async()=>{
+ const button=$('issuerOpenNext');button.disabled=true;
+ try{
+  const res=await chrome.runtime.sendMessage({type:'issuer-open-next'});
+  if(!res?.ok)throw Error(res?.error||'Không mở được cổng phát hành.');
+  log('Đã mở cổng tra cứu PDF gốc cho '+res.invoice+
+    '. Nhập mã bảo mật, thực hiện CAPTCHA rồi bấm Tìm PDF trên trang.', 'ok');
+  await updateIssuerPending();
+ }catch(e){log('Không mở được hóa đơn: '+(e.message||e),'error')}
+ finally{button.disabled=false}
+});
+void updateIssuerPending();
+
 $('issuerPdfPermission')?.addEventListener('click',async()=>{
  const button=$('issuerPdfPermission'),label=$('issuerPdfPermissionStatus');
  button.disabled=true;

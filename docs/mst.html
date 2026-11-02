@@ -118,11 +118,14 @@
   <div><label for="mstOfficialOffice">Cơ quan thuế (nếu có)</label><input id="mstOfficialOffice" maxlength="250" autocomplete="off"></div>
   <div><label for="mstOfficialStatus">Trạng thái/ghi chú từ bảng</label><input id="mstOfficialStatus" maxlength="250" autocomplete="off"></div>
  </div>
- <label class="mst-official-confirm"><input id="mstOfficialConfirm" type="checkbox"><span>Tôi đã so sánh các trường với hàng kết quả trên cổng Thuế và hiểu đây là thông tin do người dùng cung cấp, AutoTax không tự xác thực.</span></label>
- <div class="mst-official-actions"><button id="mstOfficialSave" type="button" disabled>Lưu kết quả đối chiếu trong tab</button></div>
+ <label class="mst-official-confirm"><input id="mstOfficialConfirm" type="checkbox"><span>Tôi đã thực sự tra cứu mã này trên cổng đang chọn, đã kiểm tra kết quả hoặc không tìm thấy, và hiểu AutoTax không tự xác thực thông tin.</span></label>
+ <div class="mst-official-actions">
+  <button id="mstOfficialSave" type="button" disabled>Lưu dòng kết quả trong tab</button>
+  <button id="mstOfficialNoResult" type="button" disabled>Đánh dấu tôi không thấy kết quả</button>
+ </div>
  <p><strong>Riêng tư:</strong> kết quả hai cổng được lưu tách biệt trong tab hiện tại, không gửi nội dung dán lên Supabase. Excel sẽ có cột riêng cho từng cổng và cảnh báo khi tên khác nhau. Không có kết quả ở một cổng không có nghĩa MST không tồn tại.</p>
 </dialog>
 <script src="./web/xlsx.js?v=1"></script>
 <script src="./web/mst-official.js?v=2"></script>
-<script src="./web/mst-lookup.js?v=8"></script>
+<script src="./web/mst-lookup.js?v=9"></script>
 </body></html>

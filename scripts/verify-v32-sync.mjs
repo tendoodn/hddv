@@ -118,9 +118,13 @@ assert(crxPanel.includes('PL giảm thuế GTGT')&&crxPanel.includes('Bảng kê
 const downloadHref='https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF';
 assert(portal.includes('id="extensionDownloadBtn"')&&portal.includes('href="'+downloadHref+'"'),
  'Download button must link directly to the requested Google Drive folder');
-assert(/id="extensionDownloadBtn"[^>]*>Tải Extension<\/a>/.test(portal)&&
+assert(/id="extensionDownloadBtn"[^>]*>[^<]*Tải Extension<\/a>/.test(portal)&&
  /id="adminLink"[^>]*>Quản trị<\/a>/.test(portal),
- 'Two always-visible portal header buttons must be present');
+ 'Customer dashboard download and direct admin link must be present');
+assert(portal.indexOf('id="extensionDownloadBtn"')>portal.indexOf('id="dashboard"')&&
+ portal.indexOf('id="extensionDownloadBtn"')<portal.indexOf('id="logoutBtn"')&&
+ portal.indexOf('id="extensionDownloadBtn"')<portal.indexOf('id="refreshBtn"'),
+ 'Download button must live next to Refresh and Logout inside the customer dashboard');
 const customerSource=load('docs/customer.js');
 assert(!customerSource.includes('loadExtensionDownloadLink')&&
  !customerSource.includes('refreshAdminLink')&&

@@ -7,7 +7,7 @@ const PUBLIC_KEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
 const GATEWAY=SUPABASE+'/functions/v1/autotax-web-gateway';
 const $=id=>document.getElementById(id);
 const client=window.supabase?.createClient(SUPABASE,PUBLIC_KEY);
-let account=null,govtToken='',govtMst='',captchaKey='',captchaUrl='',rows=[],details=new Map();
+let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
 let busy=false,stopped=false,selectedMode='mst',profileMsts=[];
 const vn=(iso)=>iso.split('-').reverse().join('/');
 const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
@@ -23,7 +23,9 @@ const govSession={get token(){return govtToken}};
 window.WebTaxState=govSession;
 function clearGov(){
  govtToken='';govtMst='';details=new Map();rows=[];$('gdtPassword').value='';$('gdtStatus').textContent='Chưa có phiên đăng nhập cổng Thuế.';
- $('captchaBox').hidden=false;$('results').hidden=true;
+ captchaKey='';captchaValue='';captchaMode='pending';captchaIssuedAt=0;
+ $('captchaBox').hidden=true;$('captchaStatus').textContent='Mã xác nhận sẽ được xử lý tự động khi tra cứu.';
+ $('results').hidden=true;
 }
 async function authedRequest(op,data={},signal){
  const {data:sessionData}=await client.auth.getSession();
@@ -78,22 +80,62 @@ function tokenMst(token){
  return String(p.sub||'').replace(/\D/g,'');
  }catch{return '';}
 }
+// Uses the exact SVG recognition engine shared with the extension. Never stores CAPTCHA or passwords.
+function normalizeCaptchaSvg(content){
+ const value=String(content||'').trim();
+ let svg=value;
+ if(/^data:image\/svg\+xml;base64,/i.test(value))
+   svg=atob(value.split(',').slice(1).join(','));
+ else if(/^data:image\/svg\+xml,/i.test(value))
+   svg=decodeURIComponent(value.slice(value.indexOf(',')+1));
+ else if(value.startsWith('<?xml'))svg=value.slice(value.indexOf('<svg'));
+ if(!/^<svg(?:\s|>)/i.test(svg))throw Error('Cổng Thuế không trả CAPTCHA SVG đúng định dạng.');
+ const doc=new DOMParser().parseFromString(svg,'image/svg+xml');
+ if(doc.querySelector('parsererror')||doc.documentElement.localName!=='svg')
+   throw Error('Không đọc được CAPTCHA SVG từ cổng Thuế.');
+ return doc.documentElement.outerHTML;
+}
+function manualCaptcha(msg){
+ captchaMode='manual';captchaValue='';
+ $('captchaBox').hidden=false;
+ $('captchaInput').value='';
+ $('captchaStatus').textContent=msg||'Không đủ độ tin cậy để tự đọc mã. Vui lòng nhập CAPTCHA trên ảnh.';
+}
 async function getCaptcha(){
- if(!account)return;
+ if(!account)return false;
  $('reloadCaptcha').disabled=true;
+ captchaKey='';captchaValue='';captchaMode='pending';captchaIssuedAt=0;
+ $('captchaStatus').textContent='Đang tải và nhận dạng mã xác nhận…';
  try{
   const res=await authedRequest('captcha');
   if(!res.ok)throw Error(await messageOf(res));
   const data=await res.json();
-  if(!data?.key||!/^<svg[\s>]/i.test(String(data.content||'').trim()))
-   throw Error('Cổng Thuế không trả ảnh CAPTCHA hợp lệ.');
+  if(!data?.key||!data?.content)throw Error('Cổng Thuế chưa trả mã xác nhận.');
+  const svg=normalizeCaptchaSvg(data.content);
   captchaKey=String(data.key);
+  captchaIssuedAt=Date.now();
   if(captchaUrl)URL.revokeObjectURL(captchaUrl);
-  captchaUrl=URL.createObjectURL(new Blob([data.content],{type:'image/svg+xml'}));
+  captchaUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
   $('captchaImage').src=captchaUrl;
   $('captchaInput').value='';
- }catch(e){captchaKey='';show('Không tải được CAPTCHA: '+e.message)}
- finally{$('reloadCaptcha').disabled=false}
+  const result=window.SvgCaptcha?.solve(svg);
+  const text=String(result?.text||'').trim();
+  const confidence=Number(result?.confidence||0);
+  if(text.length>=4&&text.length<=8&&/^[a-z0-9]+$/i.test(text)&&confidence>=80){
+   captchaValue=text;captchaMode='automatic';
+   $('captchaBox').hidden=true;
+   $('captchaStatus').textContent='Đã tự nhận dạng CAPTCHA (độ tin cậy '+confidence+'%). Không cần nhập mã.';
+   return true;
+  }
+  manualCaptcha('Không nhận dạng đủ tin cậy ('+confidence+'%). Vui lòng nhập mã trên ảnh một lần.');
+  return false;
+ }catch(e){
+  captchaKey='';captchaMode='error';
+  $('captchaBox').hidden=false;
+  $('captchaStatus').textContent='Không tải được CAPTCHA tự động.';
+  show('Không tải được CAPTCHA: '+e.message);
+  return false;
+ }finally{$('reloadCaptcha').disabled=false}
 }
 async function refreshAccount(){
  if(!client){show('Không tải được thư viện đăng nhập Supabase. Vui lòng tải lại trang.');return}
@@ -122,21 +164,51 @@ async function refreshAccount(){
 async function signIntoTax(mst){
  const username=$('mst').value.trim();
  const password=$('gdtPassword').value;
- const cvalue=$('captchaInput').value.trim();
  if(!password)throw Error('Hãy nhập mật khẩu cổng Thuế.');
- if(!captchaKey||!cvalue)throw Error('Hãy nhập mã CAPTCHA trên ảnh.');
- progress('Đang xác thực tài khoản cổng Thuế…');
- const res=await authedRequest('authenticate',{username,password,ckey:captchaKey,cvalue});
- $('gdtPassword').value='';
- // Captcha is single use, even if login failed.
- captchaKey='';$('captchaInput').value='';
- if(!res.ok){await getCaptcha();throw Error(await messageOf(res))}
- const json=await res.json().catch(()=>({}));
- const token=extractToken(json),sub=tokenMst(token);
- if(!token||!sub){await getCaptcha();throw Error('Cổng Thuế chưa trả phiên đăng nhập hợp lệ. Hãy thử đăng nhập tại website chính thức để kiểm tra tài khoản.')}
- if(sub!==mst){await getCaptcha();throw Error('MST đăng nhập cổng Thuế khác MST đã chọn trong AutoTax.')}
- govtToken=token;govtMst=mst;$('captchaBox').hidden=true;
- $('gdtStatus').textContent='Đã xác thực cổng Thuế cho MST '+mst+' · phiên chỉ ở trong bộ nhớ tab.';
+ if(!captchaKey||Date.now()-captchaIssuedAt>120000)await getCaptcha();
+ if(!captchaKey)throw Error('Không lấy được CAPTCHA từ cổng Thuế. Hãy bấm Đổi mã và thử lại.');
+ const getValue=()=>captchaMode==='automatic'?captchaValue:$('captchaInput').value.trim();
+ if(!getValue()){
+  $('captchaBox').hidden=false;
+  throw Error('Không nhận dạng được CAPTCHA tự động. Hãy nhập mã trên ảnh.');
+ }
+ progress('Đang xác thực cổng Thuế…');
+ try{
+  // One bounded automatic retry, only when the server explicitly identifies CAPTCHA failure.
+  for(let attempt=0;attempt<2;attempt++){
+   const cvalue=getValue();
+   if(!cvalue)throw Error('Hãy nhập CAPTCHA hiển thị trên ảnh.');
+   const usingAuto=captchaMode==='automatic';
+   const key=captchaKey;
+   captchaKey='';captchaValue='';
+   const res=await authedRequest('authenticate',{username,password,ckey:key,cvalue});
+   if(res.ok){
+    const json=await res.json().catch(()=>({}));
+    const token=extractToken(json),sub=tokenMst(token);
+    if(!token||!sub)throw Error('Cổng Thuế chưa trả phiên đăng nhập hợp lệ. Vui lòng kiểm tra tên đăng nhập và dịch vụ kết nối.');
+    if(sub!==mst)throw Error('MST đăng nhập cổng Thuế khác MST hồ sơ AutoTax đang chọn.');
+    govtToken=token;govtMst=mst;$('captchaBox').hidden=true;
+    $('gdtStatus').textContent='Đã xác thực cổng Thuế cho MST '+mst+' · phiên chỉ ở bộ nhớ tab.';
+    $('captchaStatus').textContent='Đã đăng nhập bằng mã xác nhận tự xử lý.';
+    return;
+   }
+   const message=await messageOf(res);
+   const captchaRejected=/captcha|mã xác nhận|mã kiểm tra|cvalue|ckey/i.test(message);
+   const retry=usingAuto&&captchaRejected&&attempt===0;
+   await getCaptcha();
+   if(retry&&captchaMode==='automatic'){
+    progress('CAPTCHA chưa được chấp nhận, đang thử lại một lần với mã mới…');
+    continue;
+   }
+   if(captchaRejected&&captchaMode!=='automatic')
+    throw Error('CAPTCHA tự động chưa được chấp nhận. Vui lòng nhập mã thủ công trong khung bên dưới.');
+   throw Error('Cổng Thuế từ chối đăng nhập: '+message);
+  }
+  throw Error('Cổng Thuế không chấp nhận CAPTCHA sau lần thử lại. Vui lòng thử thủ công.');
+ }finally{
+  // No persistence; after one sign-in attempt remove password from HTML input.
+  $('gdtPassword').value='';
+ }
 }
 async function ensurePermission(mst){
  const {data,error}=await client.rpc('addon_verify_session_mst_v33',{p_mst:mst});

@@ -5,6 +5,8 @@
 const SUPABASE='https://ucqqjdsoyvvaxswzbhaw.supabase.co';
 const PUBLIC_KEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
 const GATEWAY=SUPABASE+'/functions/v1/autotax-web-gateway';
+let gatewayRegion='ap-southeast-1'; // Singapore, closer to Viet Nam than the previous Seoul route.
+const gatewayUrl=()=>GATEWAY+'?forceFunctionRegion='+gatewayRegion;
 const $=id=>document.getElementById(id);
 const client=window.supabase?.createClient(SUPABASE,PUBLIC_KEY);
 let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
@@ -40,7 +42,7 @@ async function authedRequest(op,data={},signal){
  const {data:sessionData}=await client.auth.getSession();
  const token=sessionData?.session?.access_token;
  if(!token)throw Error('Phiên AutoTax đã hết hạn. Vui lòng đăng nhập lại ở trang tài khoản.');
- const res=await fetch(GATEWAY,{method:'POST',signal,headers:{'Content-Type':'application/json',
+ const res=await fetch(gatewayUrl(),{method:'POST',signal,headers:{'Content-Type':'application/json',
    apikey:PUBLIC_KEY,Authorization:'Bearer '+token},
    body:JSON.stringify({op,...data})});
  return res;
@@ -393,6 +395,9 @@ function init(){
  $('stopBtn').addEventListener('click',()=>{stopped=true;progress('Đang dừng sau yêu cầu hiện tại…')});
  $('reloadCaptcha').addEventListener('click',getCaptcha);
  $('retryConnectionBtn').addEventListener('click',async()=>{
+  // A user-requested retry tries a different supported Supabase Edge region once.
+  gatewayRegion=gatewayRegion==='ap-southeast-1'?'ap-northeast-1':'ap-southeast-1';
+  $('captchaStatus').textContent='Đang thử kết nối qua tuyến máy chủ khác…';
   const ok=await getCaptcha();
   if(ok)show('Đã lấy CAPTCHA thành công. Nhấn Tìm kiếm hóa đơn để tiếp tục.',true);
  });

@@ -1,0 +1,7 @@
+# V1.1 source owner. GitHub will enforce owner review once a branch ruleset
+# requires CODEOWNERS approval. This file alone does NOT block external forks.
+* @tendoodn
+/.github/ @tendoodn
+/autotax/ @tendoodn
+/docs/ @tendoodn
+/addon-portal/ @tendoodn

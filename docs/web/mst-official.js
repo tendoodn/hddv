@@ -34,30 +34,43 @@ function parseCopiedRow(raw,requested,portal){
   return {ok:false,reason:'Hãy sao chép đúng một dòng kết quả trong bảng, không dán cả trang.'};
  const ids=cells.map((cell,i)=>({id:normalize(cell),index:i})).filter(x=>x.id);
  const matches=ids.filter(x=>x.id.digits===id.digits);
- if(matches.length!==1)
-  return {ok:false,reason:'Nội dung dán phải chứa đúng một mã trùng với mã đang tra cứu.'};
- const at=matches[0].index;
- // Prevent data from a second person's/company's row being assigned to this ID.
- // One old 10-digit MST alongside a 12-digit citizen ID is valid on TNCN pages.
- const oldPersonal=id.kind==='personal'&&selectedPortal==='personal'&&ids.length===2&&ids.some(x=>
-  x.index===at-3&&x.id.kind==='business');
- if(ids.length>1&&!oldPersonal)
-  return {ok:false,reason:'Có nhiều mã số thuế trong nội dung dán. Chỉ sao chép một dòng kết quả.'};
- // Business result: STT, tax code, name, address, tax office, tax status.
- // Personal result may display an older 10-digit MST before the 12-digit CCCD:
- // STT, old tax code, name, tax office, citizen ID, update date, notes.
- const isPersonalSecondary=id.kind==='personal'&&selectedPortal==='personal'&&at>=3&&
-   !!normalize(cells[at-3])&&normalize(cells[at-3]).kind==='business';
- const name=isPersonalSecondary?cells[at-2]:cells[at+1];
+ if(!matches.length)
+  return {ok:false,reason:'Dòng kết quả không chứa CCCD/MST đã chọn. Kiểm tra số 0 đầu và đúng người nộp thuế.'};
+ // The TNCN portal may return either:
+ // (A) STT, legacy 10-digit MST, name, office, CCCD12, update date, notes;
+ // (B) STT, current 12-digit citizen ID, name, office, same CCCD12, date, notes.
+ // An old 10-digit tax code and its linked CCCD in ONE row are NOT two people.
+ const primary=normalize(cells[1]);
+ const personalId=selectedPortal==='personal'?normalize(cells[4]):null;
+ const personalLayout=selectedPortal==='personal'&&cells.length>=5&&
+  !!primary&&!!personalId&&personalId.kind==='personal'&&
+  [primary.digits,personalId.digits].includes(id.digits);
+ const legitimate=personalLayout&&ids.every(x=>
+  x.id.digits===primary.digits||x.id.digits===personalId.digits);
+ // For the new CCCD-as-tax-code format the same 12 digits may occur twice;
+ // uniqueness must be by VALUE, not by number of table cells.
+ if(ids.some(x=>x.id.digits!==id.digits)&&!legitimate)
+  return {ok:false,reason:'Dòng chứa số định danh khác. Hãy chọn đúng một người và sao chép trọn dòng.'};
+ if(!legitimate&&matches.length>2)
+  return {ok:false,reason:'Đã sao chép quá nhiều vị trí mã số. Chỉ dán một dòng dữ liệu.'};
+ // Normal business rows have their ID in column 1 (after STT).
+ // TNCN legacy rows identify the person by CCCD in column 4.
+ const at=personalLayout?1:matches[0].index;
+ const name=personalLayout?cells[2]:cells[at+1];
  if(!goodName(name||''))
   return {ok:false,reason:'Không đọc được tên người nộp thuế; hãy sao chép một dòng kết quả đầy đủ.'};
+ const previousTaxCode=personalLayout&&primary.kind==='business'?primary.display:'';
+ const office=personalLayout?cells[3]:
+  selectedPortal==='personal'?cells[at+2]:cells[at+3];
+ const status=personalLayout?cells[6]||'':
+  selectedPortal==='personal'?cells[at+3]:cells[at+4];
  return {
   ok:true,code:id.display,
   name:safeText(name,250),
   address:selectedPortal==='personal'?'':safeText(cells[at+2]||'',450),
-  office:safeText(isPersonalSecondary?cells[at-1]:selectedPortal==='personal'?cells[at+2]:cells[at+3],250),
-  status:safeText(isPersonalSecondary?cells[at+2]:selectedPortal==='personal'?cells[at+3]:cells[at+4],250),
-  previousTaxCode:isPersonalSecondary?normalize(cells[at-3]).display:'',
+  office:safeText(office||'',250),
+  status:safeText(status||'',250),
+  previousTaxCode,
   portal:selectedPortal,source:OFFICIAL[selectedPortal],
   // This flag only means the copied row matches the searched ID.
   // It NEVER means we verified this against the government server.

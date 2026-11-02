@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AutoTax - Công cụ tải HĐĐT",
   "short_name": "AutoTax",
-  "version": "3.3.7",
+  "version": "3.4.0",
   "description": "AutoTax - Công cụ hỗ trợ tra cứu và tải hóa đơn điện tử.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -13,7 +13,8 @@
   "permissions": [
     "sidePanel",
     "downloads",
-    "storage"
+    "storage",
+    "permissions"
   ],
   "host_permissions": [
     "https://hoadondientu.gdt.gov.vn/*",
@@ -63,5 +64,13 @@
       ],
       "run_at": "document_idle"
     }
+  ],
+  "optional_host_permissions": [
+    "https://www.meinvoice.vn/*",
+    "https://tra-cuu.meinvoice.vn/*",
+    "https://sinvoice.viettel.vn/*",
+    "https://vinvoice.viettel.vn/*",
+    "https://xemhoadon32.vnpt.vn/*",
+    "https://vinaphone-portal.vnpt-invoice.com.vn/*"
   ]
 }

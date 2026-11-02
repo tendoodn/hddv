@@ -10,6 +10,7 @@ on:
       - "scripts/verify-admin-package.mjs"
       - "scripts/verify-web-bridge.mjs"
       - "scripts/verify-web-results.mjs"
+      - "scripts/verify-web-vault-pdf-audit.mjs"
       - "tests/v32/**"
       - ".github/workflows/verify-v32.yml"
   pull_request:
@@ -21,6 +22,7 @@ on:
       - "scripts/verify-admin-package.mjs"
       - "scripts/verify-web-bridge.mjs"
       - "scripts/verify-web-results.mjs"
+      - "scripts/verify-web-vault-pdf-audit.mjs"
       - ".github/workflows/verify-v32.yml"
 permissions:
   contents: read
@@ -36,6 +38,7 @@ jobs:
       - run: node scripts/verify-admin-package.mjs
       - run: node scripts/verify-web-bridge.mjs
       - run: node scripts/verify-web-results.mjs
+      - run: node scripts/verify-web-vault-pdf-audit.mjs
       - name: Verify published Pages branch matches customer/admin and Web code
         if: github.event_name == 'push'
         shell: bash

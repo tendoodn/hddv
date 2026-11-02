@@ -39,7 +39,7 @@ assert(addon.includes('if(!invoiceFormats.pdf)')&&
  addon.includes('Pdf.buildInvoicePdf(row,inv,source)')&&
  addon.includes('PDF_Dung_Lai_Tu_CQT_Khong_Phai_Goc'));
 assert(addon.includes('PDF_Chua_Lay_Duoc_Goc')&&
- web.includes('Link tra cứu: '),'Link/code must be reported for issuer failures.');
+ web.includes('Link tra cuu: '),'Link/code must be reported for issuer failures.');
 
 const port={window:{},URL};vm.createContext(port);vm.runInContext(common,port);
 const catalog=port.window.IssuerPortals;

@@ -118,13 +118,23 @@ assert(crxPanel.includes('PL giảm thuế GTGT')&&crxPanel.includes('Bảng kê
 const downloadHref='https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF';
 assert(portal.includes('id="extensionDownloadBtn"')&&portal.includes('href="'+downloadHref+'"'),
  'Download button must link directly to the requested Google Drive folder');
-assert(/id="extensionDownloadBtn"[^>]*>[^<]*Tải Extension<\/a>/.test(portal)&&
- /id="adminLink"[^>]*>Quản trị<\/a>/.test(portal),
- 'Customer dashboard download and direct admin link must be present');
-assert(portal.indexOf('id="extensionDownloadBtn"')>portal.indexOf('id="dashboard"')&&
- portal.indexOf('id="extensionDownloadBtn"')<portal.indexOf('id="logoutBtn"')&&
- portal.indexOf('id="extensionDownloadBtn"')<portal.indexOf('id="refreshBtn"'),
- 'Download button must live next to Refresh and Logout inside the customer dashboard');
+const accountButtons=portal.match(/<nav class="account-quick-actions"[^>]*>([\s\S]*?)<\/nav>/)?.[1]||'';
+const expectedAccountButtons=['kTrackingBtn','priceToolsBtn','extensionDownloadBtn','refreshBtn','logoutBtn'];
+assert(expectedAccountButtons.every(id=>accountButtons.includes('id="'+id+'"')),
+ 'Account action row must contain K, tools, download, refresh, and logout');
+let previousPosition=-1;
+for(const id of expectedAccountButtons){
+ const position=accountButtons.indexOf('id="'+id+'"');
+ assert(position>previousPosition,'Incorrect order for account button '+id);
+ previousPosition=position;
+}
+assert(accountButtons.includes('href="https://tendoodn.github.io/t/k.html"')&&
+ accountButtons.includes('href="https://tendoodn.github.io/t/"')&&
+ accountButtons.includes('href="'+downloadHref+'"'),
+ 'Account links must use the supplied K, tools and Drive URLs');
+assert(portal.includes('grid-template-columns:repeat(5,minmax(117px,1fr))')&&
+ portal.includes('overflow-x:auto'),
+ 'Five account buttons must stay on one row with horizontal overflow on narrow screens');
 const customerSource=load('docs/customer.js');
 assert(!customerSource.includes('loadExtensionDownloadLink')&&
  !customerSource.includes('refreshAdminLink')&&

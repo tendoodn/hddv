@@ -12,6 +12,7 @@ assert(page.includes('id="mstResults"')&&page.includes('id="mstProgressFill"')&&
 assert(frontend.includes("autotax-mst-lookup")&&!frontend.includes("invoy.io.vn"),
  'Browser must use AutoTax server broker instead of direct cross-origin third-party lookup.');
 assert(broker.includes('api.vietqr.io/v2/business/')&&
+ broker.includes('api/v1/public/lookup-mst?')&&
  broker.includes('PAY2S_PERSONAL_ENABLED')&&broker.includes('PAY2S_SECRET_KEY'),
  'Broker must use documented providers, protecting personal identifiers unless approved.');
 assert(broker.includes('req.method!=="POST"')&&broker.includes('body.codes.length>20')&&

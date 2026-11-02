@@ -116,3 +116,30 @@ footer{margin-top:25px;text-align:center;font-size:12px;color:#a0a0aa;line-heigh
 .search-total-mini strong{display:block;font-size:18px;color:#fff;font-variant-numeric:tabular-nums;margin-top:4px}
 .invoice-detail-dialog tfoot th{background:#222229;color:#fff;border-top:1px solid #444;text-align:right;font-size:14px}
 @media(max-width:580px){.search-total-mini>div{flex:1;min-width:120px}.search-total-mini strong{font-size:14px}}
+
+
+/* Secure tax credential vault and selectable profile controls */
+#mst{width:100%;min-height:49px;background:#1b1b20;color:#f8fafc;border:1px solid #33333b;border-radius:16px;padding:11px 16px;font:inherit}
+.vault-inline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;color:#aaaab4;font-size:11px}
+.vault-inline a{color:#ff8994}
+.vault-checkbox{display:flex!important;align-items:start;gap:8px;font-weight:500!important;font-size:11px!important;line-height:1.5;margin-top:8px!important;color:#c3c3cb!important}
+.vault-checkbox input{width:16px;height:16px;margin:0;accent-color:#ef3c4d;flex:none}
+.vault-panel{background:#19191f;border:1px solid #3f3f48;border-radius:13px;padding:12px 15px;margin:12px 0}
+.vault-panel summary{font-weight:750;font-size:13px;color:#ffb2bd;cursor:pointer}
+.vault-panel p{font-size:12px;color:#b9b9c4;line-height:1.6}
+.vault-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.vault-controls input{flex:2 1 200px;min-width:180px;border-radius:9px;background:#26262e;color:#fff;border:1px solid #4d4d59;padding:8px}
+.vault-controls button{flex:1 0 auto}
+.k-description{font-size:12px;color:#f1c1cb;border:1px solid #814953;background:#271b21;padding:11px 13px;border-radius:11px}
+.table-audit-btn{margin-left:6px;background:#43232c;border-color:#a14e5e}
+.invoice-audit-dialog{max-height:88vh}
+.invoice-audit-dialog table{min-width:680px}
+.invoice-audit-summary{font-weight:750;padding:12px 15px;border-radius:9px;border:1px solid #42424a;background:#24242a;margin:12px 0}
+.invoice-audit-summary.audit-bad{background:#421c27;color:#ffabb4;border-color:#ba4258}
+.invoice-audit-summary.audit-warn{background:#382c19;color:#ffe19c;border-color:#926d2c}
+.invoice-audit-summary.audit-ok{background:#1a3428;color:#b3f3d0;border-color:#407d60}
+td.audit-bad{color:#ff8e9c;font-weight:750}
+td.audit-warn{color:#ffe08a;font-weight:750}
+td.audit-ok{color:#91e7b2;font-weight:750}
+td.audit-info{color:#c6c6db}
+@media(max-width:600px){.vault-controls button{flex:1 1 auto}.table-audit-btn{display:block;margin:6px 0 0}}

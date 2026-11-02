@@ -1,4 +1,4 @@
-name: AutoTax V3.2 sync checks
+name: AutoTax V1.1 validation
 on:
   push:
     branches: [main]
@@ -300,4 +300,4 @@ jobs:
         with:
           name: autotax-v32-extension-candidate
           path: autotax-v*-candidate.zip
-          retention-days: 14
+          retention-days: 1

@@ -54,7 +54,8 @@ const migrationNames=[
  '028_explicit_mst_profiles_and_session_lock.sql',
  '029_admin_extension_download_link.sql',
  '030_custom_package_delete_and_order.sql',
- '031_user_sku_mapping_sync.sql'
+ '031_user_sku_mapping_sync.sql',
+ '032_vault_admin_reset_state.sql'
 ];
 let sql='';
 for(const name of migrationNames){

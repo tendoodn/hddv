@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#09090b">
 <title>AutoTax Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=5">
+<link rel="stylesheet" href="./web/web.css?v=6">
 </head>
 <body>
 <main class="wrap">
@@ -39,13 +39,16 @@
       <div class="fields">
         <div class="field">
           <label for="mst">Mã số thuế <em>*</em></label>
-          <input id="mst" name="mst" inputmode="numeric" list="mstList" placeholder="Nhập MST hồ sơ đã quản lý" required maxlength="20">
-          <datalist id="mstList"></datalist>
+          <select id="mst" name="mst" required aria-label="Chọn hồ sơ MST">
+            <option value="">Chọn MST từ hồ sơ AutoTax</option>
+          </select>
+          <div class="vault-inline"><a href="./" target="_blank" rel="noopener noreferrer">Quản lý hồ sơ MST</a><span id="mstProfileCount"></span></div>
         </div>
         <div class="field">
           <label for="gdtPassword">Mật khẩu cổng Thuế <em>*</em></label>
-          <div class="password-wrap"><input id="gdtPassword" name="gdtPassword" type="password" autocomplete="off" placeholder="Nhập khi cần đăng nhập" maxlength="256">
+          <div class="password-wrap"><input id="gdtPassword" name="gdtPassword" type="password" autocomplete="off" placeholder="Nhập hoặc mở kho mật khẩu đã lưu" maxlength="256">
             <button id="togglePassword" type="button" aria-label="Hiện hoặc ẩn mật khẩu">◉</button></div>
+          <label class="vault-checkbox"><input id="rememberGdt" type="checkbox"> Tự lưu MST và mật khẩu Thuế trên thiết bị (mã hóa AES-GCM)</label>
         </div>
         <div class="field">
           <label for="fromDate">Khoảng ngày <em>*</em></label>
@@ -70,13 +73,23 @@
         <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Mã trên ảnh (dự phòng)" autocomplete="off">
         <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
       </div>
-      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không ghi vào hồ sơ, lịch sử hoặc bộ nhớ trình duyệt. AutoTax tự nhận dạng CAPTCHA SVG khi kết nối thành công; chỉ yêu cầu nhập thủ công khi đã tải được ảnh. Cổng Thuế có thể giới hạn truy cập từ máy chủ trung gian.</div>
+      <details class="vault-panel" id="vaultPanel">
+        <summary>Quản lý mật khẩu các MST đã lưu</summary>
+        <p>Mật khẩu Thuế chỉ được lưu khi bạn bật “Tự lưu”, đã mở khóa kho và đăng nhập Thuế thành công. Kho được mã hóa trên trình duyệt, không chuyển mật khẩu lên Supabase. Mỗi lần mở trang mới cần nhập mật khẩu kho.</p>
+        <div class="vault-controls"><input id="vaultPassphrase" type="password" autocomplete="new-password" minlength="8" placeholder="Mật khẩu kho riêng (tối thiểu 8 ký tự)">
+          <button id="vaultUnlock" type="button" class="outline">Mở / tạo kho</button>
+          <button id="vaultForget" type="button" class="outline">Xóa mật khẩu MST đang chọn</button>
+          <button id="vaultLock" type="button" class="outline">Khóa kho</button></div>
+        <p id="vaultStatus" role="status">Chưa mở khóa kho mật khẩu.</p>
+      </details>
+      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không được ghi ở dạng rõ vào hồ sơ hay bộ nhớ trình duyệt; tùy chọn tự lưu mã hóa bằng mật khẩu kho. AutoTax tự nhận dạng CAPTCHA SVG khi kết nối thành công; chỉ yêu cầu nhập thủ công khi đã tải được ảnh. Cổng Thuế có thể giới hạn truy cập từ máy chủ trung gian.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
     </form>
   </section>
   <section id="results" class="result-card" hidden>
     <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
+    <p class="k-description">Cảnh báo hệ số K <strong>chỉ khả dụng khi tick cả Mua vào lẫn Bán ra</strong>. K = Tổng bán ra / Tổng mua vào trong cùng kỳ (chỉ để tham khảo).</p>
     <div class="invoice-stats">
       <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
       <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
@@ -93,12 +106,12 @@
       <div class="exports">
         <button id="exportExcel" type="button">Tải Excel</button>
         <button id="exportXml" type="button">Tải XML</button>
-        <button id="exportTax" type="button">Tờ khai tham khảo</button>
-        <button id="exportPdf" type="button" class="outline">Liên kết PDF gốc</button>
+        <button id="exportPdf" type="button">Tải PDF gốc</button>
       </div>
     </div>
+    <p class="result-help">Nút PDF ưu tiên tệp PDF trực tiếp từ đơn vị phát hành (nếu truy cập được); khi không có sẽ xuất <strong>bản thể hiện được AutoTax tạo từ dữ liệu cổng Thuế</strong>, không gọi bản đó là PDF gốc.</p>
     <p class="result-help">Có thể tick từng hóa đơn hoặc chọn tất cả dòng đang hiển thị. Xuất theo tháng lọc trên ngày lập hóa đơn. Các tổng tiền là tổng của cả kỳ tra cứu, không thay đổi khi bạn tick. PDF gốc phụ thuộc đơn vị phát hành.</p>
-    <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết / Hợp lệ</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <section id="stockExport" class="stock-export">
       <h3>Xuất phiếu nhập kho · ánh xạ SKU (Tendoo / MISA)</h3>
       <p>Chỉ áp dụng hóa đơn mua vào thuộc phạm vi xuất bên trên. Dữ liệu danh mục tải trên máy; biểu mẫu nhập kho dùng chung với AutoTax Extension.</p>
@@ -120,6 +133,14 @@
     <p id="invoiceDetailMeta"></p>
     <div id="invoiceDetailStatus" class="muted"></div>
     <div class="table-wrap"><table><thead><tr><th>STT</th><th>MST người bán</th><th>Tên người bán</th><th>Mã hàng hóa</th><th>Tên hàng hóa</th><th>Đơn vị tính</th><th>Thuế suất</th><th>Thành tiền chưa thuế</th><th>Thành tiền gồm thuế</th></tr></thead><tbody id="detailRows"></tbody><tfoot><tr><th colspan="8">Tổng tiền thuế</th><th id="detailTax">—</th></tr><tr><th colspan="8">Tổng tiền hóa đơn</th><th id="detailTotal">—</th></tr></tfoot></table></div>
+  </dialog>
+  <dialog id="invoiceAuditDialog" class="invoice-detail-dialog invoice-audit-dialog" aria-labelledby="invoiceAuditTitle">
+    <div class="dialog-heading"><h2 id="invoiceAuditTitle">Kiểm tra tính hợp lệ và rủi ro hóa đơn</h2><button id="closeInvoiceAudit" type="button" class="outline">Đóng</button></div>
+    <p id="invoiceAuditMeta"></p>
+    <div id="invoiceAuditStatus" role="status">Đang kiểm tra dữ liệu hóa đơn…</div>
+    <div id="invoiceAuditSummary" class="invoice-audit-summary"></div>
+    <div class="table-wrap"><table><thead><tr><th>Mức độ</th><th>Nội dung đối chiếu</th><th>Kết quả / Điểm cần rà soát</th></tr></thead><tbody id="invoiceAuditRows"></tbody></table></div>
+    <p class="result-help">Đây là đánh giá tự động dựa trên dữ liệu cổng Thuế và phép đối chiếu. Không thay thế xác minh hóa đơn, chữ ký số hoặc kết luận của cơ quan thuế.</p>
   </dialog>
   <dialog id="skuMapDialog" class="stock-map-dialog" aria-labelledby="skuMapTitle">
     <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
@@ -146,6 +167,9 @@
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
-<script src="./web/web.js?v=6"></script>
-<script src="./web/web-results.js?v=2"></script>
+<script src="./web/vault.js?v=1"></script>
+<script src="./web/pdf.js?v=1"></script>
+<script src="./web/web-pdf.js?v=1"></script>
+<script src="./web/web.js?v=7"></script>
+<script src="./web/web-results.js?v=3"></script>
 </body></html>

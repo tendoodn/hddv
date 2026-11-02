@@ -65,10 +65,11 @@ async function deleteStore(store,key){
 async function getDeviceKey(){
  if(!owner)throw Error('Chưa đăng nhập AutoTax.');
  if(deviceKey)return deviceKey;
+ const requestedOwner=owner;
  // Generate before opening transaction so it stays active, then serialize
  // competing tabs on the same database key with a read-write transaction.
  const proposed=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
- const db=await openDB(),keyName='account:'+owner;
+ const db=await openDB(),keyName='account:'+requestedOwner;
  const result=await new Promise((resolve,reject)=>{
   const tx=db.transaction('keys','readwrite'),store=tx.objectStore('keys');
   const req=store.get(keyName);
@@ -80,6 +81,7 @@ async function getDeviceKey(){
   tx.oncomplete=()=>resolve(stored);
   tx.onerror=()=>reject(tx.error);
  });
+ if(requestedOwner!==owner)throw Error('Tài khoản đã thay đổi trong khi mở khóa thiết bị.');
  deviceKey=result;
  return result;
 }
@@ -122,7 +124,7 @@ function renderPicker(){
   });
   card.append(pick);
   const remove=document.createElement('button');remove.type='button';
-  remove.className='mst-picker-remove';remove.textContent='♢';
+  remove.className='mst-picker-remove';remove.textContent='🗑';
   remove.title='Gỡ MST khỏi tài khoản (không xóa lịch sử hóa đơn)';
   remove.setAttribute('aria-label','Xóa hồ sơ '+mst);
   remove.addEventListener('click',async()=>{
@@ -155,11 +157,12 @@ function updateChosen(){
   const chosen=card.querySelector('.mst-picker-choice');
   const selected=!!chosen&&chosen.querySelector('strong')?.textContent===mst;
   card.classList.toggle('selected',selected);
+  chosen?.querySelectorAll('.mst-picker-selected').forEach(el=>el.remove());
   if(selected){
    const badge=document.createElement('span');badge.className='mst-picker-selected';
    badge.textContent='Đang chọn';
    chosen.append(badge);
-  }else chosen?.querySelectorAll('.mst-picker-selected').forEach(el=>el.remove());
+  }
  }
 }
 async function select(mst){

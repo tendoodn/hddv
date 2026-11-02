@@ -30,6 +30,20 @@ jobs:
           node-version: "22"
       - run: node scripts/verify-v32-sync.mjs
       - run: node scripts/verify-web-bridge.mjs
+      - name: Verify published Pages branch matches customer/admin and Web code
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin feature/addon-license-portal
+          for file in docs/index.html docs/customer.js docs/admin.html docs/admin-mst.js docs/web.html docs/web/*.js docs/web/*.css; do
+            if ! git show "FETCH_HEAD:$file" | cmp - "$file" >/dev/null; then
+              echo "::error file=$file::Pages branch differs from main. Mirror this change before release."
+              exit 1
+            fi
+          done
+          echo "Customer portal, admin and Web sources match the Pages branch."
+
       - name: Parse Windows backup script without running it
         shell: pwsh
         run: |

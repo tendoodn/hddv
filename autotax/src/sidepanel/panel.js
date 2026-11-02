@@ -701,25 +701,18 @@ $('historyExport')?.addEventListener('click',()=>{
 });
 // Explicit user gesture is required for optional publisher-domain access.
 // Permissions are not requested during startup, and no GDT password is sent.
-$('issuerPdfPermission')?.addEventListener('click',()=>{
+$('issuerPdfPermission')?.addEventListener('click',async()=>{
  const button=$('issuerPdfPermission'),label=$('issuerPdfPermissionStatus');
- const origins=[
-  'https://www.meinvoice.vn/*','https://tra-cuu.meinvoice.vn/*',
-  'https://sinvoice.viettel.vn/*','https://vinvoice.viettel.vn/*',
-  'https://xemhoadon32.vnpt.vn/*','https://vinaphone-portal.vnpt-invoice.com.vn/*'
- ];
  button.disabled=true;
- if(!chrome.permissions?.request){
-  label.textContent='Chrome chưa hỗ trợ cấp quyền nhà phát hành ở phiên bản này.';
-  button.disabled=false;return;
- }
- chrome.permissions.request({origins}).then(granted=>{
-  label.textContent=granted?
-   'Đã cấp quyền truy cập các cổng phát hành đã chọn. AutoTax chỉ tải link PDF trực tiếp hợp lệ.':
-   'Bạn chưa cấp quyền. PDF cần thao tác thủ công tại trang tra cứu của nhà phát hành.';
- }).catch(e=>{
-  label.textContent='Không cấp được quyền tải PDF gốc: '+(e.message||e);
- }).finally(()=>{button.disabled=false});
+ try{
+  const granted=await chrome.permissions.getAll();
+  const hosts=granted?.origins||[];
+  const count=hosts.filter(x=>/https:\/\/.*(?:meinvoice|kiotviet|vinvoice|viettel|vnpt|easyinvoice|hilo)/i.test(x)).length;
+  label.textContent='Đã khai báo '+hosts.length+' miền/quy tắc truy cập trong Chrome. '+
+    'Các cổng yêu cầu CAPTCHA/đăng nhập vẫn cần phiên hợp lệ. '+
+    'Một số link gốc chỉ xuất hiện trên từng hóa đơn.';
+ }catch(e){label.textContent='Chưa đọc được trạng thái quyền: '+(e.message||e)}
+ finally{button.disabled=false}
 });
 
 // Navigation shortcuts open a real browser tab and then close the Chrome side

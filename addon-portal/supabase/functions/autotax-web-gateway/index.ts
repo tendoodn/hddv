@@ -38,6 +38,7 @@ Deno.serve(async(req) => {
   const supaKey=Deno.env.get('SUPABASE_ANON_KEY')||'';
   if(!supaUrl||!supaKey)
     return response({error:'gateway_not_configured'},503,origin);
+  let stage='verify_autotax';
   try {
     // Verify the user session server-side. JWT validation is also enforced by Supabase gateway.
     const userRes=await upstream(supaUrl+'/auth/v1/user',{
@@ -50,9 +51,16 @@ Deno.serve(async(req) => {
     const input=JSON.parse(text);
     const op=input.op;
     if(op==='captcha'){
+      stage='gdt_captcha';
       const r=await upstream(GDT_BASE+'/api/captcha',{
-        headers:{Accept:'application/json','request-id':crypto.randomUUID()}},15000);
-      return new Response(r.body,{status:r.status,headers:{...headersFor(origin),'Content-Type':r.headers.get('content-type')||'application/json'}});
+        headers:{Accept:'application/json','request-id':crypto.randomUUID()}},18000);
+      const contentType=r.headers.get('content-type')||'';
+      // The official portal sometimes returns an HTML maintenance page instead of JSON.
+      if(!r.ok || !contentType.includes('json')){
+        return response({error:r.status===429?'gdt_rate_limited':'gdt_captcha_unavailable'},
+          r.ok?502:r.status,origin);
+      }
+      return new Response(r.body,{status:r.status,headers:{...headersFor(origin),'Content-Type':'application/json; charset=utf-8'}});
     }
     if(op==='authenticate'){
       const username=String(input.username||'').trim();
@@ -62,6 +70,7 @@ Deno.serve(async(req) => {
       if(!/^(?:[0-9]{10}|[0-9]{12}|[0-9]{13}|[0-9]{10}-[0-9]{3})(?:-U[0-9]{3})?$/.test(username)||
           password.length<1||password.length>256||ckey.length>150||!cvalue||cvalue.length>20)
         return response({error:'invalid_login_details'},400,origin);
+      stage='gdt_authenticate';
       const r=await upstream(GDT_BASE+'/api/security-taxpayer/authenticate',{
         method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json',
           'request-id':crypto.randomUUID(),Action:encodeURIComponent('Đăng nhập'),
@@ -89,6 +98,7 @@ Deno.serve(async(req) => {
     const requestedMst=cleanMst(input.mst);
     if(!govtMst||!requestedMst||govtMst!==requestedMst)
       return response({error:'gdt_mst_mismatch'},403,origin);
+    stage='verify_entitlement';
     const entitlement=await upstream(supaUrl+'/rest/v1/rpc/addon_verify_session_mst_v33',{
       method:'POST',headers:{apikey:supaKey,Authorization:'Bearer '+autoToken,
         'Content-Type':'application/json'},
@@ -106,14 +116,21 @@ Deno.serve(async(req) => {
     for(const k of ['ckey','cvalue']){
       if(extra[k])h[k]=String(extra[k]).slice(0,150);
     }
+    stage='gdt_invoice_api';
     const r=await upstream(url.toString(),{headers:h},90000);
     const ct=r.headers.get('content-type')||'application/octet-stream';
     return new Response(r.body,{status:r.status,
       headers:{...headersFor(origin),'Content-Type':ct,
         'Cache-Control':'no-store'}});
   }catch(e){
-    // Do not include request payload, passwords, tokens, or upstream details in errors.
+    // Never log passwords, tokens, MSTs, request URLs, upstream data, or raw exception text.
     const status=e?.name==='TimeoutError'?504:502;
+    console.warn('[autotax-web-gateway]',stage,status);
+    if(stage==='gdt_captcha')return response({
+      error:status===504?'gdt_captcha_timeout':'gdt_captcha_unavailable'
+    },status,origin);
+    if(stage==='verify_autotax')return response({error:'autotax_auth_unavailable'},status,origin);
+    if(stage==='verify_entitlement')return response({error:'autotax_entitlement_unavailable'},status,origin);
     return response({error:status===504?'gdt_timeout':'gdt_connection_unavailable'},status,origin);
   }
 });

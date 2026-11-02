@@ -45,6 +45,22 @@
 .mst-personal-actions a{color:#88baff;text-decoration:underline;font-size:12px}
 .mst-personal-copy{border:1px solid #44445a;background:#232331;color:#ececf3;border-radius:7px;min-height:32px;padding:5px 9px;cursor:pointer;font-size:12px}
 .mst-personal-copy:hover{border-color:#88baff}
+.mst-official-dialog{width:min(680px,calc(100% - 24px));max-height:88vh;overflow-y:auto;margin:auto;padding:24px;border:1px solid #41414c;border-radius:16px;background:#161619;color:#f2f2f6;box-shadow:0 20px 70px #000b}
+.mst-official-dialog::backdrop{background:#000b}
+.mst-official-dialog h2{font-size:20px;margin:0 0 10px}
+.mst-official-dialog p{font-size:13px;line-height:1.6;color:#b8b8c3}
+.mst-official-dialog label{display:block;margin:13px 0 6px;font-size:12px;color:#c8c8d4;font-weight:700}
+.mst-official-dialog textarea,.mst-official-dialog input:not([type=checkbox]){display:block;width:100%;border:1px solid #484854;border-radius:8px;background:#202026;color:#f5f5fa;padding:10px;font:14px/1.45 system-ui}
+.mst-official-dialog textarea{min-height:82px;resize:vertical}
+.mst-official-dialog .mst-official-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.mst-official-dialog .mst-official-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.mst-official-dialog .mst-official-actions button,.mst-official-dialog .mst-official-actions a{border:1px solid #595966;background:#252531;color:#f7f7ff;padding:9px 13px;border-radius:8px;text-decoration:none;cursor:pointer;font:600 13px system-ui}
+.mst-official-dialog .mst-official-actions button:disabled{opacity:.45;cursor:not-allowed}
+.mst-official-dialog .mst-official-confirm{display:flex;gap:10px;align-items:flex-start}
+.mst-official-dialog .mst-official-confirm input{margin-top:4px}
+.mst-official-dialog .mst-official-confirm span{font-weight:400;line-height:1.5}
+@media(max-width:610px){.mst-official-dialog{padding:14px}.mst-official-dialog .mst-official-fields{grid-template-columns:1fr}}
+
 
 @media(max-width:1100px){.mst-layout{grid-template-columns:1fr}.mst-panel{padding:19px}}
 @media(max-width:610px){.mst-shell{padding:12px}.mst-panel h1,.mst-panel h2{font-size:21px}.mst-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:18px 0}.mst-stat strong{font-size:25px}.mst-button.secondary{width:100%}}
@@ -73,10 +89,33 @@
     <select id="mstFilter"><option value="all">Tất cả</option><option value="ok">Đã có dữ liệu</option><option value="missing">Chưa xác minh</option></select></label></div>
    <div class="mst-table-wrap"><table class="mst-table"><thead><tr><th>STT</th><th>Mã số thuế</th><th>Thông tin người nộp thuế</th><th>Cơ quan quản lý</th><th>Trạng thái</th></tr></thead><tbody id="mstResults"></tbody></table></div>
    <div class="mst-progress-note" id="noticeMst" role="status" aria-live="polite"></div>
-   <p class="mst-foot">Nguồn doanh nghiệp: VietQR (trung gian AutoTax). Trạng thái và cơ quan thuế chỉ hiện nếu nguồn trả về. Tra cứu chính thức tại <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế doanh nghiệp</a> hoặc <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế cá nhân</a>. Không mặc định đánh dấu “Đang hoạt động” nếu nguồn không xác minh.</p>
+   <p class="mst-foot">Nguồn tự động: VietQR và các dịch vụ dữ liệu doanh nghiệp qua AutoTax (không phải dữ liệu đã xác minh trực tiếp từ Cục Thuế). Trạng thái và cơ quan thuế chỉ hiện nếu nguồn trả về. Tra cứu chính thức tại <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế doanh nghiệp</a> hoặc <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế cá nhân</a>. Không mặc định đánh dấu “Đang hoạt động” nếu nguồn không xác minh.</p>
   </section>
  </div>
 </main>
+<dialog id="mstOfficialDialog" class="mst-official-dialog" aria-labelledby="mstOfficialHeading">
+ <h2 id="mstOfficialHeading">Đối chiếu trên cổng Thuế chính thức</h2>
+ <p>Mã đang đối chiếu: <strong id="mstOfficialCode"></strong>. <span id="mstOfficialType"></span></p>
+ <div class="mst-official-actions">
+  <a id="mstOfficialPortal" href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">Mở cổng Thuế chính thức</a>
+  <button id="mstOfficialClose" type="button">Đóng</button>
+ </div>
+ <p><strong>Thao tác:</strong> trên trang Thuế, nhập đúng MST hoặc CCCD, tự nhập CAPTCHA rồi tra cứu. Chỉ sao chép một hàng kết quả từ bảng và dán vào ô dưới. Nếu trang không cho sao chép dòng, vui lòng kiểm tra trực tiếp trên trang chính thức.</p>
+ <label for="mstOfficialPaste">Dán một dòng kết quả (Ctrl+C trên bảng, Ctrl+V tại đây)</label>
+ <textarea id="mstOfficialPaste" maxlength="5000" autocomplete="off" placeholder="STT    MST    Tên người nộp thuế    Địa chỉ    Cơ quan thuế    Trạng thái"></textarea>
+ <div class="mst-official-actions"><button id="mstOfficialParse" type="button">Đọc dòng đã dán</button></div>
+ <p id="mstOfficialNotice" role="status" aria-live="polite"></p>
+ <div class="mst-official-fields">
+  <div><label for="mstOfficialName">Tên người nộp thuế</label><input id="mstOfficialName" maxlength="250" autocomplete="off"></div>
+  <div><label for="mstOfficialAddress">Địa chỉ (nếu có)</label><input id="mstOfficialAddress" maxlength="450" autocomplete="off"></div>
+  <div><label for="mstOfficialOffice">Cơ quan thuế (nếu có)</label><input id="mstOfficialOffice" maxlength="250" autocomplete="off"></div>
+  <div><label for="mstOfficialStatus">Trạng thái/ghi chú từ bảng</label><input id="mstOfficialStatus" maxlength="250" autocomplete="off"></div>
+ </div>
+ <label class="mst-official-confirm"><input id="mstOfficialConfirm" type="checkbox"><span>Tôi đã so sánh các trường với hàng kết quả trên cổng Thuế và hiểu đây là thông tin do người dùng cung cấp, AutoTax không tự xác thực.</span></label>
+ <div class="mst-official-actions"><button id="mstOfficialSave" type="button" disabled>Lưu kết quả đối chiếu trong tab</button></div>
+ <p><strong>Riêng tư:</strong> dữ liệu dán chỉ nằm trong tab trình duyệt, không được gửi lên AutoTax/Supabase. Khi xuất Excel, kết quả được ghi nhãn “đối chiếu thủ công — chưa xác minh tự động”.</p>
+</dialog>
 <script src="./web/xlsx.js?v=1"></script>
-<script src="./web/mst-lookup.js?v=6"></script>
+<script src="./web/mst-official.js?v=1"></script>
+<script src="./web/mst-lookup.js?v=7"></script>
 </body></html>

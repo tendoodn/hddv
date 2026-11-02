@@ -20,7 +20,7 @@ const selected=name=>[...document.querySelectorAll('input[name="'+name+'"]:check
 const show=(msg,ok=false)=>{const box=$('notice');box.hidden=!msg;box.textContent=msg||'';box.classList.toggle('success',!!ok)};
 const progress=msg=>{$('progressText').textContent=msg;};
 const busyState=value=>{busy=!!value;$('progress').hidden=!value;$('searchBtn').disabled=!!value;
-  for(const id of ['exportExcel','exportXml','exportPdf'])$(id).disabled=!!value;};
+  for(const id of ['exportExcel','exportXml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
 window.WebTaxState=govSession;
 const showGatewayHelp=visible=>{$('gdtConnectionHelp').hidden=!visible;};
@@ -428,16 +428,17 @@ async function exportFile(kind){
    if(!z.length)throw Error('Không tìm thấy XML gốc từ cổng Thuế trong danh sách hóa đơn. Không xuất dữ liệu giả.');
    download('HoaDon_XML_'+fileBase+'.zip',Zip.writeZip(z),'application/zip');
    show('Đã đóng gói '+z.length+' XML gốc từ cổng Thuế.',true);
-  }else if(kind==='pdf'){
+  }else if(kind==='pdf'||kind==='pdfTax'){
    if(!window.WebPdfExport)throw Error('Bộ xử lý PDF chưa tải xong; vui lòng làm mới trang.');
-   const result=await window.WebPdfExport.create(targetRows);
+   const mode=kind==='pdfTax'?'tax':'original';
+   const result=await window.WebPdfExport.create(targetRows,mode);
    show('PDF gốc nhà phát hành: '+result.originals+
     '; PDF dựng lại từ dữ liệu Thuế (không phải gốc): '+result.rendered+
     '; PDF do người dùng gắn (chưa xác minh chữ ký): '+(result.userSupplied||0)+
     '. '+(result.errors.length?result.errors.length+
     ' hóa đơn chưa lấy được PDF gốc — xem link/mã tra cứu trong tệp hướng dẫn ZIP.':
     'Đã tải toàn bộ tệp có thể truy cập.')+
-    ' AutoTax chỉ dựng PDF khi thiếu link hoặc mã tra cứu; có đủ hai thông tin thì ưu tiên bản gốc.',
+    ' Chế độ '+(mode==='tax'?'PDF Thuế: tất cả là bản dựng.':'PDF gốc: ưu tiên bản gốc, nếu không tải được sẽ dùng bản dựng có ghi nhãn.')+' Mọi PDF dựng đều ghi rõ KHÔNG PHẢI GỐC.',
     result.errors.length===0);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}
  }catch(e){show('Không xuất được tệp: '+e.message)}
@@ -486,7 +487,7 @@ function init(){
  });
  $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
  $('closeGdtLoginError').addEventListener('click',()=>$('gdtLoginErrorDialog').close());
- for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportPdf','pdf']])
+ for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportPdf','pdf'],['exportPdfTax','pdfTax']])
   $(id).addEventListener('click',()=>exportFile(kind));
  window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value='';window.GdtVault?.lock()});
  refreshAccount();

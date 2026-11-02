@@ -23,6 +23,34 @@ assert(customer.includes('10, 12 hoặc 13 chữ số')&&
  'Customer, trial and profile must accept branch and personal tax IDs');
 assert(webTax.includes('const MST_RE = /^(?:')&&addonTax.includes('const MST_RE = /^(?:'),
  'Shared tax search engines must permit personal and 13-digit branch codes.');
+// Execute pure normalization with synthetic tax identifiers; this test is offline.
+const normalizeSrc=broker.slice(broker.indexOf('const normalize='),broker.indexOf('const fetchJson='))
+ .replace('(value:unknown)','(value)');
+const normalize=vm.runInNewContext(normalizeSrc+'\nnormalize');
+const branch=normalize('3600675874-001');
+assert.equal(branch.digits,'3600675874001');
+assert.equal(branch.display,'3600675874-001');
+assert.equal(branch.kind,'branch');
+assert.equal(normalize('012345678901').digits,'012345678901');
+assert.equal(normalize('012345678901').kind,'personal');
+assert.equal(normalize('3600675874').kind,'business');
+assert.equal(normalize('123456789'),null);
+const resultSrc=broker.slice(broker.indexOf('function normalizeResult('),
+ broker.indexOf('async function pay2s('))
+ .replace('(o:any,src:string,n:any)','(o,src,n)');
+const resultFn=vm.runInNewContext(
+ 'const trim=(v,max=300)=>typeof v==="string"?v.trim().slice(0,max):"";\n'
+ +resultSrc+'\nnormalizeResult');
+assert.equal(resultFn({name:'Mismatched',taxCode:'0123456789'},'test',normalize('3600675874')),null,
+ 'Never attribute another taxpayer record to the requested tax code.');
+assert.equal(resultFn({name:'Expected',taxCode:'3600675874'},'test',normalize('3600675874')).verified,true);
+assert(broker.includes('if(n.kind==="personal")return lookup(n)')&&
+ broker.includes('businessInflight')&&broker.includes('businessCache.size>=500'),
+ 'Only publicly verified business data may be coalesced/cached with size bound.');
+assert(frontend.includes("value.error==='upstream_unavailable'")&&
+ !frontend.includes("['rate_limited','upstream_unavailable'"),
+ 'Frontend must not amplify provider rate limits through regional retries.');
+
 new vm.Script(frontend,{filename:'docs/web/mst-lookup.js'});
 console.log('MST front-end, broker, source labels, three tax-ID kinds and app/extension validators passed.');
 if(process.env.LIVE_MST_LOOKUP==='1'){

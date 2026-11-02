@@ -33,7 +33,7 @@ assert(addon.includes('decision.shouldReconstruct')&&
 assert(addon.includes('PDF_Chua_Lay_Duoc_Goc')&&
  web.includes('Link tra cứu: '),'Link/code must be reported for issuer failures.');
 
-const port={window:{}};vm.createContext(port);vm.runInContext(common,port);
+const port={window:{},URL};vm.createContext(port);vm.runInContext(common,port);
 const catalog=port.window.IssuerPortals;
 assert.equal(catalog.sources.length,21);
 for(const x of catalog.sources){

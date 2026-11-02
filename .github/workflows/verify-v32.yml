@@ -168,6 +168,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/033_restrict_anon_privileged_rpc.sql
       - name: Optimize foreign key indexes and authenticated RLS
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/034_fk_indexes_and_rls_initplan.sql
+      - name: Run public catalog under authenticated caller privileges
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/035_catalog_rpc_security_invoker.sql
       - name: Assert SQL security and performance migrations
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/170_assert_security_performance.sql
       - name: Verify production readiness report is readable

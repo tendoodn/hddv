@@ -106,10 +106,11 @@
       <div class="exports">
         <button id="exportExcel" type="button">Tải Excel</button>
         <button id="exportXml" type="button">Tải XML</button>
-        <button id="exportPdf" type="button">Tải PDF gốc</button>
+        <button id="exportPdfTax" type="button">Tải PDF Thuế</button>
+        <button id="exportPdf" type="button" title="Ưu tiên tệp gốc của nhà phát hành; nếu chưa tải được sẽ xuất PDF dựng lại và ghi rõ không phải bản gốc.">Tải PDF gốc (có dự phòng)</button>
       </div>
     </div>
-    <p class="result-help"><strong>AutoTax V1.1:</strong> hóa đơn có URL và mã tra cứu được ưu tiên tải <strong>PDF gốc của nhà phát hành</strong>; nếu nhà phát hành yêu cầu CAPTCHA hoặc phiên riêng, hệ thống sẽ hướng dẫn tiếp tục tra cứu, không âm thầm đổi thành PDF dựng. Hóa đơn thiếu link hoặc mã bảo mật sẽ xuất <strong>PDF dựng từ dữ liệu Thuế, được ghi rõ không phải bản gốc</strong>.</p>
+    <p class="result-help"><strong>Hai chế độ PDF:</strong> <b>PDF Thuế</b> luôn dựng lại toàn bộ hóa đơn từ dữ liệu Thuế và ghi nhãn <b>KHÔNG PHẢI GỐC</b>. <b>PDF gốc (có dự phòng)</b> thử lấy PDF thật từ nhà phát hành hoặc tệp đã gắn; nếu không có, không truy cập được, bị CAPTCHA hoặc thất bại thì dựng PDF thay thế có nhãn <b>KHÔNG PHẢI GỐC</b>, đồng thời lưu lý do cùng link/mã tra cứu vào báo cáo trong ZIP.</p>
     <p class="result-help">Phạm vi tải được xác định tự động: nếu có hóa đơn đã tick trong danh sách đang hiển thị thì chỉ tải các hóa đơn đó; nếu không tick, tải tất cả hóa đơn thuộc bộ lọc hiện tại. Không cần chọn thêm chế độ xuất. Việc lấy PDF gốc phụ thuộc nhà phát hành và bước xác thực hợp lệ.</p>
     <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết / Hợp lệ / PDF nguồn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <section id="stockExport" class="stock-export">
@@ -199,8 +200,8 @@
 <script src="./web/tendoo-import.js?v=2"></script>
 <script src="./web/vault.js?v=5"></script>
 <script src="./web/pdf.js?v=1"></script>
-<script src="./web/web-pdf.js?v=7"></script>
-<script src="./web/web.js?v=11"></script>
+<script src="./web/web-pdf.js?v=8"></script>
+<script src="./web/web.js?v=12"></script>
 <script src="./web/web-results.js?v=6"></script>
 <script src="./web/issuer-pdf.js?v=4"></script>
 <script src="./web/audit.js?v=1"></script>

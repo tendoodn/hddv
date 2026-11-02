@@ -54,6 +54,16 @@ assert(files.some(f=>f.name.startsWith('PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH/')
 assert(files.some(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt'));
 assert(files.find(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt').data
  .includes('chua tu kiem tra chu ky so'),'Provenance guide missing.');
+// A previously attached document must not prevent a genuine issuer PDF from
+// being fetched when an actual HTTPS PDF endpoint is available.
+ctx.URL=URL;ctx.AbortController=AbortController;
+ctx.setTimeout=setTimeout;ctx.clearTimeout=clearTimeout;
+ctx.fetch=async()=>({ok:true,headers:{get:()=>null},arrayBuffer:async()=>bytes.buffer});
+ctx.window.HDDT.originalLookup=()=>({name:'MISA meInvoice',
+ link:'https://www.meinvoice.vn/invoice.pdf',code:'TEST-CODE'});
+const originalWins=await api.create([row],'original');
+assert.equal(originalWins.originals,1,'Genuine issuer PDF should take precedence over user attachments.');
+assert.equal(originalWins.userSupplied,0);
 session.user={id:'account-2'};
 assert.equal(api.hasUserPdf(row),false,'Previously attached PDFs must not leak across signed-in accounts.');
 assert.throws(()=>api.attachUserPdf({...row,shdon:''},bytes,'unbound.pdf'),/hóa đơn/);

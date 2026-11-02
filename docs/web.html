@@ -25,26 +25,7 @@
       <div><strong>Phiên AutoTax</strong><span id="authStatus">Đang xác minh đăng nhập…</span></div>
       <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
     </div>
-      <details class="vault-panel" id="vaultPanel">
-        <summary>Quản lý mật khẩu các MST đã lưu</summary>
-        <p>Mật khẩu Thuế chỉ được lưu khi bạn bật “Tự lưu”, đã mở khóa kho và đăng nhập Thuế thành công. Kho được mã hóa trên trình duyệt, không chuyển mật khẩu lên Supabase. Nếu quên mật khẩu kho, liên hệ admin để reset. Reset xóa quyền truy cập mật khẩu Thuế cũ, không thể khôi phục chúng. Mỗi lần mở trang mới cần nhập mật khẩu kho.</p>
-        <div class="vault-controls"><input id="vaultPassphrase" type="password" autocomplete="new-password" minlength="8" placeholder="Mật khẩu kho riêng (tối thiểu 8 ký tự)">
-          <button id="vaultUnlock" type="button" class="outline">Mở / tạo kho</button>
-          <button id="vaultForget" type="button" class="outline">Xóa mật khẩu MST đang chọn</button>
-          <button id="vaultLock" type="button" class="outline">Khóa kho</button></div>
-        <div id="vaultRecovery" hidden class="vault-recovery">
-          <label>Mã khôi phục do admin cấp <input id="vaultRecoveryCode" type="password" inputmode="numeric" maxlength="4" placeholder="Mã khôi phục"></label>
-          <button type="button" class="outline" id="vaultConfirmRecovery">Xác nhận mã và tạo kho mới</button>
-          <p>Mã khôi phục mặc định chỉ xác nhận thao tác reset. Mật khẩu cổng Thuế đã lưu trước đó không thể giải mã lại.</p>
-        </div>
-        <div id="vaultAfterUnlock" hidden>
-          <label class="vault-checkbox"><input type="checkbox" id="vaultReveal"> Hiển thị danh sách MST và mật khẩu đã lưu</label>
-          <div class="table-wrap vault-table-wrap"><table><thead><tr><th>MST</th><th>Mật khẩu</th></tr></thead><tbody id="vaultList"></tbody></table></div>
-          <div class="vault-controls"><input type="password" id="vaultNewPassphrase" minlength="8" autocomplete="new-password" placeholder="Mật khẩu kho mới (ít nhất 8 ký tự)">
-          <button id="vaultChangePass" type="button" class="outline">Đổi mật khẩu kho</button></div>
-        </div>
-        <p id="vaultStatus" role="status">Chưa mở khóa kho mật khẩu.</p>
-      </details>
+      <div class="profile-sync-note">Hồ sơ MST được đồng bộ theo tài khoản AutoTax. Mật khẩu cổng Thuế được mã hóa riêng trên thiết bị sau khi đăng nhập thành công; không cần mật khẩu kho.</div>
     <div id="searchTotals" class="search-total-mini" hidden aria-live="polite">
       <div><span>Tổng thanh toán kỳ tra cứu</span><strong id="searchTotalPay">0 ₫</strong></div>
       <div><span>Tổng tiền thuế kỳ tra cứu</span><strong id="searchTotalVat">0 ₫</strong></div>
@@ -62,23 +43,26 @@
       <div class="fields">
         <div class="field">
           <label for="mst">Mã số thuế <em>*</em></label>
-          <select id="mst" name="mst" required aria-label="Chọn hồ sơ MST">
+          <select id="mst" name="mst" aria-label="MST đang chọn" class="mst-hidden-select">
             <option value="">Chọn MST từ hồ sơ AutoTax</option>
           </select>
-          <div class="vault-inline"><a href="./" target="_blank" rel="noopener noreferrer">Quản lý hồ sơ MST</a><span id="mstProfileCount"></span></div>
+          <button id="mstPickerToggle" class="mst-picker-toggle" type="button" aria-controls="mstPickerMenu" aria-expanded="false">Chọn hồ sơ MST ▾</button>
+          <div id="mstPickerMenu" class="mst-picker-menu" hidden aria-label="Danh sách hồ sơ MST"></div>
+          <div class="vault-inline"><a href="./" target="_blank" rel="noopener noreferrer">Quản lý / đổi tên hồ sơ MST</a><span id="mstProfileCount"></span></div>
+          <p id="mstPickerNotice" class="mst-picker-notice" role="status" aria-live="polite"></p>
         </div>
         <div class="field">
           <label for="gdtPassword">Mật khẩu cổng Thuế <em>*</em></label>
-          <div class="password-wrap"><input id="gdtPassword" name="gdtPassword" type="password" autocomplete="off" placeholder="Nhập hoặc mở kho mật khẩu đã lưu" maxlength="256">
+          <div class="password-wrap"><input id="gdtPassword" name="gdtPassword" type="password" autocomplete="off" placeholder="Nhập một lần, tự điền khi chọn lại MST" maxlength="256">
             <button id="togglePassword" type="button" aria-label="Hiện hoặc ẩn mật khẩu">◉</button></div>
-          <label class="vault-checkbox"><input id="rememberGdt" type="checkbox"> Tự lưu MST và mật khẩu Thuế trên thiết bị (mã hóa AES-GCM)</label>
+          <button id="mstForgetPassword" type="button" class="text-btn">Xóa mật khẩu đã lưu trên thiết bị này</button>
         </div>
         <div class="field">
           <label for="fromDate">Khoảng ngày <em>*</em></label>
           <div class="date-pair"><input type="date" id="fromDate" name="fromDate" required><input type="date" id="toDate" name="toDate" required aria-label="Đến ngày"></div>
         </div>
         <div class="field field-note">
-          <label>Phiên làm việc</label><p id="gdtStatus">Tự xác thực khi bấm Tìm kiếm. Mật khẩu không được lưu.</p><p id="captchaStatus" class="captcha-status" aria-live="polite">AutoTax sẽ tự nhận dạng CAPTCHA. Bạn chỉ cần MST và mật khẩu.</p>
+          <label>Phiên làm việc</label><p id="gdtStatus">Mật khẩu được ghi nhớ dạng mã hóa trên thiết bị sau khi xác thực thành công.</p><p id="captchaStatus" class="captcha-status" aria-live="polite">AutoTax sẽ tự nhận dạng CAPTCHA. Bạn chỉ cần MST và mật khẩu.</p>
           <button id="clearGdt" type="button" class="text-btn">Xóa phiên Thuế</button>
         </div>
         <fieldset class="field checks"><legend>Loại hóa đơn <em>*</em></legend>
@@ -97,7 +81,7 @@
         <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Mã trên ảnh (dự phòng)" autocomplete="off">
         <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
       </div>
-      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không được ghi ở dạng rõ vào hồ sơ hay bộ nhớ trình duyệt; tùy chọn tự lưu mã hóa bằng mật khẩu kho. AutoTax tự nhận dạng CAPTCHA SVG khi kết nối thành công; chỉ yêu cầu nhập thủ công khi đã tải được ảnh. Cổng Thuế có thể giới hạn truy cập từ máy chủ trung gian.</div>
+      <div class="privacy">Mật khẩu Thuế chỉ được sử dụng để đăng nhập cổng Thuế qua kênh bảo mật. Trên thiết bị này, mật khẩu được mã hóa bằng AES-GCM với khóa không xuất được khỏi IndexedDB và tách biệt theo tài khoản. Mật khẩu không được đồng bộ lên Supabase; thiết bị khác cần nhập lại lần đầu. Kho cũ có mật khẩu riêng không bị xóa tự động. Nếu cổng Thuế báo sai mật khẩu, AutoTax sẽ hiện cảnh báo và yêu cầu nhập lại. CAPTCHA chỉ được xử lý khi cổng trả dữ liệu hợp lệ.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
     </form>
@@ -147,6 +131,10 @@
       </div>
     </section>
   </section>
+  <dialog id="gdtLoginErrorDialog" class="invoice-detail-dialog" aria-labelledby="gdtLoginErrorTitle">
+    <div class="dialog-heading"><h2 id="gdtLoginErrorTitle">Mật khẩu cổng Thuế chưa chính xác</h2><button id="closeGdtLoginError" type="button" class="outline">Đóng</button></div>
+    <p id="gdtLoginErrorText">Cổng Thuế từ chối đăng nhập. Vui lòng nhập lại mật khẩu cho hồ sơ đang chọn.</p>
+  </dialog>
   <dialog id="invoiceDetailDialog" class="invoice-detail-dialog" aria-labelledby="invoiceDetailTitle">
     <div class="dialog-heading"><h2 id="invoiceDetailTitle">Chi tiết hóa đơn</h2><button id="closeInvoiceDetail" type="button" class="outline">Đóng</button></div>
     <p id="invoiceDetailMeta"></p>
@@ -211,7 +199,7 @@
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
-<script src="./web/vault.js?v=3"></script>
+<script src="./web/vault.js?v=4"></script>
 <script src="./web/pdf.js?v=1"></script>
 <script src="./web/web-pdf.js?v=5"></script>
 <script src="./web/web.js?v=10"></script>

@@ -13,6 +13,7 @@ on:
       - "scripts/verify-web-vault-pdf-audit.mjs"
       - "scripts/verify-web-vault-v2.mjs"
       - "scripts/verify-mst-lookup.mjs"
+      - "scripts/verify-issuer-pdf.mjs"
       - "tests/v32/**"
       - ".github/workflows/verify-v32.yml"
   pull_request:
@@ -27,6 +28,7 @@ on:
       - "scripts/verify-web-vault-pdf-audit.mjs"
       - "scripts/verify-web-vault-v2.mjs"
       - "scripts/verify-mst-lookup.mjs"
+      - "scripts/verify-issuer-pdf.mjs"
       - ".github/workflows/verify-v32.yml"
 permissions:
   contents: read
@@ -44,6 +46,7 @@ jobs:
       - run: node scripts/verify-web-results.mjs
       - run: node scripts/verify-web-vault-pdf-audit.mjs
       - run: node scripts/verify-web-vault-v2.mjs
+      - run: node scripts/verify-issuer-pdf.mjs
       - run: LIVE_MST_LOOKUP=1 node scripts/verify-mst-lookup.mjs
       - name: Verify published Pages branch matches customer/admin and Web code
         if: github.event_name == 'push'

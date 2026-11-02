@@ -65,7 +65,7 @@ async function refresh(){
   const signedIn=!!session;
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
-  if(!signedIn){state=null;$("adminLink").hidden=true;closePayment();return}
+  if(!signedIn){state=null;closePayment();return}
   $("userEmail").textContent=session.user.email||"";
   const license=await rpc("addon_my_entitlements");
   state=license;
@@ -84,7 +84,7 @@ async function refresh(){
   $("usageMode").value=selected;
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
   $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":(license.ever_had_package?"Tài khoản đã có lịch sử gói.":"");
-  await Promise.all([loadMstAssignments(),loadPackages(),refreshAdminLink()]);
+  await Promise.all([loadMstAssignments(),loadPackages()]);
  }catch(error){
   state=null;
   $("trialArea").hidden=true;
@@ -99,17 +99,15 @@ async function refresh(){
   }
  }finally{checking=false}
 }
-async function refreshAdminLink(){
- try{$("adminLink").hidden=!(await rpc("addon_is_admin"))}
- catch{$("adminLink").hidden=true}
-}
 async function loadPackages(){
  const rows=await rpc("addon_list_packages");
  const list=$("packageList");list.replaceChildren();
  for(const item of rows||[]){
   const card=document.createElement("div");card.className="plan";
   addText(card,"h3",item.name);
-  addText(card,"p",item.family==="invoice"?item.quantity+" lượt hóa đơn, cộng dồn khi mua thêm":item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn"),"muted");
+  addText(card,"p",item.family==="invoice"
+   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm). Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
+   : item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn")+". Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.","muted");
   addText(card,"strong",vnMoney(item.price_vnd),"price");
   const b=addText(card,"button","Chọn mua");
   b.type="button";b.disabled=item.family==="mst"&&!item.validity_days;
@@ -303,6 +301,13 @@ $("webAddMstForm").addEventListener("submit",async e=>{
 $("giftWebBtn").addEventListener("click",()=>{$("giftWebDialog").showModal();$("unlockCode").focus()});
 $("closeGiftWebBtn").addEventListener("click",()=>$("giftWebDialog").close());
 $("renewWebBtn").addEventListener("click",()=>$("planSection").scrollIntoView({behavior:"smooth",block:"center"}));
+$("passwordOpenBtn").addEventListener("click",()=>{
+ $("passwordPanel").hidden=false;
+ $("passwordPanel").scrollIntoView({behavior:"smooth",block:"center"});
+ $("newPassword").focus();
+});
+$("passwordCloseBtn").addEventListener("click",()=>{$("passwordPanel").hidden=true});
+
 $("trialBtn").addEventListener("click",()=>action("trialBtn",async()=>{
  const mst=$("trialMst").value.trim().replace(/[ -]/g,"");
  if(!/^\d{10}(\d{2})?$/.test(mst))throw Error("MST phải có 10 hoặc 12 chữ số.");

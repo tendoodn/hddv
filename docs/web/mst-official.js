@@ -20,9 +20,11 @@ const safeText=(value,max=350)=>{
  return s.length<=max?s:s.slice(0,max);
 };
 const goodName=s=>/[\p{L}]/u.test(s)&&!/(?:mã số thuế|người nộp thuế|họ và tên)/i.test(s);
-function parseCopiedRow(raw,requested){
+function parseCopiedRow(raw,requested,portal){
  const id=normalize(requested);
  if(!id)return {ok:false,reason:'Mã được chọn không hợp lệ.'};
+ const selectedPortal=portal==='business'||portal==='personal'?portal:
+  id.kind==='personal'?'personal':'business';
  const src=String(raw??'');
  if(!src.trim()||src.length>5000)
   return {ok:false,reason:'Chỉ dán một dòng kết quả đã tra tại cổng Thuế (tối đa 5.000 ký tự).'};
@@ -37,14 +39,14 @@ function parseCopiedRow(raw,requested){
  const at=matches[0].index;
  // Prevent data from a second person's/company's row being assigned to this ID.
  // One old 10-digit MST alongside a 12-digit citizen ID is valid on TNCN pages.
- const oldPersonal=id.kind==='personal'&&ids.length===2&&ids.some(x=>
+ const oldPersonal=id.kind==='personal'&&selectedPortal==='personal'&&ids.length===2&&ids.some(x=>
   x.index===at-3&&x.id.kind==='business');
  if(ids.length>1&&!oldPersonal)
   return {ok:false,reason:'Có nhiều mã số thuế trong nội dung dán. Chỉ sao chép một dòng kết quả.'};
  // Business result: STT, tax code, name, address, tax office, tax status.
  // Personal result may display an older 10-digit MST before the 12-digit CCCD:
  // STT, old tax code, name, tax office, citizen ID, update date, notes.
- const isPersonalSecondary=id.kind==='personal'&&at>=3&&
+ const isPersonalSecondary=id.kind==='personal'&&selectedPortal==='personal'&&at>=3&&
    !!normalize(cells[at-3])&&normalize(cells[at-3]).kind==='business';
  const name=isPersonalSecondary?cells[at-2]:cells[at+1];
  if(!goodName(name||''))
@@ -52,17 +54,28 @@ function parseCopiedRow(raw,requested){
  return {
   ok:true,code:id.display,
   name:safeText(name,250),
-  address:id.kind==='personal'?'':safeText(cells[at+2]||'',450),
-  office:safeText(isPersonalSecondary?cells[at-1]:id.kind==='personal'?cells[at+2]:cells[at+3],250),
-  status:safeText(isPersonalSecondary?cells[at+2]:id.kind==='personal'?cells[at+3]:cells[at+4],250),
+  address:selectedPortal==='personal'?'':safeText(cells[at+2]||'',450),
+  office:safeText(isPersonalSecondary?cells[at-1]:selectedPortal==='personal'?cells[at+2]:cells[at+3],250),
+  status:safeText(isPersonalSecondary?cells[at+2]:selectedPortal==='personal'?cells[at+3]:cells[at+4],250),
   previousTaxCode:isPersonalSecondary?normalize(cells[at-3]).display:'',
-  source:OFFICIAL[id.kind],
+  portal:selectedPortal,source:OFFICIAL[selectedPortal],
   // This flag only means the copied row matches the searched ID.
   // It NEVER means we verified this against the government server.
   matchedClipboard:true
  };
 }
-window.MstOfficial=Object.freeze({normalize,parseCopiedRow,officialUrl:code=>{
- const n=normalize(code);return n?OFFICIAL[n.kind]:null;
-}});
+window.MstOfficial=Object.freeze({normalize,parseCopiedRow,
+ officialUrl:(code,portal)=>{
+  const n=normalize(code);
+  if(!n)return null;
+  return OFFICIAL[portal==='business'||portal==='personal'?portal:n.kind];
+ },
+ comparePortalNames:(checks)=>{
+  const a=checks?.business?.name,b=checks?.personal?.name;
+  if(!a||!b)return 'Chưa đối chiếu đủ 2 cổng';
+  const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/đ/gi,'d').toLowerCase().replace(/\s+/g,' ').trim();
+  return norm(a)===norm(b)?'Tên khớp giữa 2 nguồn nhập thủ công':'Tên khác nhau giữa 2 cổng — cần kiểm tra';
+ }
+});
 })();

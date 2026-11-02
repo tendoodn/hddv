@@ -161,6 +161,12 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/028_mst_12_digit_trial_and_authorization.sql
       - name: Add explicit MST profiles and strict session lock
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/028_explicit_mst_profiles_and_session_lock.sql
+      - name: Harden anonymous access to privileged RPC functions
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/033_restrict_anon_privileged_rpc.sql
+      - name: Optimize foreign key indexes and authenticated RLS
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/034_fk_indexes_and_rls_initplan.sql
+      - name: Assert SQL security and performance migrations
+        run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/170_assert_security_performance.sql
       - name: Verify production readiness report is readable
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/RELEASE_READINESS_V32_READ_ONLY.sql
       - name: Verify restricted client roles and RPC grants

@@ -147,7 +147,7 @@ function route(info){
  const source=describe(link);
  let trustedLookup=false;
  try{const u=new URL(link);trustedLookup=u.protocol==='https:'&&!u.username&&!u.password&&
-   (!u.port||u.port==='443')&&!/^(?:localhost|127\\.|10\\.|192\\.168\\.|169\\.254\\.|0\\.)/i.test(u.hostname)}
+   (!u.port||u.port==='443')&&!/^(?:localhost|127\.|10\.|192\.168\\.|169\.254\\.|0\.)/i.test(u.hostname)}
  catch{}
  let directPdf=false;
  try{const u=new URL(link);directPdf=u.protocol==='https:'&&

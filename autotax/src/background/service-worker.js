@@ -37,24 +37,31 @@ function waitForDownload(id) {
 
 // Provider PDF retrieval is strictly opt-in and domain-scoped. Never proxy
 // arbitrary URLs, attach browser cookies, follow redirects, or mislabel HTML as PDF.
-const ISSUER_HOSTS=new Set([
- 'www.meinvoice.vn','tra-cuu.meinvoice.vn',
- 'sinvoice.viettel.vn','vinvoice.viettel.vn',
- 'xemhoadon32.vnpt.vn','vinaphone-portal.vnpt-invoice.com.vn'
+// Only approved consumer invoice domains from AutoTax's 21-provider catalog.
+const ISSUER_DOMAINS=new Set([
+ 'meinvoice.vn','fpt.com.vn','kiotviet.vn','vnpt-invoice.com.vn',
+ 'ehoadon.vn','easyinvoice.vn','minvoice.com.vn','thaison.vn',
+ 'mobifone.vn','fast.com.vn','nacencomm.vn','hilo.com.vn',
+ 'matbao.in','vinvoice.vn','viettel.vn','smartsign.com.vn',
+ 'xuathoadon.vn','cloudinvoice.vn','vietinvoice.vn','oinvoice.vn',
+ 'ehoadon.online'
 ]);
+const approvedIssuerHost=host=>[...ISSUER_DOMAINS].some(domain=>
+ host===domain||host.endsWith('.'+domain));
 function issuerPdfURL(value){
  let u;
  try{u=new URL(String(value||''))}catch{throw Error('Đường dẫn PDF không hợp lệ.')}
- if(u.protocol!=='https:'||u.username||u.password||!ISSUER_HOSTS.has(u.hostname))
+ if(u.protocol!=='https:'||u.username||u.password||
+    (u.port&&u.port!=='443')||!approvedIssuerHost(u.hostname.toLowerCase()))
   throw Error('Nhà phát hành chưa nằm trong danh sách miền được phép.');
  if(!/(?:\.pdf$|\/pdf(?:\/|$)|(?:download|export)[^/]*(?:pdf|invoice)?|format=pdf|type=pdf)/i.test(u.pathname+u.search))
   throw Error('Đây là trang tra cứu, chưa phải liên kết tải PDF trực tiếp.');
  return u;
 }
 async function fetchIssuerPdf(value){
- const u=issuerPdfURL(value),permission=u.origin+'/*';
- if(!(await chrome.permissions.contains({origins:[permission]})))
-  throw Error('Chưa cấp quyền truy cập nhà phát hành. Bật tại mục định dạng PDF trong Add-on.');
+ const u=issuerPdfURL(value);
+ // All issuer domains are declared as required host permissions in V1.1.
+ // No password, browser cookies or session is included in this request.
  const res=await fetch(u.href,{method:'GET',credentials:'omit',redirect:'error',cache:'no-store',
   signal:AbortSignal.timeout(16000),headers:{Accept:'application/pdf,application/octet-stream'}});
  if(!res.ok)throw Error('Máy chủ nhà phát hành trả HTTP '+res.status);

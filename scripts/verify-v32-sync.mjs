@@ -223,67 +223,6 @@ assert(!panelJs.includes("$(id).hidden = !show"),
  'Sheet choices must not be disabled based on the current MST business type');
 assert(admin.includes('id="app"')&&admin.includes('addon_is_admin'),
  'Admin page must keep server-verified access checks');
-assert(admin.includes('id="createPackageForm"')&&admin.includes('id="createPackageMessage"'),
- 'Admin must expose a dedicated new-package form with local status feedback');
-assert(admin.includes('normalizePackageCode')&&admin.includes('addon_admin_create_package'),
- 'Admin must normalize package codes before calling the existing guarded catalog RPC');
-assert(admin.includes('Mã gói phải dài 2–24') &&
- admin.includes('Số lượng phải là số nguyên') &&
- admin.includes('Giá bán phải là số nguyên'),
- 'Admin package creation must display explicit catalog validation errors');
-assert(admin.includes('Mã "+code+" đã tồn tại')&&admin.includes('Đang tạo gói'),
- 'Admin must reject duplicate codes and prevent repeated submissions');
-assert(!admin.includes('một trong 10 gói'),
- 'New package catalog must support more than the initial 10 plans');
-assert(!admin.includes('class="actions"><input id="newCode"'),
- 'Legacy unvalidated package form must not be rendered');
-assert(!admin.includes('@media(max-width:520px){</style>'),
- 'Admin stylesheet must not contain an unterminated media query');
-assert(!panelHtml.includes('Cập nhật mới:')&&!panelHtml.includes('Phiên bản sử dụng nội bộ'),'Obsolete extension notices must be removed');
-const adminHtml=load('docs/admin.html');
-assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');
-assert(adminHtml.includes('addon_admin_grant_package_v32'), 'Admin direct grant RPC missing');
-assert(adminHtml.includes('id="packageHistoryDialog" class="history-modal"'), 'Missing modal history window');
-assert(adminHtml.includes('addon_admin_search_package_transactions_v32'), 'Admin history must call server-paged transactions with search filter');
-assert(adminHtml.includes('id="historyPrev"') && adminHtml.includes('id="historyNext"'), 'Missing history pager');
-assert(adminHtml.includes('data-history='), 'Missing customer-specific history shortcut');
-assert(!adminHtml.includes('id="packageHistoryBody"'), 'Old inline expanded history must not be present');
-assert(adminHtml.includes('id="packageAdjustmentDialog"'),'Missing audited package revocation dialog');
-assert(adminHtml.includes('addon_admin_adjust_package_lot_v32'),'Missing revoke/restore RPC hookup');
-assert(adminHtml.includes('addon_admin_compensate_failed_order_v32'),'Missing failed/refunded compensation RPC hookup');
-assert(adminHtml.includes('<th>Mã đơn</th><th>Mã giao dịch</th>'),'Missing order and transaction ID columns');
-assert(adminHtml.includes('id="packageOrderSearch"'),'Missing order search input');
-assert(adminHtml.includes('addon_admin_search_package_transactions_v32'), 'Admin history must filter on server');
-assert(adminHtml.includes('id="packageOrderClearBtn"'), 'Admin history must permit clearing order search');
-assert(adminHtml.includes('addon_admin_hide_package_history_v32'), 'Admin history hide RPC must be wired');
-assert(adminHtml.includes('data-adjust="hide"'), 'Admin history must provide hide button for eligible records');
-assert(adminHtml.includes('h.can_hide'), 'Admin hide button must depend on server authorization');
-assert(adminHtml.includes('days=family==="mst"?365:null'), 'MST family must default to 365 days in admin');
-const candidate=load('addon-portal/supabase/PRODUCTION_UPGRADE_V32_ONE_TIME.sql');
-for(let number=5;number<=19;number++)assert(candidate.includes('-- =========== '+String(number).padStart(3,'0')+'_'),'Missing migration '+number);
-const truncate=candidate.split('truncate table')[1]?.split('restart identity restrict')[0]||'';
-assert(!truncate.includes('auth.users'),'auth.users is in truncate');
-assert(!truncate.includes('addon_admins'),'admin roles are in truncate');
-assert(candidate.includes('v32_already_installed_or_partial_state_stop'),'Missing one-time migration guard');
-assert(candidate.includes('v32_backup_stale_content_for_'),'Production reset must verify all snapshot data');
-assert(candidate.includes('v32_backup_required_missing_manifest'),'Production reset must refuse missing snapshots');
-assert(!/create\s+temp(?:orary)?\s+table/i.test(candidate),'Production upgrade must not create an RLS-less baseline table');
-assert(candidate.includes("set_config('autotax_v32.auth_count'"),'Production upgrade must record auth count transaction-locally');
-assert(candidate.includes("set_config('autotax_v32.admin_count'"),'Production upgrade must record admin count transaction-locally');
-assert(candidate.includes('v32_backup_rls_or_grant_invalid'),'Production reset must reject exposed backups');
-assert(!/drop\s+table\s+[^;]*cascade/i.test(candidate),'Unsafe drop table cascade');
-assert.equal((candidate.match(/\$\$/g)||[]).length%2,0,'Unbalanced upgrade $$');
-console.log('V3.2 sync source checks passed: UI IDs, JS syntax, RPCs, SQL quote balance, legacy guards and account preservation.');
-)&&admin.includes('Mã gói phải dài 2–24'),
- 'Admin must validate the same package code rules as Supabase');
-assert(admin.includes('Mã "+code+" đã tồn tại')&&admin.includes('Đang tạo gói'),
- 'Admin must reject duplicate codes and prevent repeated submissions');
-assert(!admin.includes('</div></div></div>\\n<section id="adminPackageGrant"'),
- 'Invalid extra closing div must not break admin-only panel containment');
-assert(!admin.includes('@media(max-width:520px){</style>'),
- 'Admin stylesheet must not contain an unterminated media query');
-assert(!admin.includes('một trong 10 gói'),
- 'Admin product catalog must not be described as fixed to 10 plans');
 assert(!panelHtml.includes('Cập nhật mới:')&&!panelHtml.includes('Phiên bản sử dụng nội bộ'),'Obsolete extension notices must be removed');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');

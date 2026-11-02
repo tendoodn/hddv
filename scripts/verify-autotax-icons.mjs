@@ -6,7 +6,7 @@ const file=p=>fs.readFileSync(p);
 const master=file('autotax/icons/icon.svg');
 const web=file('docs/favicon.svg');
 assert.deepEqual(web,master,'Website favicon must match Chrome extension master SVG');
-assert(master.toString().includes('AutoTax by Tendoo'));
+assert(master.toString().includes('AutoTax — smart invoice automation'));
 assert(master.toString().includes('#070D15')&&master.toString().includes('#21CEFF')&&
  master.toString().includes('smart invoice automation'),
  'Independent dark automation mark with electric-blue circuit accent required.');

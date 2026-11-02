@@ -60,7 +60,10 @@ assert(!gateway.includes('SUPABASE_SERVICE_ROLE_KEY'),'Gateway must not use serv
 for(const file of ['docs/web/web.js','docs/web/hddt-api.js','docs/web/report.js',
   'docs/web/zip.js','docs/web/xlsx.js','docs/web/captcha-svg-templates.js',
   'docs/web/vault.js','docs/web/pdf.js','docs/web/web-pdf.js','docs/web/audit.js',
+   'docs/web/issuer-pdf.js',
   'docs/web/captcha-svg.js']){
   new vm.Script(read(file),{filename:file});
 }
+assert(html.includes('id="issuerPdfDialog"')&&html.includes('issuer-pdf.js'),
+ 'Original PDF provider helper must be loaded with verified URLs and lookup codes');
 console.log('AutoTax Web: all scripts parse, form controls present, gateway authorization, extension data adapters in sync.');

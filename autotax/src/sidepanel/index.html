@@ -149,13 +149,15 @@
         <legend>Sheet thêm trong Excel</legend>
         <div class="checks sheet-grid">
           <label class="check" title="Mẫu bảng kê tải lên HTKK (NQ 142/2024/QH15)"><input type="checkbox" name="sheet" value="reduction" checked />PL giảm thuế GTGT</label>
-          <label id="hdkdOpt" class="check" title="Mẫu 01-2/BK-HĐKD cho hộ kinh doanh, lập từ hóa đơn mua vào" hidden><input type="checkbox" name="sheet" value="hdkd" />Bảng kê HĐKD</label>
-          <details class="sheet-more"><summary>Tùy chọn khác</summary><div class="sheet-more-inner">
+          <label id="hdkdOpt" class="check" title="Mẫu 01-2/BK-HĐKD cho hộ kinh doanh, lập từ hóa đơn mua vào"><input type="checkbox" name="sheet" value="hdkd" checked />Bảng kê HĐKD</label>
           <label class="check" title="Hóa đơn hủy/thay thế, lệch số học, thanh toán tiền mặt từ 5 triệu, chữ ký số, ngày ký khác tháng"><input type="checkbox" name="sheet" value="risk" checked />Kiểm tra rủi ro HĐ</label>
           <label class="check" title="Thêm 2 cột vào DS hóa đơn: người bán (mua vào) / người mua (bán ra) có tên trong danh sách công khai người sử dụng hóa đơn không hợp pháp của cổng không (tra gộp, lưu kết quả trên máy)"><input type="checkbox" name="sheet" value="seller" checked />Kiểm tra rủi ro MST</label>
           <label id="gtgtOpt" class="check" title="Tờ khai 01/GTGT điền sẵn từ hóa đơn để đối chiếu – chỉ lập khi chọn trọn 1 tháng hoặc 1 quý"><input type="checkbox" name="sheet" value="gtgt" />Tờ khai 01/GTGT (tham khảo)</label>
           <label class="check" title="Đặt HĐ thay thế/điều chỉnh cạnh HĐ gốc, tô màu chỗ thay đổi"><input type="checkbox" name="sheet" value="adjust" checked />So sánh HĐ thay thế với HĐ gốc</label>
-          <label class="check" title="Xuất ZIP nhập kho cho MISA hoặc Tendoo, cho phép thiếu mã hàng để sửa sau"><input type="checkbox" name="sheet" value="tendoo" id="tendooSyncCheck" />Xuất file nhập kho MISA / Tendoo</label></div></details>
+          </div>
+        <div class="sheet-stock-export">
+          <label class="check" title="Xuất ZIP nhập kho cho MISA hoặc Tendoo, cho phép thiếu mã hàng để sửa sau"><input type="checkbox" name="sheet" value="tendoo" id="tendooSyncCheck" />Xuất file nhập kho MISA / Tendoo</label>
+        </div>
         </div>
         <div id="tendooSummary" class="tendoo-summary" hidden>
           <strong id="tendooSummaryText">Chưa tải danh mục sản phẩm.</strong>

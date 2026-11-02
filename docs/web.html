@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#09090b">
 <title>AutoTax Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=4">
+<link rel="stylesheet" href="./web/web.css?v=5">
 </head>
 <body>
 <main class="wrap">
@@ -21,6 +21,10 @@
     <div class="account-line">
       <div><strong>Phiên AutoTax</strong><span id="authStatus">Đang xác minh đăng nhập…</span></div>
       <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
+    </div>
+    <div id="searchTotals" class="search-total-mini" hidden aria-live="polite">
+      <div><span>Tổng thanh toán kỳ tra cứu</span><strong id="searchTotalPay">0 ₫</strong></div>
+      <div><span>Tổng tiền thuế kỳ tra cứu</span><strong id="searchTotalVat">0 ₫</strong></div>
     </div>
     <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
     <div id="gdtConnectionHelp" class="gdt-connection-help" role="status" hidden>
@@ -115,8 +119,7 @@
     <div class="dialog-heading"><h2 id="invoiceDetailTitle">Chi tiết hóa đơn</h2><button id="closeInvoiceDetail" type="button" class="outline">Đóng</button></div>
     <p id="invoiceDetailMeta"></p>
     <div id="invoiceDetailStatus" class="muted"></div>
-    <div class="table-wrap"><table><thead><tr><th>STT</th><th>MST người bán</th><th>Tên người bán</th><th>Mã hàng hóa</th><th>Tên hàng hóa</th><th>Đơn vị tính</th><th>Thuế suất</th><th>Thành tiền chưa thuế</th><th>Thành tiền gồm thuế</th></tr></thead><tbody id="detailRows"></tbody></table></div>
-    <div class="invoice-detail-totals"><span>Tổng tiền thuế: <b id="detailTax">—</b></span><span>Tổng tiền hóa đơn: <b id="detailTotal">—</b></span></div>
+    <div class="table-wrap"><table><thead><tr><th>STT</th><th>MST người bán</th><th>Tên người bán</th><th>Mã hàng hóa</th><th>Tên hàng hóa</th><th>Đơn vị tính</th><th>Thuế suất</th><th>Thành tiền chưa thuế</th><th>Thành tiền gồm thuế</th></tr></thead><tbody id="detailRows"></tbody><tfoot><tr><th colspan="8">Tổng tiền thuế</th><th id="detailTax">—</th></tr><tr><th colspan="8">Tổng tiền hóa đơn</th><th id="detailTotal">—</th></tr></tfoot></table></div>
   </dialog>
   <dialog id="skuMapDialog" class="stock-map-dialog" aria-labelledby="skuMapTitle">
     <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
@@ -142,7 +145,7 @@
 <script src="./web/captcha-svg.js?v=1"></script>
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
-<script src="./web/tendoo-import.js?v=1"></script>
-<script src="./web/web.js?v=5"></script>
-<script src="./web/web-results.js?v=1"></script>
+<script src="./web/tendoo-import.js?v=2"></script>
+<script src="./web/web.js?v=6"></script>
+<script src="./web/web-results.js?v=2"></script>
 </body></html>

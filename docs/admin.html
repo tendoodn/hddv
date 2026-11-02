@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tendoo AutoTax 3.3.5 — Quản trị</title>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tendoo AutoTax 3.3.6 — Quản trị</title>
 <style>
 :root{font-family:Inter,system-ui,sans-serif;color:#172033;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1150px;margin:auto;padding:28px 16px}header,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-weight:850;font-size:20px}.brand span{color:#2563eb}.panel,.card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 22px #1e293b08}h1{font-size:26px}button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;background:#2563eb;color:white;cursor:pointer}button.secondary{background:#eaf0f9;color:#172033}button.danger{background:#dc2626}button:disabled{opacity:.5}input,select{padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;min-width:230px}.muted,small{color:#64748b}.hidden{display:none!important}.notice{padding:12px;border-radius:9px;background:#eff6ff;color:#1e40af;white-space:pre-wrap;margin-top:12px}.error{background:#fef2f2;color:#991b1b}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab.active{background:#172033;color:#fff}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:left;padding:11px;border-bottom:1px solid #e2e8f0;font-size:13px;vertical-align:top}th{background:#f8fafc}.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#dcfce7;color:#166534;font-size:12px}.pill.off{background:#fee2e2;color:#991b1b}.actions{display:flex;gap:7px;flex-wrap:wrap}.sub{font-size:12px;color:#64748b;margin-top:5px}.history-modal{width:min(1280px,98vw);max-width:98vw;max-height:88vh;overflow:auto;border:1px solid #cbd5e1;border-radius:16px;padding:22px;background:#fff;color:#172033;box-shadow:0 18px 65px #0f172a33}.history-modal::backdrop{background:#0f172a99}.history-modal .tablewrap table{min-width:1330px}
 .history-modal code{font-size:11px;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
@@ -24,29 +24,9 @@ button.tab.active{background:var(--tendoo-dark)}
 .notice.error{background:#fef2f2;color:#991b1b}
 a{color:var(--tendoo-dark)}
 input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color:var(--tendoo)}
-.admin-extension-settings{border-color:var(--tendoo-line)}
-.admin-settings-nav{display:inline-flex;align-items:center;padding:9px 12px;border-radius:9px;background:var(--tendoo-soft);border:1px solid var(--tendoo-line);font-size:13px;font-weight:750;text-decoration:none;color:var(--tendoo-dark)}
-#extensionConfigPanel{scroll-margin-top:100px;border:2px solid var(--tendoo-line)}
-.admin-extension-form{display:flex;align-items:end;flex-wrap:wrap;gap:9px}
-.admin-extension-form label{flex:1 1 450px;font-size:12px;font-weight:750;color:var(--tendoo-dark)}
-.admin-extension-form input{display:block;width:100%;min-width:0;margin-top:6px}
-.admin-extension-form button{min-height:43px}
-.admin-extension-form a{align-self:center;font-size:12px}
-@media(max-width:520px){.admin-extension-form button{width:100%}}
-</style></head><body><main class="wrap">
-<header><div class="brand">TENDOO <span>AUTOTAX 3.3.5 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><a id="extensionSettingsNav" href="#extensionConfigPanel" class="admin-settings-nav" hidden>Cấu hình link tải</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
+@media(max-width:520px){</style></head><body><main class="wrap">
+<header><div class="brand">TENDOO <span>AUTOTAX 3.3.6 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
-<section id="extensionConfigPanel" class="panel admin-extension-settings hidden" aria-labelledby="extensionLinkHeading">
-  <h2 id="extensionLinkHeading">Cấu hình link tải Chrome Extension</h2>
-  <p class="sub">Đường dẫn HTTPS này sẽ hiển thị thành nút <strong>Tải Chrome Extension</strong> trên trang người dùng. Để trống rồi lưu để ẩn nút.</p>
-  <form id="extensionLinkForm" class="admin-extension-form">
-    <label for="extensionDownloadUrl">Link tải Extension</label>
-    <input id="extensionDownloadUrl" type="url" inputmode="url" placeholder="https://chromewebstore.google.com/..." maxlength="2048" autocomplete="off">
-    <button type="submit" id="extensionLinkSave">Lưu đường dẫn</button>
-    <a id="extensionLinkPreview" href="#" target="_blank" rel="noopener noreferrer" hidden>Mở link hiện tại</a>
-  </form>
-  <p id="extensionLinkMessage" class="notice hidden" role="status"></p>
-</section>
 <section id="app" class="hidden">
 <div class="row"><div><h1>Quản lý khách hàng</h1><div class="muted">Tối đa 500 tài khoản gần nhất · gói hóa đơn, MST và trạng thái dùng thử V3.2.</div></div><button id="reload">Làm mới dữ liệu</button></div>
 <div class="panel"><div class="row"><input id="search" placeholder="Tìm theo email..." type="search"><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
@@ -79,41 +59,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js"></script><script>
 const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
 const $=id=>document.getElementById(id);let allUsers=[],allPackages=[];
-async function loadExtensionLink(){
- const {data,error}=await client.from("addon_public_settings")
-  .select("value").eq("setting_key","extension_download_url").maybeSingle();
- if(error){msg("extensionLinkMessage","Không tải được link: "+error.message,true);return}
- const value=String(data?.value||"");
- $("extensionDownloadUrl").value=value;
- $("extensionLinkPreview").hidden=!value;
- if(value)$("extensionLinkPreview").href=value;
- else $("extensionLinkPreview").removeAttribute("href");
-}
-$("extensionLinkForm").addEventListener("submit",async e=>{
- e.preventDefault();
- const value=$("extensionDownloadUrl").value.trim(),button=$("extensionLinkSave");
- if(value){
-  try{const u=new URL(value);if(u.protocol!=="https:"||!u.hostname)throw Error()}
-  catch{return msg("extensionLinkMessage","Link phải bắt đầu bằng https:// và có tên miền hợp lệ.",true)}
- }
- button.disabled=true;
- try{
-  const {error}=await client.from("addon_public_settings").upsert({
-   setting_key:"extension_download_url",value,updated_at:new Date().toISOString()
-  },{onConflict:"setting_key"});
-  if(error)throw error;
-  await loadExtensionLink();
-  msg("extensionLinkMessage",value?"Đã lưu link tải Extension; người dùng sẽ thấy nút tải.":"Đã xóa link; nút tải Extension sẽ ẩn.");
- }catch(err){msg("extensionLinkMessage","Không thể lưu: "+err.message,true)}
- finally{button.disabled=false}
-});
-
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
 function fmt(v){return v?new Date(v).toLocaleString("vi-VN"):"—"}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");$("extensionConfigPanel").classList.add("hidden");$("extensionSettingsNav").hidden=true;if(!session)return;
+async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");if(!session)return;
 const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){await client.auth.signOut();msg("authMsg","Tài khoản này không có quyền quản trị.",true);$("auth").classList.remove("hidden");return}
-$("extensionConfigPanel").classList.remove("hidden");$("extensionSettingsNav").hidden=false;$("app").classList.remove("hidden");await loadExtensionLink();await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
+$("app").classList.remove("hidden");await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
 
 async function loadPlans(){const {data,error}=await client.rpc("addon_admin_list_packages");if(error)return msg("msg","Không tải được danh mục gói: "+error.message,true);allPackages=data||[];$("packagePrices").innerHTML=(data||[]).map(p=>'<tr><td><b>'+esc(p.code)+'</b></td><td>'+(p.family==="invoice"?"Hóa đơn":"MST")+'</td><td>'+p.quantity+'</td><td><input type="number" min="0" value="'+p.price_vnd+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td><td>'+(p.family==="mst"?(Number(p.validity_days)===365?'<b>1 năm</b><div class="sub">365 ngày</div>':'<span class="pill off">Chưa áp dụng SQL 020</span>'):'—')+'</td><td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td><td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button><button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button></div></td></tr>').join("")||'<tr><td colspan="7">Chưa có gói.</td></tr>';
 $("unlockPackage").innerHTML=(data||[]).filter(p=>p.active).map(p=>'<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' ('+p.quantity+')</option>').join("");

@@ -145,14 +145,20 @@ const validCode=value=>typeof value==='string'&&value.trim().length>0&&value.tri
 function route(info){
  const link=String(info?.link||'').trim(),code=String(info?.code||'').trim();
  const source=describe(link);
+ let trustedLookup=false;
+ try{const u=new URL(link);trustedLookup=u.protocol==='https:'&&!u.username&&!u.password&&
+   (!u.port||u.port==='443')&&!/^(?:localhost|127\\.|10\\.|192\\.168\\.|169\\.254\\.|0\\.)/i.test(u.hostname)}
+ catch{}
  let directPdf=false;
  try{const u=new URL(link);directPdf=u.protocol==='https:'&&
   (/\.pdf$/i.test(u.pathname)||/\/pdf(?:\/|$)|download[^/]*(?:pdf|invoice)|format=pdf|type=pdf/i.test(u.pathname+u.search))}
  catch{}
- return {source,link,code,directPdf,hasLookup:!!(source&&validCode(code)),
-  // A direct PDF URL may already carry the access token in its existing URL.
-  // Do not ever append the security code to URL or guess provider API endpoints.
-  shouldReconstruct:!directPdf&&!(source&&validCode(code))};
+ return {source,link,code,directPdf,hasLookup:!!(trustedLookup&&validCode(code)),
+  // A direct PDF URL may carry an existing access token in its URL.
+  // Never append the security code to it or guess provider API endpoints.
+  // A real HTTPS lookup URL from an invoice has priority even if its
+  // supplier is not yet included in the catalog of 21.
+  shouldReconstruct:!directPdf&&!(trustedLookup&&validCode(code))};
 }
 window.IssuerPortals=Object.freeze({sources:SOURCES,describe,route});
 })();

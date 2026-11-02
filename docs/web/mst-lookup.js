@@ -109,22 +109,27 @@ async function requestRegion(batch,region){
  }finally{clearTimeout(timer)}
 }
 async function requestBatch(batch){
- // CI verified VietQR data from Singapore and EU-West; Tokyo returned provider 429.
- let result;
- try{result=await requestRegion(batch,'ap-southeast-1')}
- catch{return requestRegion(batch,'eu-west-1')}
- const retries=result.map((data,i)=>({data,item:batch[i],index:i}))
-  .filter(({data,item})=>item.kind!=='personal'&&
-   !data?.verified&&['rate_limited','upstream_unavailable'].includes(data?.error));
- if(retries.length){
+ const zones=['ap-southeast-1','eu-west-1','ap-northeast-1'];
+ let result=null,lastError=null;
+ for(const zone of zones){
+  // Retry only IDs without verified responses. Never retry personal IDs without licensed source.
+  const pending=(result||batch.map(()=>null))
+   .map((value,index)=>({value,item:batch[index],index}))
+   .filter(({value,item})=>item.kind!=='personal'&&(!value||!value.verified)&&
+     (!value||['rate_limited','upstream_unavailable','not_found_or_unavailable'].includes(value.error)));
+  const first=!result;
+  const items=first?batch:pending.map(x=>x.item);
+  if(!items.length)break;
   try{
-   const fallback=await requestRegion(retries.map(x=>x.item),'eu-west-1');
-   for(let i=0;i<retries.length;i++){
-    if(fallback[i]?.verified)result[retries[i].index]=fallback[i];
+   const data=await requestRegion(items,zone);
+   if(first)result=data;
+   else for(let i=0;i<pending.length;i++){
+    if(data[i]?.verified)result[pending[i].index]=data[i];
    }
-  }catch{/* Keep first region's truthful source status. */}
+  }catch(error){lastError=error;continue}
  }
- return result;
+ if(result)return result;
+ throw lastError||Error('Nguồn dữ liệu chưa phản hồi sau các tuyến được phép.');
 }
 const errorFor=(item,error)=>({mst:item.display,type:item.kind,name:'',
  address:'',office:'',status:'Chưa xác minh',verified:false,

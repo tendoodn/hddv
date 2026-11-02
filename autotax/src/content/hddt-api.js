@@ -375,12 +375,35 @@
   // Tên trường theo nhà cung cấp (khảo sát 24/10/2026): Thái Sơn "Mã TC" + "DC TC", FAST "KeySearch", Viettel "Mã số bí mật"
   const LOOKUP = /tra\s*c[ứu]u|tracuu|searchkey|keysearch|lookup|reservation|fkey|transaction|portal|website|url|link|^m[ãa]\s*tc$|^dc\s*tc$|bí mật/i;
   function lookupOf(doc) {
+    // TTKhac varies by provider: Fkey, Mã tra cứu, mã bí mật, PortalLink etc.
+    // Never invent a lookup code. Only use URLs from the invoice's own XML.
     let code = '', link = '';
+    const linkValue = (value) => {
+      const v = String(value || '').trim();
+      const candidate = /^https?:\/\//i.test(v) ? v :
+        /^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?$/i.test(v) ? 'https://' + v : '';
+      try {
+        if (!candidate) return '';
+        const u = new URL(candidate);
+        return u.protocol === 'https:' && !u.username && !u.password ? u.href : '';
+      } catch { return ''; }
+    };
     for (const tin of byName(doc, 'TTin')) {
       if (tin.closest('HHDVu, NBan, NMua, DSCKS')) continue;
       const k = txt(kid(tin, 'TTruong')), v = txt(kid(tin, 'DLieu'));
-      if (!v || !LOOKUP.test(k)) continue;
-      if (/^https?:\/\//i.test(v)) { link ||= v; } else if (/^dc\s*tc$/i.test(k)) { link ||= `https://${v}`; } else if (!/link|url|website|portal/i.test(k)) { code ||= v; }
+      if (!v) continue;
+      if (LOOKUP.test(k)) {
+        if (/link|url|website|portal|^dc\s*tc$/i.test(k)) link ||= linkValue(v);
+        else if (/^https?:\/\//i.test(v)) link ||= linkValue(v);
+        else if (v.length <= 150) code ||= v;
+      }
+    }
+    for (const tag of ['Fkey', 'FKey', 'LookupCode', 'MaTraCuu', 'MaBaoMat', 'SecretCode', 'SearchKey']) {
+      const v = txt(byName(doc, tag)[0]);
+      if (v && v.length <= 150 && !/^https?:\/\//i.test(v)) code ||= v;
+    }
+    for (const tag of ['PortalLink', 'LookupUrl', 'TraCuuURL', 'SearchUrl', 'URLTraCuu']) {
+      link ||= linkValue(txt(byName(doc, tag)[0]));
     }
     return { code, link };
   }

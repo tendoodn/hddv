@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AutoTax V1.1 - Quản lý hóa đơn",
   "short_name": "AutoTax",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "AutoTax V1.1: tải hóa đơn gốc theo link và mã tra cứu, dựng bản PDF từ dữ liệu Thuế khi thiếu thông tin.",
   "icons": {
     "16": "icons/icon-16.png",

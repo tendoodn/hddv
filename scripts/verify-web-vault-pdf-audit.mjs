@@ -7,68 +7,69 @@ const html=read('docs/web.html'),admin=read('docs/admin.html'),mst=read('docs/ad
  renderer=read('docs/web/pdf.js'),audit=read('docs/web/audit.js'),
  results=read('docs/web/web-results.js'),main=read('docs/web/web.js'),
  report=read('autotax/src/content/report.js');
-for(const id of ['mst','vaultPassphrase','rememberGdt','vaultUnlock','vaultForget','vaultStatus',
+for(const id of ['mst','mstPickerToggle','mstPickerMenu','mstForgetPassword',
  'invoiceAuditDialog','invoiceAuditRows','invoiceAuditSummary','closeInvoiceAudit','exportPdf']){
  assert(html.includes('id="'+id+'"'),'Missing Web control '+id);
 }
-assert(!html.includes('id="exportTax"')&&!html.includes('id="mstList"'),
- 'Web must use MST dropdown and single PDF button rather than obsolete tax/lookup buttons');
-assert(html.includes('Tải PDF gốc')&&html.includes('không gọi bản đó là PDF gốc'),
- 'PDF fallback must be clearly distinguished from original PDF');
-assert(admin.includes('id="customerMstSearch"')&&admin.includes('id="customerPackageFilter"')&&
- admin.includes('id="packageStatusFilter"')&&admin.includes('id="mstAssignmentSearch"'),
- 'Admin must have MST and package-status filters');
-assert(admin.includes('filtered=allUsers.filter')&&mst.includes('renderMstAssignments'),
- 'MST/customer filters must update rendered rows');
-assert(vault.includes('AES-GCM')&&vault.includes('PBKDF2')&&vault.includes('260000')&&
- vault.includes("const storageKey=()=> 'autotax_gdt_secret_v1_'+owner"),
- 'Vault must encrypt locally with a distinct per-account key');
-assert(!vault.includes('localStorage.setItem(storageKey(),JSON.stringify(entries))')&&
- vault.includes("data:b64(ciphertext)")&&vault.includes('await crypto.subtle.encrypt'),
- 'Vault must never store cleartext password values');
-assert(main.includes('window.GdtVault?.saveAfterLogin(mst,password)')&&
- main.includes('window.GdtVault?.setUser(account.id,profileMsts)'),
- 'Save only after confirmed GDT login and show only account-linked MSTs');
+assert(!html.includes('id="vaultPassphrase"')&&!html.includes('id="rememberGdt"')&&
+ !html.includes('id="exportScope"'),'Vault password and export scope selector must be removed.');
+assert(html.includes('Tải PDF gốc')&&html.includes('không xuất PDF tự dựng thay thế'),
+ 'Strict original-PDF export must not use rendered representation fallback.');
+assert(admin.includes('id="customerMstSearch"')&&admin.includes('id="mstAssignmentSearch"')&&
+ admin.includes('id="packageStatusFilter"'),'Admin filters required.');
+assert(mst.includes('addon_admin_set_mst_profile_name')&&mst.includes('a.display_name'),
+ 'Admin must manage account-linked named MST profiles.');
+assert(vault.includes('AES-GCM')&&vault.includes('indexedDB.open(DB_NAME,1)')&&
+ vault.includes("false,['encrypt','decrypt']")&&
+ vault.includes("entryKey(mst)")&&vault.includes('await crypto.subtle.encrypt'),
+ 'Tax passwords must be encrypted locally with account-specific nonextractable key.');
+assert(!vault.includes('localStorage.setItem(storageKey()')&&
+ main.includes('window.GdtVault?.saveAfterLogin(mst,password)')&&
+ main.includes('setUser(account.id,profiles.data||[])'),
+ 'Save password only after tax login, never as plaintext.');
 assert(pdf.includes("source.protocol!=='https:'")&&pdf.includes("b[0]!==37||b[1]!==80")&&
- pdf.includes("BanTheHien_GDT")&&pdf.includes("PDF_goc_nha_phat_hanh"),
- 'Source provider PDF must be verified; tax representations labelled distinctly');
+ pdf.includes('PDF_goc_nha_phat_hanh')&&
+ !pdf.includes('window.Pdf.buildInvoicePdf('),
+ 'Strict PDF exporter must reject non-PDF links and never render fake originals.');
 assert(renderer.includes('raw.githubusercontent.com/tendoodn/hddv/main/autotax/src/content/fonts/')&&
- !renderer.includes('chrome.runtime.getURL('),
- 'Web renderer must use allowed browser-accessible font URLs');
+ !renderer.includes('chrome.runtime.getURL('),'Web renderer must use HTTPS font URL.');
 assert(audit.includes('window.Report.buildSheets')&&audit.includes("s.name==='Kiểm tra rủi ro HĐ'")&&
- audit.includes('Không đủ dữ liệu'),
- 'Audit popup must use canonical risk checker and avoid false positive on data failures');
-assert(report.includes("name: 'Kiểm tra rủi ro HĐ'"),'The canonical engine must still expose risk sheet');
+ audit.includes('Không đủ dữ liệu')&&report.includes("name: 'Kiểm tra rủi ro HĐ'"),
+ 'Retain canonical risk checker.');
 assert(results.includes("audit.dataset.audit=keyOf(r)")&&results.includes('window.WebAudit?.open(row)'),
- 'Row action must open validity check alongside details');
+ 'Invoice rows must still open risk audit.');
 
 const pdfBytes=Uint8Array.from([37,80,68,70,45,49,46,55,10]);
-const createContext=(lookup,sourcePdf)=>{
- let download=null,rendered=0,originalsRead=0;
- const app={fetchDetail:async()=>({source:'xml',head:{},xml:new Uint8Array(),lines:[]}),
+const context=link=>{
+ let download=null,rendered=0;
+ const app={fetchDetail:async()=>({source:'xml',head:{},lines:[]}),
   progress(){},download:(name,bytes,mime)=>download={name,bytes,mime},getMst:()=> '0123456789'};
- const window={WebInvoiceApp:app,
-  HDDT:{originalLookup:()=>({link:lookup}),fetchOriginal:async()=>{originalsRead++;return {source:'xml',head:{}}}},
+ const window={WebInvoiceApp:app,HDDT:{originalLookup:()=>({link,code:'TEST-CODE',name:'Issuer'})},
   Pdf:{buildInvoicePdf:async()=>{rendered++;return pdfBytes}},
   Zip:{writeZip:files=>files}};
  const fetch=async()=>({ok:true,headers:{get:()=>null},arrayBuffer:async()=>pdfBytes.buffer});
  vm.runInNewContext(pdf,{window,fetch,URL,AbortController,setTimeout,clearTimeout,
   Uint8Array,Date,Error,Array,Number,String,Math,Promise,console});
- return {window,getState:()=>({download,rendered,originalsRead})};
+ return {window,getState:()=>({download,rendered})};
 };
 {
- const c=createContext('https://example.org/hddt.pdf',true);
+ const c=context('https://example.org/hddt.pdf');
  const x=await c.window.WebPdfExport.create([{khhdon:'C26',shdon:'1',kind:'purchase'}]);
- assert.equal(x.originals,1,'Direct PDF must be first priority');
- assert.equal(x.rendered,0,'Do not render when real original PDF was downloaded');
+ assert.equal(x.originals,1,'Real provider PDF downloaded from direct URL.');
+ assert.equal(x.rendered,0);
  assert.equal(c.getState().download.mime,'application/pdf');
 }
 {
- const c=createContext('https://example.org/tim-hoa-don',false);
- const x=await c.window.WebPdfExport.create([{khhdon:'C26',shdon:'2',kind:'purchase',
-  gocRef:{nbmst:'0123456789',shdon:'1'}}]);
- assert.equal(x.originals,0,'Provider search page is never treated as PDF');
- assert.equal(x.rendered,1,'Render from GDT data when original cannot be reached');
- assert.equal(x.sourceOriginals,1,'Try original invoice from GDT data first when adjustment has a source');
+ const c=context('https://example.org/tim-hoa-don');
+ const x=await c.window.WebPdfExport.create([{khhdon:'C26',shdon:'2',kind:'purchase'}]);
+ assert.equal(x.originals,0,'Provider lookup page is not a PDF.');
+ assert.equal(x.rendered,0,'No synthetic fallback PDF may be generated.');
+ assert.equal(x.errors.length,1,'Missing original must be reported.');
+ assert.equal(c.getState().rendered,0);
+ const files=c.getState().download.bytes;
+ assert.equal(c.getState().download.mime,'application/zip');
+ assert.equal(files.length,1,'Only a status report, no fake invoice PDFs.');
+ assert.equal(files[0].name,'NGUON_PDF_MA_TRA_CUU.txt');
+ assert(files[0].data.includes('TEST-CODE'),'Guide must retain invoice lookup security code.');
 }
-console.log('Web PDF priority, fallback labelling, MST/profile filters, encrypted vault and invoice audit regression checks passed.');
+console.log('Strict original-PDF, per-account encrypted credentials, MST and invoice audit regression checks passed.');

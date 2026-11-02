@@ -64,6 +64,16 @@ button:hover:not(:disabled){filter:brightness(.97)}
 input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 .license-token{color:#b00014}
 
+/* Dashboard action links remain visible after login, independent of admin and database settings. */
+.portal-account-head{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.account-quick-actions{display:grid;grid-template-columns:repeat(5,minmax(117px,1fr));gap:7px;width:100%;overflow-x:auto;padding-bottom:4px}
+.account-quick-actions .account-link-btn,.account-quick-actions button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:39px;height:auto;min-width:0;margin:0;padding:7px 8px;text-align:center;white-space:nowrap;font-size:12px;line-height:1.15;border-radius:9px;text-decoration:none;font-weight:750}
+.account-quick-actions .account-link-btn{border:1px solid var(--tendoo-line);background:var(--tendoo-soft);color:var(--tendoo-dark)}
+.account-quick-actions .account-link-btn:hover{background:#ffe4e6}
+.account-quick-actions .extension-download-link{border-color:var(--tendoo);background:var(--tendoo);color:#fff}
+.account-quick-actions .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+@media(max-width:600px){.portal-account-head .account-quick-actions{grid-template-columns:repeat(5,minmax(124px,1fr));gap:5px;max-width:100%}}
+
 </style>
 </head>
 <body>
@@ -85,7 +95,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 </section>
 <section id="dashboard" hidden>
  <div class="panel">
-  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><div class="actions"><button id="refreshBtn" class="secondary" title="Làm mới">↻ Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
+  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tendoodn.github.io/t/k.html" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tendoodn.github.io/t/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="refreshBtn" class="secondary" title="Làm mới">Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
   <div class="grid">
    <div class="plan stat"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>

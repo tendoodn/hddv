@@ -177,6 +177,42 @@ async function getCaptcha(){
   $('retryConnectionBtn').disabled=false;
  }
 }
+// Account-owned display name: prefer the authenticated GDT profile name;
+ // fall back only to an invoice buyer/seller name whose MST matches this session.
+const profileDisplayNames=new Map();
+const normalizedMst=v=>String(v||'').replace(/\D/g,'');
+const validProfileLabel=v=>{
+ const s=String(v||'').trim().replace(/\s+/g,' ');
+ return s.length>=3&&s.length<=120&&/[\p{L}]/u.test(s)&&
+  !/^(khách lẻ|khach le|người mua không lấy hóa đơn|không có tên)$/i.test(s)?s:'';
+};
+async function assignAutoMstName(mst,candidate,source){
+ const label=validProfileLabel(candidate),id=normalizedMst(mst);
+ if(!label||!account||!profileMsts.includes(id)||profileDisplayNames.get(id))return false;
+ try{
+  const {error}=await client.rpc('addon_set_mst_profile_name',
+   {p_mst:id,p_display_name:label});
+  if(error)throw error;
+  profileDisplayNames.set(id,label);
+  // Reload account-scoped labels in the MST picker, preserving the selection.
+  const {data}=await client.rpc('addon_list_my_mst_assignments');
+  if(data)await window.GdtVault?.setUser(account.id,data);
+  $('gdtStatus').textContent='Tên hồ sơ '+id+' được nhận từ '+source+': '+label;
+  return true;
+ }catch(e){console.warn('Không đồng bộ được tên hồ sơ MST:',e.message);return false}
+}
+function nameFromMatchedInvoices(rows,mst){
+ const normalized=normalizedMst(mst),names=new Map();
+ for(const r of rows){
+  const match=r.kind==='purchase'?
+   normalizedMst(r.nmmst)===normalized:normalizedMst(r.nbmst)===normalized;
+  if(!match)continue;
+  const name=validProfileLabel(r.kind==='purchase'?r.nmten:r.nbten);
+  if(name)names.set(name,(names.get(name)||0)+1);
+ }
+ return [...names.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+}
+
 async function refreshAccount(){
  if(!client){show('Không tải được thư viện đăng nhập Supabase. Vui lòng tải lại trang.');return}
  try{
@@ -196,6 +232,9 @@ async function refreshAccount(){
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   selectedMode=ent.data?.mode||'mst';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
+  profileDisplayNames.clear();
+  for(const item of profiles.data||[])
+   profileDisplayNames.set(normalizedMst(item.mst),String(item.display_name||'').trim());
   await window.GdtVault?.setUser(account.id,profiles.data||[]);
   if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
   else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
@@ -300,12 +339,16 @@ async function search(e){
   const info=await HDDT.getSessionInfo();
   if(!info?.ready||String(info.mst||'').replace(/\D/g,'')!==mst)
     throw Error('Phiên cổng Thuế hết hạn hoặc MST không khớp.');
+  if(info.company)await assignAutoMstName(mst,info.company,'cổng Thuế đã đăng nhập');
   const result=await HDDT.search({tuNgay:vn(start),denNgay:vn(end),
     kinds:selected('kind'),forms:selected('form'),shouldStop:()=>stopped,
     onProgress:p=>progress(p.label+' · '+p.count+' hóa đơn'),
     onWarn:msg=>show(msg),onWait:w=>progress(w.label+' · đang đợi cổng Thuế '+(w.secs||0)+' giây')});
   if(stopped)throw Error('Đã dừng theo yêu cầu.');
   rows=await claimRows(result.rows,mst);details.clear();
+  if(!profileDisplayNames.get(mst))
+   await assignAutoMstName(mst,nameFromMatchedInvoices(rows,mst),
+    'tên người mua/người bán khớp MST trên hóa đơn');
   searchedBothKinds=selected('kind').includes('purchase')&&selected('kind').includes('sold');
   renderResults(rows,result.skipped||[]);
   show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
@@ -389,11 +432,12 @@ async function exportFile(kind){
    if(!window.WebPdfExport)throw Error('Bộ xử lý PDF chưa tải xong; vui lòng làm mới trang.');
    const result=await window.WebPdfExport.create(targetRows);
    show('PDF gốc nhà phát hành: '+result.originals+
+    '; PDF dựng lại từ dữ liệu Thuế (không phải gốc): '+result.rendered+
     '; PDF do người dùng gắn (chưa xác minh chữ ký): '+(result.userSupplied||0)+
     '. '+(result.errors.length?result.errors.length+
     ' hóa đơn chưa lấy được PDF gốc — xem link/mã tra cứu trong tệp hướng dẫn ZIP.':
     'Đã tải toàn bộ tệp có thể truy cập.')+
-    ' AutoTax không dựng PDF thay thế và không tự nhận tệp không rõ nguồn là bản gốc.',
+    ' AutoTax chỉ dựng PDF khi thiếu link hoặc mã tra cứu; có đủ hai thông tin thì ưu tiên bản gốc.',
     result.errors.length===0);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}
  }catch(e){show('Không xuất được tệp: '+e.message)}

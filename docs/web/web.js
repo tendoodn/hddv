@@ -385,6 +385,7 @@ async function exportFile(kind){
    const result=await window.WebPdfExport.create(targetRows);
    show('Đã xuất '+result.count+' PDF; '+result.originals+' PDF trực tiếp từ đơn vị phát hành, '+
     (result.attachments||0)+' PDF đính kèm dữ liệu Thuế (chưa xác minh nguồn), '+
+    (result.userSupplied||0)+' PDF do người dùng gắn thủ công (chưa xác minh), '+
     result.rendered+' bản thể hiện do AutoTax dựng.'+
     (result.errors.length?' Có '+result.errors.length+' hóa đơn chưa xuất được.':''),true);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}

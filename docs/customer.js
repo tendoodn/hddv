@@ -134,15 +134,30 @@ async function loadMstAssignments(){
   const line=document.createElement("div");line.className="mst-row";
   const name=document.createElement("div");
   addText(name,"strong",a.mst);
+  const label=addText(name,"div",a.display_name||"Chưa đặt tên hồ sơ","mst-name");
   addText(name,"small","Liên kết: "+vnDate(a.assigned_at),"muted");
-  const button=addText(line,"button","Xóa MST");button.className="secondary";
+  const actions=document.createElement("div");actions.className="mst-row-actions";
+  const rename=addText(actions,"button","Đổi tên");rename.className="secondary";
+  rename.addEventListener("click",async()=>{
+   const entered=prompt("Tên hiển thị hồ sơ "+a.mst+" (tối đa 120 ký tự):",a.display_name||"");
+   if(entered===null)return;
+   const display=entered.trim();
+   if(display.length>120){showMessage("Tên hồ sơ tối đa 120 ký tự.",true);return}
+   rename.disabled=true;
+   try{
+    await rpc("addon_set_mst_profile_name",{p_mst:a.mst,p_display_name:display});
+    showMessage("Đã cập nhật tên hồ sơ "+a.mst);
+    await loadMstAssignments();
+   }catch(e){showMessage(prettyError(e),true);rename.disabled=false}
+  });
+  const button=addText(actions,"button","Xóa MST");button.className="secondary";
   button.addEventListener("click",async()=>{
    if(!confirm("Xóa hồ sơ MST "+a.mst+"? Lịch sử cũ và dùng thử vẫn được giữ."))return;
    button.disabled=true;
    try{await rpc("addon_remove_mst_profile_v33",{p_mst:a.mst});showMessage("Đã xóa hồ sơ "+a.mst);await loadMstAssignments()}
    catch(e){showMessage(prettyError(e),true);button.disabled=false}
   });
-  line.prepend(name);list.append(line);
+  line.append(name,actions);list.append(line);
  }
  if(!list.children.length)addText(list,"p","Chưa có hồ sơ MST nào. Hãy thêm MST của phiên cổng Thuế.","muted");
 }

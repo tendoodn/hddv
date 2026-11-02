@@ -68,6 +68,10 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 /* Portal shares the compact red account layout from the extension. */
 .extension-download-link{display:inline-flex;align-items:center;padding:10px 13px;border-radius:9px;background:var(--tendoo);color:#fff;text-decoration:none;font-size:13px;font-weight:750}
 .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+.account-quick-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.account-quick-actions .extension-download-link{white-space:nowrap;min-height:38px;justify-content:center;align-items:center}
+@media(max-width:480px){.portal-account-head .account-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:5px}.account-quick-actions .extension-download-link,.account-quick-actions button{min-width:0;white-space:normal;text-align:center;padding:9px 5px;font-size:11px}}
+
 .portal-header-actions{gap:8px;margin:0}
 .portal-admin-link{display:inline-flex;align-items:center;padding:10px 13px;border:1px solid var(--tendoo-line);border-radius:9px;background:#fff1f2;color:var(--tendoo-dark);font-size:13px;font-weight:750;text-decoration:none}
 .portal-admin-link:hover{background:#ffe4e6;color:var(--tendoo-dark)}
@@ -87,7 +91,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <main class="wrap">
 <header>
   <div class="brand">TENDOO <span>AUTOTAX V3.3.5</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionDownloadBtn" class="extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension</a><a href="./admin.html?v=3.3.6" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./admin.html?v=3.3.6" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
@@ -102,7 +106,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 </section>
 <section id="dashboard" hidden>
  <div class="panel">
-  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><div class="actions"><button id="refreshBtn" class="secondary" title="Làm mới">↻ Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
+  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><div class="actions account-quick-actions"><a id="extensionDownloadBtn" class="extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">⬇ Tải Extension</a><button id="refreshBtn" class="secondary" title="Làm mới">↻ Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
   <div class="portal-mode-toolbar">
    <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><p class="muted">Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</p></div>

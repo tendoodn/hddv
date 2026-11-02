@@ -21,10 +21,19 @@ const busyState=value=>{busy=!!value;$('progress').hidden=!value;$('searchBtn').
   for(const id of ['exportExcel','exportXml','exportTax','exportPdf'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
 window.WebTaxState=govSession;
+const showGatewayHelp=visible=>{$('gdtConnectionHelp').hidden=!visible;};
+function resetCaptchaImage(){
+ if(captchaUrl){URL.revokeObjectURL(captchaUrl);captchaUrl='';}
+ const img=$('captchaImage');
+ img.removeAttribute('src');
+ img.hidden=true;
+}
 function clearGov(){
  govtToken='';govtMst='';details=new Map();rows=[];$('gdtPassword').value='';$('gdtStatus').textContent='Chưa có phiên đăng nhập cổng Thuế.';
  captchaKey='';captchaValue='';captchaMode='pending';captchaIssuedAt=0;
- $('captchaBox').hidden=true;$('captchaStatus').textContent='Mã xác nhận sẽ được xử lý tự động khi tra cứu.';
+ resetCaptchaImage();
+ $('captchaBox').hidden=true;showGatewayHelp(false);
+ $('captchaStatus').textContent='Mã xác nhận sẽ được xử lý tự động khi tra cứu.';
  $('results').hidden=true;
 }
 async function authedRequest(op,data={},signal){
@@ -43,7 +52,10 @@ const messageOf=async res=>{
   autotax_sign_in_required:'Bạn cần đăng nhập tài khoản AutoTax.',
   autotax_session_expired:'Phiên AutoTax hết hạn. Hãy đăng nhập lại.',
   invalid_login_details:'Kiểm tra MST, mật khẩu và CAPTCHA rồi thử lại.',
-  gdt_timeout:'Cổng Thuế phản hồi quá chậm. Thử lại sau.',
+  gdt_timeout:'Máy chủ AutoTax kết nối cổng Thuế bị hết thời gian chờ. Đây không phải lỗi CAPTCHA nhập sai.',
+  gdt_captcha_timeout:'Máy chủ kết nối không lấy được CAPTCHA từ cổng Thuế. Không có ảnh để nhập thủ công; hãy thử kết nối lại hoặc dùng trang Thuế chính thức.',
+  gdt_captcha_unavailable:'Máy chủ kết nối chưa lấy được ảnh CAPTCHA từ cổng Thuế.',
+  autotax_auth_unavailable:'Dịch vụ xác thực AutoTax tạm thời không phản hồi.',
   gdt_connection_unavailable:'Máy chủ chưa kết nối được với cổng Thuế. Có thể bị chặn hoặc đang bảo trì.',
   gdt_sign_in_required:'Cổng Thuế yêu cầu đăng nhập lại.',
   gdt_mst_mismatch:'MST phiên Thuế không khớp MST hồ sơ AutoTax.',
@@ -96,7 +108,15 @@ function normalizeCaptchaSvg(content){
  return doc.documentElement.outerHTML;
 }
 function manualCaptcha(msg){
+ if(!captchaKey||!captchaUrl||!$('captchaImage').naturalWidth){
+  captchaMode='error';
+  $('captchaBox').hidden=true;showGatewayHelp(true);
+  $('captchaStatus').textContent='Không có ảnh CAPTCHA hợp lệ để nhập thủ công.';
+  return;
+ }
  captchaMode='manual';captchaValue='';
+ showGatewayHelp(false);
+ $('captchaImage').hidden=false;
  $('captchaBox').hidden=false;
  $('captchaInput').value='';
  $('captchaStatus').textContent=msg||'Không đủ độ tin cậy để tự đọc mã. Vui lòng nhập CAPTCHA trên ảnh.';
@@ -104,21 +124,28 @@ function manualCaptcha(msg){
 async function getCaptcha(){
  if(!account)return false;
  $('reloadCaptcha').disabled=true;
+ $('retryConnectionBtn').disabled=true;
  captchaKey='';captchaValue='';captchaMode='pending';captchaIssuedAt=0;
- $('captchaStatus').textContent='Đang tải và nhận dạng mã xác nhận…';
+ $('captchaBox').hidden=true;
+ showGatewayHelp(false);
+ resetCaptchaImage();
+ $('captchaStatus').textContent='Đang kết nối và tải mã xác nhận từ cổng Thuế…';
  try{
   const res=await authedRequest('captcha');
   if(!res.ok)throw Error(await messageOf(res));
-  const data=await res.json();
-  if(!data?.key||!data?.content)throw Error('Cổng Thuế chưa trả mã xác nhận.');
+  const data=await res.json().catch(()=>null);
+  if(!data?.key||!data?.content)
+   throw Error('Cổng Thuế chưa trả mã xác nhận hoặc ảnh CAPTCHA.');
   const svg=normalizeCaptchaSvg(data.content);
+  captchaUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+  const img=$('captchaImage');
+  img.src=captchaUrl;
+  // A manual fallback is valid only when the image has actually rendered.
+  await img.decode();
+  if(!img.naturalWidth)throw Error('Không hiển thị được ảnh CAPTCHA nhận từ cổng Thuế.');
   captchaKey=String(data.key);
   captchaIssuedAt=Date.now();
-  if(captchaUrl)URL.revokeObjectURL(captchaUrl);
-  captchaUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
-  $('captchaImage').src=captchaUrl;
   $('captchaInput').value='';
-  // Unknown/new CAPTCHA SVG layouts must not break the manual fallback.
   let result=null;
   try{result=window.SvgCaptcha?.solve(svg)||null;}catch(_){
    manualCaptcha('Cổng Thuế đã thay đổi mẫu CAPTCHA. Vui lòng nhập mã trên ảnh để tiếp tục.');
@@ -129,18 +156,23 @@ async function getCaptcha(){
   if(text.length>=4&&text.length<=8&&/^[a-z0-9]+$/i.test(text)&&confidence>=80){
    captchaValue=text;captchaMode='automatic';
    $('captchaBox').hidden=true;
-   $('captchaStatus').textContent='Đã tự nhận dạng CAPTCHA (độ tin cậy '+confidence+'%). Không cần nhập mã.';
+   $('captchaStatus').textContent='Đã nhận dạng CAPTCHA (độ tin cậy '+confidence+'%). Không cần nhập mã.';
    return true;
   }
-  manualCaptcha('Không nhận dạng đủ tin cậy ('+confidence+'%). Vui lòng nhập mã trên ảnh một lần.');
+  manualCaptcha('Chưa nhận dạng đủ tin cậy ('+confidence+'%). Vui lòng nhập mã trên ảnh.');
   return false;
  }catch(e){
-  captchaKey='';captchaMode='error';
-  $('captchaBox').hidden=false;
-  $('captchaStatus').textContent='Không tải được CAPTCHA tự động.';
+  captchaKey='';captchaValue='';captchaMode='error';captchaIssuedAt=0;
+  resetCaptchaImage();
+  $('captchaBox').hidden=true;
+  showGatewayHelp(true);
+  $('captchaStatus').textContent='Kết nối cổng Thuế chưa sẵn sàng — không có CAPTCHA để nhập.';
   show('Không tải được CAPTCHA: '+e.message);
   return false;
- }finally{$('reloadCaptcha').disabled=false}
+ }finally{
+  $('reloadCaptcha').disabled=false;
+  $('retryConnectionBtn').disabled=false;
+ }
 }
 async function refreshAccount(){
  if(!client){show('Không tải được thư viện đăng nhập Supabase. Vui lòng tải lại trang.');return}
@@ -163,7 +195,7 @@ async function refreshAccount(){
   $('mstList').replaceChildren(...profileMsts.map(m=>{const opt=document.createElement('option');opt.value=m;return opt}));
   if(profileMsts.length&&!$('mst').value)$('mst').value=profileMsts[0];
   if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
-  else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.'),true);await getCaptcha()}
+  else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
 }
 async function signIntoTax(mst){
@@ -360,8 +392,12 @@ function init(){
  $('searchForm').addEventListener('submit',search);
  $('stopBtn').addEventListener('click',()=>{stopped=true;progress('Đang dừng sau yêu cầu hiện tại…')});
  $('reloadCaptcha').addEventListener('click',getCaptcha);
- $('clearGdt').addEventListener('click',()=>{clearGov();getCaptcha();show('Đã xóa phiên cổng Thuế khỏi bộ nhớ.',true)});
- $('mst').addEventListener('change',()=>{const x=$('mst').value.replace(/\D/g,'');if(govtToken&&x!==govtMst){clearGov();getCaptcha()}});
+ $('retryConnectionBtn').addEventListener('click',async()=>{
+  const ok=await getCaptcha();
+  if(ok)show('Đã lấy CAPTCHA thành công. Nhấn Tìm kiếm hóa đơn để tiếp tục.',true);
+ });
+ $('clearGdt').addEventListener('click',()=>{clearGov();show('Đã xóa phiên cổng Thuế khỏi bộ nhớ.',true)});
+ $('mst').addEventListener('change',()=>{const x=$('mst').value.replace(/\D/g,'');if(govtToken&&x!==govtMst)clearGov()});
  $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
  for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportTax','tax'],['exportPdf','pdf']])
   $(id).addEventListener('click',()=>exportFile(kind));

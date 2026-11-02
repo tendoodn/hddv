@@ -196,7 +196,7 @@ async function refreshAccount(){
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   selectedMode=ent.data?.mode||'mst';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
-  await window.GdtVault?.setUser(account.id,profileMsts);
+  await window.GdtVault?.setUser(account.id,profiles.data||[]);
   if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
   else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
@@ -243,6 +243,11 @@ async function signIntoTax(mst){
    }
    if(captchaRejected&&captchaMode!=='automatic')
     throw Error('CAPTCHA tự động chưa được chấp nhận. Vui lòng nhập mã thủ công trong khung bên dưới.');
+   if(!captchaRejected&&/mật khẩu|mat khau|sai mật khẩu|incorrect password|invalid credentials|wrong password|tài khoản.*không đúng/i.test(message)){
+    $('gdtLoginErrorText').textContent='Cổng Thuế từ chối mật khẩu MST '+mst+
+     '. Hãy nhập mật khẩu mới cho đúng hồ sơ, sau khi đăng nhập thành công AutoTax sẽ cập nhật mật khẩu mã hóa trên thiết bị.';
+    $('gdtLoginErrorDialog').showModal();
+   }
    throw Error('Cổng Thuế từ chối đăng nhập: '+message);
   }
   throw Error('Cổng Thuế không chấp nhận CAPTCHA sau lần thử lại. Vui lòng thử thủ công.');
@@ -399,6 +404,7 @@ window.WebInvoiceApp={
  getMst:()=>govtMst||$('mst').value.replace(/\D/g,''),
  getAccount:()=>account,
  getClient:()=>client,
+ refreshAccount,
  searchedBothKinds:()=>searchedBothKinds,
  busy:()=>busy,
  busyState,progress,show,download,loadDetails,
@@ -430,9 +436,10 @@ function init(){
  $('mst').addEventListener('change',()=>{
   const x=$('mst').value.replace(/\D/g,'');
   if(govtToken&&x!==govtMst)clearGov();
-  window.GdtVault?.select(x);
+  // GdtVault handles the selection event and encrypted credential autofill.
  });
  $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
+ $('closeGdtLoginError').addEventListener('click',()=>$('gdtLoginErrorDialog').close());
  for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportPdf','pdf']])
   $(id).addEventListener('click',()=>exportFile(kind));
  window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value='';window.GdtVault?.lock()});

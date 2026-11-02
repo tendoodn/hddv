@@ -29,6 +29,16 @@ assert(frontend.includes('addon_verify_session_mst_v33')&&
  frontend.includes('addon_claim_invoice_quota'),'Web must use same server entitlement and atomic quota RPC');
 assert(frontend.includes('webTax')===false,'No dead web tax adapter references');
 assert(!/localStorage\s*\.|sessionStorage\s*\./.test(frontend),'Do not store GDT credentials/tokens in browser storage');
+assert(html.includes('id="captchaBox" class="captcha-row" hidden')&&html.includes('id="captchaStatus"'),
+ 'CAPTCHA should default to automatic mode, with a hidden manual fallback');
+assert(frontend.includes('window.SvgCaptcha?.solve(svg)')&&
+ frontend.includes("captchaMode='automatic'")&&
+ frontend.includes("captchaMode='manual'"),
+ 'Auto CAPTCHA recognition must use the shared engine and retain a manual fallback');
+assert(frontend.includes("confidence>=80")&&frontend.includes("attempt<2"),
+ 'CAPTCHA recognition must have a confidence threshold and bounded retries');
+assert(!/localStorage\s*\.|sessionStorage\s*\./.test(frontend),
+ 'No password or CAPTCHA token may be stored persistently');
 assert(gateway.includes('origin!==ALLOWED_ORIGIN')&&
  gateway.includes("const GDT_BASE = 'https://hoadondientu.gdt.gov.vn'"),'Gateway must restrict browser origins and fixed GDT host');
 assert(gateway.includes('addon_verify_session_mst_v33')&&

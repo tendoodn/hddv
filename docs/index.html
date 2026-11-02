@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tendoo AutoTax V3.3.5 — Tài khoản và gói sử dụng</title>
+<title>Tendoo AutoTax V3.3.6 — Tài khoản và gói sử dụng</title>
 <style>
 :root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#291b1f;background:#fff8f8;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
 *{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
@@ -68,6 +68,11 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 /* Portal shares the compact red account layout from the extension. */
 .extension-download-link{display:inline-flex;align-items:center;padding:10px 13px;border-radius:9px;background:var(--tendoo);color:#fff;text-decoration:none;font-size:13px;font-weight:750}
 .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+.portal-header-actions{gap:8px;margin:0}
+.portal-admin-link{display:inline-flex;align-items:center;padding:10px 13px;border:1px solid var(--tendoo-line);border-radius:9px;background:#fff1f2;color:var(--tendoo-dark);font-size:13px;font-weight:750;text-decoration:none}
+.portal-admin-link:hover{background:#ffe4e6;color:var(--tendoo-dark)}
+@media(max-width:430px){.portal-header-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.portal-header-actions a{justify-content:center;text-align:center;padding:9px 6px;font-size:12px}}
+
 .portal-mode-toolbar{margin:12px 0;border-top:1px solid var(--tendoo-line);padding-top:10px}
 #modeSection{display:grid;grid-template-columns:auto minmax(130px,250px);align-items:center;gap:6px 12px}
 #modeSection label{margin:0;font-weight:750;color:#9f1239}
@@ -82,7 +87,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <main class="wrap">
 <header>
   <div class="brand">TENDOO <span>AUTOTAX V3.3.5</span></div>
-  <div class="actions"><a id="extensionDownloadBtn" class="extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer" hidden>Tải Chrome Extension</a><a href="admin.html?v=3.3.5" id="adminLink" hidden>Quản trị</a></div>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionDownloadBtn" class="extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension</a><a href="./admin.html?v=3.3.6" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>

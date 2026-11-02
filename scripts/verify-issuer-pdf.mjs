@@ -8,7 +8,7 @@ const pdf=fs.readFileSync('docs/web/web-pdf.js','utf8');
 const issuer=fs.readFileSync('docs/web/issuer-pdf.js','utf8');
 new vm.Script(pdf,{filename:'web-pdf.js'});
 new vm.Script(issuer,{filename:'issuer-pdf.js'});
-for(const id of ['issuerPdfFile','issuerPdfAttach','issuerPdfHelp','issuerPdfStatus']){
+for(const id of ['issuerPdfFile','issuerPdfAttach','issuerPdfHelp','issuerPdfStatus','copyIssuerDetails']){
  assert(page.includes('id="'+id+'"'), 'Missing issuer dialog control: '+id);
 }
 const downloaded=[];
@@ -28,6 +28,8 @@ const ctx={window:{
 vm.createContext(ctx);
 vm.runInContext(pdf,ctx);
 const api=ctx.window.WebPdfExport;
+assert(issuer.includes("navigator.clipboard.writeText(information)"),
+ 'Issuer details must be copied only after an explicit user gesture.');
 assert.equal(typeof api.attachUserPdf,'function');
 assert.equal(typeof api.hasUserPdf,'function');
 const row={kind:'purchase',form:'normal',nbmst:'3600675874',

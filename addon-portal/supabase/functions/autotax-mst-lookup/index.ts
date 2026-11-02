@@ -32,6 +32,13 @@ const trim=(v:unknown,max=300)=>typeof v==="string"?v.trim().slice(0,max):"";
 function normalizeResult(o:any,src:string,n:any){
  const obj=o?.data?.data||o?.data||o?.result||o;
  if(!obj||typeof obj!=="object")return null;
+ // A provider can return a valid-looking record for a different taxpayer.
+ // Never attach that person's/company's data to the requested MST.
+ const returnedTaxCode=[obj.mst,obj.taxCode,obj.tax_code,obj.maSoThue,
+  obj.MaSoThue,obj.TaxCode,obj.taxpayerCode,obj.tin]
+  .find(v=>typeof v==="string"||typeof v==="number");
+ if(returnedTaxCode!==undefined&&String(returnedTaxCode).replace(/\D/g,"")!==n.digits)
+  return null;
  const name=trim(obj.name||obj.companyName||obj.company_name||obj.taxpayerName||
   obj.tenNNT||obj.ten||obj.Title||obj.TenCongTy||obj.Name||obj.name_vi);
  if(!name)return null;
@@ -102,6 +109,36 @@ async function lookup(n:any){
    problems.length?"upstream_unavailable":"not_found_or_unavailable"
  };
 }
+// Best-effort warm cache per Edge instance: only public, verified BUSINESS data.
+ // Avoid repeating paid upstream lookups when many users search the same MST.
+ // Personal identifiers are never cached or coalesced.
+const businessCache=new Map<string,{result:any,until:number}>();
+const businessInflight=new Map<string,Promise<any>>();
+async function lookupCached(n:any){
+ if(n.kind==="personal")return lookup(n);
+ const now=Date.now();
+ const cached=businessCache.get(n.digits);
+ if(cached&&cached.until>now)return cached.result;
+ if(cached)businessCache.delete(n.digits);
+ const pending=businessInflight.get(n.digits);
+ if(pending)return pending;
+ const task=lookup(n);
+ businessInflight.set(n.digits,task);
+ try{
+  const result=await task;
+  if(result.verified){
+   if(businessCache.size>=500){
+    for(const [key,value] of businessCache)
+     if(value.until<=now)businessCache.delete(key);
+    if(businessCache.size>=500)
+     businessCache.delete(businessCache.keys().next().value!);
+   }
+   businessCache.set(n.digits,{result,until:Date.now()+300000});
+  }
+  return result;
+ }finally{businessInflight.delete(n.digits);}
+}
+
 const recentRequests=new Map<string,{count:number,time:number}>();
 Deno.serve(async(req)=>{
  const origin=req.headers.get("origin")||"";
@@ -128,7 +165,7 @@ Deno.serve(async(req)=>{
  const work=async()=>{
   for(;;){
    const i=next++;if(i>=nums.length)return;
-   out[i]=await lookup(nums[i]);
+   out[i]=await lookupCached(nums[i]);
   }
  };
  await Promise.all(Array.from({length:Math.min(nums.length,3)},()=>work()));

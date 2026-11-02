@@ -15,6 +15,7 @@ on:
       - "scripts/verify-mst-lookup.mjs"
       - "scripts/verify-mst-official.mjs"
       - "scripts/verify-issuer-pdf.mjs"
+      - "scripts/verify-mst-account-v34.mjs"
       - "scripts/verify-autotax-icons.mjs"
       - "tests/v32/**"
       - ".github/workflows/verify-v32.yml"
@@ -32,6 +33,7 @@ on:
       - "scripts/verify-mst-lookup.mjs"
       - "scripts/verify-mst-official.mjs"
       - "scripts/verify-issuer-pdf.mjs"
+      - "scripts/verify-mst-account-v34.mjs"
       - "scripts/verify-autotax-icons.mjs"
       - ".github/workflows/verify-v32.yml"
 permissions:
@@ -52,6 +54,7 @@ jobs:
       - run: node scripts/verify-web-vault-v2.mjs
       - run: node scripts/verify-autotax-icons.mjs
       - run: node scripts/verify-issuer-pdf.mjs
+      - run: node scripts/verify-mst-account-v34.mjs
       - run: node scripts/verify-mst-official.mjs
       - run: LIVE_MST_LOOKUP=1 node scripts/verify-mst-lookup.mjs
       - name: Verify published Pages branch matches customer/admin and Web code
@@ -176,6 +179,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/034_fk_indexes_and_rls_initplan.sql
       - name: Run public catalog under authenticated caller privileges
         run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/035_catalog_rpc_security_invoker.sql
+      - name: Add account-specific MST display names
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/036_account_mst_profile_names.sql
+      - name: Add admin-only MST profile rename
+        run: psql -v ON_ERROR_STOP=1 -f addon-portal/supabase/migrations/037_admin_mst_profile_rename.sql
       - name: Assert SQL security and performance migrations
         run: psql -v ON_ERROR_STOP=1 -f tests/v32/sql/170_assert_security_performance.sql
       - name: Verify production readiness report is readable

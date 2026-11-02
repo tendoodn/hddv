@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#09090b">
 <title>AutoTax Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=2">
+<link rel="stylesheet" href="./web/web.css?v=3">
 </head>
 <body>
 <main class="wrap">
@@ -23,6 +23,14 @@
       <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
     </div>
     <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
+    <div id="gdtConnectionHelp" class="gdt-connection-help" role="status" hidden>
+      <strong>Máy chủ chưa lấy được CAPTCHA từ cổng Thuế</strong>
+      <p>Không có ảnh thì cũng không thể nhập mã xác nhận thủ công. Bạn có thể thử kết nối lại hoặc kiểm tra trực tiếp cổng Thuế. AutoTax không trừ lượt hóa đơn khi chưa tra cứu thành công.</p>
+      <div class="connection-actions">
+        <button id="retryConnectionBtn" class="outline" type="button">Thử tải lại CAPTCHA</button>
+        <a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer" class="outline">Mở cổng Thuế ↗</a>
+      </div>
+    </div>
     <form id="searchForm" autocomplete="off">
       <div class="fields">
         <div class="field">
@@ -54,11 +62,11 @@
       </div>
       <div id="captchaBox" class="captcha-row" hidden>
         <div class="captcha-info"><label for="captchaInput">Nhập CAPTCHA thủ công khi cần</label><span>Chỉ hiện khi AutoTax không nhận dạng được mã. Giữ nguyên chữ hoa/thường.</span></div>
-        <img id="captchaImage" alt="Ảnh CAPTCHA từ cổng Thuế" width="172" height="56">
+        <img id="captchaImage" alt="Ảnh CAPTCHA từ cổng Thuế" width="172" height="56" hidden>
         <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Mã trên ảnh (dự phòng)" autocomplete="off">
         <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
       </div>
-      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không ghi vào hồ sơ, lịch sử hoặc bộ nhớ trình duyệt. AutoTax tự nhận dạng CAPTCHA SVG trên thiết bị khi khả dụng; nếu cổng đổi cơ chế xác thực, hệ thống sẽ yêu cầu nhập thủ công.</div>
+      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không ghi vào hồ sơ, lịch sử hoặc bộ nhớ trình duyệt. AutoTax tự nhận dạng CAPTCHA SVG khi kết nối thành công; chỉ yêu cầu nhập thủ công khi đã tải được ảnh. Cổng Thuế có thể giới hạn truy cập từ máy chủ trung gian.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
     </form>
@@ -86,5 +94,5 @@
 <script src="./web/captcha-svg.js?v=1"></script>
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
-<script src="./web/web.js?v=2"></script>
+<script src="./web/web.js?v=3"></script>
 </body></html>

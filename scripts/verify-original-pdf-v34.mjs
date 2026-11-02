@@ -25,7 +25,6 @@ assert(webPdf.includes('PDF_goc_nha_phat_hanh')&&
 for(const [path,source] of [
  ['autotax/src/background/service-worker.js',worker],
  ['autotax/src/content/content.js',content],
- ['autotax/src/sidepanel/panel.js',panelJs],
  ['docs/web/web-pdf.js',webPdf]])new vm.Script(source,{filename:path});
 
 const seen=[];

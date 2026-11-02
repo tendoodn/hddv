@@ -7,6 +7,7 @@ on:
       - "autotax/**"
       - "addon-portal/**"
       - "scripts/verify-v32-sync.mjs"
+      - "scripts/verify-admin-package.mjs"
       - "scripts/verify-web-bridge.mjs"
       - "tests/v32/**"
       - ".github/workflows/verify-v32.yml"
@@ -16,6 +17,7 @@ on:
       - "autotax/**"
       - "addon-portal/**"
       - "scripts/verify-v32-sync.mjs"
+      - "scripts/verify-admin-package.mjs"
       - "scripts/verify-web-bridge.mjs"
       - ".github/workflows/verify-v32.yml"
 permissions:
@@ -29,6 +31,7 @@ jobs:
         with:
           node-version: "22"
       - run: node scripts/verify-v32-sync.mjs
+      - run: node scripts/verify-admin-package.mjs
       - run: node scripts/verify-web-bridge.mjs
       - name: Verify published Pages branch matches customer/admin and Web code
         if: github.event_name == 'push'

@@ -2,12 +2,12 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tendoo AutoTax V3.2 — Tài khoản và gói sử dụng</title>
+<title>Tendoo AutoTax V3.3.6 — Tài khoản và gói sử dụng</title>
 <style>
-:root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#fff;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
+:root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#291b1f;background:#fff8f8;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
 *{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
 header,.row,.mst-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-header{margin-bottom:24px}.brand{font-size:21px;font-weight:850}.brand span{color:var(--tendoo)}
+header{margin-bottom:24px;position:sticky;top:0;z-index:5;background:#fff;border:1px solid var(--tendoo-line);border-radius:12px;padding:10px 16px;box-shadow:0 2px 12px #ae000f0d}.brand{font-size:21px;font-weight:850}.brand span{color:var(--tendoo)}
 h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:16px;margin:10px 0}
 .panel,.plan{background:#fff;border:1px solid #f1c7cc;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 20px #1e293b09}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
@@ -24,7 +24,7 @@ h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:1
 label{font-size:13px;font-weight:650;display:block;margin:12px 0 6px}
 input,select{font:inherit;padding:10px 12px;border-radius:9px;border:1px solid #cbd5e1;max-width:100%;min-width:0}
 input{width:100%}button{border:0;padding:11px 15px;border-radius:9px;background:var(--tendoo);color:#fff;font:inherit;font-weight:700;cursor:pointer}
-button.secondary{background:#fff1f2;color:#991b1b}button:disabled{opacity:.55;cursor:not-allowed}
+button.secondary{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}button:disabled{opacity:.55;cursor:not-allowed}
 .actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0}
 .notice{margin:12px 0;padding:12px;border-radius:9px;background:var(--tendoo-soft);color:#9f1239;white-space:pre-wrap}
 .error{background:#fef2f2;color:#991b1b}a{color:var(--tendoo-dark)}
@@ -49,7 +49,7 @@ footer{padding:16px 0 28px;color:#64748b;font-size:12px}
 @media(max-width:540px){.wrap{padding:18px 12px}.panel{padding:14px}h1{font-size:22px}}
  
 /* Đồng nhất với sidepanel Tendoo đỏ, không thay đổi API/nhật ký thanh toán */
-body{background:#fff}
+body{background:#fff8f8}
 button:hover:not(:disabled){filter:brightness(.97)}
 .panel,.plan{box-shadow:0 3px 15px #8000120b}
 .portal-account-head{padding-bottom:8px;border-bottom:1px solid var(--tendoo-line)}
@@ -64,23 +64,40 @@ button:hover:not(:disabled){filter:brightness(.97)}
 input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 .license-token{color:#b00014}
 
-/* Dashboard action links remain visible after login, independent of admin and database settings. */
+
+/* Portal shares the compact red account layout from the extension. */
+.extension-download-link{display:inline-flex;align-items:center;padding:10px 13px;border-radius:9px;background:var(--tendoo);color:#fff;text-decoration:none;font-size:13px;font-weight:750}
+.extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+/* Five account actions always stay on one line. Narrow screens scroll this row horizontally. */
 .portal-account-head{display:flex;flex-direction:column;align-items:stretch;gap:10px}
 .account-quick-actions{display:grid;grid-template-columns:repeat(5,minmax(117px,1fr));gap:7px;width:100%;overflow-x:auto;padding-bottom:4px}
 .account-quick-actions .account-link-btn,.account-quick-actions button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:39px;height:auto;min-width:0;margin:0;padding:7px 8px;text-align:center;white-space:nowrap;font-size:12px;line-height:1.15;border-radius:9px;text-decoration:none;font-weight:750}
-.account-quick-actions .account-link-btn{border:1px solid var(--tendoo-line);background:var(--tendoo-soft);color:var(--tendoo-dark)}
+.account-quick-actions .account-link-btn{border:1px solid var(--tendoo-line);background:#fff1f2;color:var(--tendoo-dark)}
 .account-quick-actions .account-link-btn:hover{background:#ffe4e6}
 .account-quick-actions .extension-download-link{border-color:var(--tendoo);background:var(--tendoo);color:#fff}
 .account-quick-actions .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
 @media(max-width:600px){.portal-account-head .account-quick-actions{grid-template-columns:repeat(5,minmax(124px,1fr));gap:5px;max-width:100%}}
 
+.portal-header-actions{gap:8px;margin:0}
+.portal-admin-link{display:inline-flex;align-items:center;padding:10px 13px;border:1px solid var(--tendoo-line);border-radius:9px;background:#fff1f2;color:var(--tendoo-dark);font-size:13px;font-weight:750;text-decoration:none}
+.portal-admin-link:hover{background:#ffe4e6;color:var(--tendoo-dark)}
+@media(max-width:430px){.portal-header-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.portal-header-actions a{justify-content:center;text-align:center;padding:9px 6px;font-size:12px}}
+
+.portal-mode-toolbar{margin:12px 0;border-top:1px solid var(--tendoo-line);padding-top:10px}
+#modeSection{display:grid;grid-template-columns:auto minmax(130px,250px);align-items:center;gap:6px 12px}
+#modeSection label{margin:0;font-weight:750;color:#9f1239}
+#modeSection p{grid-column:1/-1;font-size:12px;margin:0 0 4px}
+.portal-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.portal-quick-actions button{min-width:0;white-space:nowrap;padding:9px 5px}
+#passwordPanel{border-color:var(--tendoo-line)}
+@media(max-width:450px){.portal-quick-actions{gap:5px}.portal-quick-actions button{font-size:11px;padding:8px 3px}}
 </style>
 </head>
 <body>
 <main class="wrap">
 <header>
-  <div class="brand">TENDOO <span>AUTOTAX V3.2</span></div>
-  <div class="actions"><a href="./web.html" style="font-weight:700;text-decoration:none;color:#b00014">Tra cứu Web</a><a href="admin.html" id="adminLink" hidden>Quản trị</a></div>
+  <div class="brand">TENDOO <span>AUTOTAX V3.3.5</span></div>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./web.html" class="portal-admin-link">Tra cứu Web</a><a href="./admin.html?v=3.3.6" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
@@ -97,11 +114,14 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
  <div class="panel">
   <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tendoodn.github.io/t/k.html" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tendoodn.github.io/t/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="refreshBtn" class="secondary" title="Làm mới">Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
+  <div class="portal-mode-toolbar">
+   <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><p class="muted">Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</p></div>
+   <div class="portal-quick-actions"><button id="renewWebBtn" type="button">Gia hạn</button><button id="giftWebBtn" type="button" class="secondary">🎁 Quà tặng</button><button id="passwordOpenBtn" type="button" class="secondary">Đổi mật khẩu</button></div>
+  </div>
   <div class="grid">
    <div class="plan stat"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
    <div class="plan stat"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
   </div>
-  <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Theo MST</option><option value="invoice">Theo số lượt hóa đơn</option></select><p class="muted">Hai chế độ không chạy đồng thời; gói còn lại được bảo lưu.</p></div>
   <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
  </div>
  <div class="activation-grid">
@@ -132,12 +152,12 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
  </div>
  <div class="panel" id="planSection">
-  <div class="row"><h2>Mua gói mới</h2><div class="actions"><button id="renewWebBtn" type="button" class="secondary">Gia hạn</button><button id="giftWebBtn" type="button" class="secondary">🎁 Mã quà tặng</button></div></div><p class="muted">Gói hóa đơn được cộng dồn. Mỗi gói MST có hạn riêng; khi hết hạn, sức chứa MST giảm tương ứng.</p>
+  <div class="row"><h2>Mua gói mới</h2></div><p class="muted">Gói MST: Không giới hạn số hóa đơn tra cứu trong các MST đã đăng ký, theo thời hạn gói. Gói T (số tờ): Không giới hạn MST tra cứu; số hóa đơn mới được xử lý theo số lượt đã mua. Lượt gói T được cộng dồn khi mua thêm.</p>
   <div id="packageList" class="grid package-grid"></div>
  </div>
 
- <div class="panel">
-  <h2>Đổi mật khẩu</h2><label for="newPassword">Mật khẩu mới</label>
+ <div class="panel" id="passwordPanel" hidden>
+  <div class="row"><h2>Đổi mật khẩu</h2><button id="passwordCloseBtn" type="button" class="secondary">Đóng</button></div><label for="newPassword">Mật khẩu mới</label>
   <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
   <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
  </div>

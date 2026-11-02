@@ -1,0 +1,51 @@
+name: Generate AutoTax favicon assets
+on:
+  push:
+    branches: [main]
+    paths:
+      - "autotax/icons/icon.svg"
+      - "scripts/build-autotax-icons.py"
+      - ".github/workflows/generate-autotax-icons.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: generate-autotax-icons
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install SVG rasterizer
+        run: python -m pip install "cairosvg==2.8.2" "pillow==12.3.0"
+      - name: Generate all favicon and Chrome extension sizes
+        run: python scripts/build-autotax-icons.py
+      - name: Commit generated assets on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add autotax/icons/*.png autotax/icons/favicon.ico docs/favicon.svg docs/favicon.ico docs/apple-touch-icon.png
+          if ! git diff --cached --quiet; then
+            git commit -m "build(icons): regenerate AutoTax Chrome icons and favicons [skip ci]"
+            git push origin HEAD:main
+          fi
+      - name: Mirror public favicon assets to the Pages branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feature/addon-license-portal
+          git switch -c pages-icon-sync origin/feature/addon-license-portal
+          git restore --source=main -- docs/favicon.svg docs/favicon.ico docs/apple-touch-icon.png
+          git add docs/favicon.svg docs/favicon.ico docs/apple-touch-icon.png
+          if ! git diff --cached --quiet; then
+            git commit -m "build(pages): sync AutoTax favicon assets [skip ci]"
+            git push origin HEAD:feature/addon-license-portal
+          fi

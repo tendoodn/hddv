@@ -123,6 +123,9 @@ function renderVisible(){
   const audit=document.createElement('button');audit.type='button';
   audit.className='table-detail-btn table-audit-btn';audit.dataset.audit=keyOf(r);
   audit.textContent='Kiểm tra hợp lệ';action.append(audit);
+  const issuer=document.createElement('button');issuer.type='button';
+  issuer.className='table-detail-btn table-issuer-btn';
+  issuer.dataset.issuer=keyOf(r);issuer.textContent='PDF nguồn';action.append(issuer);
   tr.append(action);body.append(tr);
  }
  if(filterRows().length>1500)app()?.show('Đang hiển thị 1.500 dòng đầu; xuất tất cả sẽ bao gồm toàn bộ hóa đơn khớp bộ lọc.',true);
@@ -337,6 +340,11 @@ function init(){
   const button=event.target.closest('[data-audit]');if(!button)return;
   const row=dataset.find(r=>keyOf(r)===button.dataset.audit);
   if(row)void window.WebAudit?.open(row);
+ });
+ $('resultRows').addEventListener('click',event=>{
+  const button=event.target.closest('[data-issuer]');if(!button)return;
+  const row=dataset.find(r=>keyOf(r)===button.dataset.issuer);
+  if(row)void window.IssuerPdf?.open(row);
  });
  $('selectAllInvoices').addEventListener('change',event=>{
   for(const row of visible){

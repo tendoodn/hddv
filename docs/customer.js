@@ -3,23 +3,6 @@
 const BASE="https://ucqqjdsoyvvaxswzbhaw.supabase.co";
 const PUBLIC_KEY="sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ";
 const client=window.supabase.createClient(BASE,PUBLIC_KEY);
-const downloadUrlIsSafe=value=>{
- try{const url=new URL(String(value||"").trim());return url.protocol==="https:"&&!!url.hostname}
- catch{return false}
-};
-async function loadExtensionDownloadLink(){
- const button=document.getElementById("extensionDownloadBtn");
- try{
-  const {data,error}=await client.from("addon_public_settings")
-   .select("value").eq("setting_key","extension_download_url").maybeSingle();
-  if(error)throw error;
-  const url=String(data?.value||"").trim();
-  button.hidden=!downloadUrlIsSafe(url);
-  if(!button.hidden)button.href=url;
-  else button.removeAttribute("href");
- }catch{button.hidden=true;button.removeAttribute("href")}
-}
-
 const $=id=>document.getElementById(id);
 const vnDate=value=>value?new Date(value).toLocaleString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
@@ -82,7 +65,7 @@ async function refresh(){
   const signedIn=!!session;
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
-  if(!signedIn){state=null;$("adminLink").hidden=true;closePayment();return}
+  if(!signedIn){state=null;closePayment();return}
   $("userEmail").textContent=session.user.email||"";
   const license=await rpc("addon_my_entitlements");
   state=license;
@@ -101,7 +84,7 @@ async function refresh(){
   $("usageMode").value=selected;
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
   $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":(license.ever_had_package?"Tài khoản đã có lịch sử gói.":"");
-  await Promise.all([loadMstAssignments(),loadPackages(),refreshAdminLink()]);
+  await Promise.all([loadMstAssignments(),loadPackages()]);
  }catch(error){
   state=null;
   $("trialArea").hidden=true;
@@ -116,17 +99,15 @@ async function refresh(){
   }
  }finally{checking=false}
 }
-async function refreshAdminLink(){
- try{$("adminLink").hidden=!(await rpc("addon_is_admin"))}
- catch{$("adminLink").hidden=true}
-}
 async function loadPackages(){
  const rows=await rpc("addon_list_packages");
  const list=$("packageList");list.replaceChildren();
  for(const item of rows||[]){
   const card=document.createElement("div");card.className="plan";
   addText(card,"h3",item.name);
-  addText(card,"p",item.family==="invoice"?item.quantity+" lượt hóa đơn, cộng dồn khi mua thêm":item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn"),"muted");
+  addText(card,"p",item.family==="invoice"
+   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm). Không giới hạn MST tra cứu; mỗi hóa đơn mới trừ 1 lượt."
+   : item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn")+". Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.","muted");
   addText(card,"strong",vnMoney(item.price_vnd),"price");
   const b=addText(card,"button","Chọn mua");
   b.type="button";b.disabled=item.family==="mst"&&!item.validity_days;
@@ -308,7 +289,7 @@ $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
  showMessage("Đã gửi hướng dẫn khôi phục nếu email hợp lệ.",false,"authMessage");
 }));
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
-$("refreshBtn").addEventListener("click",()=>{void loadExtensionDownloadLink();void refresh()});
+$("refreshBtn").addEventListener("click",refresh);
 $("webAddMstForm").addEventListener("submit",async e=>{
  e.preventDefault();const input=$("webAddMst"),mst=input.value.trim().replace(/[ -]/g,"");
  if(!/^(\d{10}|\d{12}|\d{13})$/.test(mst)){showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);return}
@@ -358,5 +339,4 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
  showMessage("Mật khẩu đã được thay đổi.");
 }));
 client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")$("passwordRecovery").hidden=false});
-loadExtensionDownloadLink();
 refresh();

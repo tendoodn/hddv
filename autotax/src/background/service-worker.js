@@ -114,17 +114,22 @@ async function issuerAdd(record,sender){
  const u=lookupURL(record?.link),code=String(record?.code||'').trim();
  if(!code||code.length>300||u.href.length>2048)throw Error('Thiếu mã hoặc link tra cứu hợp lệ.');
  const invoice=String(record?.invoice||'').replace(/[^0-9A-Za-z_.-]/g,'_').slice(0,90);
- const key=[u.hostname,invoice,code].join('|');
+ const ownerMst=String(record?.ownerMst||'').replace(/\D/g,'');
+ if(!/^(?:\d{10}|\d{12}|\d{13})$/.test(ownerMst))
+  throw Error('Hồ sơ MST không hợp lệ.');
+ const key=[ownerMst,u.hostname,invoice,code].join('|');
  const a=await issuerQueue();
  if(!a.some(x=>x.key===key))a.push({
-  key,link:u.href,code,invoice,addedAt:Date.now(),opened:false
+  key,link:u.href,code,invoice,ownerMst,addedAt:Date.now(),opened:false
  });
  await chrome.storage.session.set({[ISSUER_QUEUE]:a.slice(-100)});
  return {ok:true,count:a.length};
 }
-async function issuerOpenNext(){
+async function issuerOpenNext(owner){
+ const ownerMst=String(owner||'').replace(/\D/g,'');
  const all=await issuerQueue();
- const item=all.find(x=>!x.opened)||all[0];
+ const visible=all.filter(x=>x.ownerMst===ownerMst);
+ const item=visible.find(x=>!x.opened)||visible[0];
  if(!item)return {ok:false,error:'Chưa có hóa đơn cần mở. Hãy bật PDF gốc và tải hóa đơn trên cổng Thuế trước.'};
  const tab=await chrome.tabs.create({url:item.link,active:true});
  await chrome.storage.session.set({['autotax_issuer_tab_'+tab.id]:{...item,tabId:tab.id}});
@@ -169,14 +174,15 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if(msg?.type==='issuer-queue-count'){
-    issuerQueue().then(a=>reply({ok:true,count:a.length}),
+    issuerQueue().then(a=>reply({ok:true,
+      count:a.filter(x=>x.ownerMst===String(msg.ownerMst||'').replace(/\D/g,'')).length}),
       e=>reply({ok:false,error:e.message}));
     return true;
   }
   if(msg?.type==='issuer-open-next'){
     if(!sender?.url?.startsWith(chrome.runtime.getURL('src/sidepanel/')))
       return reply({ok:false,error:'Chỉ Add-on mới mở phiên tra cứu.'}),false;
-    issuerOpenNext().then(reply,e=>reply({ok:false,error:e.message}));
+    issuerOpenNext(msg.ownerMst).then(reply,e=>reply({ok:false,error:e.message}));
     return true;
   }
   if(msg?.type==='issuer-assist-state'){

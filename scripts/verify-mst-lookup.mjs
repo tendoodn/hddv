@@ -53,7 +53,7 @@ assert(frontend.includes("value.error==='upstream_unavailable'")&&
 
 assert(frontend.includes('Cổng Thuế cá nhân')&&
  frontend.includes('navigator.clipboard.writeText(v.mst)')&&
- frontend.includes('https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp')&&
+ read('docs/web/mst-official.js').includes('https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp')&&
  !frontend.includes('mstcn.jsp?mst='),
  'Personal 12-digit IDs require user-controlled official verification, without leaking ID in URL.');
 assert(page.includes('mst-lookup.js?v=7'),

@@ -1,0 +1,19 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AutoTax · Tra cứu nhanh mã số thuế</title><link rel="stylesheet" href="./web/web.css?v=7"><style>
+.mst-lookup{max-width:950px;margin:45px auto;padding:24px;background:#141417;border:1px solid #383840;border-radius:20px}
+.mst-lookup h1{margin:0 0 8px;font-size:clamp(24px,3vw,37px)}
+.mst-lookup p{color:#babac4;font-size:13px;line-height:1.65}
+.mst-lookup textarea{width:100%;padding:14px;color:#fff;background:#222229;border:1px solid #454550;border-radius:12px;resize:vertical;font:inherit}
+.mst-lookup .actions{display:flex;gap:10px;margin-top:15px;flex-wrap:wrap}
+.mst-lookup button{background:#f3f3f6;color:#141416;padding:11px 17px;font-weight:800;border:0;border-radius:10px;cursor:pointer}
+.mst-lookup button:disabled{opacity:.5}
+.mst-lookup table{width:100%;min-width:600px}
+.mst-lookup small{color:#aaa}
+.mst-lookup #noticeMst{white-space:pre-wrap;padding:12px;margin:12px 0;border:1px solid #555;border-radius:9px;display:none}
+</style></head><body><main class="wrap"><div class="topbar"><a class="logo" href="./web.html">TENDOO <span>AUTOTAX · TRA MST</span></a><div class="toplinks"><a href="./web.html">Tra cứu hóa đơn</a><a href="./">Tài khoản</a></div></div>
+<section class="mst-lookup"><h1>Tra cứu nhanh mã số thuế</h1><p>Nhập từng MST doanh nghiệp/hộ kinh doanh, mỗi dòng một mã (tối đa 20). Kết quả lấy từ API công khai bên thứ ba, không thay thế dữ liệu chính thức của cơ quan thuế. Không nhập CCCD hoặc thông tin cá nhân nhạy cảm.</p>
+<label for="mstInput">Danh sách MST</label><textarea id="mstInput" rows="5" placeholder="0314798911&#10;0106026495-001" maxlength="600"></textarea>
+<div class="actions"><button type="button" id="startMst">Tra cứu MST</button><button type="button" id="downloadMst" disabled>Xuất Excel</button><button type="button" id="clearMst">Xóa</button></div>
+<div id="noticeMst" role="status"></div>
+<div class="table-wrap" style="margin-top:15px"><table><thead><tr><th>MST</th><th>Tên đơn vị</th><th>Địa chỉ</th><th>Trạng thái</th><th>Nguồn</th></tr></thead><tbody id="mstResults"></tbody></table></div>
+<p>Đối chiếu chính thức: <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">Tra cứu người nộp thuế – Tổng cục Thuế</a>. Khi dịch vụ tra cứu nhanh chặn trình duyệt, vui lòng dùng liên kết chính thức.</p>
+</section></main><script src="./web/xlsx.js?v=1"></script><script src="./web/mst-lookup.js?v=1"></script></body></html>

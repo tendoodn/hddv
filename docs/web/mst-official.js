@@ -30,10 +30,17 @@ function parseCopiedRow(raw,requested){
  const cells=src.split(/\t|\r?\n/).map(x=>safeText(x,500)).filter(Boolean);
  if(cells.length<3||cells.length>12)
   return {ok:false,reason:'Hãy sao chép đúng một dòng kết quả trong bảng, không dán cả trang.'};
- const matches=cells.map((cell,i)=>normalize(cell)?.digits===id.digits?i:-1).filter(i=>i>=0);
+ const ids=cells.map((cell,i)=>({id:normalize(cell),index:i})).filter(x=>x.id);
+ const matches=ids.filter(x=>x.id.digits===id.digits);
  if(matches.length!==1)
   return {ok:false,reason:'Nội dung dán phải chứa đúng một mã trùng với mã đang tra cứu.'};
- const at=matches[0];
+ const at=matches[0].index;
+ // Prevent data from a second person's/company's row being assigned to this ID.
+ // One old 10-digit MST alongside a 12-digit citizen ID is valid on TNCN pages.
+ const oldPersonal=id.kind==='personal'&&ids.length===2&&ids.some(x=>
+  x.index===at-3&&x.id.kind==='business');
+ if(ids.length>1&&!oldPersonal)
+  return {ok:false,reason:'Có nhiều mã số thuế trong nội dung dán. Chỉ sao chép một dòng kết quả.'};
  // Business result: STT, tax code, name, address, tax office, tax status.
  // Personal result may display an older 10-digit MST before the 12-digit CCCD:
  // STT, old tax code, name, tax office, citizen ID, update date, notes.

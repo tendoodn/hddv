@@ -276,28 +276,44 @@ function clearOfficial(){
  $('mstOfficialSave').disabled=true;
  $('mstOfficialNotice').textContent='';
 }
-function openOfficial(index){
+function selectOfficialPortal(portal){
+ if(!officialSelection)return;
+ officialSelection.portal=portal;
+ $('mstOfficialSource').value=portal;
+ $('mstOfficialPaste').value='';
+ officialParsed=null;
+ for(const id of ['mstOfficialName','mstOfficialAddress','mstOfficialOffice','mstOfficialStatus'])
+  $(id).value='';
+ $('mstOfficialConfirm').checked=false;
+ const selected=state[officialSelection.index]?.officialChecks?.[portal];
+ $('mstOfficialType').textContent=portal==='personal'?
+  'Cổng TNCN: tra bằng MST hoặc CCCD nếu biểu mẫu hỗ trợ. Mã doanh nghiệp có thể không có kết quả.':
+  'Cổng doanh nghiệp: tra bằng MST/chi nhánh, mã 12 số chỉ có kết quả nếu cổng hỗ trợ.';
+ $('mstOfficialNotice').textContent=selected?
+  'Đã có một kết quả dán từ cổng này. Muốn thay thế, hãy tra cứu và dán lại một dòng mới.':
+  'Hãy nhập CAPTCHA trên cổng đã chọn, tra cứu rồi sao chép đúng MỘT DÒNG kết quả; không dán cả trang.';
+ officialSaveState();
+}
+function openOfficial(index,portal){
  const v=state[index];
  if(!v||running)return status('Chỉ đối chiếu khi kết quả tra cứu đã tải xong.');
  clearOfficial();
- officialSelection={index,code:v.mst,stamp:sequence};
- const url=window.MstOfficial.officialUrl(v.mst);
+ officialSelection={index,code:v.mst,stamp:sequence,portal};
  $('mstOfficialCode').textContent=v.mst;
- $('mstOfficialPortal').href=url;
- $('mstOfficialType').textContent=v.type==='personal'?
-  'Chọn ô Số CMND/Thẻ căn cước tại mục người nộp thuế TNCN.':
-  'Chọn mục Thông tin người nộp thuế và nhập MST doanh nghiệp/chi nhánh.';
- $('mstOfficialNotice').textContent='Mở cổng Thuế, nhập mã và CAPTCHA, tra cứu rồi sao chép CHỈ MỘT DÒNG kết quả trong bảng. Không dán cả trang.';
+ $('mstOfficialPortalBusiness').href=window.MstOfficial.officialUrl(v.mst,'business');
+ $('mstOfficialPortalPersonal').href=window.MstOfficial.officialUrl(v.mst,'personal');
  $('mstOfficialDialog').showModal();
+ selectOfficialPortal(portal);
 }
 function officialSaveState(){
  $('mstOfficialSave').disabled=!officialSelection||!officialParsed?.ok||
+  officialParsed?.portal!==officialSelection?.portal||
   !$('mstOfficialConfirm').checked||!$('mstOfficialName').value.trim();
 }
 $('mstOfficialParse').addEventListener('click',()=>{
  if(!officialSelection)return;
  const parsed=window.MstOfficial.parseCopiedRow(
-  $('mstOfficialPaste').value,officialSelection.code);
+  $('mstOfficialPaste').value,officialSelection.code,officialSelection.portal);
  officialParsed=parsed.ok?parsed:null;
  $('mstOfficialNotice').textContent=parsed.ok?
   'Mã đã khớp với dòng dán. Hãy kiểm tra các trường trước khi lưu. KHÔNG phải xác minh qua API.':
@@ -311,24 +327,30 @@ $('mstOfficialParse').addEventListener('click',()=>{
 for(const id of ['mstOfficialName','mstOfficialAddress','mstOfficialOffice','mstOfficialStatus'])
  $(id).addEventListener('input',officialSaveState);
 $('mstOfficialConfirm').addEventListener('change',officialSaveState);
+$('mstOfficialSource').addEventListener('change',value=>selectOfficialPortal($('mstOfficialSource').value));
 $('mstOfficialSave').addEventListener('click',()=>{
  const s=officialSelection;
- if(!s||!officialParsed?.ok||!$('mstOfficialConfirm').checked||
-  !String($('mstOfficialName').value||'').trim())return;
+ if(!s||!officialParsed?.ok||officialParsed.portal!==s.portal||
+  !$('mstOfficialConfirm').checked||!String($('mstOfficialName').value||'').trim())return;
  const row=state[s.index];
  if(running||sequence!==s.stamp||!row||
   normalize(row.mst)?.digits!==normalize(s.code)?.digits)
   return $('mstOfficialNotice').textContent='Danh sách đã đổi. Hãy tra cứu và đối chiếu lại.';
- state[s.index]={...row,name:$('mstOfficialName').value.trim().slice(0,250),
+ const record={
+  name:$('mstOfficialName').value.trim().slice(0,250),
   address:$('mstOfficialAddress').value.trim().slice(0,450),
   office:$('mstOfficialOffice').value.trim().slice(0,250),
   status:$('mstOfficialStatus').value.trim().slice(0,250),
-  verified:false,manual:true,error:'user_copied_official_row',
-  source:'Người dùng đối chiếu thủ công tại '+window.MstOfficial.officialUrl(s.code),
-  manuallyCheckedAt:new Date().toISOString()};
+  source:window.MstOfficial.officialUrl(s.code,s.portal),
+  matchedClipboard:true,manuallyCheckedAt:new Date().toISOString()
+ };
+ // Preserve the API result and the OTHER government portal's record. Never
+ // promote user-pasted content into a server-verified government fact.
+ state[s.index]={...row,officialChecks:{...(row.officialChecks||{}),[s.portal]:record}};
  $('mstOfficialDialog').close();render();
- status('Đã lưu kết quả do người dùng đối chiếu cho '+s.code+
-  ' trong tab hiện tại. AutoTax chưa xác minh độc lập thông tin này.');
+ status('Đã ghi nhận dữ liệu do người dùng dán cho '+s.code+' từ cổng '+
+  (s.portal==='business'?'doanh nghiệp':'TNCN')+
+  '. Cổng còn lại vẫn phải kiểm tra riêng; AutoTax không xác minh máy chủ.');
 });
 $('mstOfficialClose').addEventListener('click',()=>$('mstOfficialDialog').close());
 $('mstOfficialDialog').addEventListener('close',clearOfficial);

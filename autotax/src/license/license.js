@@ -85,7 +85,16 @@
   try{
    packages=await rpc('addon_list_packages');
    const holder=$('lic-package-list');holder.replaceChildren();
-   for(const p of packages||[]){
+   const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
+   const ordered=[...defaults.map(code=>(packages||[]).find(p=>p.code===code)).filter(Boolean),
+     ...(packages||[]).filter(p=>!defaults.includes(p.code))];
+   let customHeading=false;
+   for(const p of ordered){
+    if(!defaults.includes(p.code)&&!customHeading){
+     const heading=document.createElement('strong');heading.textContent='Gói bổ sung';
+     heading.style.cssText='display:block;width:100%;padding:8px 0;color:#b80010';
+     holder.append(heading);customHeading=true;
+    }
     const card=document.createElement('div');card.className='license-package';
     const details=document.createElement('div');
     const name=document.createElement('b');name.textContent=p.name||p.code;

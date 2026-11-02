@@ -50,7 +50,7 @@
 .mst-official-dialog h2{font-size:20px;margin:0 0 10px}
 .mst-official-dialog p{font-size:13px;line-height:1.6;color:#b8b8c3}
 .mst-official-dialog label{display:block;margin:13px 0 6px;font-size:12px;color:#c8c8d4;font-weight:700}
-.mst-official-dialog textarea,.mst-official-dialog input:not([type=checkbox]){display:block;width:100%;border:1px solid #484854;border-radius:8px;background:#202026;color:#f5f5fa;padding:10px;font:14px/1.45 system-ui}
+.mst-official-dialog textarea,.mst-official-dialog select,.mst-official-dialog input:not([type=checkbox]){display:block;width:100%;border:1px solid #484854;border-radius:8px;background:#202026;color:#f5f5fa;padding:10px;font:14px/1.45 system-ui}
 .mst-official-dialog textarea{min-height:82px;resize:vertical}
 .mst-official-dialog .mst-official-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
 .mst-official-dialog .mst-official-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
@@ -89,18 +89,25 @@
     <select id="mstFilter"><option value="all">Tất cả</option><option value="ok">Đã có dữ liệu</option><option value="missing">Chưa xác minh</option></select></label></div>
    <div class="mst-table-wrap"><table class="mst-table"><thead><tr><th>STT</th><th>Mã số thuế</th><th>Thông tin người nộp thuế</th><th>Cơ quan quản lý</th><th>Trạng thái</th></tr></thead><tbody id="mstResults"></tbody></table></div>
    <div class="mst-progress-note" id="noticeMst" role="status" aria-live="polite"></div>
-   <p class="mst-foot">Nguồn tự động: VietQR và các dịch vụ dữ liệu doanh nghiệp qua AutoTax (không phải dữ liệu đã xác minh trực tiếp từ Cục Thuế). Trạng thái và cơ quan thuế chỉ hiện nếu nguồn trả về. Tra cứu chính thức tại <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế doanh nghiệp</a> hoặc <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế cá nhân</a>. Không mặc định đánh dấu “Đang hoạt động” nếu nguồn không xác minh.</p>
+   <p class="mst-foot">Nguồn tự động: VietQR và các dịch vụ dữ liệu doanh nghiệp qua AutoTax (không phải dữ liệu đã xác minh trực tiếp từ Cục Thuế). Trạng thái và cơ quan thuế chỉ hiện nếu nguồn trả về. Mỗi MST có thể đối chiếu thủ công tại cả hai cổng chính thức: <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế doanh nghiệp</a> và <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế cá nhân</a>. Không mặc định đánh dấu “Đang hoạt động” nếu nguồn không xác minh.</p>
   </section>
  </div>
 </main>
 <dialog id="mstOfficialDialog" class="mst-official-dialog" aria-labelledby="mstOfficialHeading">
  <h2 id="mstOfficialHeading">Đối chiếu trên cổng Thuế chính thức</h2>
- <p>Mã đang đối chiếu: <strong id="mstOfficialCode"></strong>. <span id="mstOfficialType"></span></p>
+ <p>Mã đang đối chiếu: <strong id="mstOfficialCode"></strong>. Mỗi mã có thể được kiểm tra trên <strong>cả hai cổng</strong> và lưu kết quả riêng.</p>
+ <label for="mstOfficialSource">Nguồn đang ghi nhận</label>
+ <select id="mstOfficialSource" aria-label="Chọn cổng Thuế để ghi nhận">
+  <option value="business">Cổng doanh nghiệp / tổ chức</option>
+  <option value="personal">Cổng người nộp thuế TNCN</option>
+ </select>
+ <p id="mstOfficialType"></p>
  <div class="mst-official-actions">
-  <a id="mstOfficialPortal" href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">Mở cổng Thuế chính thức</a>
+  <a id="mstOfficialPortalBusiness" href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">Mở cổng doanh nghiệp</a>
+  <a id="mstOfficialPortalPersonal" href="https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp" target="_blank" rel="noopener noreferrer">Mở cổng TNCN</a>
   <button id="mstOfficialClose" type="button">Đóng</button>
  </div>
- <p><strong>Thao tác:</strong> trên trang Thuế, nhập đúng MST hoặc CCCD, tự nhập CAPTCHA rồi tra cứu. Chỉ sao chép một hàng kết quả từ bảng và dán vào ô dưới. Nếu trang không cho sao chép dòng, vui lòng kiểm tra trực tiếp trên trang chính thức.</p>
+ <p><strong>Thao tác:</strong> mở cổng phù hợp, nhập MST/CCCD theo trường mà cổng đó hỗ trợ, tự nhập CAPTCHA rồi tra cứu. Chọn đúng nguồn ở ô phía trên trước khi dán một dòng kết quả. Nếu cổng không có hồ sơ, không tự đánh dấu là đã tìm thấy.</p>
  <label for="mstOfficialPaste">Dán một dòng kết quả (Ctrl+C trên bảng, Ctrl+V tại đây)</label>
  <textarea id="mstOfficialPaste" maxlength="5000" autocomplete="off" placeholder="STT    MST    Tên người nộp thuế    Địa chỉ    Cơ quan thuế    Trạng thái"></textarea>
  <div class="mst-official-actions"><button id="mstOfficialParse" type="button">Đọc dòng đã dán</button></div>
@@ -113,9 +120,9 @@
  </div>
  <label class="mst-official-confirm"><input id="mstOfficialConfirm" type="checkbox"><span>Tôi đã so sánh các trường với hàng kết quả trên cổng Thuế và hiểu đây là thông tin do người dùng cung cấp, AutoTax không tự xác thực.</span></label>
  <div class="mst-official-actions"><button id="mstOfficialSave" type="button" disabled>Lưu kết quả đối chiếu trong tab</button></div>
- <p><strong>Riêng tư:</strong> dữ liệu dán chỉ nằm trong tab trình duyệt, không được gửi lên AutoTax/Supabase. Khi xuất Excel, kết quả được ghi nhãn “đối chiếu thủ công — chưa xác minh tự động”.</p>
+ <p><strong>Riêng tư:</strong> kết quả hai cổng được lưu tách biệt trong tab hiện tại, không gửi nội dung dán lên Supabase. Excel sẽ có cột riêng cho từng cổng và cảnh báo khi tên khác nhau. Không có kết quả ở một cổng không có nghĩa MST không tồn tại.</p>
 </dialog>
 <script src="./web/xlsx.js?v=1"></script>
-<script src="./web/mst-official.js?v=1"></script>
-<script src="./web/mst-lookup.js?v=7"></script>
+<script src="./web/mst-official.js?v=2"></script>
+<script src="./web/mst-lookup.js?v=8"></script>
 </body></html>

@@ -132,7 +132,7 @@
  async function startMstTrial(){
   const input=$('lic-trial-mst'),btn=$('lic-trial-start');
   const mst=(input?.value||'').trim().replace(/[ -]/g,'');
-  if(!/^[0-9]{10}([0-9]{2})?$/.test(mst))return message('Nhập MST 10 hoặc 12 chữ số hợp lệ.',true);
+  if(!/^(?:[0-9]{10}|[0-9]{12}|[0-9]{13})$/.test(mst))return message('Nhập MST 10, 12 hoặc 13 chữ số hợp lệ.',true);
   btn.disabled=true;
   try{
    const result=await rpc('addon_start_mst_trial',{p_mst:mst});
@@ -150,7 +150,7 @@
   const content=document.createElement('div');
   const title=document.createElement('b');title.textContent='Dùng thử miễn phí 7 ngày · 1 MST';
   const hint=document.createElement('small');hint.textContent='Mỗi email và MST chỉ được dùng thử một lần. Gói trả phí không bị giới hạn trùng MST.';
-  const input=document.createElement('input');input.id='lic-trial-mst';input.placeholder='Nhập MST 10 hoặc 12 chữ số';input.inputMode='numeric';input.maxLength=13;
+  const input=document.createElement('input');input.id='lic-trial-mst';input.placeholder='MST 10, 12 hoặc 13 số (10-001)';input.inputMode='numeric';input.maxLength=14;
   const button=document.createElement('button');button.id='lic-trial-start';button.type='button';button.textContent='Kích hoạt dùng thử';
   button.addEventListener('click',startMstTrial);
   content.append(title,hint,input);wrapper.append(content,button);

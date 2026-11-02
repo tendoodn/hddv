@@ -7,6 +7,7 @@ on:
       - "autotax/**"
       - "addon-portal/**"
       - "scripts/verify-v32-sync.mjs"
+      - "scripts/verify-web-bridge.mjs"
       - "tests/v32/**"
       - ".github/workflows/verify-v32.yml"
   pull_request:
@@ -15,6 +16,7 @@ on:
       - "autotax/**"
       - "addon-portal/**"
       - "scripts/verify-v32-sync.mjs"
+      - "scripts/verify-web-bridge.mjs"
       - ".github/workflows/verify-v32.yml"
 permissions:
   contents: read
@@ -27,6 +29,7 @@ jobs:
         with:
           node-version: "22"
       - run: node scripts/verify-v32-sync.mjs
+      - run: node scripts/verify-web-bridge.mjs
       - name: Parse Windows backup script without running it
         shell: pwsh
         run: |

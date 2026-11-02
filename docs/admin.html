@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102">
-<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102">
-<title>Tendoo AutoTax 3.3.7 — Quản trị</title>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
+<title>AutoTax 3.4.0 — Quản trị</title>
 <style>
 :root{font-family:Inter,system-ui,sans-serif;color:#172033;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1150px;margin:auto;padding:28px 16px}header,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-weight:850;font-size:20px}.brand span{color:#2563eb}.panel,.card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 22px #1e293b08}h1{font-size:26px}button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;background:#2563eb;color:white;cursor:pointer}button.secondary{background:#eaf0f9;color:#172033}button.danger{background:#dc2626}button:disabled{opacity:.5}input,select{padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;min-width:230px}.muted,small{color:#64748b}.hidden{display:none!important}.notice{padding:12px;border-radius:9px;background:#eff6ff;color:#1e40af;white-space:pre-wrap;margin-top:12px}.error{background:#fef2f2;color:#991b1b}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab.active{background:#172033;color:#fff}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:left;padding:11px;border-bottom:1px solid #e2e8f0;font-size:13px;vertical-align:top}th{background:#f8fafc}.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#dcfce7;color:#166534;font-size:12px}.pill.off{background:#fee2e2;color:#991b1b}.actions{display:flex;gap:7px;flex-wrap:wrap}.sub{font-size:12px;color:#64748b;margin-top:5px}.history-modal{width:min(1280px,98vw);max-width:98vw;max-height:88vh;overflow:auto;border:1px solid #cbd5e1;border-radius:16px;padding:22px;background:#fff;color:#172033;box-shadow:0 18px 65px #0f172a33}.history-modal::backdrop{background:#0f172a99}.history-modal .tablewrap table{min-width:1330px}
 .history-modal code{font-size:11px;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
@@ -51,7 +51,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 <option value="all">Mọi trạng thái gói</option><option value="invoice">Còn lượt hóa đơn</option>
 <option value="mst">Còn quyền MST</option><option value="trial">Đang dùng thử</option>
 <option value="expired">Không còn quyền hoạt động</option></select><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
-<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST hoặc email đang liên kết..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
+<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
 <div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
 <h3>10 gói mặc định</h3>
 <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
@@ -95,7 +95,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 <div class="panel"><h2>Tạo mã unlock theo gói</h2><p class="sub">Mỗi mã chỉ mở khóa đúng một gói đã chọn, sử dụng một lần cho một tài khoản. Số lượng và thời hạn MST được chốt tại lúc tạo mã.</p><div class="actions"><label>Chọn gói <select id="unlockPackage"></select></label><label>Hạn sử dụng mã <input id="unlockExpiry" type="datetime-local"></label><button id="createUnlock">Tạo mã unlock</button></div><div id="unlockCreated" class="notice hidden"></div><h3>Danh sách mã unlock</h3><div class="tablewrap"><table><thead><tr><th>Mã unlock</th><th>Gói được mở</th><th>Hạn mã</th><th>Trạng thái</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead><tbody id="unlocks"></tbody></table></div></div><div class="tabs"><button class="tab active" data-tab="customers">Khách hàng</button><button class="tab secondary" data-tab="logs">Nhật ký quản trị</button></div>
 <div id="logsPanel" class="panel hidden"><h2>Nhật ký thao tác</h2><div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Khách hàng</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody id="logs"></tbody></table></div></div>
 </section></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js?v=34"></script><script>
 const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
 const $=id=>document.getElementById(id);let allUsers=[],allPackages=[];
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
@@ -442,7 +442,7 @@ function renderUsers(){
   const trial='<div>'+(u.trial_used?'<span class="pill off">Đã dùng thử</span>':'<span class="pill">Chưa dùng thử</span>')+'</div>'+
    (u.trial_expires_at?'<div class="sub">Hạn thử: '+fmt(u.trial_expires_at)+'</div>':'')+
    '<div class="sub">Liên kết: '+(linked||'Chưa có')+'</div>';
-  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Đặt lại mật khẩu</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button><button class="danger" data-reset-vault="'+esc(u.user_id)+'">Reset kho mật khẩu</button></div></td></tr>';
+  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Đặt lại mật khẩu</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button></div></td></tr>';
  }).join('');
  $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
  $("count").textContent=filtered.length+"/"+allUsers.length+" tài khoản đang hiển thị (tối đa 500 tài khoản gần nhất)";
@@ -464,19 +464,6 @@ $("clearAdminFilters").onclick=()=>{
 };
 $("users").onclick=async e=>{
  const b=e.target.closest("button");if(!b)return;
- if(b.dataset.resetVault){
-  const customer=allUsers.find(u=>u.user_id===b.dataset.resetVault);
-  if(!customer)return msg("msg","Không tìm thấy khách hàng.",true);
-  if(!confirm("Reset kho mật khẩu của "+customer.email+"?\nMã khôi phục tạm: 0000.\nLần mở Web kế tiếp sẽ xóa kho mật khẩu đã mã hóa trên trình duyệt đó. Không thể khôi phục mật khẩu Thuế cũ và khách phải tạo kho mới.\nTiếp tục?"))return;
-  b.disabled=true;
-  try{
-   const {data,error}=await client.rpc("addon_admin_reset_vault",{p_user_id:customer.user_id});
-   if(error)throw error;
-   msg("msg","Đã gửi reset kho cho "+customer.email+". Mã khôi phục tạm 0000; dữ liệu cũ sẽ bị xóa khi Web đồng bộ. Khách phải tạo mật khẩu kho mới.");
-  }catch(e){msg("msg","Không reset được kho: "+(e.message||e),true)}
-  finally{b.disabled=false}
-  return;
- }
  if(b.dataset.history){openPackageHistory(b.dataset.history);return;}if(b.dataset.grant){$("grantCustomer").value=b.dataset.grant;$("adminPackageGrant").scrollIntoView({behavior:"smooth",block:"center"});$("grantPackage").focus();return;}if(b.dataset.reset){if(!confirm("Gửi email đặt lại mật khẩu tới "+b.dataset.reset+"?"))return;b.disabled=true;const {error}=await client.auth.resetPasswordForEmail(b.dataset.reset,{redirectTo:"https://tendoodn.github.io/hddv/"});b.disabled=false;if(error)msg("msg","Không gửi được email: "+error.message,true);else msg("msg","Đã gửi yêu cầu đặt lại mật khẩu tới "+b.dataset.reset+".");return;}
 };
 document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");const logs=b.dataset.tab==="logs";$("logsPanel").classList.toggle("hidden",!logs);$("search").parentElement.parentElement.classList.toggle("hidden",logs);if(logs)await loadLogs()});

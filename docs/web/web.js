@@ -183,6 +183,7 @@ async function refreshAccount(){
   const {data:{session}}=await client.auth.getSession();
   account=session?.user||null;
   if(!account){
+   window.GdtVault?.setUser(null,[]);
    $('authStatus').textContent='Chưa đăng nhập — đăng nhập ở trang tài khoản trước.';
    show('Phiên bản Web dùng chung tài khoản AutoTax. Hãy đăng nhập và đăng ký hồ sơ MST ở trang Tài khoản rồi quay lại trang này.');
    return;
@@ -195,8 +196,7 @@ async function refreshAccount(){
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   selectedMode=ent.data?.mode||'mst';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
-  $('mstList').replaceChildren(...profileMsts.map(m=>{const opt=document.createElement('option');opt.value=m;return opt}));
-  if(profileMsts.length&&!$('mst').value)$('mst').value=profileMsts[0];
+  window.GdtVault?.setUser(account.id,profileMsts);
   if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
   else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
@@ -228,6 +228,7 @@ async function signIntoTax(mst){
     if(!token||!sub)throw Error('Cổng Thuế chưa trả phiên đăng nhập hợp lệ. Vui lòng kiểm tra tên đăng nhập và dịch vụ kết nối.');
     if(sub!==mst)throw Error('MST đăng nhập cổng Thuế khác MST hồ sơ AutoTax đang chọn.');
     govtToken=token;govtMst=mst;$('captchaBox').hidden=true;
+    await window.GdtVault?.saveAfterLogin(mst,password);
     $('gdtStatus').textContent='Đã xác thực cổng Thuế cho MST '+mst+' · phiên chỉ ở bộ nhớ tab.';
     $('captchaStatus').textContent='Đã đăng nhập bằng mã xác nhận tự xử lý.';
     return;
@@ -416,11 +417,15 @@ function init(){
   if(ok)show('Đã lấy CAPTCHA thành công. Nhấn Tìm kiếm hóa đơn để tiếp tục.',true);
  });
  $('clearGdt').addEventListener('click',()=>{clearGov();show('Đã xóa phiên cổng Thuế khỏi bộ nhớ.',true)});
- $('mst').addEventListener('change',()=>{const x=$('mst').value.replace(/\D/g,'');if(govtToken&&x!==govtMst)clearGov()});
+ $('mst').addEventListener('change',()=>{
+  const x=$('mst').value.replace(/\D/g,'');
+  if(govtToken&&x!==govtMst)clearGov();
+  window.GdtVault?.select(x);
+ });
  $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
  for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportTax','tax'],['exportPdf','pdf']])
   $(id).addEventListener('click',()=>exportFile(kind));
- window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value=''});
+ window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value='';window.GdtVault?.lock()});
  refreshAccount();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();

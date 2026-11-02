@@ -24,28 +24,30 @@ const normalSku=product=>window.TendooImport.normalize(product.name);
 const alertPref='autotax_web_disable_k_popup_v1';
 const getPopupDisabled=()=>{try{return localStorage.getItem(alertPref)==='1'}catch{return false}};
 const setPopupDisabled=value=>{try{localStorage.setItem(alertPref,value?'1':'0')}catch{}};
+function filterRows(){
+ const kind=$('visibleKind').value,month=$('visibleMonth').value;
+ return dataset.filter(row=>(kind==='all'||row.kind===kind)&&(!month||invoiceMonth(row)===month));
+}
 function pickedRows(){
- const scope=$('exportScope').value;
- if(scope==='selected')return dataset.filter(r=>checked.has(keyOf(r)));
- if(scope==='month'){
-  const month=$('exportMonth').value;
-  return dataset.filter(r=>invoiceMonth(r)===month);
- }
- return dataset.slice();
+ const shown=filterRows();
+ // Selection is preferred whenever the user ticked at least one currently visible invoice.
+ const selected=shown.filter(r=>checked.has(keyOf(r)));
+ return $('exportScope').value==='selected'&&selected.length?selected:shown;
 }
 function exportSuffix(){
- const scope=$('exportScope').value;
- return scope==='month'?'_thang_'+$('exportMonth').value.replace('-',''):
-   scope==='selected'?'_da_chon_'+checked.size:'';
+ const kind=$('visibleKind').value,month=$('visibleMonth').value;
+ const amount=$('exportScope').value==='selected'&&pickedRows().length<filterRows().length?
+  '_da_chon_'+pickedRows().length:'';
+ return (kind==='all'?'':'_'+kind)+(month?'_thang_'+month.replace('-',''):'')+amount;
 }
 function updateScope(){
- const scope=$('exportScope').value;
- $('exportMonthWrap').hidden=scope!=='month';
- const view=visible.map(keyOf),selectedCount=checked.size;
- $('selectAllInvoices').checked=!!view.length&&view.every(k=>checked.has(k));
- $('selectAllInvoices').indeterminate=!!view.length&&view.some(k=>checked.has(k))&&!view.every(k=>checked.has(k));
- $('selectionCount').textContent='Đã tick '+selectedCount+'/'+dataset.length+
-   ' · phạm vi xuất '+pickedRows().length+' hóa đơn';
+ const shown=filterRows(),selected=shown.filter(r=>checked.has(keyOf(r))).length;
+ const page=visible.map(keyOf);
+ $('selectAllInvoices').checked=!!page.length&&page.every(k=>checked.has(k));
+ $('selectAllInvoices').indeterminate=!!page.length&&page.some(k=>checked.has(k))&&!page.every(k=>checked.has(k));
+ $('selectionCount').textContent='Đã tick '+selected+'/'+shown.length+
+  ' · sẽ xuất '+pickedRows().length+' hóa đơn ('+
+  (selected&&$('exportScope').value==='selected'?'đã tick':'toàn bộ đang hiển thị')+')';
 }
 function totals(list){
  const active=list.filter(isActive);
@@ -65,15 +67,15 @@ function kAlert(stats){
  if(!valid||getPopupDisabled())return;
  $('disableKPopup').checked=false;
  $('kWarningText').textContent='Tổng bán ra '+money(stats.sold)+
-  ' / tổng mua vào '+money(stats.buy)+' = K '+ratio.toFixed(2)+
-  ', vượt ngưỡng cảnh báo 2. MST này có nguy cơ vượt hệ số K và nên rà soát chứng từ, hàng tồn và giá vốn thực tế.';
+  ' / tổng mua vào '+money(stats.buy)+' = '+ratio.toFixed(2)+
+  ' (chỉ là Bán/Mua). K chính thức = Tổng bán ra / (Tồn trước kỳ + Tổng mua vào). Do không biết tồn trước kỳ, chưa thể xác định K thực tế. NNT vui lòng rà soát tồn đầu, đầu vào và chứng từ.';
  if(!$('kWarningDialog').open)$('kWarningDialog').showModal();
 }
 function render(list,warnings=[]){
  dataset=Array.isArray(list)?list.slice():[];
- checked.clear();visible=dataset.slice(0,1500);
+ checked.clear();visible=[];
+ $('visibleKind').value='all';$('visibleMonth').value='';
  $('results').hidden=false;
- $('exportMonth').value=$('fromDate').value.slice(0,7);
  $('exportScope').value='all';
  const st=totals(dataset);
  $('totalPayments').textContent=money(st.total);
@@ -87,17 +89,22 @@ function render(list,warnings=[]){
   dataset.filter(r=>r.kind==='sold').length+
   (st.excluded?' · '+st.excluded+' HĐ hủy/thay thế không cộng tiền':'')+
   (warnings.length?' · có cảnh báo nguồn dữ liệu':'');
+ renderVisible();
+ kAlert(st);
+}
+function renderVisible(){
+ visible=filterRows().slice(0,1500);
  const body=$('resultRows');body.replaceChildren();
- if(!dataset.length){
+ if(!visible.length){
   const tr=document.createElement('tr'),td=document.createElement('td');
-  td.colSpan=9;td.textContent='Không có hóa đơn trong khoảng thời gian này.';
+  td.colSpan=9;td.textContent='Không có hóa đơn trong bộ lọc hiển thị.';
   tr.append(td);body.append(tr);
  }
  for(const r of visible){
   const tr=document.createElement('tr');tr.dataset.key=keyOf(r);
   const choice=document.createElement('td'),checkbox=document.createElement('input');
   checkbox.type='checkbox';checkbox.className='invoice-select';
-  checkbox.dataset.key=keyOf(r);
+  checkbox.dataset.key=keyOf(r);checkbox.checked=checked.has(keyOf(r));
   checkbox.setAttribute('aria-label','Chọn hóa đơn '+(r.shdon||''));
   choice.append(checkbox);tr.append(choice);
   const partner=r.kind==='purchase'?(r.nbten||r.nbmst):(r.nmten||r.nmmst);
@@ -109,17 +116,17 @@ function render(list,warnings=[]){
    const td=document.createElement('td');td.textContent=value;
    if(i===4||i===5)td.className='money';tr.append(td);
   });
-  const action=document.createElement('td'),button=document.createElement('button');
-  button.type='button';button.className='table-detail-btn';button.dataset.detail=keyOf(r);
+  const action=document.createElement('td');
+  const button=document.createElement('button');button.type='button';
+  button.className='table-detail-btn';button.dataset.detail=keyOf(r);
   button.textContent='Xem chi tiết';action.append(button);
   const audit=document.createElement('button');audit.type='button';
   audit.className='table-detail-btn table-audit-btn';audit.dataset.audit=keyOf(r);
   audit.textContent='Kiểm tra hợp lệ';action.append(audit);
   tr.append(action);body.append(tr);
  }
- if(dataset.length>1500)app()?.show('Hiển thị 1.500/'+dataset.length+' dòng để bảo đảm tốc độ. Chọn tất cả chỉ tick các dòng đang hiện; chế độ "Tất cả hóa đơn" vẫn xuất toàn bộ kết quả.',true);
+ if(filterRows().length>1500)app()?.show('Đang hiển thị 1.500 dòng đầu; xuất tất cả sẽ bao gồm toàn bộ hóa đơn khớp bộ lọc.',true);
  updateScope();
- kAlert(st);
 }
 function appendCells(row,values){
  for(const [i,v] of values.entries()){
@@ -339,7 +346,9 @@ function init(){
   updateScope();
  });
  $('exportScope').addEventListener('change',updateScope);
- $('exportMonth').addEventListener('change',updateScope);
+ $('visibleKind').addEventListener('change',renderVisible);
+ $('visibleMonth').addEventListener('change',renderVisible);
+ $('clearVisibleMonth').addEventListener('click',()=>{$('visibleMonth').value='';renderVisible()});
  $('closeInvoiceDetail').addEventListener('click',()=>$('invoiceDetailDialog').close());
  $('closeSkuMap').addEventListener('click',()=>$('skuMapDialog').close());
  $('saveSkuMap').addEventListener('click',async()=>{
@@ -361,6 +370,6 @@ function init(){
  });
  updateStock();
 }
-window.WebResults={render,exportRows:pickedRows,exportSuffix,init};
+window.WebResults={render,exportRows:pickedRows,filteredRows:filterRows,exportSuffix,init};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

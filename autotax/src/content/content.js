@@ -231,7 +231,7 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
               try{
                 await chrome.runtime.sendMessage({
                   type:'issuer-queue-add',link:source.link,code:source.code,
-                  invoice:[row.nbmst,row.khhdon,row.shdon].filter(Boolean).join('_')
+                  ownerMst:profile.mst,invoice:[row.nbmst,row.khhdon,row.shdon].filter(Boolean).join('_')
                 });
               }catch{/* A PDF-missing TXT report is still saved below. */}
             }

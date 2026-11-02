@@ -73,6 +73,10 @@ async function pdfForInvoice(row,index,total){
  app.progress('Đang tải PDF và kiểm tra nguồn '+(index+1)+'/'+total);
  const detail=await app.fetchDetail(row);
  const lookup=window.HDDT.originalLookup(row,detail.head);
+ const decision=window.IssuerPortals?.route(lookup)||{
+  hasLookup:!!(lookup.link&&lookup.code),directPdf:false,
+  shouldReconstruct:!(lookup.link&&lookup.code)
+ };
  // A file explicitly selected for this exact invoice is bundled as user-supplied,
  // NOT as a verified issuer-original. The PDF signature is not authenticated here.
  const uploaded=suppliedPdf.get(invoiceKey(row));
@@ -89,14 +93,24 @@ async function pdfForInvoice(row,index,total){
  if(bytes&&validPdf(bytes)){
   return {name:'PDF_goc_nha_phat_hanh/'+name+'.pdf',data:bytes,kind:'original'};
  }
- // Strict issuer-original mode: tax-portal attachments and locally generated
- // PDF representations are never silently substituted for the original PDF.
- // The provider may require its own authenticated session and CAPTCHA.
- throw Error('Chưa tải được PDF gốc từ nhà phát hành. '+
-  'Nhà phát hành: '+(lookup.name||'chưa xác định')+'. '+
-  'Link tra cứu: '+(lookup.link||'chưa có')+'. '+
-  'Mã tra cứu: '+(lookup.code||'chưa có trong XML')+
-  '. Mở chức năng Tra PDF gốc ở hóa đơn để xác thực tại cổng phát hành và gắn file nhận được.');
+ // V1.1 business rule: invoice WITH URL + security lookup code MUST
+ // prioritize issuer original, including CAPTCHA-assisted portal retrieval.
+ // Never silently fabricate a replacement when both lookup values exist.
+ if(!decision.shouldReconstruct){
+  throw Error('Hóa đơn đã có thông tin tra cứu, chưa lấy được PDF gốc từ nhà phát hành. '+
+   'Nhà phát hành: '+(lookup.name||decision.source?.name||'chưa xác định')+'. '+
+   'Link tra cứu: '+(lookup.link||'chưa có')+'. '+
+   'Mã tra cứu: '+(lookup.code||'chưa có trong XML')+
+   '. Hãy xác thực CAPTCHA/phiên tại trang tra cứu hoặc gắn PDF đã tải, '+
+   'AutoTax sẽ không tự thay bằng bản dựng trong trường hợp này.');
+ }
+ // If either the invoice-specific lookup link or its security code is absent,
+ // reconstruct an explicitly labelled PDF representation from tax data.
+ const rebuilt=await window.Pdf.buildInvoicePdf(row,detail,lookup);
+ if(!validPdf(rebuilt))throw Error('Không dựng được PDF từ dữ liệu CQT hợp lệ.');
+ return {name:'PDF_DUNG_LAI_TU_DU_LIEU_CQT_KHONG_PHAI_GOC/'+name+'.pdf',
+  data:rebuilt,kind:'representation',sourceOriginal:false,
+  providerName:lookup.name||'',providerLink:lookup.link||'',lookupCode:lookup.code||''};
 }
 async function create(rows){
  if(!rows.length)throw Error('Không có hóa đơn trong phạm vi xuất.');
@@ -123,9 +137,10 @@ async function create(rows){
  const guide=[
   'AutoTax Web – PHAN BIET FILE PDF',
   'PDF_goc_nha_phat_hanh: Tap PDF goc lay truc tiep tu tep nha cung cap hoac duong dan PDF hop le.',
-  'Che do bat buoc PDF goc: khong tao PDF the hien thay the va khong su dung PDF kem cong Thue chua ro nguon.',
+  'V1.1: Hoa don CO link + ma tra cuu thi bat buoc uu tien PDF goc; neu bi CAPTCHA/chan truy cap thi bao loi va huong dan.',
   'PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH: File PDF duoc nguoi dung gan thu cong, khong tu dong xac minh chu ky so hay nguon goc.',
   'Neu khong co PDF goc, xem danh sach hoa don that bai va link/ma tra cuu o cuoi tep.',
+  'PDF_DUNG_LAI_TU_DU_LIEU_CQT_KHONG_PHAI_GOC: Chỉ tạo khi thiếu link hoặc mã bảo mật, không phải bản gốc.',
   'Tep nguoi dung gan thu cong chi duoc gan nhan CHUA XAC MINH chu ky, khong la PDF goc duoc AutoTax xac thuc.',
   'Neu nha cung cap yeu cau ma tra cuu/CAPTCHA ma khong cho phep tai PDF truc tiep,',
   'AutoTax khong the lay PDF goc mot cach chac chan. Link va ma tra cuu duoc liet ke ben duoi.',

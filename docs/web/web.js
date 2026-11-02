@@ -10,7 +10,7 @@ const gatewayUrl=()=>GATEWAY+'?forceFunctionRegion='+gatewayRegion;
 const $=id=>document.getElementById(id);
 const client=window.supabase?.createClient(SUPABASE,PUBLIC_KEY);
 let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
-let busy=false,stopped=false,selectedMode='mst',profileMsts=[];
+let busy=false,stopped=false,selectedMode='mst',profileMsts=[],searchedBothKinds=false;
 const vn=(iso)=>iso.split('-').reverse().join('/');
 const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const idOf=r=>JSON.stringify([r.kind,r.form,r.khhdon,r.shdon,r.nbmst,r.nmmst]);
@@ -273,21 +273,8 @@ async function claimRows(all,mst){
  return accepted;
 }
 function renderResults(list,warnings=[]){
- $('results').hidden=false;
- const mua=list.filter(r=>r.kind==='purchase').length;
- $('resultSummary').textContent='Tìm thấy '+list.length+' hóa đơn · Mua vào: '+mua+' · Bán ra: '+(list.length-mua)+(warnings.length?' · Có cảnh báo nguồn dữ liệu':'');
- const tbody=$('resultRows');tbody.replaceChildren();
- for(const r of list.slice(0,1500)){
-  const tr=document.createElement('tr');
-  const partner=r.kind==='purchase'?(r.nbten||r.nbmst):(r.nmten||r.nmmst);
-  const date=r.tdlap?new Date(r.tdlap).toLocaleDateString('vi-VN'):'—';
-  const values=[r.kind==='purchase'?'Mua vào':'Bán ra',date,
-   [r.khhdon,r.shdon].filter(Boolean).join(' / '),partner||'—',
-   money(r.tgtttbso),HDDT.TTHAI[r.tthai]||'—'];
-  values.forEach((value,i)=>{const td=document.createElement('td');td.textContent=value;if(i===4)td.className='money';tr.append(td)});
-  tbody.append(tr);
- }
- if(list.length>1500)show('Có '+list.length+' hóa đơn; bảng xem trước giới hạn 1.500 dòng, Excel vẫn xuất theo toàn bộ kết quả.',true);
+ if(window.WebResults?.render)window.WebResults.render(list,warnings);
+ else show('Đã có '+list.length+' hóa đơn. Giao diện kết quả chưa tải xong, vui lòng làm mới trang.');
 }
 async function search(e){
  e.preventDefault();if(busy)return;
@@ -311,25 +298,26 @@ async function search(e){
     onWarn:msg=>show(msg),onWait:w=>progress(w.label+' · đang đợi cổng Thuế '+(w.secs||0)+' giây')});
   if(stopped)throw Error('Đã dừng theo yêu cầu.');
   rows=await claimRows(result.rows,mst);details.clear();
+  searchedBothKinds=selected('kind').includes('purchase')&&selected('kind').includes('sold');
   renderResults(rows,result.skipped||[]);
   show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
    (result.skipped?.length?' Nguồn chưa hoàn tất: '+result.skipped.join(', '):''),true);
  }catch(error){show(error.message||'Tra cứu không thành công.');}
  finally{busyState(false)}
 }
-async function loadDetails(){
- if(!rows.length)throw Error('Chưa có hóa đơn để xuất.');
+async function loadDetails(scopeRows=rows){
+ if(!scopeRows.length)throw Error('Chưa có hóa đơn để xuất.');
  let done=0;
- for(const row of rows){
+ for(const row of scopeRows){
   if(stopped)throw Error('Đã dừng khi tải chi tiết.');
   if(details.has(idOf(row)))continue;
   try{const v=await HDDT.fetchInvoice(row,()=>stopped);
    details.set(idOf(row),v);
   }catch(e){details.set(idOf(row),{error:e.message});}
-  progress('Đang tải chi tiết '+(++done)+'/'+rows.length+' hóa đơn');
+  progress('Đang tải chi tiết '+(++done)+'/'+scopeRows.length+' hóa đơn');
  }
  const good=new Map();
- for(const row of rows){const v=details.get(idOf(row));if(v&&!v.error)good.set(row.key,v)}
+ for(const row of scopeRows){const v=details.get(idOf(row));if(v&&!v.error)good.set(row.key,v)}
  return good;
 }
 function download(filename,data,mime){
@@ -339,15 +327,18 @@ function download(filename,data,mime){
  setTimeout(()=>URL.revokeObjectURL(u),30000);
 }
 async function exportFile(kind){
- if(busy)return;if(!rows.length)return show('Hãy tra cứu có kết quả trước khi xuất file.');
+ if(busy)return;
+ const targetRows=window.WebResults?.exportRows?.()||rows;
+ if(!targetRows.length)return show('Không có hóa đơn trong phạm vi xuất. Kiểm tra các ô đã tick hoặc tháng được chọn.');
  stopped=false;busyState(true);show('');
  try{
-  const stamp=($('fromDate').value||'').replace(/-/g,'')+'_'+($('toDate').value||'').replace(/-/g,'');
+  const stamp=($('fromDate').value||'').replace(/-/g,'')+'_'+($('toDate').value||'').replace(/-/g,'')+
+   (window.WebResults?.exportSuffix?.()||'');
   const fileBase='AutoTax_'+safe(govtMst)+'_'+stamp;
   let detailMap=new Map();
-  if(kind!=='pdf')detailMap=await loadDetails();
+  if(kind!=='pdf')detailMap=await loadDetails(targetRows);
   if(kind==='excel'||kind==='tax'){
-   const book=Report.buildSheets(rows,detailMap,{
+   const book=Report.buildSheets(targetRows,detailMap,{
     withLines:kind==='excel',withPdf:true,
     sheets:kind==='excel'?
       {reduction:true,hdkd:true,risk:true,seller:false,adjust:true,gtgt:false}:
@@ -359,7 +350,7 @@ async function exportFile(kind){
    show('Đã tạo Excel '+book.length+' sheet.'+(book.notes?.length?' Ghi chú: '+book.notes.join('; '):''),true);
   }else if(kind==='xml'){
    const z=[];
-   for(const row of rows){
+   for(const row of targetRows){
     const det=detailMap.get(row.key);
     if(!det?.files)continue;
     for(const [name,data] of Object.entries(det.files)){
@@ -372,7 +363,7 @@ async function exportFile(kind){
    show('Đã đóng gói '+z.length+' XML gốc từ cổng Thuế.',true);
   }else{
    const values=[['Loại','Ký hiệu','Số hóa đơn','Đơn vị phát hành','Link tra cứu PDF gốc','Mã tra cứu']];
-   for(const row of rows){
+   for(const row of targetRows){
     const p=HDDT.originalLookup(row,details.get(idOf(row))?.head);
     values.push([row.kind,row.khhdon,row.shdon,p.name,p.link,p.code]);
    }
@@ -388,6 +379,25 @@ async function exportFile(kind){
  }catch(e){show('Không xuất được tệp: '+e.message)}
  finally{busyState(false)}
 }
+// Shared in-page adapter: export and stock tools use the exact same invoice rows
+// and fetchInvoice() implementation as the extension.
+window.WebInvoiceApp={
+ getRows:()=>rows,
+ getMst:()=>govtMst||$('mst').value.replace(/\\D/g,''),
+ getAccount:()=>account,
+ searchedBothKinds:()=>searchedBothKinds,
+ busy:()=>busy,
+ busyState,progress,show,download,loadDetails,
+ async fetchDetail(row){
+  if(!row)throw Error('Không tìm thấy hóa đơn.');
+  const existing=details.get(idOf(row));
+  if(existing?.error)details.delete(idOf(row));
+  const m=await loadDetails([row]);
+  const out=m.get(row.key);
+  if(!out)throw Error(details.get(idOf(row))?.error||'Cổng Thuế chưa trả chi tiết hóa đơn.');
+  return out;
+ }
+};
 function init(){
  const today=new Date();$('toDate').value=dateOnly(today);
  $('fromDate').value=dateOnly(new Date(today.getFullYear(),today.getMonth(),1));

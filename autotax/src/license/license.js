@@ -16,7 +16,7 @@
  function money(v){return Number(v||0).toLocaleString('vi-VN')+'đ'}
  function render(){
   if(!$('license-card'))return;
-  const active=!!session?.access_token;const mstPanel=$('lic-mst-manager');if(mstPanel)mstPanel.hidden=!active;
+  const active=!!session?.access_token;const mstPanel=$('lic-mst-manager');
   $('lic-header-email').hidden=!active;$('lic-header-email').textContent=active?(session?.user?.email||''):'';
   $('lic-logout').hidden=!active;$('lic-manage-account').hidden=!active;
   $('lic-auth').hidden=active;$('lic-account').hidden=!active;
@@ -26,6 +26,14 @@
   const both=(invLeft>0||!!license?.can_reread_charged_invoices)&&mstCount>0;
   const mode=license?.mode||(invLeft>0?'invoice':'mst');
   $('lic-mode-wrap').hidden=!both;$('lic-mode').value=mode;
+  // A counted-invoice account must not show the registered MST manager.
+  // MST assignments remain stored per-account and return when MST mode is selected.
+  if(mstPanel)mstPanel.hidden=!active||mode!=='mst';
+  const mstToggle=$('lic-mst-toggle');
+  if(mstToggle){
+   mstToggle.hidden=!active||mode!=='mst';
+   mstToggle.setAttribute('aria-expanded',String(!!$('lic-mst-details')?.open));
+  }
   const holder=$('lic-entitlements');holder.replaceChildren();
   const card=document.createElement('div');card.className='license-entitlement';
   const info=document.createElement('div'),heading=document.createElement('b'),detail=document.createElement('small'),value=document.createElement('strong');
@@ -168,10 +176,28 @@
     const line=document.createElement('div');line.className='mst-profile-row';
     const info=document.createElement('div'),name=document.createElement('strong');
     name.textContent=row.mst;
+    const display=document.createElement('small');
+    display.className='mst-display-name';
+    display.textContent=row.display_name||'Chưa đặt tên hồ sơ';
     const note=document.createElement('small');
     note.textContent='Đã thêm: '+(row.assigned_at?
       new Date(row.assigned_at).toLocaleDateString('vi-VN'):'—');
-    info.append(name,note);
+    info.append(name,display,note);
+    const actions=document.createElement('div');actions.className='mst-profile-actions';
+    const rename=document.createElement('button');
+    rename.type='button';rename.textContent='Đổi tên';
+    rename.addEventListener('click',async()=>{
+     const value=prompt('Tên hiển thị hồ sơ '+row.mst+':',row.display_name||'');
+     if(value===null)return;
+     if(value.trim().length>120)return message('Tên hồ sơ tối đa 120 ký tự.',true);
+     rename.disabled=true;
+     try{
+      await rpc('addon_set_mst_profile_name',{p_mst:row.mst,p_display_name:value.trim()});
+      await loadMyMst();
+      message('Đã lưu tên hồ sơ trên tài khoản.');
+     }catch(e){message('Không thể đổi tên: '+e.message,true);rename.disabled=false}
+    });
+    actions.append(rename);
     const button=document.createElement('button');
     button.type='button';button.textContent='Xóa';
     button.title='Xóa MST khỏi danh sách. Lịch sử cũ và quyền dùng thử không bị xóa.';
@@ -184,7 +210,7 @@
       await loadMyMst();
      }catch(e){message('Không xóa được MST: '+e.message,true);button.disabled=false}
     });
-    line.append(info,button);target.append(line);
+    actions.append(button);line.append(info,actions);target.append(line);
    }
    if(!rows?.length){
     const empty=document.createElement('small');
@@ -217,7 +243,18 @@
  async function changePassword(){const current=$('lic-current-password').value,password=$('lic-new-password').value;if(!current)return message('Nhập mật khẩu hiện tại để xác minh.',true);if(password.length<8)return message('Mật khẩu mới cần ít nhất 8 ký tự.',true);if(current===password)return message('Mật khẩu mới phải khác mật khẩu hiện tại.',true);const btn=$('lic-password-save');btn.disabled=true;try{const verified=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:session?.user?.email,password:current})},null);if(!verified?.access_token)throw new Error('Không xác minh được mật khẩu hiện tại.');session=verified;await save();await authed('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})});$('lic-current-password').value='';$('lic-new-password').value='';$('lic-password-box').hidden=true;message('Đã cập nhật mật khẩu.')}catch(e){message(e.message,true)}finally{btn.disabled=false}}
  async function logout(){try{await request('/auth/v1/logout',{method:'POST'})}catch{}session=null;license={allowed:false};profileMsts=[];emitProfiles();await save();clearInterval(timer);render();message('Đã đăng xuất.')}
  async function init(){ensureTrialPanel();ensureMstPanel();const stored=await chrome.storage.local.get(STORE);session=stored[STORE]||null;if(session?.expires_at&&session.expires_at*1000<Date.now()+60000)await refreshToken();await check();setInterval(check,60000)}
- document.addEventListener('DOMContentLoaded',()=>{$('lic-login').addEventListener('click',()=>auth('login'));$('lic-register').addEventListener('click',()=>auth('register'));$('lic-logout').addEventListener('click',logout);$('lic-mst-add-form').addEventListener('submit',addMstProfile);$('lic-refresh').addEventListener('click',check);$('lic-renew').addEventListener('click',()=>{$('lic-packages').hidden=!$('lic-packages').hidden});$('lic-packages-close').addEventListener('click',()=>$('lic-packages').hidden=true);$('lic-package-list').addEventListener('click',e=>{const b=e.target.closest('[data-package]');if(b)buy(b.dataset.package,b)});$('lic-gift-open').addEventListener('click',()=>{
+ document.addEventListener('DOMContentLoaded',()=>{
+  const manager=$('lic-mst-details'),toggle=$('lic-mst-toggle');
+  toggle?.addEventListener('click',()=>{
+   if(!manager)return;manager.open=!manager.open;
+   toggle.setAttribute('aria-expanded',String(manager.open));
+   toggle.textContent=manager.open?'Ẩn quản lý MST ▴':'Quản lý MST ▾';
+  });
+  manager?.addEventListener('toggle',()=>{
+   if(!toggle)return;toggle.setAttribute('aria-expanded',String(manager.open));
+   toggle.textContent=manager.open?'Ẩn quản lý MST ▴':'Quản lý MST ▾';
+  });
+  $('lic-login').addEventListener('click',()=>auth('login'));$('lic-register').addEventListener('click',()=>auth('register'));$('lic-logout').addEventListener('click',logout);$('lic-mst-add-form').addEventListener('submit',addMstProfile);$('lic-refresh').addEventListener('click',check);$('lic-renew').addEventListener('click',()=>{$('lic-packages').hidden=!$('lic-packages').hidden});$('lic-packages-close').addEventListener('click',()=>$('lic-packages').hidden=true);$('lic-package-list').addEventListener('click',e=>{const b=e.target.closest('[data-package]');if(b)buy(b.dataset.package,b)});$('lic-gift-open').addEventListener('click',()=>{
   const dialog=$('lic-unlock-dialog');
   if(!dialog.open)dialog.showModal();
   $('lic-unlock-code').focus();

@@ -145,9 +145,12 @@
       <div class="tiles" role="group" aria-label="Định dạng tải về">
         <label class="tile"><input type="checkbox" name="fmt" value="excel" checked /><span>Excel</span></label>
         <label class="tile"><input type="checkbox" name="fmt" value="xml" checked /><span>XML</span></label>
-        <label class="tile" title="Bản thể hiện dựng trên máy từ XML của cổng, không phải PDF gốc của nhà cung cấp. Cần bản gốc: xem cột Link tra cứu HĐ gốc trong Excel"><input type="checkbox" name="fmt" value="pdf" /><span>PDF</span></label>
+        <label class="tile" title="Chỉ tải PDF thực từ link nhà phát hành được phép. Nếu cần CAPTCHA, AutoTax ghi link và mã tra cứu; không tạo PDF giả."><input type="checkbox" name="fmt" value="pdf" /><span>PDF gốc</span></label>
         <label class="tile"><input type="checkbox" name="fmt" value="html" /><span>HTML</span></label>
-
+      </div>
+      <div class="issuer-permission-wrap">
+        <button id="issuerPdfPermission" type="button" class="outline">Cho phép tải PDF từ MISA / Viettel / VNPT</button>
+        <small id="issuerPdfPermissionStatus">Chỉ yêu cầu quyền truy cập các miền nhà phát hành khi bạn bấm nút này. PDF chưa tải được sẽ có link và mã tra cứu trong ZIP.</small>
       </div>
       <!-- Sheet thêm trong file Excel (DS hóa đơn + Chi tiết sản phẩm luôn có) -->
       <fieldset id="sheetOpts" class="sheet-opts">

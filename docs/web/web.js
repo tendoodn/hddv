@@ -118,7 +118,12 @@ async function getCaptcha(){
   captchaUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
   $('captchaImage').src=captchaUrl;
   $('captchaInput').value='';
-  const result=window.SvgCaptcha?.solve(svg);
+  // Unknown/new CAPTCHA SVG layouts must not break the manual fallback.
+  let result=null;
+  try{result=window.SvgCaptcha?.solve(svg)||null;}catch(_){
+   manualCaptcha('Cổng Thuế đã thay đổi mẫu CAPTCHA. Vui lòng nhập mã trên ảnh để tiếp tục.');
+   return false;
+  }
   const text=String(result?.text||'').trim();
   const confidence=Number(result?.confidence||0);
   if(text.length>=4&&text.length<=8&&/^[a-z0-9]+$/i.test(text)&&confidence>=80){

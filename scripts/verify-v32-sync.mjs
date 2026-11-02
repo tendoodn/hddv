@@ -115,11 +115,25 @@ for(const format of ['Excel','XML','PDF','HTML'])
  assert(crxPanel.includes('<span>'+format+'</span>'),'Missing compact format '+format);
 assert(crxPanel.includes('PL giảm thuế GTGT')&&crxPanel.includes('Bảng kê HĐKD'),
  'Excel main sheet labels must be compact');
-assert(portal.includes('id="extensionDownloadBtn"')&&
- load('docs/customer.js').includes('addon_public_settings'),
- 'Customer download link must resolve from server config');
-assert(admin.includes('id="extensionDownloadUrl"')&&admin.includes('addon_public_settings'),
- 'Admin must save dynamic extension link to Supabase');
+const downloadHref='https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF';
+assert(portal.includes('id="extensionDownloadBtn"')&&portal.includes('href="'+downloadHref+'"'),
+ 'Download button must link directly to the requested Google Drive folder');
+assert(/id="extensionDownloadBtn"[^>]*>Tải Extension<\/a>/.test(portal)&&
+ /id="adminLink"[^>]*>Quản trị<\/a>/.test(portal),
+ 'Two always-visible portal header buttons must be present');
+const customerSource=load('docs/customer.js');
+assert(!customerSource.includes('loadExtensionDownloadLink')&&
+ !customerSource.includes('refreshAdminLink')&&
+ !customerSource.includes('adminLink").hidden'),
+ 'The two header buttons cannot be hidden by remote configuration or account status');
+assert(!admin.includes('extensionConfigPanel')&&!admin.includes('extensionDownloadUrl'),
+ 'Retired admin URL settings must not misleadingly override the direct link');
+assert(customerSource.includes('Không giới hạn số hóa đơn tra cứu')&&
+ customerSource.includes('Không giới hạn MST tra cứu'),
+ 'Portal plans must state unlimited invoice/MST benefits by package family');
+assert(load('autotax/src/license/license.js').includes('Không giới hạn số hóa đơn tra cứu')&&
+ load('autotax/src/license/license.js').includes('Không giới hạn MST tra cứu'),
+ 'Addon package suggestions must match the website');
 const settingsSql=load('addon-portal/supabase/migrations/029_admin_extension_download_link.sql');
 assert(settingsSql.includes('enable row level security')&&settingsSql.includes('addon_is_admin()'),
  'Extension link is publicly readable but writes must be restricted to admin');
@@ -193,10 +207,8 @@ assert(panelCss.includes('.tiles{display:grid;grid-template-columns:repeat(4,min
  'All four download formats must stay in one row');
 assert(!panelJs.includes("$(id).hidden = !show"),
  'Sheet choices must not be disabled based on the current MST business type');
-assert(admin.indexOf('id="extensionConfigPanel"')<admin.indexOf('id="app"'),
- 'Admin settings must be separate from the customer manager and shown after authorization');
-assert(admin.includes('id="extensionSettingsNav"')&&admin.includes('extensionConfigPanel").classList.remove("hidden")'),
- 'Admin navigation to extension settings must show only to authorized admins');
+assert(admin.includes('id="app"')&&admin.includes('addon_is_admin'),
+ 'Admin page must keep server-verified access checks');
 assert(!panelHtml.includes('Cập nhật mới:')&&!panelHtml.includes('Phiên bản sử dụng nội bộ'),'Obsolete extension notices must be removed');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');

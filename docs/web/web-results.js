@@ -111,7 +111,11 @@ function render(list,warnings=[]){
   });
   const action=document.createElement('td'),button=document.createElement('button');
   button.type='button';button.className='table-detail-btn';button.dataset.detail=keyOf(r);
-  button.textContent='Xem chi tiết';action.append(button);tr.append(action);body.append(tr);
+  button.textContent='Xem chi tiết';action.append(button);
+  const audit=document.createElement('button');audit.type='button';
+  audit.className='table-detail-btn table-audit-btn';audit.dataset.audit=keyOf(r);
+  audit.textContent='Kiểm tra hợp lệ';action.append(audit);
+  tr.append(action);body.append(tr);
  }
  if(dataset.length>1500)app()?.show('Hiển thị 1.500/'+dataset.length+' dòng để bảo đảm tốc độ. Chọn tất cả chỉ tick các dòng đang hiện; chế độ "Tất cả hóa đơn" vẫn xuất toàn bộ kết quả.',true);
  updateScope();
@@ -320,6 +324,12 @@ function init(){
   const button=event.target.closest('[data-detail]');if(!button)return;
   const row=dataset.find(r=>keyOf(r)===button.dataset.detail);
   if(row)void showDetail(row);
+  return;
+ });
+ $('resultRows').addEventListener('click',event=>{
+  const button=event.target.closest('[data-audit]');if(!button)return;
+  const row=dataset.find(r=>keyOf(r)===button.dataset.audit);
+  if(row)void window.WebAudit?.open(row);
  });
  $('selectAllInvoices').addEventListener('change',event=>{
   for(const row of visible){

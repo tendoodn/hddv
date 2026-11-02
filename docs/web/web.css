@@ -143,3 +143,17 @@ td.audit-warn{color:#ffe08a;font-weight:750}
 td.audit-ok{color:#91e7b2;font-weight:750}
 td.audit-info{color:#c6c6db}
 @media(max-width:600px){.vault-controls button{flex:1 1 auto}.table-audit-btn{display:block;margin:6px 0 0}}
+
+/* Vault in the AutoTax session summary, reset recovery and invoice display filters */
+.account-line+.vault-panel{margin:10px 0 14px;border-color:#555465}
+.vault-table-wrap{margin-top:10px;max-height:225px;overflow:auto}
+.vault-table-wrap table{min-width:330px}
+.vault-table-wrap td{user-select:text}
+.vault-recovery{margin-top:13px;padding:13px;border-radius:11px;border:1px solid #b45362;background:#311c24}
+.vault-recovery label{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.vault-recovery input{max-width:180px;background:#16161b;border:1px solid #757582;border-radius:8px;padding:8px;color:#fff}
+.vault-recovery button{margin-top:9px}
+.k-hint{display:block;line-height:1.5;color:#ffc0ce;font-size:11px;margin:1px 0 7px}
+#clearVisibleMonth{align-self:end;min-height:38px}
+.export-toolbar>label{min-width:140px}
+@media(max-width:650px){.vault-recovery input{max-width:100%}.export-toolbar>label{flex:1;min-width:125px}#clearVisibleMonth{align-self:end}}

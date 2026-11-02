@@ -265,7 +265,12 @@ async function exportFile(kind){
     const p=HDDT.originalLookup(row,details.get(idOf(row))?.head);
     values.push([row.kind,row.khhdon,row.shdon,p.name,p.link,p.code]);
    }
-   const csv='\uFEFF'+values.map(line=>line.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+   const csv='\uFEFF'+values.map(line=>line.map(v=>{
+     const cell=String(v??'');
+     // Prevent invoice/provider content from becoming a spreadsheet formula.
+     const safeCell=/^[\s]*[=+\-@]/.test(cell)?"'"+cell:cell;
+     return '"'+safeCell.replace(/"/g,'""')+'"';
+    }).join(',')).join('\r\n');
    download('LienKet_PDF_Goc_'+fileBase+'.csv',csv,'text/csv;charset=utf-8');
    show('Đã tải danh sách liên kết để mở tra cứu PDF gốc trên website của đơn vị phát hành. Không phải file PDF gốc.',true);
   }

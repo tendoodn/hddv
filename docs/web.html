@@ -163,7 +163,15 @@
       <button id="copyIssuerCode" type="button" class="outline">Sao chép mã tra cứu</button>
       <button id="tryIssuerPdf" type="button">Thử tải PDF trực tiếp</button>
     </div>
-    <p class="result-help">Nếu nhà phát hành yêu cầu CAPTCHA hoặc xác thực phiên riêng, hãy mở trang tra cứu, nhập mã bảo mật rồi tải PDF của nhà phát hành. AutoTax không tự giả định rằng bản thể hiện cổng Thuế là PDF gốc.</p>
+    <div id="issuerPdfHelp" class="result-help">Thông tin thao tác theo nhà phát hành sẽ xuất hiện tại đây.</div>
+    <div class="stock-grid">
+      <label for="issuerPdfFile">PDF đã tải từ cổng nhà phát hành
+        <input id="issuerPdfFile" type="file" accept=".pdf,application/pdf">
+      </label>
+      <div style="align-self:end"><button id="issuerPdfAttach" type="button" disabled>Gắn PDF vào hóa đơn đang chọn</button></div>
+    </div>
+    <p class="result-help">Tệp PDF gắn thủ công chỉ được giữ trong bộ nhớ tab hiện tại; không tải lên Supabase. Khi xuất PDF/ZIP, tệp này được phân loại là <strong>người dùng cung cấp — chưa xác minh nguồn và chữ ký số</strong>. Hãy đối chiếu số hóa đơn và người bán trước khi gắn tệp.</p>
+    <p class="result-help">Nếu nhà phát hành yêu cầu CAPTCHA hoặc xác thực phiên riêng, hãy thao tác trên trang tra cứu chính thức rồi tải PDF về máy. Không dùng bản thể hiện từ cổng Thuế thay cho tệp nhà phát hành.</p>
     <p class="result-help">Mã tra cứu sẽ chỉ hiển thị khi có dữ liệu nguồn; không tự suy đoán từ số hóa đơn.</p>
   </dialog>
   <dialog id="invoiceAuditDialog" class="invoice-detail-dialog invoice-audit-dialog" aria-labelledby="invoiceAuditTitle">
@@ -201,9 +209,9 @@
 <script src="./web/tendoo-import.js?v=2"></script>
 <script src="./web/vault.js?v=3"></script>
 <script src="./web/pdf.js?v=1"></script>
-<script src="./web/web-pdf.js?v=3"></script>
+<script src="./web/web-pdf.js?v=4"></script>
 <script src="./web/web.js?v=9"></script>
 <script src="./web/web-results.js?v=7"></script>
-<script src="./web/issuer-pdf.js?v=1"></script>
+<script src="./web/issuer-pdf.js?v=2"></script>
 <script src="./web/audit.js?v=1"></script>
 </body></html>

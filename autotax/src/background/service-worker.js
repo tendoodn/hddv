@@ -35,6 +35,54 @@ function waitForDownload(id) {
   });
 }
 
+// Provider PDF retrieval is strictly opt-in and domain-scoped. Never proxy
+// arbitrary URLs, attach browser cookies, follow redirects, or mislabel HTML as PDF.
+const ISSUER_HOSTS=new Set([
+ 'www.meinvoice.vn','tra-cuu.meinvoice.vn',
+ 'sinvoice.viettel.vn','vinvoice.viettel.vn',
+ 'xemhoadon32.vnpt.vn','vinaphone-portal.vnpt-invoice.com.vn'
+]);
+function issuerPdfURL(value){
+ let u;
+ try{u=new URL(String(value||''))}catch{throw Error('Đường dẫn PDF không hợp lệ.')}
+ if(u.protocol!=='https:'||u.username||u.password||!ISSUER_HOSTS.has(u.hostname))
+  throw Error('Nhà phát hành chưa nằm trong danh sách miền được phép.');
+ if(!/(?:\.pdf$|\/pdf(?:\/|$)|(?:download|export)[^/]*(?:pdf|invoice)?|format=pdf|type=pdf)/i.test(u.pathname+u.search))
+  throw Error('Đây là trang tra cứu, chưa phải liên kết tải PDF trực tiếp.');
+ return u;
+}
+async function fetchIssuerPdf(value){
+ const u=issuerPdfURL(value),permission=u.origin+'/*';
+ if(!(await chrome.permissions.contains({origins:[permission]})))
+  throw Error('Chưa cấp quyền truy cập nhà phát hành. Bật tại mục định dạng PDF trong Add-on.');
+ const res=await fetch(u.href,{method:'GET',credentials:'omit',redirect:'error',cache:'no-store',
+  signal:AbortSignal.timeout(16000),headers:{Accept:'application/pdf,application/octet-stream'}});
+ if(!res.ok)throw Error('Máy chủ nhà phát hành trả HTTP '+res.status);
+ const cap=12*1024*1024,n=Number(res.headers.get('content-length')||0);
+ if(n>cap)throw Error('PDF lớn hơn 12 MB.');
+ const pieces=[];let size=0;
+ if(res.body){
+  const reader=res.body.getReader();
+  for(;;){
+   const {value,done}=await reader.read();if(done)break;
+   size+=value.byteLength;
+   if(size>cap){await reader.cancel();throw Error('PDF lớn hơn 12 MB.')}
+   pieces.push(value);
+  }
+ }else{
+  const data=new Uint8Array(await res.arrayBuffer());size=data.byteLength;
+  if(size>cap)throw Error('PDF lớn hơn 12 MB.');pieces.push(data);
+ }
+ const data=new Uint8Array(size);let offset=0;
+ for(const part of pieces){data.set(part,offset);offset+=part.byteLength}
+ if(size<5||data[0]!==37||data[1]!==80||data[2]!==68||data[3]!==70||data[4]!==45)
+  throw Error('Nhà phát hành không trả PDF thực (có thể yêu cầu CAPTCHA hoặc đăng nhập).');
+ let chars='';
+ for(let i=0;i<data.length;i+=8192)
+  chars+=String.fromCharCode(...data.subarray(i,i+8192));
+ return {ok:true,pdfBase64:btoa(chars),origin:u.hostname};
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.type === 'stock-tab-mapping') {
     (async()=>{
@@ -58,6 +106,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
       await chrome.storage.session.remove(key);
       return {ok:true};
     })().then(reply,e=>reply({ok:false,error:e.message}));
+    return true;
+  }
+  if (msg.type === 'fetch-issuer-pdf') {
+    fetchIssuerPdf(msg.url).then(reply,e=>reply({ok:false,error:e.message||String(e)}));
     return true;
   }
   if (msg.type === 'download') {

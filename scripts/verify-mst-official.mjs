@@ -45,6 +45,22 @@ assert.equal(personal.ok,true);
 assert.equal(personal.name,'Nguyễn Văn Kiểm Thử');
 assert.equal(personal.previousTaxCode,'1234567890');
 assert.equal(personal.address,'');
+const cccdTwice=a.parseCopiedRow(
+ '1\t012345678901\tNguyễn Thị Ví Dụ\tĐội thuế số 2\t012345678901\t01/07/2025\tNNT đang hoạt động',
+ '012345678901','personal');
+assert.equal(cccdTwice.ok,true,'12-digit CCCD repeated in two TNCN columns is one person.');
+assert.equal(cccdTwice.name,'Nguyễn Thị Ví Dụ');
+assert.equal(cccdTwice.office,'Đội thuế số 2');
+assert.equal(a.parseCopiedRow(
+ '1\t1234567890\tNguyễn Văn Kiểm Thử\tCục Thuế A\t012345678901\t01/07/2025\tNNT đang hoạt động',
+ '1234567890','personal').ok,true,
+ 'Searching by old 10-digit individual MST must accept the linked 12-digit CCCD.');
+assert.equal(a.parseCopiedRow(
+ '1\t1234567890\tNguyễn Văn A\tCục Thuế A\t987654321000\t2025\tNNT hoạt động',
+ '012345678901','personal').ok,false,'Must reject a different citizen ID.');
+assert.equal(a.parseCopiedRow(
+ '1\t012345678901\tNguyễn Văn A\tCục Thuế A\t012345678901\t2025\tNNT hoạt động',
+ '012345678901','personal').code,'012345678901','Leading zero must remain intact.');
 assert.equal(a.parseCopiedRow('1\t012345678901\tHộ kinh doanh thử\tĐịa chỉ A\tCQT A\tĐang hoạt động',
  '012345678901','business').source,
  'https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp');
@@ -60,7 +76,7 @@ assert.equal(a.parseCopiedRow(company+'\n'+company.replace('3600675874','3600675
  '3600675874').ok,false,'Cannot use a multi-row selection');
 assert.equal(a.parseCopiedRow('<script>alert(1)</script>','3600675874').ok,false);
 assert(page.includes('id="mstOfficialDialog"')&&page.includes('id="mstOfficialConfirm"'));
-assert(page.includes('mst-official.js?v=2')&&page.includes('mst-lookup.js?v=9'));
+assert(page.includes('mst-official.js?v=3')&&page.includes('mst-lookup.js?v=10'));
 assert(page.includes('id="mstOfficialNoResult"'));
 assert(frontend.includes('found:false')&&frontend.includes('matchedClipboard:false'));
 assert(page.includes('id="mstOfficialSource"')&&

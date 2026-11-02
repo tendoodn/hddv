@@ -150,7 +150,8 @@
       </div>
       <div class="issuer-permission-wrap">
         <button id="issuerPdfPermission" type="button" class="outline">Kiểm tra quyền truy cập 21 cổng HĐĐT</button>
-        <small id="issuerPdfPermissionStatus">AutoTax V1.1 khai báo quyền truy cập nhà phát hành trong bộ cài. Việc truy cập không tự vượt CAPTCHA hoặc đăng nhập riêng; nếu thiếu link/mã thì tạo PDF dựng từ dữ liệu Thuế.</small>
+        <button id="issuerOpenNext" type="button" class="outline" hidden>Tra PDF gốc đang chờ</button>
+        <small id="issuerPdfPermissionStatus">Có link + mã tra cứu: thử PDF gốc, nếu bị chặn sẽ đưa vào hàng đợi tra cứu. Sau khi nhập CAPTCHA trên cổng nhà phát hành, dùng nút AutoTax để tải PDF thực. Thiếu link/mã: xuất PDF dựng và ghi rõ không phải gốc.</small>
       </div>
       <!-- Sheet thêm trong file Excel (DS hóa đơn + Chi tiết sản phẩm luôn có) -->
       <fieldset id="sheetOpts" class="sheet-opts">

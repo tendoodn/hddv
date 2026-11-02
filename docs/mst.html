@@ -76,7 +76,7 @@
    <label for="mstInput" class="mst-label">Danh sách MST <span id="mstInputCount" class="mst-count">0 mã</span></label>
    <textarea id="mstInput" rows="5" maxlength="700" placeholder="3600675874&#10;3600675874-001&#10;012345678901"></textarea>
    <button type="button" id="startMst" class="mst-button primary">↻ &nbsp;Tra cứu đợt mới</button>
-   <p class="mst-note">Tối đa 20 mã/lượt. Dữ liệu đơn vị phụ thuộc có thể thiếu ở nguồn miễn phí; số định danh 12 chữ số cần nguồn được cấp quyền để trả thông tin cá nhân.</p>
+   <p class="mst-note">Tối đa 20 mã/lượt. <strong>CCCD 12 số:</strong> AutoTax giữ nguyên cả số 0 đầu, không gửi số định danh đến API doanh nghiệp và không tự kết luận “không tồn tại”. Mở cổng Thuế TNCN, nhập vào ô <em>Số CMND/Thẻ căn cước</em> (hoặc ô MST nếu giao diện hiện tại hỗ trợ số định danh), nhập CAPTCHA rồi ghi nhận kết quả. Dòng trả về có thể chứa cả MST 10 số trước đây và CCCD 12 số.</p>
   </section>
   <section class="mst-panel" aria-label="Tiến trình và kết quả tra cứu">
    <div class="mst-title-line"><div><h2>Tiến trình tra cứu</h2><p id="mstState" style="margin:0">Nhập mã số thuế rồi bấm tra cứu.</p></div><button id="downloadMst" type="button" disabled class="mst-button secondary">⇩ Tải file Excel <span id="downloadCount"></span></button></div>
@@ -112,7 +112,7 @@
  </div>
  <p><strong>Thao tác:</strong> mở cổng phù hợp, nhập MST/CCCD theo trường mà cổng đó hỗ trợ, tự nhập CAPTCHA rồi tra cứu. Chọn đúng nguồn ở ô phía trên trước khi dán một dòng kết quả. Nếu cổng không có hồ sơ, không tự đánh dấu là đã tìm thấy.</p>
  <label for="mstOfficialPaste">Dán một dòng kết quả (Ctrl+C trên bảng, Ctrl+V tại đây)</label>
- <textarea id="mstOfficialPaste" maxlength="5000" autocomplete="off" placeholder="STT    MST    Tên người nộp thuế    Địa chỉ    Cơ quan thuế    Trạng thái"></textarea>
+ <textarea id="mstOfficialPaste" maxlength="5000" autocomplete="off" placeholder="TNCN: STT    MST cũ 10 số    Tên người nộp thuế    CQT    CCCD 12 số    Ngày cập nhật    Ghi chú"></textarea>
  <div class="mst-official-actions"><button id="mstOfficialParse" type="button">Đọc dòng đã dán</button></div>
  <p id="mstOfficialNotice" role="status" aria-live="polite"></p>
  <div class="mst-official-fields">
@@ -129,6 +129,6 @@
  <p><strong>Riêng tư:</strong> kết quả hai cổng được lưu tách biệt trong tab hiện tại, không gửi nội dung dán lên Supabase. Excel sẽ có cột riêng cho từng cổng và cảnh báo khi tên khác nhau. Không có kết quả ở một cổng không có nghĩa MST không tồn tại.</p>
 </dialog>
 <script src="./web/xlsx.js?v=1"></script>
-<script src="./web/mst-official.js?v=2"></script>
-<script src="./web/mst-lookup.js?v=9"></script>
+<script src="./web/mst-official.js?v=3"></script>
+<script src="./web/mst-lookup.js?v=10"></script>
 </body></html>

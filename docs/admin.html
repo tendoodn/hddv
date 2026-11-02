@@ -25,6 +25,8 @@ button.tab.active{background:var(--tendoo-dark)}
 a{color:var(--tendoo-dark)}
 input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color:var(--tendoo)}
 .admin-extension-settings{border-color:var(--tendoo-line)}
+.admin-settings-nav{display:inline-flex;align-items:center;padding:9px 12px;border-radius:9px;background:var(--tendoo-soft);border:1px solid var(--tendoo-line);font-size:13px;font-weight:750;text-decoration:none;color:var(--tendoo-dark)}
+#extensionConfigPanel{scroll-margin-top:100px;border:2px solid var(--tendoo-line)}
 .admin-extension-form{display:flex;align-items:end;flex-wrap:wrap;gap:9px}
 .admin-extension-form label{flex:1 1 450px;font-size:12px;font-weight:750;color:var(--tendoo-dark)}
 .admin-extension-form input{display:block;width:100%;min-width:0;margin-top:6px}
@@ -32,10 +34,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 .admin-extension-form a{align-self:center;font-size:12px}
 @media(max-width:520px){.admin-extension-form button{width:100%}}
 </style></head><body><main class="wrap">
-<header><div class="brand">TENDOO <span>AUTOTAX 3.3.4 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
+<header><div class="brand">TENDOO <span>AUTOTAX 3.3.4 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><a id="extensionSettingsNav" href="#extensionConfigPanel" class="admin-settings-nav" hidden>Cấu hình link tải</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
-<section id="app" class="hidden">
-<section class="panel admin-extension-settings" aria-labelledby="extensionLinkHeading">
+<section id="extensionConfigPanel" class="panel admin-extension-settings hidden" aria-labelledby="extensionLinkHeading">
   <h2 id="extensionLinkHeading">Cấu hình link tải Chrome Extension</h2>
   <p class="sub">Đường dẫn HTTPS này sẽ hiển thị thành nút <strong>Tải Chrome Extension</strong> trên trang người dùng. Để trống rồi lưu để ẩn nút.</p>
   <form id="extensionLinkForm" class="admin-extension-form">
@@ -46,6 +47,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
   </form>
   <p id="extensionLinkMessage" class="notice hidden" role="status"></p>
 </section>
+<section id="app" class="hidden">
 <div class="row"><div><h1>Quản lý khách hàng</h1><div class="muted">Tối đa 500 tài khoản gần nhất · gói hóa đơn, MST và trạng thái dùng thử V3.2.</div></div><button id="reload">Làm mới dữ liệu</button></div>
 <div class="panel"><div class="row"><input id="search" placeholder="Tìm theo email..." type="search"><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
 <div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">Giá mới chỉ áp dụng cho đơn tạo sau khi lưu. Đơn chờ và lịch sử cũ giữ nguyên giá đã chốt.</p><div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div><p class="sub">Thời hạn các gói MST cố định 1 năm (365 ngày) từ lúc kích hoạt. Admin vẫn được chỉnh giá.</p><h3>Thêm gói mới</h3><div class="actions"><input id="newCode" placeholder="Mã gói"><select id="newFamily"><option value="invoice">Số tờ hóa đơn</option><option value="mst">MST</option></select><input id="newName" placeholder="Tên gói"><input id="newQty" type="number" min="1" placeholder="Số lượng"><input id="newPrice" type="number" min="0" placeholder="Giá VND"><input id="newValidity" type="number" value="365" title="MST có hạn cố định 365 ngày" disabled hidden><input id="newDesc" placeholder="Mô tả"><button id="createPackage">Thêm gói</button></div></div></div>
@@ -109,9 +111,9 @@ $("extensionLinkForm").addEventListener("submit",async e=>{
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
 function fmt(v){return v?new Date(v).toLocaleString("vi-VN"):"—"}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");if(!session)return;
+async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");$("extensionConfigPanel").classList.add("hidden");$("extensionSettingsNav").hidden=true;if(!session)return;
 const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){await client.auth.signOut();msg("authMsg","Tài khoản này không có quyền quản trị.",true);$("auth").classList.remove("hidden");return}
-$("app").classList.remove("hidden");await loadExtensionLink();await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
+$("extensionConfigPanel").classList.remove("hidden");$("extensionSettingsNav").hidden=false;$("app").classList.remove("hidden");await loadExtensionLink();await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
 
 async function loadPlans(){const {data,error}=await client.rpc("addon_admin_list_packages");if(error)return msg("msg","Không tải được danh mục gói: "+error.message,true);allPackages=data||[];$("packagePrices").innerHTML=(data||[]).map(p=>'<tr><td><b>'+esc(p.code)+'</b></td><td>'+(p.family==="invoice"?"Hóa đơn":"MST")+'</td><td>'+p.quantity+'</td><td><input type="number" min="0" value="'+p.price_vnd+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td><td>'+(p.family==="mst"?(Number(p.validity_days)===365?'<b>1 năm</b><div class="sub">365 ngày</div>':'<span class="pill off">Chưa áp dụng SQL 020</span>'):'—')+'</td><td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td><td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button><button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button></div></td></tr>').join("")||'<tr><td colspan="7">Chưa có gói.</td></tr>';
 $("unlockPackage").innerHTML=(data||[]).filter(p=>p.active).map(p=>'<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' ('+p.quantity+')</option>').join("");

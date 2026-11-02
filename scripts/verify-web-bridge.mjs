@@ -1,0 +1,42 @@
+/* Keep the Website's invoice engine in sync with the extension's source of truth. */
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const read=p=>fs.readFileSync(p,'utf8');
+const code=read('docs/web/hddt-api.js');
+let canonical=read('autotax/src/content/hddt-api.js');
+canonical=canonical.replace(
+  "  function token() {\n    const m = document.cookie.match(/(?:^|;\\s*)jwt=([^;]+)/);\n    return m ? decodeURIComponent(m[1]) : null;\n  }",
+  "  function token() {\n    // Web session lives only in JavaScript memory, never in cookies or localStorage.\n    return window.WebTaxState?.token || null;\n  }"
+).replace(
+  "const res = await fetch(url, { credentials: 'include', headers: headers(act, { auth, extra, endPoint }), cache: 'no-store', signal: ctrl.signal });",
+  "const res = await window.WebTaxTransport(url, { headers: headers(act, { auth, extra, endPoint }), signal: ctrl.signal });"
+);
+assert.equal(code,"// AutoTax Web adapter — copied from the extension's invoice engine; only token and fetch transport differ.\n"+canonical,
+  'GDT Web adapter drifted from the extension. Apply the two web transport changes again.');
+for(const filename of ['zip.js','xlsx.js','report.js','captcha-svg.js','captcha-svg-templates.js'])
+  assert.equal(read('docs/web/'+filename),read('autotax/src/content/'+filename),
+    filename+' in the website must match the extension.');
+const html=read('docs/web.html'),frontend=read('docs/web/web.js');
+const gateway=read('addon-portal/supabase/functions/autotax-web-gateway/index.ts');
+for(const id of ['searchForm','mst','gdtPassword','captchaInput','fromDate','toDate',
+  'searchBtn','exportExcel','exportXml','exportTax','exportPdf','resultRows']){
+  assert(html.includes('id="'+id+'"'),'Missing Web form field: '+id);
+}
+for(const s of ['./web/zip.js','./web/xlsx.js','./web/report.js','./web/hddt-api.js','./web/web.js'])
+  assert(html.includes(s),'Missing shared client module '+s);
+assert(frontend.includes('addon_verify_session_mst_v33')&&
+ frontend.includes('addon_claim_invoice_quota'),'Web must use same server entitlement and atomic quota RPC');
+assert(frontend.includes('webTax')===false,'No dead web tax adapter references');
+assert(!/localStorage\s*\.|sessionStorage\s*\./.test(frontend),'Do not store GDT credentials/tokens in browser storage');
+assert(gateway.includes('origin!==ALLOWED_ORIGIN')&&
+ gateway.includes("const GDT_BASE = 'https://hoadondientu.gdt.gov.vn'"),'Gateway must restrict browser origins and fixed GDT host');
+assert(gateway.includes('addon_verify_session_mst_v33')&&
+ gateway.includes('parseJwtSub(govtToken)'),'Gateway must verify both GDT MST and AutoTax entitlement');
+assert(!gateway.includes('SUPABASE_SERVICE_ROLE_KEY'),'Gateway must not use service-role DB privileges');
+for(const file of ['docs/web/web.js','docs/web/hddt-api.js','docs/web/report.js',
+  'docs/web/zip.js','docs/web/xlsx.js','docs/web/captcha-svg-templates.js',
+  'docs/web/captcha-svg.js']){
+  new vm.Script(read(file),{filename:file});
+}
+console.log('AutoTax Web: 7 scripts parse, form controls present, gateway authorization, extension data adapters in sync.');

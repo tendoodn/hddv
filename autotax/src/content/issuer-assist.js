@@ -5,8 +5,13 @@
 'use strict';
 if(window.top!==window)return;
 let state;
-try{state=await chrome.runtime.sendMessage({type:'issuer-assist-state'})}
-catch{return}
+for(let attempt=0;attempt<4;attempt++){
+ try{state=await chrome.runtime.sendMessage({type:'issuer-assist-state'})}
+ catch{return}
+ if(state?.ok&&state.code)break;
+ // First render can race the background's tab-to-lookup association.
+ if(attempt<3)await new Promise(resolve=>setTimeout(resolve,450));
+}
 if(!state?.ok||!state.code)return;
 const host=document.createElement('div');
 host.id='autotax-issuer-assist-v11';

@@ -55,7 +55,9 @@ const migrationNames=[
  '029_admin_extension_download_link.sql',
  '030_custom_package_delete_and_order.sql',
  '031_user_sku_mapping_sync.sql',
- '032_vault_admin_reset_state.sql'
+ '032_vault_admin_reset_state.sql',
+ '036_account_mst_profile_names.sql',
+ '037_admin_mst_profile_rename.sql'
 ];
 let sql='';
 for(const name of migrationNames){

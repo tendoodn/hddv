@@ -714,16 +714,16 @@ async function updateIssuerPending(){
  const button=$('issuerOpenNext');
  if(!button)return;
  try{
-  const r=await chrome.runtime.sendMessage({type:'issuer-queue-count'});
+  const r=await chrome.runtime.sendMessage({type:'issuer-queue-count',ownerMst:connected?portalMst:''});
   const n=r?.ok?Number(r.count||0):0;
-  button.hidden=n===0;
+  button.hidden=n===0||!connected;
   button.textContent='Tiếp tục lấy PDF gốc ('+n+' hóa đơn)';
  }catch{button.hidden=true}
 }
 $('issuerOpenNext')?.addEventListener('click',async()=>{
  const button=$('issuerOpenNext');button.disabled=true;
  try{
-  const res=await chrome.runtime.sendMessage({type:'issuer-open-next'});
+  const res=await chrome.runtime.sendMessage({type:'issuer-open-next',ownerMst:portalMst});
   if(!res?.ok)throw Error(res?.error||'Không mở được cổng phát hành.');
   log('Đã mở cổng tra cứu PDF gốc cho '+res.invoice+
     '. Nhập mã bảo mật, thực hiện CAPTCHA rồi bấm Tìm PDF trên trang.', 'ok');

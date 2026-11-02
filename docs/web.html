@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#09090b">
 <title>AutoTax Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=7">
+<link rel="stylesheet" href="./web/web.css?v=8">
 </head>
 <body>
 <main class="wrap">
@@ -127,7 +127,7 @@
     </div>
     <p class="result-help">Nút PDF ưu tiên tệp PDF trực tiếp từ đơn vị phát hành (nếu truy cập được); khi không có sẽ xuất <strong>bản thể hiện được AutoTax tạo từ dữ liệu cổng Thuế</strong>, không gọi bản đó là PDF gốc.</p>
     <p class="result-help">Lọc theo mua vào/bán ra và tháng trước khi xuất. Mặc định chỉ tải các hóa đơn đã tick; nếu chưa tick hóa đơn nào thì tải tất cả hóa đơn trong bộ lọc đang hiển thị. Các tổng tiền là tổng của cả kỳ tra cứu, không thay đổi khi bạn tick. PDF gốc phụ thuộc đơn vị phát hành.</p>
-    <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết / Hợp lệ</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết / Hợp lệ / PDF nguồn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <section id="stockExport" class="stock-export">
       <h3>Xuất phiếu nhập kho · ánh xạ SKU (Tendoo / MISA)</h3>
       <p>Chỉ áp dụng hóa đơn mua vào thuộc phạm vi xuất bên trên. Dữ liệu danh mục tải trên máy; biểu mẫu nhập kho dùng chung với AutoTax Extension.</p>
@@ -149,6 +149,22 @@
     <p id="invoiceDetailMeta"></p>
     <div id="invoiceDetailStatus" class="muted"></div>
     <div class="table-wrap"><table><thead><tr><th>STT</th><th>MST người bán</th><th>Tên người bán</th><th>Mã hàng hóa</th><th>Tên hàng hóa</th><th>Đơn vị tính</th><th>Thuế suất</th><th>Thành tiền chưa thuế</th><th>Thành tiền gồm thuế</th></tr></thead><tbody id="detailRows"></tbody><tfoot><tr><th colspan="8">Tổng tiền thuế</th><th id="detailTax">—</th></tr><tr><th colspan="8">Tổng tiền hóa đơn</th><th id="detailTotal">—</th></tr></tfoot></table></div>
+  </dialog>
+  <dialog id="issuerPdfDialog" class="stock-map-dialog" aria-labelledby="issuerPdfTitle">
+    <div class="dialog-heading"><h2 id="issuerPdfTitle">Tra PDF gốc từ nhà phát hành</h2><button type="button" class="outline" id="closeIssuerPdf">Đóng</button></div>
+    <p id="issuerPdfMeta">Đang kiểm tra dữ liệu XML/JSON hóa đơn…</p>
+    <div id="issuerPdfStatus" role="status" class="result-help"></div>
+    <div class="stock-grid">
+      <label>Đơn vị cung cấp hóa đơn <input id="issuerPdfName" readonly></label>
+      <label>Mã bảo mật / mã tra cứu <input id="issuerPdfCode" readonly placeholder="Chưa có trong XML"></label>
+    </div>
+    <div class="stock-actions">
+      <a id="issuerPdfLink" class="table-detail-btn" href="#" target="_blank" rel="noopener noreferrer" hidden>Mở trang tra cứu nhà phát hành ↗</a>
+      <button id="copyIssuerCode" type="button" class="outline">Sao chép mã tra cứu</button>
+      <button id="tryIssuerPdf" type="button">Thử tải PDF trực tiếp</button>
+    </div>
+    <p class="result-help">Nếu nhà phát hành yêu cầu CAPTCHA hoặc xác thực phiên riêng, hãy mở trang tra cứu, nhập mã bảo mật rồi tải PDF của nhà phát hành. AutoTax không tự giả định rằng bản thể hiện cổng Thuế là PDF gốc.</p>
+    <p class="result-help">Mã tra cứu sẽ chỉ hiển thị khi có dữ liệu nguồn; không tự suy đoán từ số hóa đơn.</p>
   </dialog>
   <dialog id="invoiceAuditDialog" class="invoice-detail-dialog invoice-audit-dialog" aria-labelledby="invoiceAuditTitle">
     <div class="dialog-heading"><h2 id="invoiceAuditTitle">Kiểm tra tính hợp lệ và rủi ro hóa đơn</h2><button id="closeInvoiceAudit" type="button" class="outline">Đóng</button></div>
@@ -187,6 +203,7 @@
 <script src="./web/pdf.js?v=1"></script>
 <script src="./web/web-pdf.js?v=3"></script>
 <script src="./web/web.js?v=9"></script>
-<script src="./web/web-results.js?v=5"></script>
+<script src="./web/web-results.js?v=6"></script>
+<script src="./web/issuer-pdf.js?v=1"></script>
 <script src="./web/audit.js?v=1"></script>
 </body></html>

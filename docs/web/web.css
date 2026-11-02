@@ -39,6 +39,14 @@ a{color:inherit}.topbar{display:flex;align-items:center;justify-content:space-be
 .spinner{height:17px;width:17px;border:2px solid #bbb;border-top-color:#f14e5e;border-radius:50%;animation:rotate .8s linear infinite}@keyframes rotate{to{transform:rotate(360deg)}}
 .notice{background:#272022;color:#fcd3d7;border:1px solid #8b3c47;border-radius:12px;padding:12px 16px;font-size:13px;margin-bottom:17px;white-space:pre-wrap}
 .notice.success{border-color:#35674e;background:#182820;color:#bcf5d6}
+.gdt-connection-help{margin:0 0 18px;border:1px solid #a86655;border-radius:13px;background:#261d1b;padding:14px 16px;color:#ffded1;font-size:13px;line-height:1.6}
+.gdt-connection-help strong{display:block;font-size:14px}
+.gdt-connection-help p{margin:7px 0 11px;color:#e4c8bd}
+.connection-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.connection-actions button,.connection-actions a{display:inline-flex;justify-content:center;align-items:center;background:#392827;color:#fff2e9;min-height:39px;border:1px solid #8f5b52;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer}
+.connection-actions button:disabled{opacity:.5;cursor:wait}
+#captchaImage[hidden]{display:none!important}
+
 .result-card{margin-top:18px}.result-head{display:flex;align-items:start;justify-content:space-between;gap:15px;flex-wrap:wrap}.result-head h2{margin:0;font-size:22px}.result-head p,.result-help{font-size:12px;color:#b4b4bc;line-height:1.5}.exports{display:flex;gap:8px;flex-wrap:wrap}.exports button{min-height:38px;border:1px solid #55545c;background:#fff;color:#141414;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:800;cursor:pointer}.exports .outline{background:#27272b;color:#fff}
 .table-wrap{overflow:auto;border:1px solid #333;border-radius:11px}table{border-collapse:collapse;min-width:760px;width:100%}th,td{padding:11px 13px;text-align:left;border-bottom:1px solid #303037;font-size:12px}th{background:#1b1b1f;color:#d4d4da}td{color:#d8d8df}td.money{text-align:right;font-variant-numeric:tabular-nums}tr:last-child td{border-bottom:0}
 footer{margin-top:25px;text-align:center;font-size:12px;color:#a0a0aa;line-height:2}footer a{margin-right:8px;color:#bfbfc8}footer p{margin:5px 0}

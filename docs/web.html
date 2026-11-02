@@ -6,15 +6,15 @@
 <meta name="theme-color" content="#09090b">
 <title>AutoTax Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=6">
+<link rel="stylesheet" href="./web/web.css?v=7">
 </head>
 <body>
 <main class="wrap">
   <div class="topbar"><a class="logo" href="./">TENDOO <span>AUTOTAX WEB</span></a>
-    <div class="toplinks"><a href="./">Tài khoản</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
+    <div class="toplinks"><a href="./">Tài khoản</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>
-    <p>Tìm kiếm → Tải Excel, XML, Tờ khai và liên kết tra cứu PDF gốc</p>
+    <p>Tra cứu hóa đơn → Chọn hồ sơ → Xuất Excel, XML và PDF nhà phát hành</p>
     <div class="sync"><span class="dot"></span> Dùng chung tài khoản, hồ sơ MST và quyền sử dụng với AutoTax Extension</div>
   </header>
   <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
@@ -22,6 +22,26 @@
       <div><strong>Phiên AutoTax</strong><span id="authStatus">Đang xác minh đăng nhập…</span></div>
       <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
     </div>
+      <details class="vault-panel" id="vaultPanel">
+        <summary>Quản lý mật khẩu các MST đã lưu</summary>
+        <p>Mật khẩu Thuế chỉ được lưu khi bạn bật “Tự lưu”, đã mở khóa kho và đăng nhập Thuế thành công. Kho được mã hóa trên trình duyệt, không chuyển mật khẩu lên Supabase. Nếu quên mật khẩu kho, liên hệ admin để reset. Reset xóa quyền truy cập mật khẩu Thuế cũ, không thể khôi phục chúng. Mỗi lần mở trang mới cần nhập mật khẩu kho.</p>
+        <div class="vault-controls"><input id="vaultPassphrase" type="password" autocomplete="new-password" minlength="8" placeholder="Mật khẩu kho riêng (tối thiểu 8 ký tự)">
+          <button id="vaultUnlock" type="button" class="outline">Mở / tạo kho</button>
+          <button id="vaultForget" type="button" class="outline">Xóa mật khẩu MST đang chọn</button>
+          <button id="vaultLock" type="button" class="outline">Khóa kho</button></div>
+        <div id="vaultRecovery" hidden class="vault-recovery">
+          <label>Mã khôi phục do admin cấp <input id="vaultRecoveryCode" type="password" inputmode="numeric" maxlength="4" placeholder="Mã khôi phục"></label>
+          <button type="button" class="outline" id="vaultConfirmRecovery">Xác nhận mã và tạo kho mới</button>
+          <p>Mã khôi phục mặc định chỉ xác nhận thao tác reset. Mật khẩu cổng Thuế đã lưu trước đó không thể giải mã lại.</p>
+        </div>
+        <div id="vaultAfterUnlock" hidden>
+          <label class="vault-checkbox"><input type="checkbox" id="vaultReveal"> Hiển thị danh sách MST và mật khẩu đã lưu</label>
+          <div class="table-wrap vault-table-wrap"><table><thead><tr><th>MST</th><th>Mật khẩu</th></tr></thead><tbody id="vaultList"></tbody></table></div>
+          <div class="vault-controls"><input type="password" id="vaultNewPassphrase" minlength="8" autocomplete="new-password" placeholder="Mật khẩu kho mới (ít nhất 8 ký tự)">
+          <button id="vaultChangePass" type="button" class="outline">Đổi mật khẩu kho</button></div>
+        </div>
+        <p id="vaultStatus" role="status">Chưa mở khóa kho mật khẩu.</p>
+      </details>
     <div id="searchTotals" class="search-total-mini" hidden aria-live="polite">
       <div><span>Tổng thanh toán kỳ tra cứu</span><strong id="searchTotalPay">0 ₫</strong></div>
       <div><span>Tổng tiền thuế kỳ tra cứu</span><strong id="searchTotalVat">0 ₫</strong></div>
@@ -74,15 +94,6 @@
         <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Mã trên ảnh (dự phòng)" autocomplete="off">
         <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
       </div>
-      <details class="vault-panel" id="vaultPanel">
-        <summary>Quản lý mật khẩu các MST đã lưu</summary>
-        <p>Mật khẩu Thuế chỉ được lưu khi bạn bật “Tự lưu”, đã mở khóa kho và đăng nhập Thuế thành công. Kho được mã hóa trên trình duyệt, không chuyển mật khẩu lên Supabase. Mỗi lần mở trang mới cần nhập mật khẩu kho.</p>
-        <div class="vault-controls"><input id="vaultPassphrase" type="password" autocomplete="new-password" minlength="8" placeholder="Mật khẩu kho riêng (tối thiểu 8 ký tự)">
-          <button id="vaultUnlock" type="button" class="outline">Mở / tạo kho</button>
-          <button id="vaultForget" type="button" class="outline">Xóa mật khẩu MST đang chọn</button>
-          <button id="vaultLock" type="button" class="outline">Khóa kho</button></div>
-        <p id="vaultStatus" role="status">Chưa mở khóa kho mật khẩu.</p>
-      </details>
       <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không được ghi ở dạng rõ vào hồ sơ hay bộ nhớ trình duyệt; tùy chọn tự lưu mã hóa bằng mật khẩu kho. AutoTax tự nhận dạng CAPTCHA SVG khi kết nối thành công; chỉ yêu cầu nhập thủ công khi đã tải được ảnh. Cổng Thuế có thể giới hạn truy cập từ máy chủ trung gian.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
@@ -90,19 +101,23 @@
   </section>
   <section id="results" class="result-card" hidden>
     <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
-    <p class="k-description">Cảnh báo hệ số K <strong>chỉ khả dụng khi tick cả Mua vào lẫn Bán ra</strong>. K = Tổng bán ra / Tổng mua vào trong cùng kỳ (chỉ để tham khảo).</p>
+    <p class="k-description">Cảnh báo hệ số K <strong>chỉ khả dụng khi tick cả Mua vào lẫn Bán ra</strong>. K = Tổng bán ra / (Tồn trước kỳ + Tổng mua vào). Không xác định được tồn đầu nên chỉ có tính tham khảo, NNT vui lòng kiểm tra lại.</p>
     <div class="invoice-stats">
       <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
       <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
       <div><span>Mua vào / Bán ra</span><strong id="purchaseSaleTotals">—</strong></div>
-      <div><span>Hệ số K (Bán / Mua)</span><strong id="kRatio">—</strong></div>
+      <div><span>Ước tính Bán / Mua (không gồm tồn đầu)</span><strong id="kRatio">—</strong></div>
     </div>
     <div class="export-toolbar">
-      <label for="exportScope">Phạm vi xuất
-        <select id="exportScope"><option value="all">Tất cả hóa đơn</option><option value="selected">Chỉ hóa đơn đã tick</option><option value="month">Theo tháng</option></select>
+      <label for="visibleKind">Lọc hiển thị
+        <select id="visibleKind"><option value="all">Mua vào + Bán ra</option><option value="purchase">Chỉ mua vào</option><option value="sold">Chỉ bán ra</option></select>
       </label>
-      <label id="exportMonthWrap" hidden for="exportMonth">Tháng xuất
-        <input id="exportMonth" type="month"></label>
+      <label for="visibleMonth">Tháng hiển thị
+        <input id="visibleMonth" type="month" aria-label="Lọc tháng hiển thị"></label>
+      <button id="clearVisibleMonth" type="button" class="outline">Mọi tháng</button>
+      <label for="exportScope">Phạm vi xuất
+        <select id="exportScope"><option value="all">Tất cả HĐ đang hiển thị</option><option value="selected">HĐ đã chọn (không chọn = tất cả hiển thị)</option></select>
+      </label>
       <span id="selectionCount" class="selection-count">Đã chọn 0 hóa đơn</span>
       <div class="exports">
         <button id="exportExcel" type="button">Tải Excel</button>
@@ -111,7 +126,7 @@
       </div>
     </div>
     <p class="result-help">Nút PDF ưu tiên tệp PDF trực tiếp từ đơn vị phát hành (nếu truy cập được); khi không có sẽ xuất <strong>bản thể hiện được AutoTax tạo từ dữ liệu cổng Thuế</strong>, không gọi bản đó là PDF gốc.</p>
-    <p class="result-help">Có thể tick từng hóa đơn hoặc chọn tất cả dòng đang hiển thị. Xuất theo tháng lọc trên ngày lập hóa đơn. Các tổng tiền là tổng của cả kỳ tra cứu, không thay đổi khi bạn tick. PDF gốc phụ thuộc đơn vị phát hành.</p>
+    <p class="result-help">Lọc theo mua vào/bán ra và tháng trước khi xuất. Mặc định chỉ tải các hóa đơn đã tick; nếu chưa tick hóa đơn nào thì tải tất cả hóa đơn trong bộ lọc đang hiển thị. Các tổng tiền là tổng của cả kỳ tra cứu, không thay đổi khi bạn tick. PDF gốc phụ thuộc đơn vị phát hành.</p>
     <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết / Hợp lệ</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <section id="stockExport" class="stock-export">
       <h3>Xuất phiếu nhập kho · ánh xạ SKU (Tendoo / MISA)</h3>
@@ -168,10 +183,10 @@
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
-<script src="./web/vault.js?v=1"></script>
+<script src="./web/vault.js?v=2"></script>
 <script src="./web/pdf.js?v=1"></script>
-<script src="./web/web-pdf.js?v=1"></script>
-<script src="./web/web.js?v=7"></script>
-<script src="./web/web-results.js?v=3"></script>
+<script src="./web/web-pdf.js?v=2"></script>
+<script src="./web/web.js?v=8"></script>
+<script src="./web/web-results.js?v=4"></script>
 <script src="./web/audit.js?v=1"></script>
 </body></html>

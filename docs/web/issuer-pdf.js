@@ -18,7 +18,12 @@ const directPdfLink=link=>{
    /\/download[^/]*pdf|\/pdf(?:\/|$)|format=pdf/i.test(u.pathname+u.search));
  }catch{return false}
 };
-function providerInstructions(name){
+function providerInstructions(name,link){
+ const supplier=window.IssuerPortals?.describe(link);
+ if(supplier?.id==='kiotviet')
+  return 'KiotViet: nhập mã tra cứu trên tracuuhoadon.kiotviet.vn rồi bấm Tải xuống. Nhà phát hành có thể trả ZIP chứa cả PDF gốc và XML; giải nén ZIP, chọn đúng PDF để gắn lại trên Web.';
+ if(supplier?.id==='vnpt')
+  return 'VNPT: dùng ĐÚNG link ghi trên hóa đơn vì mỗi đơn vị phát hành có thể dùng cổng riêng. Nhập mã xác nhận, tải PDF từ trang chính thức.';
  if(/misa|meinvoice/i.test(name))
   return 'MISA meInvoice: dùng mã tra cứu trên hóa đơn, nhập mã xác nhận tại cổng MISA và tải PDF từ trang chính thức.';
  if(/viettel|sinvoice/i.test(name))
@@ -46,14 +51,16 @@ async function open(row){
   const source=window.HDDT.originalLookup(row,detail.head||{});
   const link=verifiedHttps(source?.link);
   const code=title(source?.code);
-  $('issuerPdfName').value=source?.name||'Chưa xác định nhà phát hành';
+  const catalog=window.IssuerPortals?.describe(link);
+  $('issuerPdfName').value=source?.name||catalog?.name||'Chưa xác định nhà phát hành';
   $('issuerPdfCode').value=code;
   $('copyIssuerCode').disabled=!code;
   if(link){$('issuerPdfLink').href=link;$('issuerPdfLink').hidden=false;}
   current={row,link,code,detail};
   $('issuerPdfAttach').disabled=false;
   $('tryIssuerPdf').disabled=!directPdfLink(link);
-  $('issuerPdfHelp').textContent=providerInstructions(source?.name||'');
+  $('issuerPdfHelp').textContent=providerInstructions(source?.name||catalog?.name||'',link)+
+   ' Nếu cổng đã xác thực nhưng Web bị CORS chặn, tải tệp trên chính trang phát hành hoặc dùng Add-on để nhận PDF qua phiên trang đó.';
   const previouslyAttached=window.WebPdfExport?.hasUserPdf(row);
   status((previouslyAttached?'Đã có tệp PDF được gắn trong phiên làm việc. ':
     'Bạn có thể gắn PDF tải từ cổng nhà phát hành vào đúng hóa đơn này. ')+

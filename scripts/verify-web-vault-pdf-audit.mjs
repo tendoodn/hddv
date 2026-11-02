@@ -73,7 +73,7 @@ const context=link=>{
  assert.equal(c.getState().download.mime,'application/zip');
  assert(files.some(f=>f.name.startsWith('PDF_DUNG_LAI_TU_DU_LIEU_CQT_KHONG_PHAI_GOC/')));
  assert(files.some(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt'&&
-  f.data.includes('TEST-CODE')&&f.data.includes('khong phai')));
+  f.data.includes('TEST-CODE')&&f.data.includes('KHONG PHAI')));
 }
 {
  const c=context('https://example.org/hddt.pdf');

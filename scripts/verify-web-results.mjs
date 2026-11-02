@@ -9,7 +9,7 @@ const syncSql=read('addon-portal/supabase/migrations/031_user_sku_mapping_sync.s
 assert.equal(read('docs/web/tendoo-import.js'),read('autotax/src/content/tendoo-import.js'),
  'The SKU mapping and import exporter must be byte-for-byte shared between website and addon.');
 for(const id of ['totalPayments','totalVat','purchaseSaleTotals','kRatio','selectAllInvoices',
- 'exportScope','visibleKind','visibleMonth','clearVisibleMonth','invoiceDetailDialog','detailRows','detailTax',
+ 'visibleKind','visibleMonth','clearVisibleMonth','invoiceDetailDialog','detailRows','detailTax',
  'detailTotal','stockCatalog','stockMapBtn','stockDownloadBtn','skuMapDialog',
  'kWarningDialog','disableKPopup','stockPlatform','stockWarehouse','stockLastDoc']){
  assert(html.includes('id="'+id+'"'),'Missing Web control '+id);
@@ -48,7 +48,8 @@ function node(id=''){
 }
 const elements=id=>{if(!nodes.has(id))nodes.set(id,node(id));return nodes.get(id)};
 elements('fromDate').value='2026-10-01';
-elements('exportScope').value='selected';
+assert(!html.includes('id="exportScope"'),'Do not show redundant export-scope selector');
+assert(logic.includes('return selected.length?selected:shown;'),'Automatic export should prioritize visible checked rows');
 const doc={readyState:'loading',getElementById:elements,createElement:()=>node(),
  addEventListener(){},querySelectorAll(){return []}};
 const window={HDDT:{TTHAI:{}},WebInvoiceApp:{
@@ -72,6 +73,6 @@ assert.deepEqual(Array.from(window.WebResults.exportRows(),x=>x.key),['buy'],
 elements('visibleKind').value='all';elements('visibleMonth').value='2026-11';
 assert.deepEqual(Array.from(window.WebResults.exportRows(),x=>x.key),['sold'],
  'Display month filter determines export scope');
-elements('visibleMonth').value='';elements('exportScope').value='all';
-assert.equal(window.WebResults.exportRows().length,2,'Explicit all-visible scope exports all filtered records');
-console.log('Web enhancements: invoice totals, K popup and selected/all filtered display scope tested.');
+elements('visibleMonth').value='';
+assert.equal(window.WebResults.exportRows().length,2,'With no tick, automatically export all filtered records');
+console.log('Web enhancements: K, invoice totals and automatic checked-or-visible export scope verified.');

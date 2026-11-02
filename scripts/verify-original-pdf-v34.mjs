@@ -8,16 +8,24 @@ const addon=read('autotax/src/content/content.js');
 const web=read('docs/web/web-pdf.js');
 const common=read('docs/web/issuer-portals.js');
 const panel=read('autotax/src/sidepanel/index.html');
+const assist=read('autotax/src/content/issuer-assist.js');
 const bytes=Uint8Array.from([37,80,68,70,45,49,46,55,10]);
 
-assert.equal(manifest.version,'1.1.0');
+assert.equal(manifest.version,'1.1.1');
 assert(manifest.host_permissions.includes('https://*.kiotviet.vn/*'));
 assert(manifest.host_permissions.includes('https://*.vinvoice.vn/*'));
 assert(manifest.host_permissions.includes('https://*.viettel.vn/*'));
 assert(manifest.host_permissions.includes('https://*.vnpt-invoice.com.vn/*'));
 assert(manifest.content_scripts[0].js.includes('src/content/issuer-portals.js'));
+assert(manifest.content_scripts.some(s=>s.js.includes('src/content/issuer-assist.js')&&
+ s.matches.includes('https://*.kiotviet.vn/*')),
+ 'Authorized supplier portals need manual CAPTCHA-aware PDF helper.');
 assert.equal(common,read('autotax/src/content/issuer-portals.js'));
-assert(panel.includes('PDF gốc')&&panel.includes('21 cổng'));
+assert(panel.includes('PDF gốc')&&panel.includes('21 cổng')&&
+ panel.includes('id="issuerOpenNext"'));
+assert(assist.includes("type:'issuer-assist-state'")&&assist.includes("type:'issuer-assist-download'")&&
+ assist.includes('Tìm PDF sau khi xác thực'));
+new vm.Script(assist,{filename:'autotax/src/content/issuer-assist.js'});
 
 for(const [path,js] of [
  ['docs/web/web-pdf.js',web],['docs/web/issuer-portals.js',common],
@@ -53,15 +61,24 @@ assert.equal(catalog.route({link:'http://127.0.0.1/x',code:'123'}).hasLookup,fal
 
 // Simulate direct issuer PDF service worker; no cookies or redirects.
 const seen=[];
-const chrome={sidePanel:{setPanelBehavior:()=>Promise.resolve(),setOptions:()=>Promise.resolve()},
- runtime:{onMessage:{addListener(){}}}};
+const sessionStore=new Map();
+const chrome={
+ sidePanel:{setPanelBehavior:()=>Promise.resolve(),setOptions:()=>Promise.resolve()},
+ runtime:{onMessage:{addListener(){}}},
+ tabs:{create:async({url})=>({id:46,url})},
+ storage:{session:{
+  get:async key=>({[key]:sessionStore.get(key)}),
+  set:async values=>{for(const [key,val] of Object.entries(values))sessionStore.set(key,val)},
+  remove:async key=>{sessionStore.delete(key)}
+ }}
+};
 const fetch=async(url,options)=>{
  seen.push({url,options});
  return {ok:true,headers:{get:()=>null},body:null,arrayBuffer:async()=>bytes.buffer};
 };
 const context={chrome,URL,fetch,AbortSignal,Uint8Array,Error,Array,Number,String,
  Set,Promise,TextEncoder,btoa};vm.createContext(context);
-vm.runInContext(worker+'\nthis.testAPI={issuerPdfURL,fetchIssuerPdf}',context);
+vm.runInContext(worker+'\nthis.testAPI={issuerPdfURL,fetchIssuerPdf,issuerAdd,issuerQueue,issuerOpenNext,issuerSession}',context);
 const api=context.testAPI;
 assert.throws(()=>api.issuerPdfURL('https://attacker.example/a.pdf'),/được phép/);
 assert.throws(()=>api.issuerPdfURL('http://tracuuhoadon.kiotviet.vn/a.pdf'),/được phép/);
@@ -71,4 +88,26 @@ assert.equal(res.ok,true);
 assert.equal(atob(res.pdfBase64).slice(0,5),'%PDF-');
 assert.equal(seen[0].options.credentials,'omit');
 assert.equal(seen[0].options.redirect,'error');
-console.log('V1.1: 21 supplier domains incl KiotViet, issuer-first and reconstructed-only-if-missing routing passed.');
+// Sensitive lookup codes are queued only from a GDT tab, per MST, and
+// exposed only to an issuer-tab whose domain matches the original supplier.
+await assert.rejects(api.issuerAdd({ownerMst:'3600675874',
+ link:'https://tracuuhoadon.kiotviet.vn/',code:'TEST-ABC'},
+ {url:'https://attacker.example/x'}),/trang Thuế/);
+await api.issuerAdd({ownerMst:'3600675874',invoice:'C26_1',
+ link:'https://tracuuhoadon.kiotviet.vn/',code:'TEST-ABC'},
+ {url:'https://hoadondientu.gdt.gov.vn/tra-cuu'});
+const queued=await api.issuerQueue();
+assert.equal(queued.length,1);
+assert.equal(queued[0].ownerMst,'3600675874');
+const opened=await api.issuerOpenNext('3600675874');
+assert.equal(opened.ok,true);
+assert.equal(opened.tabId,46);
+const session=await api.issuerSession({tab:{id:46},
+ url:'https://tracuuhoadon.kiotviet.vn/xem-hoa-don'});
+assert.equal(session.code,'TEST-ABC');
+await assert.rejects(api.issuerSession({tab:{id:46},
+ url:'https://www.meinvoice.vn/tra-cuu/'}),/không cùng nhà phát hành/);
+await api.fetchIssuerPdf('https://tracuuhoadon.kiotviet.vn/sample.pdf',true);
+assert.equal(seen.at(-1).options.credentials,'include');
+assert.equal(seen.at(-1).options.redirect,'error');
+console.log('V1.1.1: 21 suppliers, authenticated issuer-tab queue, PDF headers, CAPTCHA handoff, and fallback passed.');

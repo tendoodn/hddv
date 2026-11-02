@@ -13,8 +13,8 @@ for(const id of ['mst','mstPickerToggle','mstPickerMenu','mstForgetPassword',
 }
 assert(!html.includes('id="vaultPassphrase"')&&!html.includes('id="rememberGdt"')&&
  !html.includes('id="exportScope"'),'Vault password and export scope selector must be removed.');
-assert(html.includes('Tải PDF gốc')&&html.includes('không xuất PDF tự dựng thay thế'),
- 'Strict original-PDF export must not use rendered representation fallback.');
+assert(html.includes('Tải PDF gốc')&&html.includes('PDF dựng từ dữ liệu Thuế'),
+ 'V1.1 must describe original-first routing and reconstruction if lookup metadata is missing.');
 assert(admin.includes('id="customerMstSearch"')&&admin.includes('id="mstAssignmentSearch"')&&
  admin.includes('id="packageStatusFilter"'),'Admin filters required.');
 assert(mst.includes('addon_admin_set_mst_profile_name')&&mst.includes('a.display_name'),
@@ -29,8 +29,9 @@ assert(!vault.includes('localStorage.setItem(storageKey()')&&
  'Save password only after tax login, never as plaintext.');
 assert(pdf.includes("source.protocol!=='https:'")&&pdf.includes("b[0]!==37||b[1]!==80")&&
  pdf.includes('PDF_goc_nha_phat_hanh')&&
- !pdf.includes('window.Pdf.buildInvoicePdf('),
- 'Strict PDF exporter must reject non-PDF links and never render fake originals.');
+ pdf.includes('window.Pdf.buildInvoicePdf(row,detail,lookup)')&&
+ pdf.includes('decision.shouldReconstruct'),
+ 'V1.1 must fetch original when lookup metadata exists and rebuild only if missing.');
 assert(renderer.includes('raw.githubusercontent.com/tendoodn/hddv/main/autotax/src/content/fonts/')&&
  !renderer.includes('chrome.runtime.getURL('),'Web renderer must use HTTPS font URL.');
 assert(audit.includes('window.Report.buildSheets')&&audit.includes("s.name==='Kiểm tra rủi ro HĐ'")&&
@@ -72,4 +73,12 @@ const context=link=>{
  assert.equal(files[0].name,'NGUON_PDF_MA_TRA_CUU.txt');
  assert(files[0].data.includes('TEST-CODE'),'Guide must retain invoice lookup security code.');
 }
-console.log('Strict original-PDF, per-account encrypted credentials, MST and invoice audit regression checks passed.');
+{
+ const c=context('');
+ const x=await c.window.WebPdfExport.create([{khhdon:'C26',shdon:'3',kind:'purchase'}]);
+ assert.equal(x.originals,0);
+ assert.equal(x.rendered,1,'Missing lookup URL must trigger clearly labelled rebuilt PDF.');
+ assert.equal(c.getState().rendered,1);
+ assert(c.getState().download.bytes.some(f=>f.name.startsWith('PDF_DUNG_LAI_TU_DU_LIEU_CQT_KHONG_PHAI_GOC/')));
+}
+console.log('V1.1 original-first, reconstructed-without-lookup, encrypted profile and invoice audit checks passed.');

@@ -692,5 +692,23 @@ $('historyExport')?.addEventListener('click',()=>{
   const blob=new Blob(['\uFEFF'+csv.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='autotax-lich-su-hoa-don.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+// Navigation shortcuts open a real browser tab and then close the Chrome side
+// panel where the host API supports it. Never close it before tab creation succeeds.
+document.querySelectorAll('a[data-close-panel]').forEach(link=>{
+ link.addEventListener('click',async event=>{
+  event.preventDefault();
+  const url=link.href;
+  if(!/^https:\/\/tendoodn\.github\.io\//.test(url))return;
+  try{
+   const tab=await chrome.tabs.create({url,active:true});
+   if(chrome.sidePanel?.close){
+    try{await chrome.sidePanel.close({windowId:tab.windowId})}
+    catch{try{window.close()}catch{}}
+   }else{try{window.close()}catch{}}
+  }catch(e){
+   log('Không mở được trang Web: '+(e.message||e),'error');
+  }
+ });
+});
 loadHistory().catch(e=>log('Không đọc được lịch sử: '+e.message,'error'));
 init().catch((e) => log(e.message, 'error'));

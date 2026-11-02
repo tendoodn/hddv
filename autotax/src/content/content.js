@@ -210,9 +210,22 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
               invoiceFormats.pdf=true;
             }catch(e){originalError=e.message||String(e)}
           }
-          if(!invoiceFormats.pdf&&decision.shouldReconstruct){
-            // Only when the invoice lacks a usable lookup URL OR security
-            // code. Never label this reconstructed PDF as the original.
+          if(!invoiceFormats.pdf){
+            // If the original failed, keep issuer-link/code for later assisted
+            // retrieval even though the current download will contain a
+            // clearly marked rebuilt PDF. Do not launch mass CAPTCHA tabs.
+            if(source.link&&source.code){
+              try{
+                await chrome.runtime.sendMessage({
+                  type:'issuer-queue-add',link:source.link,code:source.code,
+                  ownerMst:profile.mst,
+                  invoice:[row.nbmst,row.khhdon,row.shdon].filter(Boolean).join('_')
+                });
+              }catch{/* PDF rebuild is independent from queue success. */}
+            }
+            // The Add-on is intentionally less strict than the Web Tax PDF
+            // button: genuine PDF preferred, rebuild whenever absent/blocked.
+            // NEVER label the fallback representation as an original.
             try{
               const generated=await Pdf.buildInvoicePdf(row,inv,source);
               if(!generated||generated.length<5||generated[0]!==37||
@@ -221,30 +234,31 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
               add(`PDF_Dung_Lai_Tu_CQT_Khong_Phai_Goc/${sub}${base}.pdf`,generated);
               invoiceFormats.pdf=true;
               send({type:'log',level:'warn',
-                text:`${row.khhdon}-${row.shdon}: không đủ URL/mã tra cứu nên đã xuất PDF dựng lại (không phải gốc).`});
+                text:`${row.khhdon}-${row.shdon}: không lấy được PDF gốc (${originalError||'chưa có URL tải trực tiếp'}), đã xuất PDF dựng lại KHÔNG PHẢI GỐC.`});
+              const provenance=[
+                'AutoTax PDF goc -> fallback tu du lieu CQT, KHONG PHAI GOC',
+                'MST ben ban: '+(row.nbmst||''),
+                'Ky hieu / so: '+(row.khhdon||'')+' / '+(row.shdon||''),
+                'Link tra cuu: '+(source.link||'Khong co'),
+                'Ma tra cuu: '+(source.code||'Khong co'),
+                'Ly do khong tai PDF goc: '+(originalError||'Khong co URL tai PDF truc tiep')
+              ];
+              add(`PDF_Dung_Lai_Tu_CQT_Khong_Phai_Goc/${sub}${base}_NGUON.txt`,
+                new TextEncoder().encode(provenance.join('\n')));
             }catch(e){originalError=e.message||String(e)}
           }
           if(!invoiceFormats.pdf){
-            // Queue the exact issuer URL/code for an assisted tab lookup.
-            // Never start 100 CAPTCHA tabs during a bulk invoice job.
-            if(source.link&&source.code){
-              try{
-                await chrome.runtime.sendMessage({
-                  type:'issuer-queue-add',link:source.link,code:source.code,
-                  ownerMst:profile.mst,invoice:[row.nbmst,row.khhdon,row.shdon].filter(Boolean).join('_')
-                });
-              }catch{/* A PDF-missing TXT report is still saved below. */}
-            }
+            // The PDF rebuild itself also failed; report the invoice as missing.
             errors++;
             const guide=[
              'AutoTax V1.1 - CHUA TAI DUOC PDF GOC',
-             'Hoa don co link + ma tra cuu phai uu tien PDF goc. Khong xuat PDF dung lai.',
+             'Thu PDF goc truoc. Neu khong lay duoc thi dung PDF tu CQT co nhan KHONG PHAI GOC.',
              'MST ben ban: '+(row.nbmst||''),
              'Ky hieu/so: '+(row.khhdon||'')+' / '+(row.shdon||''),
              'Nha phat hanh: '+(source.name||'Chua xac dinh'),
              'Link tra cuu: '+(source.link||'Chua co trong du lieu'),
              'Ma tra cuu/bao mat: '+(source.code||'Chua co trong XML'),
-             'Ly do: '+(originalError||'Can tra tai cong nha phat hanh bang ma va xac minh CAPTCHA'),
+             'Ly do: '+(originalError||'Khong lay duoc PDF goc va khong dung duoc PDF thay the'),
              'Mo duong dan tra cuu tren hoa don de tai PDF goc khi cong yeu cau xac thuc.'
             ];
             add(`PDF_Chua_Lay_Duoc_Goc/${sub}${base}.txt`,new TextEncoder().encode(guide.join('\n')));

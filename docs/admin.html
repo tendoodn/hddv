@@ -24,14 +24,33 @@ button.tab.active{background:var(--tendoo-dark)}
 .notice.error{background:#fef2f2;color:#991b1b}
 a{color:var(--tendoo-dark)}
 input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color:var(--tendoo)}
-@media(max-width:520px){</style></head><body><main class="wrap">
+.new-package-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin-top:12px}
+.new-package-form label{font-size:12px;color:#591d27;font-weight:750;display:flex;flex-direction:column;gap:5px}
+.new-package-form input,.new-package-form select{width:100%;min-width:0;max-width:100%}
+.new-package-form input:invalid{box-shadow:none}
+.new-package-form .package-form-footer{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.new-package-form button{white-space:nowrap}
+#createPackageMessage{margin:11px 0 3px}
+@media(max-width:520px){.wrap{padding:14px 10px}input,select{min-width:0}}</style></head><body><main class="wrap">
 <header><div class="brand">TENDOO <span>AUTOTAX 3.3.6 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
 <section id="app" class="hidden">
 <div class="row"><div><h1>Quản lý khách hàng</h1><div class="muted">Tối đa 500 tài khoản gần nhất · gói hóa đơn, MST và trạng thái dùng thử V3.2.</div></div><button id="reload">Làm mới dữ liệu</button></div>
 <div class="panel"><div class="row"><input id="search" placeholder="Tìm theo email..." type="search"><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
-<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">Giá mới chỉ áp dụng cho đơn tạo sau khi lưu. Đơn chờ và lịch sử cũ giữ nguyên giá đã chốt.</p><div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div><p class="sub">Thời hạn các gói MST cố định 1 năm (365 ngày) từ lúc kích hoạt. Admin vẫn được chỉnh giá.</p><h3>Thêm gói mới</h3><div class="actions"><input id="newCode" placeholder="Mã gói"><select id="newFamily"><option value="invoice">Số tờ hóa đơn</option><option value="mst">MST</option></select><input id="newName" placeholder="Tên gói"><input id="newQty" type="number" min="1" placeholder="Số lượng"><input id="newPrice" type="number" min="0" placeholder="Giá VND"><input id="newValidity" type="number" value="365" title="MST có hạn cố định 365 ngày" disabled hidden><input id="newDesc" placeholder="Mô tả"><button id="createPackage">Thêm gói</button></div></div></div>
-<section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong 10 gói sản phẩm để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label>Khách hàng <select id="grantCustomer" aria-label="Khách hàng cần cấp gói"><option value="">Chọn khách hàng</option></select></label><label>Gói cần cấp <select id="grantPackage" aria-label="Gói cần cấp"><option value="">Chọn gói</option></select></label><button id="grantNow" type="button">Cấp gói cho khách hàng</button></div><div id="grantMessage" class="notice hidden" role="status"></div></section>
+<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">Giá mới chỉ áp dụng cho đơn tạo sau khi lưu. Đơn chờ và lịch sử cũ giữ nguyên giá đã chốt.</p><div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div><p class="sub">Thời hạn các gói MST cố định 1 năm (365 ngày) từ lúc kích hoạt. Admin vẫn được chỉnh giá.</p><h3>Thêm gói mới</h3>
+<p class="sub">Mã gói gồm 2–24 ký tự A–Z, 0–9 hoặc dấu gạch dưới (_). Ví dụ <b>T300</b>, <b>MST_100</b>. Khoảng trắng và dấu gạch nối được tự đổi thành dấu _.</p>
+<form id="createPackageForm" class="new-package-form" autocomplete="off">
+  <label>Mã gói *<input id="newCode" type="text" maxlength="64" placeholder="Ví dụ T300" required autocapitalize="characters" spellcheck="false"></label>
+  <label>Loại gói *<select id="newFamily"><option value="invoice">Số tờ hóa đơn</option><option value="mst">MST</option></select></label>
+  <label>Tên gói *<input id="newName" type="text" maxlength="120" placeholder="Ví dụ 300 tờ hóa đơn" required></label>
+  <label>Số lượng *<input id="newQty" type="number" min="1" step="1" placeholder="Ví dụ 300" required></label>
+  <label>Giá VND *<input id="newPrice" type="number" min="0" step="1" placeholder="Ví dụ 200000" required></label>
+  <label>Mô tả (không bắt buộc)<input id="newDesc" maxlength="400" placeholder="Quyền lợi của gói"></label>
+  <input id="newValidity" type="number" value="365" title="MST có hạn cố định 365 ngày" disabled hidden>
+  <div class="package-form-footer"><span class="sub">Gói MST có thời hạn cố định 365 ngày. Gói số tờ cộng dồn lượt.</span><button id="createPackage" type="submit">Thêm gói</button></div>
+</form>
+<div id="createPackageMessage" class="notice hidden" role="status" aria-live="polite"></div></div>
+<section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong các gói sản phẩm đang mở để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label>Khách hàng <select id="grantCustomer" aria-label="Khách hàng cần cấp gói"><option value="">Chọn khách hàng</option></select></label><label>Gói cần cấp <select id="grantPackage" aria-label="Gói cần cấp"><option value="">Chọn gói</option></select></label><button id="grantNow" type="button">Cấp gói cho khách hàng</button></div><div id="grantMessage" class="notice hidden" role="status"></div></section>
 <section class="panel" id="packageHistorySection"><div class="row"><div><h2>Lịch sử mua và cấp gói</h2><p class="sub">Mua gói và cấp gói bởi quản trị · mỗi trang tối đa 10 giao dịch.</p></div><button id="togglePackageHistory" class="secondary" type="button">Xem lịch sử gói</button></div></section>
 <dialog id="packageHistoryDialog" class="history-modal" aria-labelledby="packageHistoryTitle">
  <div class="row"><div><h2 id="packageHistoryTitle">Lịch sử mua và cấp gói</h2><p id="packageHistoryCount" class="muted"></p></div><button id="closePackageHistory" type="button" class="secondary" aria-label="Đóng lịch sử gói">Đóng ✕</button></div>
@@ -74,7 +93,58 @@ if(allPackages.some(p=>p.code===selected&&p.active))grantPackage.value=selected;
 
 }
 $("packagePrices").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const code=b.dataset.save||b.dataset.active;if(!code)return;b.disabled=true;let error;if(b.dataset.save){const price=Number($("packagePrices").querySelector('[data-price="'+CSS.escape(code)+'"]').value);if(!Number.isSafeInteger(price)||price<0){b.disabled=false;return msg("msg","Giá không hợp lệ.",true)}({error}=await client.rpc("addon_admin_set_package_price",{p_code:code,p_price_vnd:price}));}else{({error}=await client.rpc("addon_admin_set_package_active",{p_code:code,p_active:b.dataset.value==="true"}))}b.disabled=false;if(error)msg("msg","Thao tác thất bại: "+error.message,true);else msg("msg","Đã cập nhật gói.");await loadPlans()};
-$("createPackage").onclick=async()=>{const code=$("newCode").value.trim().toUpperCase(),family=$("newFamily").value,name=$("newName").value.trim(),quantity=Number($("newQty").value),price=Number($("newPrice").value),days=family==="mst"?365:null;if(!code||!name||!Number.isSafeInteger(quantity)||quantity<1||!Number.isSafeInteger(price)||price<0)return msg("msg","Kiểm tra lại thông tin gói.",true);const {error}=await client.rpc("addon_admin_create_package",{p_code:code,p_family:family,p_name:name,p_quantity:quantity,p_price_vnd:price,p_description:$("newDesc").value,p_validity_days:days});if(error)msg("msg","Không tạo được gói: "+error.message,true);else{msg("msg","Đã tạo gói mới.");["newCode","newName","newQty","newPrice","newValidity","newDesc"].forEach(id=>$(id).value="");await loadPlans()}};
+// The Supabase catalog RPC enforces ^[A-Z0-9_]{2,24}$; normalize before sending.
+const normalizePackageCode=value=>String(value||"").trim().normalize("NFD")
+ .replace(/[\u0300-\u036f]/g,"").replace(/[đĐ]/g,"D").toUpperCase()
+ .replace(/[^A-Z0-9_]+/g,"_").replace(/^_+|_+$/g,"");
+const packageNotice=(text,error=false)=>msg("createPackageMessage",text,error);
+$("newCode").addEventListener("blur",()=>{$("newCode").value=normalizePackageCode($("newCode").value)});
+$("createPackageForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ const button=$("createPackage");
+ if(button.disabled)return;
+ const code=normalizePackageCode($("newCode").value),
+   family=$("newFamily").value,name=$("newName").value.trim(),
+   quantity=Number($("newQty").value),price=Number($("newPrice").value),
+   days=family==="mst"?365:null;
+ $("newCode").value=code;
+ if(!/^[A-Z0-9_]{2,24}$/.test(code))
+   return packageNotice("Mã gói phải dài 2–24 ký tự và chỉ gồm A–Z, 0–9, dấu gạch dưới (_).",true);
+ if(!name)return packageNotice("Vui lòng nhập tên gói.",true);
+ if(!Number.isSafeInteger(quantity)||quantity<1)
+   return packageNotice("Số lượng phải là số nguyên lớn hơn 0.",true);
+ if(!Number.isSafeInteger(price)||price<0)
+   return packageNotice("Giá bán phải là số nguyên không âm.",true);
+ if(allPackages.some(p=>p.code===code))
+   return packageNotice("Mã "+code+" đã tồn tại. Hãy sử dụng một mã gói khác.",true);
+ button.disabled=true;button.textContent="Đang tạo gói…";
+ packageNotice("Đang lưu gói "+code+" lên hệ thống…");
+ try{
+  const {error}=await client.rpc("addon_admin_create_package",{
+   p_code:code,p_family:family,p_name:name,p_quantity:quantity,
+   p_price_vnd:price,p_description:$("newDesc").value.trim(),p_validity_days:days
+  });
+  if(error){
+   const reason=String(error.message||"");
+   const human=error.code==="23505"||/duplicate key|unique constraint/i.test(reason)
+     ?"Mã "+code+" đã tồn tại."
+     :/invalid_package/.test(reason)
+       ?"Dữ liệu gói không hợp lệ. Kiểm tra mã gói, số lượng và giá bán."
+       :/admin_required|permission denied/.test(reason)
+         ?"Phiên quản trị không đủ quyền. Hãy đăng nhập lại bằng tài khoản admin."
+         :reason;
+   return packageNotice("Không tạo được gói: "+human,true);
+  }
+  await loadPlans();
+  if(!allPackages.some(p=>p.code===code))
+   return packageNotice("Máy chủ đã nhận yêu cầu nhưng chưa xác minh được gói trong danh sách. Hãy bấm Làm mới dữ liệu.",true);
+  packageNotice("Đã tạo thành công gói "+code+" ("+name+"). Gói đã xuất hiện trong danh mục.",false);
+  for(const id of ["newCode","newName","newQty","newPrice","newDesc"])$(id).value="";
+  $("newCode").focus();
+ }catch(err){
+  packageNotice("Không kết nối được để tạo gói: "+(err.message||String(err)),true);
+ }finally{button.disabled=false;button.textContent="Thêm gói";}
+});
 // Sensitive purchase and direct-admin-grant history is fetched only inside a modal.
 // Supabase enforces the page size (10) and admin-only access.
 function updateNewPackageFamily(){

@@ -37,6 +37,19 @@ assert(frontend.includes('window.SvgCaptcha?.solve(svg)')&&
  'Auto CAPTCHA recognition must use the shared engine and retain a manual fallback');
 assert(frontend.includes("confidence>=80")&&frontend.includes("attempt<2"),
  'CAPTCHA recognition must have a confidence threshold and bounded retries');
+assert(html.includes('id="gdtConnectionHelp"')&&html.includes('id="retryConnectionBtn"'),
+ 'Show actionable connectivity help when a GDT CAPTCHA cannot be fetched');
+assert(frontend.includes("await img.decode()")&&frontend.includes("resetCaptchaImage()")&&
+ frontend.includes("showGatewayHelp(true)")&&
+ !frontend.includes("$('captchaBox').hidden=false;\n  $('captchaStatus').textContent='Không tải được"),
+ 'Never show a manual CAPTCHA field without an image that actually decoded');
+assert(!frontend.includes(");await getCaptcha()}"),
+ 'Do not fetch captcha in the background during account refresh');
+assert(frontend.includes("forceFunctionRegion=")&&frontend.includes("ap-southeast-1")&&
+ frontend.includes("ap-northeast-1"),
+ 'Use official regional Edge routing and allow a user-requested retry via another region');
+assert(gateway.includes("'gdt_captcha_timeout'")&&gateway.includes("stage='gdt_captcha'"),
+ 'Gateway must distinguish CAPTCHA upstream failure from other upstream timeouts');
 assert(!/localStorage\s*\.|sessionStorage\s*\./.test(frontend),
  'No password or CAPTCHA token may be stored persistently');
 assert(gateway.includes('origin!==ALLOWED_ORIGIN')&&

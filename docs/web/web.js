@@ -383,8 +383,9 @@ async function exportFile(kind){
   }else if(kind==='pdf'){
    if(!window.WebPdfExport)throw Error('Bộ xử lý PDF chưa tải xong; vui lòng làm mới trang.');
    const result=await window.WebPdfExport.create(targetRows);
-   show('Đã xuất '+result.count+' PDF; '+result.originals+' PDF gốc của đơn vị phát hành và '+
-    result.rendered+' bản thể hiện từ dữ liệu cổng Thuế.'+
+   show('Đã xuất '+result.count+' PDF; '+result.originals+' PDF trực tiếp từ đơn vị phát hành, '+
+    (result.attachments||0)+' PDF đính kèm dữ liệu Thuế (chưa xác minh nguồn), '+
+    result.rendered+' bản thể hiện do AutoTax dựng.'+
     (result.errors.length?' Có '+result.errors.length+' hóa đơn chưa xuất được.':''),true);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}
  }catch(e){show('Không xuất được tệp: '+e.message)}

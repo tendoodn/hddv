@@ -164,11 +164,41 @@
   content.append(title,hint,input);wrapper.append(content,button);
   $('lic-entitlements').insertAdjacentElement('afterend',wrapper);
  }
+ const verifiedName=value=>{
+  const s=String(value||'').trim().replace(/\s+/g,' ');
+  return s.length>=3&&s.length<=120&&/[\p{L}]/u.test(s)&&
+   !/^(khách lẻ|khach le)$/i.test(s)?s:'';
+ };
+ async function autoNameFromGdt(info){
+  const mst=String(info?.mst||'').replace(/\D/g,''),
+   label=verifiedName(info?.company);
+  if(!session?.access_token||!label||!profileMsts.includes(mst))return false;
+  try{
+   const rows=await rpc('addon_list_my_mst_assignments');
+   const item=(rows||[]).find(x=>String(x.mst||'').replace(/\D/g,'')===mst);
+   if(!item||item.display_name)return false;
+   await rpc('addon_set_mst_profile_name',{p_mst:mst,p_display_name:label});
+   await loadMyMst();return true;
+  }catch(e){console.warn('AutoTax: không lưu được tên hồ sơ đã xác thực',e.message);return false}
+ }
  async function loadMyMst(){
   const target=$('lic-mst-assignments');
   if(!target||!session?.access_token){profileMsts=[];emitProfiles();return}
   try{
    const rows=await rpc('addon_list_my_mst_assignments');
+   // Auto-name only from the currently verified GDT portal account.
+   const current=globalThis.AutoTaxGdtProfile,
+    approved=verifiedName(current?.company),
+    verifiedMst=String(current?.mst||'').replace(/\D/g,'');
+   if(approved){
+    const match=(rows||[]).find(x=>String(x.mst||'').replace(/\D/g,'')===verifiedMst);
+    if(match&&!match.display_name){
+     try{
+      await rpc('addon_set_mst_profile_name',{p_mst:verifiedMst,p_display_name:approved});
+      match.display_name=approved;
+     }catch(e){console.warn('AutoTax: chưa đồng bộ được tên cổng Thuế',e.message)}
+    }
+   }
    profileMsts=(rows||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
    $('lic-mst-count').textContent=String(profileMsts.length);
    target.replaceChildren();
@@ -261,5 +291,5 @@
  });
  $('lic-unlock-close').addEventListener('click',()=>$('lic-unlock-dialog').close());
  $('lic-unlock-form').addEventListener('submit',e=>{e.preventDefault();void redeemUnlock()});$('lic-password-open').addEventListener('click',()=>$('lic-password-box').hidden=!$('lic-password-box').hidden);$('lic-password-save').addEventListener('click',changePassword);$('lic-mode').addEventListener('change',async e=>{try{await rpc('addon_set_usage_mode',{p_mode:e.target.value});license.mode=e.target.value;await check();message('Đã đổi chế độ.')}catch(err){message(err.message,true);e.target.value=license?.mode||'mst'}});$('lic-close-qr').addEventListener('click',()=>{$('lic-payment').hidden=true;clearInterval(timer)});init().catch(e=>message(e.message,true))});
- globalThis.License={status,check,canUse:()=>!!license?.allowed,getState:()=>license,getProfiles:()=>[...profileMsts]};
+ globalThis.License={status,check,autoNameFromGdt,canUse:()=>!!license?.allowed,getState:()=>license,getProfiles:()=>[...profileMsts]};
 })();

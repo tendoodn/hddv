@@ -109,3 +109,10 @@ footer{margin-top:25px;text-align:center;font-size:12px;color:#a0a0aa;line-heigh
 .k-warning-dialog small{font-size:11px;color:#edbabe}
 @media(max-width:800px){.invoice-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.export-toolbar .exports{margin-left:0;width:100%}.export-toolbar .exports button{flex:1}.stock-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.invoice-stats strong{font-size:15px}.invoice-detail-dialog,.stock-map-dialog{padding:12px}.export-toolbar select,.export-toolbar input{min-width:0}}
+
+.search-total-mini{display:flex;gap:13px;align-items:center;justify-content:flex-end;flex-wrap:wrap;border-bottom:1px solid #393941;padding:8px 0 14px;margin:-5px 0 16px}
+.search-total-mini>div{min-width:180px;text-align:right}
+.search-total-mini span{display:block;font-size:11px;color:#aaaab4}
+.search-total-mini strong{display:block;font-size:18px;color:#fff;font-variant-numeric:tabular-nums;margin-top:4px}
+.invoice-detail-dialog tfoot th{background:#222229;color:#fff;border-top:1px solid #444;text-align:right;font-size:14px}
+@media(max-width:580px){.search-total-mini>div{flex:1;min-width:120px}.search-total-mini strong{font-size:14px}}

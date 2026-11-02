@@ -227,7 +227,7 @@ async function withPurchaseDetails(task){
  if(!target.length)throw Error('Phạm vi xuất không có hóa đơn mua vào.');
  if(!catalog.length)throw Error('Chưa tải danh mục sản phẩm Tendoo/MISA.');
  if(app().busy())throw Error('Đang chạy tác vụ khác. Vui lòng thử sau.');
- app().busyState(true);
+ app().startTask();
  try{
   const detailMap=await app().loadDetails(target);
   if(!detailMap.size)throw Error('Không tải được chi tiết hàng hóa của hóa đơn mua vào.');

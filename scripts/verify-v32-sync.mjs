@@ -116,7 +116,7 @@ assert(crxPanel.includes('id="tendooMatchClose"')&&crxPanel.includes('id="lic-ac
 assert(!crxPanel.includes('Quản lý số hóa đơn hoặc số MST'),'Remove obsolete package subtitle');
 assert(crxPanel.indexOf('id="lic-mode-wrap"')<crxPanel.indexOf('id="lic-entitlements"'),
  'License mode must live below the package title');
-for(const format of ['Excel','XML','PDF gốc','HTML'])
+for(const format of ['Excel','XML','PDF (gốc → dựng lại)','HTML'])
  assert(crxPanel.includes('<span>'+format+'</span>'),'Missing compact format '+format);
 assert(crxPanel.includes('PL giảm thuế GTGT')&&crxPanel.includes('Bảng kê HĐKD'),
  'Excel main sheet labels must be compact');

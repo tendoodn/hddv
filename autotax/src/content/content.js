@@ -225,6 +225,16 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
             }catch(e){originalError=e.message||String(e)}
           }
           if(!invoiceFormats.pdf){
+            // Queue the exact issuer URL/code for an assisted tab lookup.
+            // Never start 100 CAPTCHA tabs during a bulk invoice job.
+            if(source.link&&source.code){
+              try{
+                await chrome.runtime.sendMessage({
+                  type:'issuer-queue-add',link:source.link,code:source.code,
+                  invoice:[row.nbmst,row.khhdon,row.shdon].filter(Boolean).join('_')
+                });
+              }catch{/* A PDF-missing TXT report is still saved below. */}
+            }
             errors++;
             const guide=[
              'AutoTax V1.1 - CHUA TAI DUOC PDF GOC',

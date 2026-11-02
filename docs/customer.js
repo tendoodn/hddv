@@ -106,7 +106,7 @@ async function loadPackages(){
   const card=document.createElement("div");card.className="plan";
   addText(card,"h3",item.name);
   addText(card,"p",item.family==="invoice"
-   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm). Không giới hạn MST tra cứu; mỗi hóa đơn mới trừ 1 lượt."
+   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm). Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
    : item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn")+". Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.","muted");
   addText(card,"strong",vnMoney(item.price_vnd),"price");
   const b=addText(card,"button","Chọn mua");

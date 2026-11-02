@@ -552,6 +552,12 @@ function job(msg){
   current.postMessage(msg);
 }
 function onJobMessage(m) {
+  if(m.type==='mst-name'){
+   if(connected&&m.mst&&normalizeMst(m.mst)===portalMst&&
+      typeof m.name==='string'&&m.name.length<=120)
+    void globalThis.License?.autoNameFromGdt?.({mst:portalMst,company:m.name});
+   return;
+  }
   if (m.type === 'run-started')setBusy(true);
   if (m.type === 'tendoo-map-request')return mapUnknownTendoo(m);
   if (m.type === 'status') $('status').textContent = m.text;

@@ -40,17 +40,9 @@ function log(text, level = '') {
 }
 let connErr = null;
 
-// Bảng kê HĐKD (01-2/BK-HĐKD) chỉ dành cho hộ / cá nhân kinh doanh, tờ khai 01/GTGT (khấu trừ) cho tổ chức →
-// theo tên người nộp thuế (công ty, chi nhánh, DNTN, HTX…) chỉ hiện ô phù hợp để không chọn nhầm. Chưa đăng nhập
-// (chưa biết tên) thì hiện tờ khai – phần lớn người dùng là doanh nghiệp; Bảng kê HĐKD chỉ hiện khi biết chắc là hộ KD
-const ORG = /\b(CONG TY|CTY|TNHH|CO PHAN|CHI NHANH|DOANH NGHIEP|DNTN|HOP TAC XA|HTX|TAP DOAN|VAN PHONG DAI DIEN|NGAN HANG|TRUONG (DAI HOC|CAO DANG|TRUNG CAP|THPT|THCS|TIEU HOC|MAM NON|MAU GIAO)|BENH VIEN|UBND|LIEN HIEP)\b/;
-const isOrg = (name) => ORG.test(String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'D').toUpperCase());
-function syncHousehold(info) {
-  const household = !!info.company && !isOrg(info.company);
-  for (const [id, show] of [['hdkdOpt', household], ['gtgtOpt', !household]]) {
-    $(id).hidden = !show;
-    if (!show) $(id).querySelector('input').checked = false;
-  }
+// Các lựa chọn Sheet luôn hiển thị để người dùng tự quyết định xuất biểu mẫu nào.
+// Đặc biệt không tự tắt Bảng kê HĐKD khi đổi hồ sơ MST hoặc mất kết nối.
+function syncHousehold() {
   summarize();
 }
 

@@ -59,7 +59,7 @@ Deno.serve(async(req) => {
       const password=String(input.password||'');
       const ckey=String(input.ckey||'');
       const cvalue=String(input.cvalue||'').trim();
-      if(!/^[0-9]{10}(?:-[0-9]{3})?(?:-U[0-9]{3})?$/.test(username)||
+      if(!/^(?:[0-9]{10}|[0-9]{12}|[0-9]{13}|[0-9]{10}-[0-9]{3})(?:-U[0-9]{3})?$/.test(username)||
           password.length<1||password.length>256||ckey.length>150||!cvalue||cvalue.length>20)
         return response({error:'invalid_login_details'},400,origin);
       const r=await upstream(GDT_BASE+'/api/security-taxpayer/authenticate',{

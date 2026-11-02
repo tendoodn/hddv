@@ -1,4 +1,4 @@
-// AutoTax Web PDF renderer adapter: same engine as Extension, fonts fetched from the repository's public raw assets.
+// AutoTax Web PDF renderer adapter: same engine as Extension, fonts loaded from public website runtime assets.
 // Tự dựng PDF bản thể hiện hóa đơn ngay trên máy từ dữ liệu của cổng (XML gốc, hoặc JSON chi tiết với HĐ không mã).
 // Không phải PDF gốc của nhà cung cấp HĐĐT (cần captcha ở cổng tra cứu của họ) và không gửi dữ liệu đi đâu.
 // Không thư viện ngoài: tự ghi PDF 1.7, nhúng font Roboto rút gọn (src/content/fonts, tạo bằng scripts/build-pdf-font.py)
@@ -85,7 +85,7 @@
 
   let fontsPromise = null;
   const loadFonts = () => (fontsPromise ||= Promise.all(['regular', 'bold', 'italic'].map(async (n) =>
-    parseFont(new Uint8Array(await (await fetch(`https://raw.githubusercontent.com/tendoodn/hddv/main/autotax/src/content/fonts/pdf-${n}.ttf`)).arrayBuffer())))));
+    parseFont(new Uint8Array(await (await fetch(`./web/fonts/pdf-${n}.ttf`)).arrayBuffer())))));
 
   const deflate = async (bytes) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
 

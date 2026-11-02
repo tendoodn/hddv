@@ -27,18 +27,19 @@ console.log('MST front-end, broker, source labels, three tax-ID kinds and app/ex
 if(process.env.LIVE_MST_LOOKUP==='1'){
  // This is a publicly documented demo corporate tax ID, NOT a personal identifier.
  const url='https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-mst-lookup';
- try{
-  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({codes:['0316794479']}),signal:AbortSignal.timeout(17000)});
-  const data=await res.json();
-  assert.equal(res.status,200,'Public MST broker must return HTTP 200');
-  assert.equal(data?.count,1);
-  assert.equal(data.data[0].mst,'0316794479');
-  console.log('LIVE MST broker:',JSON.stringify({
-   http:res.status,verified:data.data[0].verified,
-   source:data.data[0].source,error:data.data[0].error||null}));
-  if(!data.data[0].verified)console.log('::warning::MST provider not verified; page must show unverified rather than fabricate taxpayer details.');
- }catch(e){
-  console.log('::warning::Broker live check unreachable: '+e.message);
+ for(const region of ['ap-southeast-1','ap-northeast-1','eu-west-1']){
+  try{
+   const res=await fetch(url+'?forceFunctionRegion='+region,
+    {method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({codes:['0316794479']}),signal:AbortSignal.timeout(17000)});
+   const data=await res.json();
+   assert.equal(res.status,200,'Public MST broker must return HTTP 200');
+   assert.equal(data?.count,1);
+   assert.equal(data.data[0].mst,'0316794479');
+   console.log('LIVE MST broker:',JSON.stringify({region,http:res.status,
+    verified:data.data[0].verified,source:data.data[0].source,
+    error:data.data[0].error||null}));
+   if(!data.data[0].verified)console.log('::warning::MST provider not verified in '+region);
+  }catch(e){console.log('::warning::Broker live check '+region+' unavailable: '+e.message)}
  }
 }

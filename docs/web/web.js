@@ -196,7 +196,7 @@ async function refreshAccount(){
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   selectedMode=ent.data?.mode||'mst';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
-  window.GdtVault?.setUser(account.id,profileMsts);
+  await window.GdtVault?.setUser(account.id,profileMsts);
   if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
   else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
@@ -308,21 +308,40 @@ async function search(e){
  }catch(error){show(error.message||'Tra cứu không thành công.');}
  finally{busyState(false)}
 }
+const pendingDetails=new Map();
 async function loadDetails(scopeRows=rows){
  if(!scopeRows.length)throw Error('Chưa có hóa đơn để xuất.');
- let done=0;
- for(const row of scopeRows){
-  if(stopped)throw Error('Đã dừng khi tải chi tiết.');
-  if(details.has(idOf(row)))continue;
-  try{const v=await HDDT.fetchInvoice(row,()=>stopped);
-   details.set(idOf(row),v);
-  }catch(e){details.set(idOf(row),{error:e.message});}
-  progress('Đang tải chi tiết '+(++done)+'/'+scopeRows.length+' hóa đơn');
- }
+ const queue=scopeRows.filter(r=>!details.has(idOf(r)));
+ let next=0,completed=0;
+ const worker=async()=>{
+  for(;;){
+   if(stopped)return;
+   const index=next++;
+   if(index>=queue.length)return;
+   const row=queue[index],id=idOf(row);
+   try{
+    if(!pendingDetails.has(id)){
+     const request=HDDT.fetchInvoice(row,()=>stopped).then(
+      result=>{details.set(id,result);return result},
+      error=>{details.set(id,{error:error.message});return null}
+     ).finally(()=>pendingDetails.delete(id));
+     pendingDetails.set(id,request);
+    }
+    await pendingDetails.get(id);
+   }catch(error){details.set(id,{error:error.message})}
+   completed++;
+   progress('Đã đọc '+completed+'/'+queue.length+' chi tiết hóa đơn (tối đa 3 yêu cầu song song)');
+  }
+ };
+ await Promise.all(Array.from({length:Math.min(3,queue.length)},()=>worker()));
  const good=new Map();
- for(const row of scopeRows){const v=details.get(idOf(row));if(v&&!v.error)good.set(row.key,v)}
+ for(const row of scopeRows){
+  const result=details.get(idOf(row));
+  if(result&&!result.error)good.set(row.key,result);
+ }
  return good;
 }
+
 function download(filename,data,mime){
  const b=new Blob([data],{type:mime});
  const u=URL.createObjectURL(b),a=document.createElement('a');

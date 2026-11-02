@@ -42,16 +42,27 @@ begin
  if missing is not null then
   raise exception 'Expected FK indexes are missing: %', missing;
  end if;
- if (select count(*) from pg_policies
-   where schemaname='public'
-   and (tablename, policyname) in (
-    ('addon_trial_claims','trial claim self read'),
+ -- Trial policy is optional in legacy test installations, but every
+ -- policy that exists must use an initPlan for auth.uid().
+ if exists (
+   select 1 from pg_policies where schemaname='public'
+     and (tablename, policyname) in (
+      ('addon_trial_claims','trial claim self read'),
+      ('addon_package_lots','addon_lots_read'),
+      ('addon_invoice_deductions','addon_deductions_read'),
+      ('addon_mst_assignments','addon_mst_assignments_read')
+     )
+     and qual not like '%SELECT auth.uid()%'
+ ) then
+  raise exception 'An optimized read policy still calls auth.uid() per row';
+ end if;
+ if (select count(*) from pg_policies where schemaname='public'
+   and (tablename,policyname) in (
     ('addon_package_lots','addon_lots_read'),
     ('addon_invoice_deductions','addon_deductions_read'),
     ('addon_mst_assignments','addon_mst_assignments_read')
-   )
-   and qual like '%SELECT auth.uid()%') <> 4 then
-  raise exception 'Four optimized read policies must keep initPlan auth identity';
+   )) <> 3 then
+  raise exception 'Expected shared entitlement read policies are missing';
  end if;
 end $$;
 select 'AutoTax security, FK index and RLS optimization checks passed' as result;

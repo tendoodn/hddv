@@ -181,6 +181,22 @@ assert(panelJs.includes("key: 'thisYear', label: 'Cả năm'"),'Missing current-
 const orderedSheets=['reduction','hdkd','risk','seller','gtgt','adjust','tendoo'];
 const listedSheets=[...panelHtml.matchAll(/name="sheet" value="([^"]+)"/g)].map(m=>m[1]);
 assert.deepEqual(listedSheets,orderedSheets,'Incorrect Excel sheet ordering');
+const visibleSheetGrid=panelHtml.match(/<div class="checks sheet-grid">([\s\S]*?)<\/div>/)?.[1]||'';
+const sixSheets=[...visibleSheetGrid.matchAll(/name="sheet" value="([^"]+)"/g)].map(m=>m[1]);
+assert.deepEqual(sixSheets,['reduction','hdkd','risk','seller','gtgt','adjust'],
+ 'Six Excel sheet options must always be visible; warehouse export is separate');
+assert(/id="hdkdOpt"[^>]*><input[^>]*value="hdkd" checked/.test(panelHtml),
+ 'HĐKD sheet must be checked by default');
+assert(!panelHtml.includes('class="sheet-more"')&&!panelHtml.includes('id="hdkdOpt" class="check" title="Mẫu 01-2/BK-HĐKD cho hộ kinh doanh, lập từ hóa đơn mua vào" hidden'),
+ 'No collapsed or hidden optional Excel sheets');
+assert(panelCss.includes('.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'),
+ 'All four download formats must stay in one row');
+assert(!panelJs.includes("$(id).hidden = !show"),
+ 'Sheet choices must not be disabled based on the current MST business type');
+assert(admin.indexOf('id="extensionConfigPanel"')<admin.indexOf('id="app"'),
+ 'Admin settings must be separate from the customer manager and shown after authorization');
+assert(admin.includes('id="extensionSettingsNav"')&&admin.includes('extensionConfigPanel").classList.remove("hidden")'),
+ 'Admin navigation to extension settings must show only to authorized admins');
 assert(!panelHtml.includes('Cập nhật mới:')&&!panelHtml.includes('Phiên bản sử dụng nội bộ'),'Obsolete extension notices must be removed');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');

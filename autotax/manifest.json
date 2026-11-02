@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AutoTax - Công cụ tải HĐĐT",
   "short_name": "AutoTax",
-  "version": "3.3.5",
+  "version": "3.3.6",
   "description": "AutoTax - Công cụ hỗ trợ tra cứu và tải hóa đơn điện tử.",
   "icons": {
     "16": "icons/icon-16.png",

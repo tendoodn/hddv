@@ -17,7 +17,7 @@ assert(html.includes('Không xác định được tồn đầu'),
  'K formula caveat must be visible');
 assert(html.includes('href="./mst.html"'),'Top bar must expose quick taxpayer lookup');
 assert(quick.includes('id="mstInput"')&&quick.includes('id="downloadMst"')&&
- quickJs.includes('https://invoy.io.vn/api/v1/public/lookup-mst?mst='),
+ quickJs.includes('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-mst-lookup'),
  'Quick MST lookup must exist with clearly identified public data provider');
 assert(logic.includes("filterRows()")&&logic.includes("kind==='all'||row.kind===kind")&&
  logic.includes("shown.filter(r=>checked.has(keyOf(r)))"),

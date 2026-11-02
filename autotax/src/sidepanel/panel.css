@@ -597,3 +597,17 @@ button.chip{width:100%;min-width:0;min-height:34px;height:auto;padding:4px 2px;f
 .sheet-stock-export{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line)}
 .sheet-stock-export .check{display:flex;align-items:center;gap:8px;margin:0;padding:8px;border:1px solid var(--line);border-radius:9px}
 .sheet-stock-export .check:has(input:checked){background:var(--accent-soft);border-color:var(--accent-line)}
+
+/* AutoTax v3.4 — MST/invoice mode separation and account-scoped profile labels. */
+.lic-mode-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lic-mode-toolbar>.license-mode{flex:1 1 195px;min-width:0}
+.lic-mst-toggle{flex:none;font-size:11px;font-weight:800;border-radius:9px;border:1px solid #64748b;background:#111827;color:#fff;padding:9px 11px;cursor:pointer}
+.lic-mst-toggle[hidden],#lic-mst-manager[hidden]{display:none!important}
+.mst-profile-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.mst-profile-actions button{font-size:10px;padding:6px 8px}
+.mst-profile-row .mst-display-name{display:block;color:#334155;font-weight:700;margin:4px 0}
+.quick-links:has(.quick-link[data-close-panel]){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.quick-links .quick-link[data-close-panel]{flex-direction:column;text-align:center;align-items:center;padding:10px 5px;gap:6px;min-height:96px}
+.quick-links .quick-link-copy strong{font-size:11px}
+.quick-links .quick-link-copy>span{font-size:10px}
+.quick-links .quick-link-arrow{display:none}

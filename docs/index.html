@@ -58,7 +58,7 @@ button:hover:not(:disabled){filter:brightness(.97)}
 .portal-account-head{padding-bottom:8px;border-bottom:1px solid var(--tendoo-line)}
 .portal-account-head strong{color:#930013;overflow-wrap:anywhere}
 .mst-accordion{padding:0 16px}
-.mst-accordion summary{cursor:pointer;list-style:none;font-weight:800;color:#b00014;padding:15px 0;display:flex;gap:10px;align-items:center}
+.mst-accordion h2{font-size:19px;margin:0 0 8px}.mst-row .mst-name{color:#4b5563;font-size:12px;margin-top:4px;font-weight:600}.mst-row .mst-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mst-accordion summary{cursor:pointer;list-style:none;font-weight:800;color:#b00014;padding:15px 0;display:flex;gap:10px;align-items:center}
 .mst-accordion summary::-webkit-details-marker{display:none}
 .mst-accordion summary span{padding:1px 9px;border-radius:15px;background:#fff1f2}
 .mst-accordion summary small{margin-left:auto}
@@ -137,14 +137,14 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 
  </div>
 
- <details id="mstProfilesWeb" class="panel mst-accordion">
-  <summary>Hồ sơ MST <span id="mstWebCount">0</span><small>▾ Xem / quản lý</small></summary>
+ <section id="mstProfilesWeb" class="panel mst-accordion mst-always-visible">
+  <h2>Hồ sơ MST đã liên kết <span id="mstWebCount">0</span></h2><p class="muted">Luôn hiển thị và đồng bộ theo tài khoản AutoTax trên Web, Add-on và Admin.</p>
   <form id="webAddMstForm" class="actions">
     <input id="webAddMst" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="MST 10 / 12 / 13 số (10-001)" aria-label="Thêm MST" required>
     <button type="submit">+ Thêm MST</button>
   </form>
   <div id="mstList"></div>
- </details>
+ </section>
 
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>

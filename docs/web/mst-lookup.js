@@ -112,11 +112,13 @@ async function requestBatch(batch){
  const zones=['ap-southeast-1','eu-west-1','ap-northeast-1'];
  let result=null,lastError=null;
  for(const zone of zones){
-  // Retry only IDs without verified responses. Never retry personal IDs without licensed source.
+  // Retry only transport/provider outages. Never amplify upstream 429 quotas or
+  // repeat definitive no-data responses across geographic Edge regions.
+  // Never retry personal IDs without an approved private-taxpayer source.
   const pending=(result||batch.map(()=>null))
    .map((value,index)=>({value,item:batch[index],index}))
-   .filter(({value,item})=>item.kind!=='personal'&&(!value||!value.verified)&&
-     (!value||['rate_limited','upstream_unavailable','not_found_or_unavailable'].includes(value.error)));
+   .filter(({value,item})=>item.kind!=='personal'&&
+     (!value||(!value.verified&&value.error==='upstream_unavailable')));
   const first=!result;
   const items=first?batch:pending.map(x=>x.item);
   if(!items.length)break;
@@ -126,7 +128,12 @@ async function requestBatch(batch){
    else for(let i=0;i<pending.length;i++){
     if(data[i]?.verified)result[pending[i].index]=data[i];
    }
-  }catch(error){lastError=error;continue}
+  }catch(error){
+   lastError=error;
+   // Server-side 429 is not a regional outage; honor the retry window.
+   if(error?.message?.includes('giới hạn lượt'))break;
+   continue;
+  }
  }
  if(result)return result;
  throw lastError||Error('Nguồn dữ liệu chưa phản hồi sau các tuyến được phép.');

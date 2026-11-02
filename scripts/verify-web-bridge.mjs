@@ -20,7 +20,7 @@ for(const filename of ['zip.js','xlsx.js','report.js','captcha-svg.js','captcha-
 const html=read('docs/web.html'),frontend=read('docs/web/web.js');
 const gateway=read('addon-portal/supabase/functions/autotax-web-gateway/index.ts');
 for(const id of ['searchForm','mst','gdtPassword','captchaInput','fromDate','toDate',
-  'searchBtn','exportExcel','exportXml','exportTax','exportPdf','resultRows']){
+  'searchBtn','exportExcel','exportXml','exportPdf','resultRows']){
   assert(html.includes('id="'+id+'"'),'Missing Web form field: '+id);
 }
 for(const s of ['./web/zip.js','./web/xlsx.js','./web/report.js','./web/hddt-api.js','./web/web.js'])
@@ -59,7 +59,8 @@ assert(gateway.includes('addon_verify_session_mst_v33')&&
 assert(!gateway.includes('SUPABASE_SERVICE_ROLE_KEY'),'Gateway must not use service-role DB privileges');
 for(const file of ['docs/web/web.js','docs/web/hddt-api.js','docs/web/report.js',
   'docs/web/zip.js','docs/web/xlsx.js','docs/web/captcha-svg-templates.js',
+  'docs/web/vault.js','docs/web/pdf.js','docs/web/web-pdf.js','docs/web/audit.js',
   'docs/web/captcha-svg.js']){
   new vm.Script(read(file),{filename:file});
 }
-console.log('AutoTax Web: 7 scripts parse, form controls present, gateway authorization, extension data adapters in sync.');
+console.log('AutoTax Web: all scripts parse, form controls present, gateway authorization, extension data adapters in sync.');

@@ -125,8 +125,8 @@ async function create(rows){
   'PDF_goc_nha_phat_hanh: Tap PDF goc lay truc tiep tu tep nha cung cap hoac duong dan PDF hop le.',
   'Che do bat buoc PDF goc: khong tao PDF the hien thay the va khong su dung PDF kem cong Thue chua ro nguon.',
   'PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH: File PDF duoc nguoi dung gan thu cong, khong tu dong xac minh chu ky so hay nguon goc.',
-  'Neu khong co PDF goc, xem danh sach hoa don that bai va link/ma tra cuu o cuoi tep.'
-  'Tep nguoi dung gan thu cong chi duoc gan nhan CHUA XAC MINH chu ky, khong la PDF goc duoc AutoTax xac thuc.'
+  'Neu khong co PDF goc, xem danh sach hoa don that bai va link/ma tra cuu o cuoi tep.',
+  'Tep nguoi dung gan thu cong chi duoc gan nhan CHUA XAC MINH chu ky, khong la PDF goc duoc AutoTax xac thuc.',
   'Neu nha cung cap yeu cau ma tra cuu/CAPTCHA ma khong cho phep tai PDF truc tiep,',
   'AutoTax khong the lay PDF goc mot cach chac chan. Link va ma tra cuu duoc liet ke ben duoi.',
   'Tong '+results.length+' tap PDF; goc nha phat hanh '+originals+'; nguoi dung cung cap '+userSupplied+'; ban the hien '+rendered+'; loi '+errors.length+'.'

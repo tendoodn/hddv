@@ -76,7 +76,7 @@ function render(list,warnings=[]){
  checked.clear();visible=[];
  $('visibleKind').value='all';$('visibleMonth').value='';
  $('results').hidden=false;
- $('exportScope').value='all';
+ $('exportScope').value='selected';
  const st=totals(dataset);
  $('totalPayments').textContent=money(st.total);
  $('totalVat').textContent=money(st.vat);

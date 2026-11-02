@@ -20,7 +20,7 @@ const selected=name=>[...document.querySelectorAll('input[name="'+name+'"]:check
 const show=(msg,ok=false)=>{const box=$('notice');box.hidden=!msg;box.textContent=msg||'';box.classList.toggle('success',!!ok)};
 const progress=msg=>{$('progressText').textContent=msg;};
 const busyState=value=>{busy=!!value;$('progress').hidden=!value;$('searchBtn').disabled=!!value;
-  for(const id of ['exportExcel','exportXml','exportTax','exportPdf'])$(id).disabled=!!value;};
+  for(const id of ['exportExcel','exportXml','exportPdf'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
 window.WebTaxState=govSession;
 const showGatewayHelp=visible=>{$('gdtConnectionHelp').hidden=!visible;};
@@ -339,16 +339,13 @@ async function exportFile(kind){
    (window.WebResults?.exportSuffix?.()||'');
   const fileBase='AutoTax_'+safe(govtMst)+'_'+stamp;
   let detailMap=new Map();
-  if(kind!=='pdf')detailMap=await loadDetails(targetRows);
-  if(kind==='excel'||kind==='tax'){
+  if(kind==='excel'||kind==='xml')detailMap=await loadDetails(targetRows);
+  if(kind==='excel'){
    const book=Report.buildSheets(targetRows,detailMap,{
-    withLines:kind==='excel',withPdf:true,
-    sheets:kind==='excel'?
-      {reduction:true,hdkd:true,risk:true,seller:false,adjust:true,gtgt:false}:
-      {reduction:true,hdkd:true,risk:false,seller:false,adjust:false,gtgt:true}
+    withLines:true,withPdf:true,
+    sheets:{reduction:true,hdkd:true,risk:true,seller:false,adjust:true,gtgt:false}
    });
-   const name=kind==='tax'?'ToKhai_tham_khao_':'BangKe_';
-   download(name+fileBase+'.xlsx',Xlsx.buildXlsx(book),
+   download('BangKe_'+fileBase+'.xlsx',Xlsx.buildXlsx(book),
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
    show('Đã tạo Excel '+book.length+' sheet.'+(book.notes?.length?' Ghi chú: '+book.notes.join('; '):''),true);
   }else if(kind==='xml'){
@@ -364,21 +361,13 @@ async function exportFile(kind){
    if(!z.length)throw Error('Không tìm thấy XML gốc từ cổng Thuế trong danh sách hóa đơn. Không xuất dữ liệu giả.');
    download('HoaDon_XML_'+fileBase+'.zip',Zip.writeZip(z),'application/zip');
    show('Đã đóng gói '+z.length+' XML gốc từ cổng Thuế.',true);
-  }else{
-   const values=[['Loại','Ký hiệu','Số hóa đơn','Đơn vị phát hành','Link tra cứu PDF gốc','Mã tra cứu']];
-   for(const row of targetRows){
-    const p=HDDT.originalLookup(row,details.get(idOf(row))?.head);
-    values.push([row.kind,row.khhdon,row.shdon,p.name,p.link,p.code]);
-   }
-   const csv='\uFEFF'+values.map(line=>line.map(v=>{
-     const cell=String(v??'');
-     // Prevent invoice/provider content from becoming a spreadsheet formula.
-     const safeCell=/^[\s]*[=+\-@]/.test(cell)?"'"+cell:cell;
-     return '"'+safeCell.replace(/"/g,'""')+'"';
-    }).join(',')).join('\r\n');
-   download('LienKet_PDF_Goc_'+fileBase+'.csv',csv,'text/csv;charset=utf-8');
-   show('Đã tải danh sách liên kết để mở tra cứu PDF gốc trên website của đơn vị phát hành. Không phải file PDF gốc.',true);
-  }
+  }else if(kind==='pdf'){
+   if(!window.WebPdfExport)throw Error('Bộ xử lý PDF chưa tải xong; vui lòng làm mới trang.');
+   const result=await window.WebPdfExport.create(targetRows);
+   show('Đã xuất '+result.count+' PDF; '+result.originals+' PDF gốc của đơn vị phát hành và '+
+    result.rendered+' bản thể hiện từ dữ liệu cổng Thuế.'+
+    (result.errors.length?' Có '+result.errors.length+' hóa đơn chưa xuất được.':''),true);
+  }else{throw Error('Định dạng tải không được hỗ trợ.');}
  }catch(e){show('Không xuất được tệp: '+e.message)}
  finally{busyState(false)}
 }
@@ -423,7 +412,7 @@ function init(){
   window.GdtVault?.select(x);
  });
  $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
- for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportTax','tax'],['exportPdf','pdf']])
+ for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportPdf','pdf']])
   $(id).addEventListener('click',()=>exportFile(kind));
  window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value='';window.GdtVault?.lock()});
  refreshAccount();

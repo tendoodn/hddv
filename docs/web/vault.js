@@ -116,7 +116,6 @@ function init(){
  $('vaultUnlock').addEventListener('click',()=>void unlock());
  $('vaultForget').addEventListener('click',()=>void forget().catch(e=>status(e.message,true)));
  $('vaultLock').addEventListener('click',lock);
- $('mst').addEventListener('change',()=>select($('mst').value));
  window.addEventListener('pagehide',lock);
 }
 window.GdtVault={setUser,select,saveAfterLogin,lock,hasSaved};

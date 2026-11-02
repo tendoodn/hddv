@@ -52,7 +52,9 @@ const migrationNames=[
  '027_admin_order_search.sql',
  '028_mst_12_digit_trial_and_authorization.sql',
  '028_explicit_mst_profiles_and_session_lock.sql',
- '029_admin_extension_download_link.sql'
+ '029_admin_extension_download_link.sql',
+ '030_custom_package_delete_and_order.sql',
+ '031_user_sku_mapping_sync.sql'
 ];
 let sql='';
 for(const name of migrationNames){

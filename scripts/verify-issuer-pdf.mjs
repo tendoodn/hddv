@@ -53,7 +53,7 @@ assert(files.some(f=>f.name.startsWith('PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH/')
  'Unverified PDF must be in an explicitly labelled folder.');
 assert(files.some(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt'));
 assert(files.find(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt').data
- .includes('khong tu dong xac minh chu ky so'),'Provenance guide missing.');
+ .includes('chua tu kiem tra chu ky so'),'Provenance guide missing.');
 session.user={id:'account-2'};
 assert.equal(api.hasUserPdf(row),false,'Previously attached PDFs must not leak across signed-in accounts.');
 assert.throws(()=>api.attachUserPdf({...row,shdon:''},bytes,'unbound.pdf'),/hóa đơn/);

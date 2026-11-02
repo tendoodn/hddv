@@ -37,6 +37,7 @@ function clearGov(){
  $('captchaBox').hidden=true;showGatewayHelp(false);
  $('captchaStatus').textContent='Mã xác nhận sẽ được xử lý tự động khi tra cứu.';
  $('results').hidden=true;
+ $('searchTotals').hidden=true;
 }
 async function authedRequest(op,data={},signal){
  const {data:sessionData}=await client.auth.getSession();

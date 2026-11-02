@@ -58,11 +58,12 @@ function issuerPdfURL(value){
   throw Error('Đây là trang tra cứu, chưa phải liên kết tải PDF trực tiếp.');
  return u;
 }
-async function fetchIssuerPdf(value){
+async function fetchIssuerPdf(value,authenticated=false){
  const u=issuerPdfURL(value);
  // All issuer domains are declared as required host permissions in V1.1.
- // No password, browser cookies or session is included in this request.
- const res=await fetch(u.href,{method:'GET',credentials:'omit',redirect:'error',cache:'no-store',
+ // Authentication is used ONLY after an explicit click in the real issuer tab.
+ // Default automated requests never attach login cookies or security codes.
+ const res=await fetch(u.href,{method:'GET',credentials:authenticated?'include':'omit',redirect:'error',cache:'no-store',
   signal:AbortSignal.timeout(16000),headers:{Accept:'application/pdf,application/octet-stream'}});
  if(!res.ok)throw Error('Máy chủ nhà phát hành trả HTTP '+res.status);
  const cap=12*1024*1024,n=Number(res.headers.get('content-length')||0);
@@ -90,7 +91,104 @@ async function fetchIssuerPdf(value){
  return {ok:true,pdfBase64:btoa(chars),origin:u.hostname};
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+// V1.1 assisted retrieval: the issuer's own CAPTCHA/authentication happens in
+// its real page. Only the user can start a lookup and authorize PDF capture.
+// Never persist PDF bytes or tax passwords; session queue expires after 2h.
+const ISSUER_QUEUE='autotax_issuer_lookup_queue_v11';
+const ISSUER_TTL=2*60*60*1000;
+const issuerGroup=host=>[...ISSUER_DOMAINS].find(domain=>
+ host===domain||host.endsWith('.'+domain));
+function lookupURL(value){
+ const u=new URL(String(value||''));
+ if(u.protocol!=='https:'||u.username||u.password||(u.port&&u.port!=='443')||
+  !issuerGroup(u.hostname.toLowerCase()))throw Error('Link không thuộc 21 cổng nhà phát hành được duyệt.');
+ return u;
+}
+async function issuerQueue(){
+ const a=(await chrome.storage.session.get(ISSUER_QUEUE))[ISSUER_QUEUE];
+ return (Array.isArray(a)?a:[]).filter(x=>x.addedAt>Date.now()-ISSUER_TTL).slice(-100);
+}
+async function issuerAdd(record,sender){
+ if(!/^https:\/\/hoadondientu\.gdt\.gov\.vn\//.test(sender?.url||''))
+  throw Error('Chỉ trang Thuế đã đăng nhập được thêm link tra cứu hóa đơn.');
+ const u=lookupURL(record?.link),code=String(record?.code||'').trim();
+ if(!code||code.length>300||u.href.length>2048)throw Error('Thiếu mã hoặc link tra cứu hợp lệ.');
+ const invoice=String(record?.invoice||'').replace(/[^0-9A-Za-z_.-]/g,'_').slice(0,90);
+ const key=[u.hostname,invoice,code].join('|');
+ const a=await issuerQueue();
+ if(!a.some(x=>x.key===key))a.push({
+  key,link:u.href,code,invoice,addedAt:Date.now(),opened:false
+ });
+ await chrome.storage.session.set({[ISSUER_QUEUE]:a.slice(-100)});
+ return {ok:true,count:a.length};
+}
+async function issuerOpenNext(){
+ const all=await issuerQueue();
+ const item=all.find(x=>!x.opened)||all[0];
+ if(!item)return {ok:false,error:'Chưa có hóa đơn cần mở. Hãy bật PDF gốc và tải hóa đơn trên cổng Thuế trước.'};
+ const tab=await chrome.tabs.create({url:item.link,active:true});
+ await chrome.storage.session.set({['autotax_issuer_tab_'+tab.id]:{...item,tabId:tab.id}});
+ item.opened=true;
+ await chrome.storage.session.set({[ISSUER_QUEUE]:all});
+ return {ok:true,tabId:tab.id,invoice:item.invoice,count:all.length};
+}
+async function issuerSession(sender){
+ const tabId=sender?.tab?.id;
+ if(!Number.isInteger(tabId))throw Error('Yêu cầu cần xuất phát từ trang nhà phát hành.');
+ const item=(await chrome.storage.session.get('autotax_issuer_tab_'+tabId))
+  ['autotax_issuer_tab_'+tabId];
+ if(!item||Date.now()-item.addedAt>ISSUER_TTL)throw Error('Phiên tra cứu đã hết hạn.');
+ const current=lookupURL(sender?.url),initial=lookupURL(item.link);
+ if(issuerGroup(current.hostname)!==issuerGroup(initial.hostname))
+  throw Error('Trang hiện tại không cùng nhà phát hành với hóa đơn.');
+ return item;
+}
+async function issuerDownloadFromPage(message,sender){
+ const item=await issuerSession(sender);
+ const candidate=issuerPdfURL(message?.url);
+ if(issuerGroup(candidate.hostname)!==issuerGroup(new URL(item.link).hostname))
+  throw Error('PDF phải cùng nhà phát hành của hóa đơn.');
+ const pdf=await fetchIssuerPdf(candidate.href,true);
+ const safeInvoice=(item.invoice||'HoaDon').replace(/[^0-9A-Za-z_.-]/g,'_');
+ const filename='AutoTax/PDF_Goc_Nha_Phat_Hanh/'+safeInvoice+'.pdf';
+ const downloadId=await chrome.downloads.download({
+  url:'data:application/pdf;base64,'+pdf.pdfBase64,filename,
+  conflictAction:'uniquify',saveAs:false
+ });
+ await waitForDownload(downloadId);
+ const list=await issuerQueue();
+ await chrome.storage.session.set({[ISSUER_QUEUE]:list.filter(x=>x.key!==item.key)});
+ await chrome.storage.session.remove('autotax_issuer_tab_'+item.tabId);
+ return {ok:true,filename,remaining:Math.max(0,list.length-1),
+  note:'Đã tải PDF thực. Chữ ký và nội dung hóa đơn cần được đối chiếu riêng.'};
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if(msg?.type==='issuer-queue-add'){
+    issuerAdd(msg,sender).then(reply,e=>reply({ok:false,error:e.message}));
+    return true;
+  }
+  if(msg?.type==='issuer-queue-count'){
+    issuerQueue().then(a=>reply({ok:true,count:a.length}),
+      e=>reply({ok:false,error:e.message}));
+    return true;
+  }
+  if(msg?.type==='issuer-open-next'){
+    if(!sender?.url?.startsWith(chrome.runtime.getURL('src/sidepanel/')))
+      return reply({ok:false,error:'Chỉ Add-on mới mở phiên tra cứu.'}),false;
+    issuerOpenNext().then(reply,e=>reply({ok:false,error:e.message}));
+    return true;
+  }
+  if(msg?.type==='issuer-assist-state'){
+    issuerSession(sender).then(item=>reply({ok:true,invoice:item.invoice,code:item.code}),
+      e=>reply({ok:false,error:e.message}));
+    return true;
+  }
+  if(msg?.type==='issuer-assist-download'){
+    issuerDownloadFromPage(msg,sender).then(reply,e=>reply({ok:false,error:e.message}));
+    return true;
+  }
+
   if (msg.type === 'stock-tab-mapping') {
     (async()=>{
       const tabId=msg.portalTabId,requestId=String(msg.requestId||'');

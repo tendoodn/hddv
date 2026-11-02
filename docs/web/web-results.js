@@ -78,6 +78,9 @@ function render(list,warnings=[]){
  const st=totals(dataset);
  $('totalPayments').textContent=money(st.total);
  $('totalVat').textContent=money(st.vat);
+ $('searchTotalPay').textContent=money(st.total);
+ $('searchTotalVat').textContent=money(st.vat);
+ $('searchTotals').hidden=false;
  $('purchaseSaleTotals').textContent=money(st.buy)+' / '+money(st.sold);
  $('resultSummary').textContent='Tìm thấy '+dataset.length+' hóa đơn · mua vào '+
   dataset.filter(r=>r.kind==='purchase').length+' · bán ra '+

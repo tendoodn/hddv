@@ -37,12 +37,18 @@ async function pdfForInvoice(row,index,total){
  const detail=await app.fetchDetail(row);
  const lookup=window.HDDT.originalLookup(row,detail.head);
  // First use original supplier PDF included in source files. No custom-rendered PDF is labelled original.
- let bytes=fromSourceFiles(detail);
- if(!bytes&&lookup.link){
+ let bytes=null;
+ if(lookup.link){
   try{bytes=await readPdf(lookup.link)}catch{/* Provider may require CAPTCHA, cookies or block CORS. */}
  }
  if(bytes&&validPdf(bytes)){
   return {name:'PDF_goc_nha_phat_hanh/'+name+'.pdf',data:bytes,kind:'original'};
+ }
+ // PDF bundled with tax-portal files has unknown issuer provenance: keep it distinct.
+ const bundled=fromSourceFiles(detail);
+ if(bundled){
+  return {name:'PDF_dinh_kem_du_lieu_CQT/'+name+'.pdf',data:bundled,kind:'tax_attachment',
+   providerName:lookup.name||'',providerLink:lookup.link||'',lookupCode:lookup.code||''};
  }
  let input=detail,sourceRow=row,prefix='BanTheHien_GDT',sourceOriginal=false;
  if(row.gocRef){
@@ -74,23 +80,25 @@ async function create(rows){
  await Promise.all(Array.from({length:Math.min(2,rows.length)},worker));
  const results=outputs.filter(Boolean),originals=results.filter(x=>x.kind==='original').length,
   rendered=results.filter(x=>x.kind==='representation').length,
+  attachments=results.filter(x=>x.kind==='tax_attachment').length,
   sourceOriginals=results.filter(x=>x.sourceOriginal).length;
  if(!results.length)throw Error('Không tải được PDF nào. '+errors.slice(0,2).join('; '));
  const guide=[
   'AutoTax Web – PHAN BIET FILE PDF',
   'PDF_goc_nha_phat_hanh: Tap PDF goc lay truc tiep tu tep nha cung cap hoac duong dan PDF hop le.',
+  'PDF_dinh_kem_du_lieu_CQT: PDF dinh kem voi du lieu cong Thue, CHUA XAC THUC nguon nha phat hanh.',
   'BanTheHien_GDT: Ban the hien PDF do AutoTax tu dung tu XML/JSON cong Thue, KHONG PHAI PDF GOC.',
   'BanTheHien_HoaDonGoc_GDT: Ban the hien tu du lieu hoa don goc tra duoc qua cong Thue.',
   'Neu nha cung cap yeu cau ma tra cuu/CAPTCHA ma khong cho phep tai PDF truc tiep,',
   'AutoTax khong the lay PDF goc mot cach chac chan. Link va ma tra cuu duoc liet ke ben duoi.',
   'Tong '+results.length+' tap PDF; goc nha phat hanh '+originals+'; ban the hien '+rendered+'; loi '+errors.length+'.'
  ];
- for(const x of results.filter(x=>x.kind==='representation'&&(x.providerLink||x.lookupCode))){
+ for(const x of results.filter(x=>x.kind!=='original'&&(x.providerLink||x.lookupCode))){
   guide.push('',x.name,'Nha phat hanh: '+x.providerName,'Link tra cuu: '+x.providerLink,
    'Ma bao mat / ma tra cuu (neu co): '+(x.lookupCode||'Chua co trong du lieu cong Thue'));
  }
  if(errors.length)guide.push('LOI:',...errors);
- if(results.length===1&&!errors.length){
+ if(results.length===1&&!errors.length&&results[0].kind==='original'){
   const file=results[0];app.download(file.name.split('/').pop(),file.data,'application/pdf');
  }else{
   const files=results.map(x=>({name:x.name,data:x.data}));
@@ -98,7 +106,7 @@ async function create(rows){
   app.download('AutoTax_PDF_'+safe(app.getMst())+'_'+new Date().toISOString().slice(0,10)+'.zip',
    window.Zip.writeZip(files),'application/zip');
  }
- return {count:results.length,originals,rendered,sourceOriginals,errors};
+ return {count:results.length,originals,rendered,attachments,sourceOriginals,errors};
 }
 
 window.WebPdfExport={create};

@@ -63,8 +63,8 @@ const context={chrome,URL,fetch,AbortSignal,Uint8Array,Error,Array,Number,String
  Set,Promise,TextEncoder,btoa};vm.createContext(context);
 vm.runInContext(worker+'\nthis.testAPI={issuerPdfURL,fetchIssuerPdf}',context);
 const api=context.testAPI;
-assert.throws(()=>api.issuerPdfURL('https://attacker.example/a.pdf'),/cho phép/);
-assert.throws(()=>api.issuerPdfURL('http://tracuuhoadon.kiotviet.vn/a.pdf'),/cho phép/);
+assert.throws(()=>api.issuerPdfURL('https://attacker.example/a.pdf'),/được phép/);
+assert.throws(()=>api.issuerPdfURL('http://tracuuhoadon.kiotviet.vn/a.pdf'),/được phép/);
 assert.throws(()=>api.issuerPdfURL('https://tracuuhoadon.kiotviet.vn/tra-cuu'),/chưa phải/);
 const res=await api.fetchIssuerPdf('https://tracuuhoadon.kiotviet.vn/sample.pdf');
 assert.equal(res.ok,true);

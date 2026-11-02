@@ -32,6 +32,9 @@ assert(web.includes('id="mstPickerMenu"')&&web.includes('id="mstPickerToggle"')&
  'Web must provide profile card selector and wrong tax password warning.');
 assert(!web.includes('id="vaultPassphrase"')&&!web.includes('id="vaultUnlock"')&&
  !admin.includes('data-reset-vault'),'Legacy vault management controls must be gone.');
+assert(webjs.includes('assignAutoMstName')&&webjs.includes('nameFromMatchedInvoices')&&
+ license.includes('autoNameFromGdt')&&ui.includes('AutoTaxGdtProfile'),
+ 'Profile name must come from verified GDT account or matching invoice buyer/seller.');
 assert(picker.includes("display_name")&&picker.includes('indexedDB.open(DB_NAME,1)')&&
  picker.includes('crypto.subtle.encrypt')&&picker.includes('crypto.subtle.decrypt')&&
  picker.includes("false,['encrypt','decrypt']")&&picker.includes("entryKey(mst)"),
@@ -43,9 +46,10 @@ assert(!web.includes('id="exportScope"')&&
  results.includes('return selected.length?selected:shown;'),
  'Export selected visible invoices or all filtered invoices automatically.');
 assert(pdf.includes('PDF_goc_nha_phat_hanh')&&
- !pdf.includes('window.Pdf.buildInvoicePdf(')&&
+ pdf.includes('window.Pdf.buildInvoicePdf(row,detail,lookup)')&&
+ pdf.includes('decision.shouldReconstruct')&&
  pdf.includes('NGUON_PDF_MA_TRA_CUU.txt'),
- 'Strict original PDF export must not fabricate PDF representations.');
+ 'V1.1 must prioritize issuer originals and rebuild PDF only without lookup metadata.');
 assert(adminjs.includes('addon_admin_set_mst_profile_name')&&
  adminjs.includes('a.display_name')&&
  admin.includes('<th>Tên hồ sơ</th>'),
@@ -65,4 +69,4 @@ for(const filePath of ['docs/customer.js','docs/web/web.js','docs/web/vault.js',
  'autotax/src/license/license.js']){
  new vm.Script(file(filePath),{filename:filePath});
 }
-console.log('AutoTax 3.4 MST sync, mode toggle, dark logo, encrypted local credentials and original-PDF policy passed.');
+console.log('AutoTax 1.1 account naming, mode toggle, credential privacy and PDF routing passed.');

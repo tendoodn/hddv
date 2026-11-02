@@ -68,9 +68,15 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 /* Portal shares the compact red account layout from the extension. */
 .extension-download-link{display:inline-flex;align-items:center;padding:10px 13px;border-radius:9px;background:var(--tendoo);color:#fff;text-decoration:none;font-size:13px;font-weight:750}
 .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
-.account-quick-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.account-quick-actions .extension-download-link{white-space:nowrap;min-height:38px;justify-content:center;align-items:center}
-@media(max-width:480px){.portal-account-head .account-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:5px}.account-quick-actions .extension-download-link,.account-quick-actions button{min-width:0;white-space:normal;text-align:center;padding:9px 5px;font-size:11px}}
+/* Five account actions always stay on one line. Narrow screens scroll this row horizontally. */
+.portal-account-head{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.account-quick-actions{display:grid;grid-template-columns:repeat(5,minmax(117px,1fr));gap:7px;width:100%;overflow-x:auto;padding-bottom:4px}
+.account-quick-actions .account-link-btn,.account-quick-actions button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:39px;height:auto;min-width:0;margin:0;padding:7px 8px;text-align:center;white-space:nowrap;font-size:12px;line-height:1.15;border-radius:9px;text-decoration:none;font-weight:750}
+.account-quick-actions .account-link-btn{border:1px solid var(--tendoo-line);background:#fff1f2;color:var(--tendoo-dark)}
+.account-quick-actions .account-link-btn:hover{background:#ffe4e6}
+.account-quick-actions .extension-download-link{border-color:var(--tendoo);background:var(--tendoo);color:#fff}
+.account-quick-actions .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+@media(max-width:600px){.portal-account-head .account-quick-actions{grid-template-columns:repeat(5,minmax(124px,1fr));gap:5px;max-width:100%}}
 
 .portal-header-actions{gap:8px;margin:0}
 .portal-admin-link{display:inline-flex;align-items:center;padding:10px 13px;border:1px solid var(--tendoo-line);border-radius:9px;background:#fff1f2;color:var(--tendoo-dark);font-size:13px;font-weight:750;text-decoration:none}
@@ -106,7 +112,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 </section>
 <section id="dashboard" hidden>
  <div class="panel">
-  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><div class="actions account-quick-actions"><a id="extensionDownloadBtn" class="extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">⬇ Tải Extension</a><button id="refreshBtn" class="secondary" title="Làm mới">↻ Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></div></div>
+  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tendoodn.github.io/t/k.html" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tendoodn.github.io/t/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="refreshBtn" class="secondary" title="Làm mới">Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
   <div class="portal-mode-toolbar">
    <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><p class="muted">Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</p></div>

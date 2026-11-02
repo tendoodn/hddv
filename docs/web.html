@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#09090b">
 <title>AutoTax Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=1">
+<link rel="stylesheet" href="./web/web.css?v=2">
 </head>
 <body>
 <main class="wrap">
@@ -40,7 +40,7 @@
           <div class="date-pair"><input type="date" id="fromDate" name="fromDate" required><input type="date" id="toDate" name="toDate" required aria-label="Đến ngày"></div>
         </div>
         <div class="field field-note">
-          <label>Phiên làm việc</label><p id="gdtStatus">Cần xác thực cổng Thuế trước khi tra cứu. Mật khẩu không được lưu.</p>
+          <label>Phiên làm việc</label><p id="gdtStatus">Tự xác thực khi bấm Tìm kiếm. Mật khẩu không được lưu.</p><p id="captchaStatus" class="captcha-status" aria-live="polite">AutoTax sẽ tự nhận dạng CAPTCHA. Bạn chỉ cần MST và mật khẩu.</p>
           <button id="clearGdt" type="button" class="text-btn">Xóa phiên Thuế</button>
         </div>
         <fieldset class="field checks"><legend>Loại hóa đơn <em>*</em></legend>
@@ -52,13 +52,13 @@
           <label class="check"><input type="checkbox" name="form" value="mtt" checked><span>Hóa đơn máy tính tiền</span></label>
         </fieldset>
       </div>
-      <div id="captchaBox" class="captcha-row">
-        <div class="captcha-info"><label for="captchaInput">Mã xác nhận cổng Thuế <em>*</em></label><span>Nhập đúng chữ trên ảnh, có phân biệt hoa thường.</span></div>
+      <div id="captchaBox" class="captcha-row" hidden>
+        <div class="captcha-info"><label for="captchaInput">Nhập CAPTCHA thủ công khi cần</label><span>Chỉ hiện khi AutoTax không nhận dạng được mã. Giữ nguyên chữ hoa/thường.</span></div>
         <img id="captchaImage" alt="Ảnh CAPTCHA từ cổng Thuế" width="172" height="56">
-        <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Nhập CAPTCHA" autocomplete="off">
+        <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Mã trên ảnh (dự phòng)" autocomplete="off">
         <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
       </div>
-      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không ghi vào hồ sơ, lịch sử hoặc bộ nhớ trình duyệt. CAPTCHA có thể được yêu cầu lại theo chính sách của cổng Thuế.</div>
+      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không ghi vào hồ sơ, lịch sử hoặc bộ nhớ trình duyệt. AutoTax tự nhận dạng CAPTCHA SVG trên thiết bị khi khả dụng; nếu cổng đổi cơ chế xác thực, hệ thống sẽ yêu cầu nhập thủ công.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
     </form>
@@ -86,5 +86,5 @@
 <script src="./web/captcha-svg.js?v=1"></script>
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
-<script src="./web/web.js?v=1"></script>
+<script src="./web/web.js?v=2"></script>
 </body></html>

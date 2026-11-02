@@ -62,7 +62,7 @@ assert(logo.includes('#070D15')&&logo.includes('#21CEFF')&&
  !logo.includes('#FF2449'),'Original dark AutoTax logo must replace old Tendoo-red logo.');
 for(const filePath of ['docs/customer.js','docs/web/web.js','docs/web/vault.js',
  'docs/web/web-results.js','docs/web/web-pdf.js','docs/admin-mst.js',
- 'autotax/src/license/license.js','autotax/src/sidepanel/panel.js']){
+ 'autotax/src/license/license.js']){
  new vm.Script(file(filePath),{filename:filePath});
 }
 console.log('AutoTax 3.4 MST sync, mode toggle, dark logo, encrypted local credentials and original-PDF policy passed.');

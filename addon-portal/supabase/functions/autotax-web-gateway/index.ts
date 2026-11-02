@@ -53,7 +53,8 @@ Deno.serve(async(req) => {
     if(op==='captcha'){
       stage='gdt_captcha';
       const r=await upstream(GDT_BASE+'/api/captcha',{
-        headers:{Accept:'application/json','request-id':crypto.randomUUID()}},18000);
+        headers:{Accept:'application/json','request-id':crypto.randomUUID(),
+          'Action':'','End-Point':'/tra-cuu/tra-cuu-hoa-don'}},18000);
       const contentType=r.headers.get('content-type')||'';
       // The official portal sometimes returns an HTML maintenance page instead of JSON.
       if(!r.ok || !contentType.includes('json')){

@@ -13,6 +13,18 @@ begin
  if not has_function_privilege('authenticated',
     'public.addon_redeem_package_unlock(text)'::regprocedure,'EXECUTE') then
   raise exception 'Package unlock permission is missing for authenticated users'; end if;
+ if (select prosecdef from pg_proc where oid='public.addon_list_packages()'::regprocedure) then
+  raise exception 'Public package catalog reader must use SECURITY INVOKER';
+ end if;
+ if exists (
+  select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public' and p.prosecdef
+    and p.proname like 'addon_admin_%'
+    and has_function_privilege('authenticated',p.oid,'EXECUTE')
+    and position('addon_is_admin' in pg_get_functiondef(p.oid))=0
+ ) then
+  raise exception 'Authenticated administrator RPC lacks an explicit admin guard';
+ end if;
  select string_agg(expected_name,', ')
  into missing from (
   select unnest(array[

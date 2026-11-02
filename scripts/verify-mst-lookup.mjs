@@ -51,12 +51,12 @@ assert(frontend.includes("value.error==='upstream_unavailable'")&&
  !frontend.includes("['rate_limited','upstream_unavailable'"),
  'Frontend must not amplify provider rate limits through regional retries.');
 
-assert(frontend.includes('Cổng Thuế cá nhân')&&
+assert(frontend.includes('Mở cổng TNCN')&&
  frontend.includes('navigator.clipboard.writeText(v.mst)')&&
  read('docs/web/mst-official.js').includes('https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp')&&
  !frontend.includes('mstcn.jsp?mst='),
  'Personal 12-digit IDs require user-controlled official verification, without leaking ID in URL.');
-assert(page.includes('mst-lookup.js?v=7'),
+assert(page.includes('mst-lookup.js?v=8'),
  'Published MST page must refresh script after personal ID verification support.');
 new vm.Script(frontend,{filename:'docs/web/mst-lookup.js'});
 console.log('MST front-end, broker, source labels, three tax-ID kinds and app/extension validators passed.');

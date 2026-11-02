@@ -153,6 +153,14 @@ let tendooTemplate=TendooImport.builtinTemplate(stockPlatform);
 let tendooMappingRequest=null,tendooPendingNames=[],tendooSavedLinks={};
 const TENDOO_LINKS_KEY='autotax_tendoo_sku_links_v1';
 const STOCK_SETTINGS_KEY='autotax_stock_import_settings_v1';
+const SKU_SYNC_URL='https://ucqqjdsoyvvaxswzbhaw.supabase.co/rest/v1/addon_user_sku_mappings';
+const SKU_SYNC_APIKEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
+let skuSyncUserId=null,skuSyncAccessToken=null;
+const skuStorageKey=()=>skuSyncUserId+':'+tendooCatalogKey();
+const skuSyncHeaders=()=>({
+ apikey:SKU_SYNC_APIKEY,Authorization:'Bearer '+skuSyncAccessToken,
+ 'Content-Type':'application/json'
+});
 function tendooCatalogKey(){
   if(!tendooCatalog?.length)return '';
   let hash=2166136261;
@@ -163,22 +171,47 @@ function tendooCatalogKey(){
   return stockPlatform+'-catalog-'+tendooCatalog.length+'-'+hash.toString(16);
 }
 async function loadTendooLinks(){
-  tendooSavedLinks={};
-  if(!tendooCatalog?.length)return;
-  const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
-  const known=new Set(tendooCatalog.map(p=>p.sku));
-  tendooSavedLinks=Object.fromEntries(Object.entries(data[tendooCatalogKey()]||{})
-    .filter(([name,sku])=>name&&known.has(sku)));
+ tendooSavedLinks={};
+ if(!tendooCatalog?.length)return;
+ const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
+ const known=new Set(tendooCatalog.map(p=>p.sku));
+ tendooSavedLinks=Object.fromEntries(Object.entries(data[skuStorageKey()]||{})
+  .filter(([name,sku])=>name&&known.has(sku)));
+ if(skuSyncUserId&&skuSyncAccessToken){
+  try{
+   const query=new URLSearchParams({select:'product_key,sku',
+    user_id:'eq.'+skuSyncUserId,platform:'eq.'+stockPlatform,
+    catalog_key:'eq.'+tendooCatalogKey(),limit:'1000'});
+   const response=await fetch(SKU_SYNC_URL+'?'+query,{headers:skuSyncHeaders()});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   for(const item of await response.json()){
+    if(item.product_key&&known.has(item.sku))tendooSavedLinks[item.product_key]=item.sku;
+   }
+  }catch(error){log('Đang dùng liên kết SKU cục bộ: '+error.message,'warn')}
+ }
 }
 async function keepTendooLinks(mapping){
-  const known=new Set((tendooCatalog||[]).map(p=>p.sku));
-  const accepted=Object.fromEntries(Object.entries(mapping||{}).filter(([k,v])=>k&&known.has(v)));
-  if(!Object.keys(accepted).length)return;
-  const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
-  tendooSavedLinks={...tendooSavedLinks,...accepted};
-  data[tendooCatalogKey()]=tendooSavedLinks;
-  await chrome.storage.local.set({[TENDOO_LINKS_KEY]:data});
-  updateTendooUi();
+ const known=new Set((tendooCatalog||[]).map(p=>p.sku));
+ const accepted=Object.fromEntries(Object.entries(mapping||{}).filter(([k,v])=>k&&known.has(v)));
+ if(!Object.keys(accepted).length)return;
+ const data=(await chrome.storage.local.get(TENDOO_LINKS_KEY))[TENDOO_LINKS_KEY]||{};
+ tendooSavedLinks={...tendooSavedLinks,...accepted};
+ data[skuStorageKey()]=tendooSavedLinks;
+ await chrome.storage.local.set({[TENDOO_LINKS_KEY]:data});
+ if(skuSyncUserId&&skuSyncAccessToken){
+  const body=Object.entries(accepted).map(([product_key,sku])=>({
+   user_id:skuSyncUserId,platform:stockPlatform,catalog_key:tendooCatalogKey(),
+   product_key,sku,updated_at:new Date().toISOString()
+  }));
+  try{
+   const response=await fetch(SKU_SYNC_URL+'?on_conflict=user_id,platform,catalog_key,product_key',{
+    method:'POST',headers:{...skuSyncHeaders(),Prefer:'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify(body)
+   });
+   if(!response.ok)throw Error('HTTP '+response.status);
+  }catch(error){log('Đã lưu SKU cục bộ nhưng chưa đồng bộ Supabase: '+error.message,'warn')}
+ }
+ updateTendooUi();
 }
 const tendooDialog=$('tendooSettingsDialog');
 function tendooStatus(message,error=false){
@@ -597,7 +630,16 @@ preset('lastMonth');
 // Gate the existing invoice workflow using the server-verified license.
 let licenseAllowed=false;
 function applyLicense(st){licenseAllowed=!!st?.allowed;syncRun()}
-document.addEventListener('autotax-license-change',e=>applyLicense(e.detail?.license));
+document.addEventListener('autotax-license-change',e=>{
+ applyLicense(e.detail?.license);
+ const sess=e.detail?.session||null,newId=sess?.user?.id||null;
+ const userChanged=newId!==skuSyncUserId;
+ skuSyncUserId=newId;
+ skuSyncAccessToken=sess?.access_token||null;
+ if(userChanged&&tendooCatalog?.length){
+  loadTendooLinks().then(updateTendooUi).catch(error=>log('Không thể tải SKU đã lưu: '+error.message,'warn'));
+ }
+});
 document.addEventListener('autotax-license-gate',e=>{licenseAllowed=!!e.detail?.allowed;syncRun()});
 document.addEventListener('autotax-mst-profiles',e=>{
  configuredMsts=(e.detail?.msts||[]).map(normalizeMst);

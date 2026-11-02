@@ -227,7 +227,18 @@ assert(admin.includes('id="createPackageForm"')&&admin.includes('id="createPacka
  'Admin must expose a dedicated new-package form with local status feedback');
 assert(admin.includes('normalizePackageCode')&&admin.includes('addon_admin_create_package'),
  'Admin must normalize package codes before calling the existing guarded catalog RPC');
-assert(admin.includes('^[A-Z0-9_]{2,24}
+assert(admin.includes('Mã gói phải dài 2–24') &&
+ admin.includes('Số lượng phải là số nguyên') &&
+ admin.includes('Giá bán phải là số nguyên'),
+ 'Admin package creation must display explicit catalog validation errors');
+assert(admin.includes('Mã "+code+" đã tồn tại')&&admin.includes('Đang tạo gói'),
+ 'Admin must reject duplicate codes and prevent repeated submissions');
+assert(!admin.includes('một trong 10 gói'),
+ 'New package catalog must support more than the initial 10 plans');
+assert(!admin.includes('class="actions"><input id="newCode"'),
+ 'Legacy unvalidated package form must not be rendered');
+assert(!admin.includes('@media(max-width:520px){</style>'),
+ 'Admin stylesheet must not contain an unterminated media query');
 assert(!panelHtml.includes('Cập nhật mới:')&&!panelHtml.includes('Phiên bản sử dụng nội bộ'),'Obsolete extension notices must be removed');
 const adminHtml=load('docs/admin.html');
 assert(adminHtml.includes('id="adminPackageGrant"'), 'Admin direct grant panel missing');

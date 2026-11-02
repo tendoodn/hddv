@@ -32,14 +32,17 @@ const trim=(v:unknown,max=300)=>typeof v==="string"?v.trim().slice(0,max):"";
 function normalizeResult(o:any,src:string,n:any){
  const obj=o?.data?.data||o?.data||o?.result||o;
  if(!obj||typeof obj!=="object")return null;
- const name=trim(obj.name||obj.companyName||obj.company_name||obj.taxpayerName||obj.tenNNT||obj.ten);
+ const name=trim(obj.name||obj.companyName||obj.company_name||obj.taxpayerName||
+  obj.tenNNT||obj.ten||obj.Title||obj.TenCongTy||obj.Name||obj.name_vi);
  if(!name)return null;
  const statusVal=obj.status;
- const status=trim(typeof statusVal==="object"?statusVal?.name:(obj.statusName||obj.trangThai||statusVal));
- const office=trim(obj.taxOffice||obj.taxAuthority||obj.cqt||obj.managingTaxOffice);
+ const status=trim(typeof statusVal==="object"?statusVal?.name:
+  (obj.statusName||obj.trangThai||obj.TinhTrang||obj.Status||statusVal));
+ const office=trim(obj.taxOffice||obj.taxAuthority||obj.cqt||obj.managingTaxOffice||obj.CoQuanThue);
  return {
   mst:n.display,type:n.kind,name,
-  address:trim(obj.address||obj.registeredAddress||obj.address_full||obj.diaChi,450),
+  address:trim(obj.address||obj.registeredAddress||obj.address_full||obj.diaChi||
+   obj.DiaChiCongTy||obj.Address,450),
   office,status:status||"Chưa có dữ liệu trạng thái",
   source:src,verified:true
  };
@@ -63,9 +66,18 @@ async function vietqr(n:any){
  if(data?.code!=="00")return null;
  return normalizeResult(data,"VietQR — dữ liệu doanh nghiệp",n);
 }
+async function thongtindoanhnghiep(n:any){
+ if(n.kind==="personal")return null; // Its API is for publicly registered companies.
+ // Documented public REST route. No API key, redirects or arbitrary URLs.
+ const data=await fetchJson("https://thongtindoanhnghiep.co/api/company/"+n.digits,
+  {"User-Agent":"AutoTax/3.3.7 (public business lookup)"},9500);
+ const from=data?.MaSoThue||data?.maSoThue||data?.TaxCode||data?.taxCode||"";
+ if(from&&String(from).replace(/\D/g,"")!==n.digits)return null;
+ return normalizeResult(data,"ThongTinDoanhNghiep.co (dữ liệu doanh nghiệp công khai)",n);
+}
 async function lookup(n:any){
  const problems:string[]=[];
- for(const source of [pay2s,vietqr]){
+ for(const source of [pay2s,vietqr,thongtindoanhnghiep]){
   try{
    const got=await source(n);if(got)return got;
   }catch(e){problems.push(String(e instanceof Error?e.message:"upstream_error").slice(0,90))}

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="iconTitle">
+  <title id="iconTitle">AutoTax by Tendoo — invoice verified</title>
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF2449"/>
+      <stop offset=".56" stop-color="#ED0C2C"/>
+      <stop offset="1" stop-color="#D6001F"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#red)"/>
+  <!-- Signature Tendoo signal, redrawn as bold compact strokes for tiny favicons. -->
+  <path d="M320 111C382 117 420 155 422 217" fill="none" stroke="#FFF" stroke-width="29" stroke-linecap="round"/>
+  <path d="M322 171C351 174 362 192 365 216" fill="none" stroke="#FFF" stroke-width="27" stroke-linecap="round"/>
+  <!-- O-shaped Till/Invoice mark, retaining the original Tendoo silhouette. -->
+  <rect x="91" y="211" width="281" height="216" rx="79" fill="#FFF"/>
+  <rect x="148" y="263" width="167" height="112" rx="42" fill="#DF0425"/>
+  <!-- A clear verification mark for AutoTax, deliberately separated from the arcs. -->
+  <path d="M183 319l37 31 65-70" fill="none" stroke="#FFF" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -43,14 +43,14 @@ assert(results.includes("audit.dataset.audit=keyOf(r)")&&results.includes('windo
  'Invoice rows must still open risk audit.');
 
 const pdfBytes=Uint8Array.from([37,80,68,70,45,49,46,55,10]);
-const context=link=>{
+const context=(link,rejectPdf=false)=>{
  let download=null,rendered=0;
  const app={fetchDetail:async()=>({source:'xml',head:{},lines:[]}),
   progress(){},download:(name,bytes,mime)=>download={name,bytes,mime},getMst:()=> '0123456789'};
  const window={WebInvoiceApp:app,HDDT:{originalLookup:()=>({link,code:'TEST-CODE',name:'Issuer'})},
   Pdf:{buildInvoicePdf:async()=>{rendered++;return pdfBytes}},
   Zip:{writeZip:files=>files}};
- const fetch=async()=>({ok:true,headers:{get:()=>null},arrayBuffer:async()=>pdfBytes.buffer});
+ const fetch=async()=>{if(rejectPdf)throw Error('CORS/nhà phát hành từ chối PDF');return {ok:true,headers:{get:()=>null},arrayBuffer:async()=>pdfBytes.buffer}};
  vm.runInNewContext(pdf,{window,fetch,URL,AbortController,setTimeout,clearTimeout,
   Uint8Array,Date,Error,Array,Number,String,Math,Promise,console});
  return {window,getState:()=>({download,rendered})};
@@ -91,4 +91,15 @@ const context=link=>{
  assert.equal(c.getState().rendered,1);
  assert(c.getState().download.bytes.some(f=>f.name.startsWith('PDF_DUNG_LAI_TU_DU_LIEU_CQT_KHONG_PHAI_GOC/')));
 }
-console.log('V1.1.2 Tax PDF mode, original-first fallback and provider metadata checks passed.');
+{
+ const c=context('https://example.org/download/invoice.pdf',true);
+ const x=await c.window.WebPdfExport.create([{khhdon:'C26',shdon:'5',kind:'purchase'}],'original');
+ assert.equal(x.originals,0,'HTTP/CORS rejection is not an original PDF.');
+ assert.equal(x.rendered,1,'Source download failure must fall back to a rebuilt PDF.');
+ assert.equal(x.errors.length,0);
+ const files=c.getState().download.bytes;
+ const guide=files.find(f=>f.name==='NGUON_PDF_MA_TRA_CUU.txt');
+ assert(guide?.data.includes('https://example.org/download/invoice.pdf'));
+ assert(guide?.data.includes('CORS/nhà phát hành từ chối PDF'));
+}
+console.log('V1.1.2 Tax PDF always rebuilt, genuine source prioritized and failures fall back with provenance.');

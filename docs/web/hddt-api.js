@@ -374,7 +374,7 @@
   const kid = (el, tag) => (el ? [...el.children].find((c) => c.localName === tag) : undefined);
   const txt = (el) => el?.textContent?.trim() ?? '';
   // Tên trường theo nhà cung cấp (khảo sát 24/10/2026): Thái Sơn "Mã TC" + "DC TC", FAST "KeySearch", Viettel "Mã số bí mật"
-  const LOOKUP = /tra\s*c[ứu]u|tracuu|searchkey|keysearch|lookup|reservation|fkey|transaction|portal|website|url|link|^m[ãa]\s*tc$|^dc\s*tc$|bí mật/i;
+  const LOOKUP = /tra\s*c[ứu]u|tracuu|searchkey|keysearch|lookup|reservation|fkey|transaction|portal|website|url|link|^m[ãa]\s*tc$|^dc\s*tc$|bí mật|bảo mật|bao mat|ma nhan hoa don|mã nhận hóa đơn|secret/i;
   function lookupOf(doc) {
     // TTKhac varies by provider: Fkey, Mã tra cứu, mã bí mật, PortalLink etc.
     // Never invent a lookup code. Only use URLs from the invoice's own XML.

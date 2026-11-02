@@ -1,198 +1,225 @@
-/* Local encrypted GDT credential vault.
-   Passwords are NEVER stored in plaintext or sent to Supabase for synchronization.
-   AES-GCM key derives from a separate user-supplied passphrase and exists in tab memory only. */
+/* AutoTax Web v3.4: account-scoped MST picker and encrypted device credentials.
+ * No vault passphrase UI. Credentials are encrypted with a non-extractable
+ * WebCrypto AES-GCM key stored in IndexedDB on THIS device/browser only.
+ * Profile names and MSTs come from Supabase; TAX PASSWORDS NEVER DO.
+ * Legacy passphrase-protected localStorage data is intentionally left intact,
+ * but cannot be decrypted without its original passphrase. Enter the GDT
+ * password again once to save it in the new device-local scheme.
+ */
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-const encoder=new TextEncoder(),decoder=new TextDecoder();
-const iterations=260000;
-const b64=u=>btoa(String.fromCharCode(...u));
-const bytes=s=>Uint8Array.from(atob(s),x=>x.charCodeAt(0));
-const random=n=>crypto.getRandomValues(new Uint8Array(n));
-let owner='',key=null,record=null,entries={},profiles=[],recoveryPending=false;
-const storageKey=()=> 'autotax_gdt_secret_v1_'+owner;
+const normalize=v=>String(v||'').replace(/\D/g,'');
+const MAX_PASS=256;
+const DB_NAME='autotax_gdt_device_credentials_v2';
+let owner='',profiles=[],dbPromise=null,deviceKey=null,requestSeq=0;
 const lastKey=()=> 'autotax_last_mst_'+owner;
-const resetMarkerKey=()=> 'autotax_vault_reset_generation_'+owner;
-function status(text,error=false){
- const el=$('vaultStatus');el.textContent=text;el.style.color=error?'#ff96a1':'#9ae6b4';
+const entryKey=mst=>owner+':'+mst;
+const asArray=v=>v instanceof Uint8Array?v:new Uint8Array(v);
+function notify(message,error=false){
+ const e=$('mstPickerNotice');
+ if(e){e.textContent=message;e.classList.toggle('error',error)}
 }
-function existing(){try{return JSON.parse(localStorage.getItem(storageKey())||'null')}catch{return null}}
-function renderSecretList(){
- const tbody=$('vaultList');tbody.replaceChildren();
- if(!key){$('vaultAfterUnlock').hidden=true;return;}
- $('vaultAfterUnlock').hidden=false;
- const reveal=$('vaultReveal').checked;
- const saved=Object.entries(entries).filter(([mst])=>profiles.includes(mst));
- if(!saved.length){
-  const tr=document.createElement('tr'),td=document.createElement('td');
-  td.colSpan=2;td.textContent='Chưa lưu mật khẩu cho MST nào.';tr.append(td);tbody.append(tr);
+function openDB(){
+ if(!dbPromise){
+  dbPromise=new Promise((resolve,reject)=>{
+   const req=indexedDB.open(DB_NAME,1);
+   req.onupgradeneeded=()=>{
+    const db=req.result;
+    if(!db.objectStoreNames.contains('keys'))db.createObjectStore('keys');
+    if(!db.objectStoreNames.contains('credentials'))db.createObjectStore('credentials');
+   };
+   req.onsuccess=()=>resolve(req.result);
+   req.onerror=()=>reject(req.error||Error('Không mở được bộ nhớ mã hóa.'));
+   req.onblocked=()=>reject(Error('Bộ nhớ đang được sử dụng ở tab khác.'));
+  }).catch(e=>{dbPromise=null;throw e});
  }
- for(const [mst,password] of saved){
-  const tr=document.createElement('tr'),a=document.createElement('td'),b=document.createElement('td');
-  a.textContent=mst;
-  b.textContent=reveal?password:'••••••••';
-  tr.append(a,b);tbody.append(tr);
- }
+ return dbPromise;
 }
-async function checkRemoteReset(){
- if(!owner)return;
- const getClient=window.WebInvoiceApp?.getClient;
- const client=getClient?.();
- if(!client){status('Chưa thể kiểm tra trạng thái khôi phục từ máy chủ.',true);return;}
- try{
-  const {data,error}=await client.rpc('addon_my_vault_reset_state');
-  if(error)throw error;
-  const current=Number(data||0),seen=Number(localStorage.getItem(resetMarkerKey())||0);
-  if(current>seen){
-   // No remote party can decrypt old encrypted credentials; discard THIS browser's ciphertext.
-   localStorage.removeItem(storageKey());
-   localStorage.setItem(resetMarkerKey(),String(current));
-   key=null;entries={};record=null;recoveryPending=true;
-   $('gdtPassword').value='';$('vaultReveal').checked=false;
-   $('vaultAfterUnlock').hidden=true;
-   $('vaultRecovery').hidden=false;$('vaultPanel').open=true;
-   status('Admin đã yêu cầu reset kho. Mật khẩu Thuế từng lưu không thể khôi phục. Nhập mã tạm 0000, sau đó tạo mật khẩu kho mới.',true);
-  }else if(current===seen&&seen>0&&!record){
-   // Recovery must still be completed after page reload.
-   recoveryPending=localStorage.getItem(resetMarkerKey()+'_confirmed')!=='1';
-   $('vaultRecovery').hidden=!recoveryPending;
-   if(recoveryPending)$('vaultPanel').open=true;
-  }
- }catch(e){status('Không xác minh được trạng thái reset kho: '+(e.message||e),true)}
+async function readStore(store,key){
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction(store,'readonly').objectStore(store).get(key);
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error);
+ });
 }
-function hasSaved(mst){return !!entries[mst]||!!record&&!key}
-function refreshList(){
- const node=$('mst'),active=node.value,previous=owner?localStorage.getItem(lastKey()):null;
- node.replaceChildren();
- const empty=document.createElement('option');empty.value='';empty.textContent='Chọn MST từ hồ sơ AutoTax';node.append(empty);
- for(const mst of profiles){
-  const opt=document.createElement('option');opt.value=mst;
-  opt.textContent=mst+(entries[mst]?' · Đã lưu mật khẩu':'');
-  node.append(opt);
+async function writeStore(store,key,value){
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(store,'readwrite');
+  tx.objectStore(store).put(value,key);
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error);
+ });
+}
+async function deleteStore(store,key){
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(store,'readwrite');
+  tx.objectStore(store).delete(key);
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error);
+ });
+}
+async function getDeviceKey(){
+ if(!owner)throw Error('Chưa đăng nhập AutoTax.');
+ if(deviceKey)return deviceKey;
+ // Generate before opening transaction so it stays active, then serialize
+ // competing tabs on the same database key with a read-write transaction.
+ const proposed=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+ const db=await openDB(),keyName='account:'+owner;
+ const result=await new Promise((resolve,reject)=>{
+  const tx=db.transaction('keys','readwrite'),store=tx.objectStore('keys');
+  const req=store.get(keyName);
+  let stored;
+  req.onsuccess=()=>{
+   if(req.result)stored=req.result;
+   else {stored=proposed;store.put(proposed,keyName)}
+  };
+  tx.oncomplete=()=>resolve(stored);
+  tx.onerror=()=>reject(tx.error);
+ });
+ deviceKey=result;
+ return result;
+}
+async function encryptPassword(pass){
+ const key=await getDeviceKey(),iv=crypto.getRandomValues(new Uint8Array(12));
+ const data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},
+   key,new TextEncoder().encode(pass)));
+ return {v:2,iv:Array.from(iv),data:Array.from(data)};
+}
+async function decryptPassword(record){
+ if(record?.v!==2||!Array.isArray(record.iv)||!Array.isArray(record.data))
+  throw Error('Định dạng mật khẩu lưu không hợp lệ.');
+ const key=await getDeviceKey();
+ const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:asArray(record.iv)},
+  key,asArray(record.data));
+ return new TextDecoder().decode(plain);
+}
+const mstName=profile=>profile.display_name||profile.name||'Chưa đặt tên hồ sơ';
+function renderPicker(){
+ const select=$('mst'),old=select.value;
+ const remembered=owner?localStorage.getItem(lastKey()):null;
+ select.replaceChildren();
+ const empty=document.createElement('option');
+ empty.value='';empty.textContent='Chọn MST';select.append(empty);
+ const menu=$('mstPickerMenu');menu.replaceChildren();
+ for(const p of profiles){
+  const mst=p.mst;
+  const opt=document.createElement('option');
+  opt.value=mst;opt.textContent=mst+' — '+mstName(p);
+  select.append(opt);
+  const card=document.createElement('div');card.className='mst-picker-card';
+  const pick=document.createElement('button');
+  pick.type='button';pick.className='mst-picker-choice';
+  const number=document.createElement('strong');number.textContent=mst;
+  const alias=document.createElement('small');alias.textContent=mstName(p);
+  pick.append(number,alias);
+  pick.addEventListener('click',()=>{
+   select.value=mst;select.dispatchEvent(new Event('change',{bubbles:true}));
+   menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
+  });
+  card.append(pick);
+  const remove=document.createElement('button');remove.type='button';
+  remove.className='mst-picker-remove';remove.textContent='♢';
+  remove.title='Gỡ MST khỏi tài khoản (không xóa lịch sử hóa đơn)';
+  remove.setAttribute('aria-label','Xóa hồ sơ '+mst);
+  remove.addEventListener('click',async()=>{
+   if(!confirm('Xóa hồ sơ '+mst+'? Hạn mức và lịch sử hóa đơn không bị xóa.'))return;
+   remove.disabled=true;
+   try{
+    const client=window.WebInvoiceApp?.getClient?.();
+    if(!client)throw Error('Chưa kết nối Supabase.');
+    const {error}=await client.rpc('addon_remove_mst_profile_v33',{p_mst:mst});
+    if(error)throw error;
+    await deleteStore('credentials',entryKey(mst)).catch(()=>{});
+    if(select.value===mst){select.value='';$('gdtPassword').value=''}
+    await window.WebInvoiceApp?.refreshAccount?.();
+    notify('Đã gỡ '+mst+' khỏi tài khoản AutoTax.');
+   }catch(e){notify('Không gỡ được hồ sơ: '+(e.message||e),true);remove.disabled=false}
+  });
+  card.append(remove);menu.append(card);
  }
- const selected=profiles.includes(active)?active:profiles.includes(previous)?previous:profiles[0]||'';
- node.value=selected;
+ const wanted=profiles.some(p=>p.mst===old)?old:
+  profiles.some(p=>p.mst===remembered)?remembered:profiles[0]?.mst||'';
+ select.value=wanted;
  $('mstProfileCount').textContent=profiles.length+' hồ sơ';
+ updateChosen();
 }
-function select(mst){
+function updateChosen(){
+ const mst=$('mst').value,p=profiles.find(x=>x.mst===mst);
+ $('mstPickerToggle').textContent=p?
+  p.mst+' · '+mstName(p)+' ▾':'Chọn hồ sơ MST ▾';
+ for(const card of $('mstPickerMenu').children){
+  const chosen=card.querySelector('.mst-picker-choice');
+  const selected=!!chosen&&chosen.querySelector('strong')?.textContent===mst;
+  card.classList.toggle('selected',selected);
+  if(selected){
+   const badge=document.createElement('span');badge.className='mst-picker-selected';
+   badge.textContent='Đang chọn';
+   chosen.append(badge);
+  }else chosen?.querySelectorAll('.mst-picker-selected').forEach(el=>el.remove());
+ }
+}
+async function select(mst){
  const input=$('gdtPassword');input.value='';
- if(mst&&key&&entries[mst]){
-  input.value=entries[mst];
-  status('Đã điền mật khẩu từ kho mã hóa cho MST '+mst+'.');
- }else if(mst&&record&&!key){
-  status('Kho đang khóa. Nhập mật khẩu kho trong mục quản lý để điền mật khẩu đã lưu.');
- }else if(mst)status('MST '+mst+' chưa có mật khẩu lưu trong kho hiện tại.');
- if(owner&&profiles.includes(mst))localStorage.setItem(lastKey(),mst);
-}
-async function setUser(userId,msts){
- const changed=userId!==owner;
- if(changed){key=null;entries={};owner=userId||'';record=owner?existing():null;
-  recoveryPending=false;$('vaultRecovery').hidden=true;$('vaultAfterUnlock').hidden=true;
-  $('vaultReveal').checked=false;$('rememberGdt').checked=false;
- }
- profiles=[...new Set((msts||[]).map(x=>String(x).replace(/\D/g,'')).filter(x=>/^\d{10}(?:\d{2,3})?$/.test(x)))];
- refreshList();
- select($('mst').value);
- if(changed)status(record?'Đã tìm thấy kho mật khẩu mã hóa trên máy. Mở kho để tự điền.':
-  'Chưa tạo kho trên thiết bị này. Bật Tự lưu và tạo mật khẩu kho để lưu sau khi đăng nhập Thuế.');
- await checkRemoteReset();
-}
-async function derive(pass,salt){
- const material=await crypto.subtle.importKey('raw',encoder.encode(pass),'PBKDF2',false,['deriveKey']);
- return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},
-  material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-}
-async function persist(){
- if(!owner||!key)throw Error('Mở kho mật khẩu trước khi lưu.');
- const iv=random(12);
- const payload=encoder.encode(JSON.stringify(entries));
- const ciphertext=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,payload));
- record={version:1,salt:record.salt,iterations,iv:b64(iv),data:b64(ciphertext)};
- localStorage.setItem(storageKey(),JSON.stringify(record));
-}
-async function unlock(){
- if(!owner){status('Đăng nhập AutoTax trước khi mở kho.',true);return}
- if(recoveryPending){status('Cần xác nhận mã khôi phục 0000 trước khi tạo lại kho.',true);$('vaultRecovery').hidden=false;return}
- const pass=$('vaultPassphrase').value;
- if(pass.length<8){status('Mật khẩu kho cần tối thiểu 8 ký tự, khác mật khẩu cổng Thuế.',true);return}
- $('vaultUnlock').disabled=true;
+ const stamp=++requestSeq;
+ updateChosen();
+ if(!owner||!profiles.some(p=>p.mst===mst))return;
+ try{localStorage.setItem(lastKey(),mst)}catch{}
  try{
+  const record=await readStore('credentials',entryKey(mst));
+  if(stamp!==requestSeq||$('mst').value!==mst)return;
   if(!record){
-   record={version:1,salt:b64(random(16)),iterations};
-   key=await derive(pass,bytes(record.salt));entries={};await persist();
-   status('Đã tạo kho mật khẩu mã hóa. Bật Tự lưu, tra cứu thành công để ghi nhớ MST và mật khẩu.');
-  }else{
-   const candidate=await derive(pass,bytes(record.salt));
-   const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(record.iv)},candidate,bytes(record.data));
-   const parsed=JSON.parse(decoder.decode(clear));
-   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('Kho không hợp lệ');
-   key=candidate;entries=parsed;status('Đã mở kho: '+Object.keys(entries).length+' MST có mật khẩu lưu.');
+   notify('Chưa lưu mật khẩu cổng Thuế trên thiết bị này. Nhập một lần để tự ghi nhớ sau khi đăng nhập thành công.');
+   return;
   }
-  refreshList();select($('mst').value);renderSecretList();
- }catch{
-  key=null;entries={};$('vaultAfterUnlock').hidden=true;
-  status('Không mở được kho. Mật khẩu kho có thể chưa đúng hoặc dữ liệu đã thay đổi.',true);
- }finally{
-  $('vaultPassphrase').value='';
-  $('vaultUnlock').disabled=false;
+  const password=await decryptPassword(record);
+  if(stamp!==requestSeq||$('mst').value!==mst)return;
+  input.value=password;
+  notify('Đã tự điền mật khẩu mã hóa của MST '+mst+' trên thiết bị này.');
+ }catch(e){if(stamp===requestSeq)notify('Không đọc được mật khẩu đã lưu. Hãy nhập lại: '+(e.message||e),true)}
+}
+async function setUser(userId,rows){
+ const changed=(userId||'')!==owner;
+ if(changed){
+  owner=userId||'';deviceKey=null;requestSeq++;$('gdtPassword').value='';
+  $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
  }
+ profiles=[...new Map((rows||[]).map(x=>{
+  const mst=normalize(typeof x==='object'?x.mst:x);
+  return [mst,{mst,display_name:typeof x==='object'?String(x.display_name||'').slice(0,120):''}];
+ }).filter(([mst])=>/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))).values()];
+ renderPicker();
+ if(owner&&$('mst').value)await select($('mst').value);
+ if(!owner)notify('Đăng nhập AutoTax để xem hồ sơ MST đã liên kết.');
 }
 async function saveAfterLogin(mst,password){
- if(!$('rememberGdt').checked)return;
- if(!owner||!key){$('vaultPanel').open=true;status('Bạn đã bật Tự lưu nhưng kho chưa mở; hãy tạo/mở kho để lưu mật khẩu.',true);return}
- if(!profiles.includes(mst)){status('MST chưa thuộc hồ sơ AutoTax — không lưu mật khẩu.',true);return}
- if(!password)return;
- entries[mst]=password;
- try{await persist();refreshList();$('mst').value=mst;renderSecretList();
-  status('Đã mã hóa và lưu mật khẩu cho MST '+mst+' trên thiết bị này. Không đồng bộ mật khẩu lên Supabase.');
- }catch(e){status('Lưu mã hóa không thành công: '+e.message,true)}
-}
-async function forget(){
- const mst=$('mst').value;if(!owner||!key){status('Mở khóa kho để xóa mật khẩu MST.',true);return}
- if(!entries[mst]){status('MST này chưa có mật khẩu lưu.');return}
- delete entries[mst];await persist();
- $('gdtPassword').value='';refreshList();$('mst').value=mst;renderSecretList();
- status('Đã xóa mật khẩu đã lưu của MST '+mst+'.');
-}
-function lock(){
- key=null;entries={};$('gdtPassword').value='';
- $('vaultPassphrase').value='';$('vaultNewPassphrase').value='';
- $('vaultReveal').checked=false;$('vaultAfterUnlock').hidden=true;refreshList();
- status('Đã khóa kho. Mật khẩu chỉ được điền lại sau khi mở khóa.');
-}
-async function rotatePassphrase(){
- if(!owner||!key){status('Mở khóa kho cũ trước khi đổi mật khẩu.',true);return}
- const next=$('vaultNewPassphrase').value;
- if(next.length<8){status('Mật khẩu kho mới phải dài ít nhất 8 ký tự.',true);return}
- const priorKey=key,priorRecord=record;
+ if(!owner||!profiles.some(p=>p.mst===mst)||!password||password.length>MAX_PASS)return;
  try{
-  record={version:1,salt:b64(random(16)),iterations};
-  key=await derive(next,bytes(record.salt));
-  await persist();
-  $('vaultNewPassphrase').value='';
-  status('Đã đổi mật khẩu kho thành công. Mật khẩu cũ không còn mở được kho này.');
- }catch(e){key=priorKey;record=priorRecord;status('Không đổi được mật khẩu kho: '+e.message,true)}
+  await writeStore('credentials',entryKey(mst),await encryptPassword(password));
+  notify('Đã lưu mật khẩu Thuế đã mã hóa cho '+mst+' trên trình duyệt này. Không gửi lên Supabase.');
+ }catch(e){notify('Không thể lưu mật khẩu vào bộ nhớ được mã hóa: '+(e.message||e),true)}
 }
-function confirmRecovery(){
- if(!recoveryPending)return;
- if($('vaultRecoveryCode').value!=='0000'){
-  status('Mã khôi phục không đúng. Liên hệ admin để xác minh lại.',true);return;
- }
- recoveryPending=false;
- localStorage.setItem(resetMarkerKey()+'_confirmed','1');
- $('vaultRecovery').hidden=true;$('vaultRecoveryCode').value='';
- $('vaultPassphrase').value='';
- status('Đã xác nhận reset. Hãy nhập mật khẩu kho MỚI từ 8 ký tự rồi bấm Mở / tạo kho. Mật khẩu Thuế cũ đã mất, cần đăng nhập lại từng MST.');
+async function forget(mst=$('mst').value){
+ if(!owner||!mst)return;
+ await deleteStore('credentials',entryKey(mst));
+ $('gdtPassword').value='';notify('Đã xóa mật khẩu cổng Thuế đã lưu cho '+mst+'.');
 }
+const hasSaved=async mst=>!!owner&&!!await readStore('credentials',entryKey(mst)).catch(()=>null);
+function lock(){requestSeq++;deviceKey=null;$('gdtPassword').value=''}
 function init(){
- $('vaultUnlock').addEventListener('click',()=>void unlock());
- $('vaultForget').addEventListener('click',()=>void forget().catch(e=>status(e.message,true)));
- $('vaultLock').addEventListener('click',lock);
- $('vaultReveal').addEventListener('change',renderSecretList);
- $('vaultChangePass').addEventListener('click',()=>void rotatePassphrase());
- $('vaultConfirmRecovery').addEventListener('click',confirmRecovery);
- window.addEventListener('pagehide',lock);
+ $('mstPickerToggle').addEventListener('click',()=>{
+  const menu=$('mstPickerMenu');menu.hidden=!menu.hidden;
+  $('mstPickerToggle').setAttribute('aria-expanded',String(!menu.hidden));
+ });
+ $('mst').addEventListener('change',()=>void select($('mst').value));
+ $('mstForgetPassword').addEventListener('click',()=>{
+  if(confirm('Xóa mật khẩu cổng Thuế đã lưu của MST đang chọn trên thiết bị này?'))
+   void forget().catch(e=>notify(e.message,true));
+ });
 }
-window.GdtVault={setUser,select,saveAfterLogin,lock,hasSaved,checkRemoteReset};
+window.GdtVault={setUser,select,saveAfterLogin,forget,lock,hasSaved};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

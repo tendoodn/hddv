@@ -311,7 +311,7 @@ async function search(e){
 const pendingDetails=new Map();
 async function loadDetails(scopeRows=rows){
  if(!scopeRows.length)throw Error('Chưa có hóa đơn để xuất.');
- const queue=scopeRows.filter(r=>!details.has(idOf(r)));
+ const queue=scopeRows.filter(r=>!details.has(idOf(r))||details.get(idOf(r))?.error);
  let next=0,completed=0;
  const worker=async()=>{
   for(;;){

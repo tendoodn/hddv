@@ -92,11 +92,11 @@ function render(){
  $('mstResultCount').textContent='Danh sách chi tiết ('+subset.length+'/'+completed+')';
  counts();
 }
-async function requestBatch(batch){
- const ctrl=new AbortController();
- const t=setTimeout(()=>ctrl.abort(),23000);
+async function requestRegion(batch,region){
+ const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),22000);
  try{
-  const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
+  const target=API+'?forceFunctionRegion='+encodeURIComponent(region);
+  const res=await fetch(target,{method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({codes:batch.map(x=>x.display)}),signal:ctrl.signal,cache:'no-store'});
   const body=await res.json().catch(()=>null);
   if(!res.ok)throw Error(body?.error==='rate_limited'?
@@ -106,7 +106,25 @@ async function requestBatch(batch){
   if(!Array.isArray(body?.data)||body.data.length!==batch.length)
    throw Error('Máy chủ chưa trả đủ kết quả.');
   return body.data;
- }finally{clearTimeout(t)}
+ }finally{clearTimeout(timer)}
+}
+async function requestBatch(batch){
+ // CI verified VietQR data from Singapore and EU-West; Tokyo returned provider 429.
+ let result;
+ try{result=await requestRegion(batch,'ap-southeast-1')}
+ catch{return requestRegion(batch,'eu-west-1')}
+ const retries=result.map((data,i)=>({data,item:batch[i],index:i}))
+  .filter(({data,item})=>item.kind!=='personal'&&
+   !data?.verified&&['rate_limited','upstream_unavailable'].includes(data?.error));
+ if(retries.length){
+  try{
+   const fallback=await requestRegion(retries.map(x=>x.item),'eu-west-1');
+   for(let i=0;i<retries.length;i++){
+    if(fallback[i]?.verified)result[retries[i].index]=fallback[i];
+   }
+  }catch{/* Keep first region's truthful source status. */}
+ }
+ return result;
 }
 const errorFor=(item,error)=>({mst:item.display,type:item.kind,name:'',
  address:'',office:'',status:'Chưa xác minh',verified:false,

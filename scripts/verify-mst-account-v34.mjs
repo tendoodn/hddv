@@ -47,7 +47,7 @@ assert(!web.includes('id="exportScope"')&&
  'Export selected visible invoices or all filtered invoices automatically.');
 assert(pdf.includes('PDF_goc_nha_phat_hanh')&&
  pdf.includes('window.Pdf.buildInvoicePdf(row,detail,lookup)')&&
- pdf.includes('decision.shouldReconstruct')&&
+ pdf.includes('fallbackAfterFailure:true')&&
  pdf.includes('NGUON_PDF_MA_TRA_CUU.txt'),
  'V1.1 must prioritize issuer originals and rebuild PDF only without lookup metadata.');
 assert(adminjs.includes('addon_admin_set_mst_profile_name')&&

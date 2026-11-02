@@ -111,6 +111,25 @@ function init(){
  $('issuerPdfDialog').addEventListener('close',()=>{sequence++;current=null});
  $('closeIssuerPdf').addEventListener('click',()=>$('issuerPdfDialog').close());
  $('issuerPdfAttach').addEventListener('click',()=>void attachDownloaded());
+ $('copyIssuerDetails').addEventListener('click',async()=>{
+  if(!current?.row)return status('Chưa chọn hóa đơn.');
+  const {row,detail,link,code}=current,head=detail?.head||{};
+  const information=[
+   'MST bên bán: '+String(head.nbmst||row.nbmst||''),
+   'Ngày lập: '+String(head.nlap||row.nlap||''),
+   'Mẫu số hóa đơn: '+String(head.khmshdon||row.khmshdon||''),
+   'Ký hiệu hóa đơn: '+String(head.khhdon||row.khhdon||''),
+   'Số hóa đơn: '+String(head.shdon||row.shdon||''),
+   'Mã bảo mật/tra cứu: '+String(code||'Không có trong dữ liệu'),
+   'Cổng tra cứu: '+String(link||'Liên hệ người bán')
+  ].join('\n');
+  try{
+   await navigator.clipboard.writeText(information);
+   status('Đã sao chép thông tin tra cứu. Chỉ dán vào cổng chính thức của đơn vị phát hành.');
+  }catch{
+   status('Trình duyệt chưa cấp quyền sao chép. Hãy dùng các ô thông tin hiển thị để nhập thủ công.');
+  }
+ });
  $('copyIssuerCode').addEventListener('click',async()=>{
   const code=$('issuerPdfCode').value;
   if(!code)return;

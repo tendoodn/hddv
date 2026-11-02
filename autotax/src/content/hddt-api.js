@@ -240,7 +240,7 @@
   const splitFor = (form, tuNgay, denNgay) => (FORMS[form].days ? splitDays(tuNgay, denNgay, FORMS[form].days) : splitMonths(tuNgay, denNgay));
   const chunkLabel = (c) => (c.month ? `tháng ${c.month}` : `${c.tuNgay.slice(0, 5)}–${c.denNgay}`);
 
-  const MST_RE = /^\d{10}(-\d{3})?$/;
+  const MST_RE = /^(?:\d{10}(?:-\d{3}|\d{3})?|\d{12})$/;
   function searchString(kind, form, chunk, { nbmst, nmmst } = {}) {
     let s = `tdlap=ge=${chunk.tuNgay}T00:00:00;tdlap=le=${chunk.denNgay}T23:59:59${FORMS[form].filter[kind]}`;
     if (nbmst && MST_RE.test(nbmst)) s += `;nbmst==${nbmst}`;
@@ -390,7 +390,7 @@
     if (!sig) return null;
     const subject = txt(byName(sig, 'X509SubjectName')[0]);
     const cn = /(?:^|,)\s*CN=([^,]+)/.exec(subject)?.[1] || /(?:^|,)\s*O=([^,]+)/.exec(subject)?.[1] || '';
-    return { subject, name: cn.trim(), mst: /MST:\s*(\d{10}(?:-\d{3})?)/i.exec(subject)?.[1] || '',
+    return { subject, name: cn.trim(), mst: /MST:\s*(\d{10}(?:-\d{3}|\d{3})?|\d{12})/i.exec(subject)?.[1] || '',
       time: txt(byName(sig, 'SigningTime')[0]), hasCert: !!byName(sig, 'X509Certificate')[0] };
   }
   function headFromXml(doc) {

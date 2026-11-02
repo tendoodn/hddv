@@ -22,8 +22,15 @@ create index if not exists idx_addon_subscriptions_plan_code_fk on public.addon_
 
 -- Auth identity and admin membership do not depend on individual result rows.
 -- InitPlan evaluates each helper once per statement, instead of once per row.
-alter policy "trial claim self read" on public.addon_trial_claims
-  using (user_id = (select auth.uid()));
+-- Some legacy installs do not have the trial read policy yet.
+-- Preserve their existing permissions rather than unexpectedly creating access.
+do $
+begin
+ if exists (select 1 from pg_policies where schemaname='public'
+   and tablename='addon_trial_claims' and policyname='trial claim self read') then
+  execute 'alter policy "trial claim self read" on public.addon_trial_claims using (user_id = (select auth.uid()))';
+ end if;
+end $;
 alter policy "addon_lots_read" on public.addon_package_lots
   using (user_id = (select auth.uid()) or (select public.addon_is_admin()));
 alter policy "addon_deductions_read" on public.addon_invoice_deductions

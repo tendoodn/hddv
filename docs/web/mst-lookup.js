@@ -105,7 +105,8 @@ function render(){
   copy.addEventListener('click',async()=>{
    try{
     await navigator.clipboard.writeText(v.mst);
-    status('Đã sao chép mã. Hãy dán vào cổng Thuế chính thức và nhập mã xác nhận trên trang đó.');
+    status(v.type==='personal'?'Đã sao chép CCCD 12 số (giữ số 0 đầu). Vào cổng TNCN, dán vào trường CMND/Thẻ căn cước hoặc MST nếu cổng hỗ trợ, nhập CAPTCHA.':
+     'Đã sao chép MST. Dán vào đúng cổng Thuế và nhập mã xác nhận.');
    }catch{
     status('Không thể sao chép tự động. Hãy chọn mã trong bảng và bấm Ctrl+C.');
    }
@@ -132,8 +133,8 @@ function render(){
   small.textContent=numberOfChecks?
    'Dữ liệu từ người dùng dán vào: không tự động kiểm chứng tại máy chủ Cục Thuế.':
    v.verified?(v.source||'Nguồn API tham khảo, không phải xác nhận của Cục Thuế'):
-   (v.error==='personal_source_not_configured'?
-    'Nguồn mã 12 số chưa được cấp quyền API. Xác minh qua cổng Thuế cá nhân.':
+   ((v.error==='personal_portal_required'||v.error==='personal_source_not_configured')?
+    'Mã CCCD 12 số: mở cổng Thuế TNCN, nhập tại ô Số CMND/Thẻ căn cước hoặc MST theo biểu mẫu đang hiển thị, nhập CAPTCHA và ghi nhận đúng dòng kết quả. AutoTax chưa có API cá nhân được cấp phép.':
     v.error==='rate_limited'?'Nguồn giới hạn lượt; hãy thử lại sau.':
     v.error==='upstream_unavailable'?'Dịch vụ nguồn tạm thời không truy cập được.':
     'Chưa tìm thấy thông tin đủ để xác minh.');
@@ -222,8 +223,19 @@ async function run(){
     const i=next++;if(i>=chunks.length||stamp!==sequence)return;
     const {index,items}=chunks[i];
     let data;
-    try{data=await requestBatch(items)}
-    catch(error){data=items.map(item=>errorFor(item,error))}
+    // Do NOT upload 12-digit citizen identifiers to the business-only broker.
+    // No approved personal-taxpayer API is connected: an honest local "needs
+    // official lookup" result is safer than a false "not found".
+    const business=items.filter(item=>item.kind!=='personal');
+    let businessResult=[];
+    try{businessResult=business.length?await requestBatch(business):[]}
+    catch(error){businessResult=business.map(item=>errorFor(item,error))}
+    let businessIndex=0;
+    data=items.map(item=>item.kind==='personal'?{
+      mst:item.display,type:'personal',name:'',address:'',office:'',
+      status:'Chưa xác minh tại cổng Thuế TNCN',verified:false,
+      source:'Cổng Thuế TNCN cần CAPTCHA',error:'personal_portal_required'
+    }:businessResult[businessIndex++]);
     if(stamp!==sequence)return;
     for(let j=0;j<items.length;j++){
      const item=items[j],out=data[j]||errorFor(item);
@@ -291,7 +303,7 @@ function selectOfficialPortal(portal){
  $('mstOfficialConfirm').checked=false;
  const selected=state[officialSelection.index]?.officialChecks?.[portal];
  $('mstOfficialType').textContent=portal==='personal'?
-  'Cổng TNCN: tra bằng MST hoặc CCCD nếu biểu mẫu hỗ trợ. Mã doanh nghiệp có thể không có kết quả.':
+  'Với CCCD 12 số: ưu tiên ô “Số CMND/Thẻ căn cước” trên cổng TNCN; nếu biểu mẫu cho phép tra theo số định danh ở ô “MST”, có thể thử tại đó. Nhập CAPTCHA tại cổng. Có thể thấy MST 10 số cũ và CCCD 12 số trong cùng một dòng.':
   'Cổng doanh nghiệp: tra bằng MST/chi nhánh, mã 12 số chỉ có kết quả nếu cổng hỗ trợ.';
  $('mstOfficialNotice').textContent=selected?
   'Đã có một kết quả dán từ cổng này. Muốn thay thế, hãy tra cứu và dán lại một dòng mới.':

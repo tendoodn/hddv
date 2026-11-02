@@ -109,7 +109,7 @@
         <button id="exportPdf" type="button">Tải PDF gốc</button>
       </div>
     </div>
-    <p class="result-help"><strong>PDF gốc bắt buộc:</strong> AutoTax chỉ đóng gói PDF tải được trực tiếp từ nhà phát hành hoặc tệp do người dùng đã tải ở cổng chính thức và tự gắn vào đúng hóa đơn (được đánh dấu chưa xác minh chữ ký). Hóa đơn không lấy được PDF sẽ được liệt kê trong hướng dẫn cùng link/mã tra cứu; <strong>không xuất PDF tự dựng thay thế</strong>.</p>
+    <p class="result-help"><strong>AutoTax V1.1:</strong> hóa đơn có URL và mã tra cứu được ưu tiên tải <strong>PDF gốc của nhà phát hành</strong>; nếu nhà phát hành yêu cầu CAPTCHA hoặc phiên riêng, hệ thống sẽ hướng dẫn tiếp tục tra cứu, không âm thầm đổi thành PDF dựng. Hóa đơn thiếu link hoặc mã bảo mật sẽ xuất <strong>PDF dựng từ dữ liệu Thuế, được ghi rõ không phải bản gốc</strong>.</p>
     <p class="result-help">Phạm vi tải được xác định tự động: nếu có hóa đơn đã tick trong danh sách đang hiển thị thì chỉ tải các hóa đơn đó; nếu không tick, tải tất cả hóa đơn thuộc bộ lọc hiện tại. Không cần chọn thêm chế độ xuất. Việc lấy PDF gốc phụ thuộc nhà phát hành và bước xác thực hợp lệ.</p>
     <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết / Hợp lệ / PDF nguồn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <section id="stockExport" class="stock-export">
@@ -193,12 +193,13 @@
 <script src="./web/xlsx.js?v=1"></script>
 <script src="./web/captcha-svg-templates.js?v=1"></script>
 <script src="./web/captcha-svg.js?v=1"></script>
+<script src="./web/issuer-portals.js?v=1"></script>
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
 <script src="./web/vault.js?v=5"></script>
 <script src="./web/pdf.js?v=1"></script>
-<script src="./web/web-pdf.js?v=6"></script>
+<script src="./web/web-pdf.js?v=7"></script>
 <script src="./web/web.js?v=11"></script>
 <script src="./web/web-results.js?v=6"></script>
 <script src="./web/issuer-pdf.js?v=3"></script>

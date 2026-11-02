@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#09090b">
+<title>AutoTax Web · Tra cứu và tải hóa đơn điện tử</title>
+<meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
+<link rel="stylesheet" href="./web/web.css?v=1">
+</head>
+<body>
+<main class="wrap">
+  <div class="topbar"><a class="logo" href="./">TENDOO <span>AUTOTAX WEB</span></a>
+    <div class="toplinks"><a href="./">Tài khoản</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
+  <header class="hero">
+    <h1>Tải hóa đơn điện tử hàng loạt</h1>
+    <p>Tìm kiếm → Tải Excel, XML, Tờ khai và liên kết tra cứu PDF gốc</p>
+    <div class="sync"><span class="dot"></span> Dùng chung tài khoản, hồ sơ MST và quyền sử dụng với AutoTax Extension</div>
+  </header>
+  <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
+    <div class="account-line">
+      <div><strong>Phiên AutoTax</strong><span id="authStatus">Đang xác minh đăng nhập…</span></div>
+      <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
+    </div>
+    <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
+    <form id="searchForm" autocomplete="off">
+      <div class="fields">
+        <div class="field">
+          <label for="mst">Mã số thuế <em>*</em></label>
+          <input id="mst" name="mst" inputmode="numeric" list="mstList" placeholder="Nhập MST hồ sơ đã quản lý" required maxlength="20">
+          <datalist id="mstList"></datalist>
+        </div>
+        <div class="field">
+          <label for="gdtPassword">Mật khẩu cổng Thuế <em>*</em></label>
+          <div class="password-wrap"><input id="gdtPassword" name="gdtPassword" type="password" autocomplete="off" placeholder="Nhập khi cần đăng nhập" maxlength="256">
+            <button id="togglePassword" type="button" aria-label="Hiện hoặc ẩn mật khẩu">◉</button></div>
+        </div>
+        <div class="field">
+          <label for="fromDate">Khoảng ngày <em>*</em></label>
+          <div class="date-pair"><input type="date" id="fromDate" name="fromDate" required><input type="date" id="toDate" name="toDate" required aria-label="Đến ngày"></div>
+        </div>
+        <div class="field field-note">
+          <label>Phiên làm việc</label><p id="gdtStatus">Cần xác thực cổng Thuế trước khi tra cứu. Mật khẩu không được lưu.</p>
+          <button id="clearGdt" type="button" class="text-btn">Xóa phiên Thuế</button>
+        </div>
+        <fieldset class="field checks"><legend>Loại hóa đơn <em>*</em></legend>
+          <label class="check"><input type="checkbox" name="kind" value="purchase" checked><span>Hóa đơn mua vào</span></label>
+          <label class="check"><input type="checkbox" name="kind" value="sold"><span>Hóa đơn bán ra</span></label>
+        </fieldset>
+        <fieldset class="field checks"><legend>Hình thức</legend>
+          <label class="check"><input type="checkbox" name="form" value="hddt" checked><span>Hóa đơn điện tử</span></label>
+          <label class="check"><input type="checkbox" name="form" value="mtt" checked><span>Hóa đơn máy tính tiền</span></label>
+        </fieldset>
+      </div>
+      <div id="captchaBox" class="captcha-row">
+        <div class="captcha-info"><label for="captchaInput">Mã xác nhận cổng Thuế <em>*</em></label><span>Nhập đúng chữ trên ảnh, có phân biệt hoa thường.</span></div>
+        <img id="captchaImage" alt="Ảnh CAPTCHA từ cổng Thuế" width="172" height="56">
+        <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Nhập CAPTCHA" autocomplete="off">
+        <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
+      </div>
+      <div class="privacy">Mật khẩu Thuế chỉ được gửi qua HTTPS đến dịch vụ kết nối AutoTax khi bạn bấm tìm kiếm; không ghi vào hồ sơ, lịch sử hoặc bộ nhớ trình duyệt. CAPTCHA có thể được yêu cầu lại theo chính sách của cổng Thuế.</div>
+      <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
+      <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
+    </form>
+  </section>
+  <section id="results" class="result-card" hidden>
+    <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div>
+      <div class="exports">
+        <button id="exportExcel" type="button">Tải Excel</button>
+        <button id="exportXml" type="button">Tải XML</button>
+        <button id="exportTax" type="button">Tờ khai tham khảo</button>
+        <button id="exportPdf" type="button" class="outline">Liên kết PDF gốc</button>
+      </div>
+    </div>
+    <p class="result-help">File PDF gốc do nhà cung cấp hóa đơn phát hành, có thể cần mã tra cứu riêng. AutoTax không gọi bản thể hiện tự dựng là “PDF gốc”.</p>
+    <div class="table-wrap"><table><thead><tr><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Trạng thái</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+  </section>
+  <footer><a href="./">Tài khoản AutoTax</a> · <a href="https://tendoodn.github.io/t/">Báo giá &amp; tiện ích</a> · <a href="https://tendoodn.github.io/t/k.html">Theo dõi hệ số K</a>
+    <p>Tra cứu dựa trên dữ liệu cổng Thuế. Việc kết nối thực tế còn phụ thuộc phản hồi và cơ chế xác thực của cổng Thuế.</p>
+  </footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js"></script>
+<script src="./web/zip.js?v=1"></script>
+<script src="./web/xlsx.js?v=1"></script>
+<script src="./web/captcha-svg-templates.js?v=1"></script>
+<script src="./web/captcha-svg.js?v=1"></script>
+<script src="./web/hddt-api.js?v=1"></script>
+<script src="./web/report.js?v=1"></script>
+<script src="./web/web.js?v=1"></script>
+</body></html>

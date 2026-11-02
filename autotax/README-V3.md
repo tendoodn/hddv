@@ -1,4 +1,4 @@
-# AutoTax 3.2.1 — source release candidate
+# AutoTax 3.3.7 — maintained source and deployment notes
 
 Chrome Manifest V3 side-panel extension for invoice lookup and download.
 
@@ -15,7 +15,7 @@ AutoTax 3.2 replaces the legacy customer-facing trial/monthly/yearly display wit
 
 ## Supabase deployment
 
-Production currently retains the old licensing schema. **Do not run historical migrations or the destructive draft on production.** The V3.2 source set now includes migrations 001–018; a safe, verified migration/reset procedure is not yet released. Preserve auth.users and addon_admins. See addon-portal/README.md and addon-portal/supabase/BUILD_STATUS_V32.md.
+Production is running the V3.2/V3.3 entitlement tables (checked 2026-11-02). **Never replay the historical migrations or run a destructive draft against production.** Take a verified backup and run the read-only preflight before changing licensing data. Security and performance hardening migrations `033_restrict_anon_privileged_rpc.sql` and `034_fk_indexes_and_rls_initplan.sql` were applied and independently verified on the production Supabase project on 2026-11-02. Edge Function `autotax-mst-lookup` v4 is deployed. Keep `auth.users`, `addon_admins`, package lots, claims and purchase records intact. See `addon-portal/supabase/DEPLOY_V32_RUNBOOK.md` and the migration files for details.
 
 Deploy Edge Functions from addon-portal/supabase/functions and configure the required Supabase/SePay secrets. Do not deploy this schema to an unrelated Tendoo project.
 
@@ -35,6 +35,6 @@ Deploy Edge Functions from addon-portal/supabase/functions and configure the req
 - A one-time MST trial is bound to both email and MST; once registered, that history is not erased by unlink. Paid packages are not blocked by an MST used in another account's trial.
 - The extension submits only invoice identity fields (including MST and invoice number) to Supabase for quota deduplication; full XML/PDF/Excel files are generated and saved on the user's device.
 
-## Extension 3.2.1 build
+## Extension 3.3.7 build
 
-GitHub Actions `AutoTax V3.2 sync checks` produces a candidate ZIP only after JavaScript/RPC tests and positive plus negative PostgreSQL upgrade tests pass. This artifact is for review; it is **not** automatically published to Chrome Web Store. Production licensing will become functional only after the existing Supabase instance is migrated safely. See `addon-portal/supabase/DEPLOY_V32_RUNBOOK.md`.
+GitHub Actions `AutoTax V3.2 sync checks` produces a candidate ZIP only after JavaScript/RPC tests and positive plus negative PostgreSQL upgrade tests pass. This artifact is for review; it is **not** automatically published to Chrome Web Store. Production licensing is already active; deploy the extension only after green CI and end-to-end login, purchase and quota verification. See `addon-portal/supabase/DEPLOY_V32_RUNBOOK.md`.

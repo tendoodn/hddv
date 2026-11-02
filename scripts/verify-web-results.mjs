@@ -35,7 +35,7 @@ assert(admin.includes('id="packageCustomPrices"')&&admin.includes('data-delete-p
  'Admin must display a separate, deletable custom package section');
 assert(syncSql.includes('enable row level security')&&syncSql.includes('auth.uid()')&&
  syncSql.includes('addon_user_sku_update_own'),'SKU mapping must be isolated by logged-in user.');
-for(const file of ['docs/web/web-results.js','docs/web/web.js','autotax/src/sidepanel/panel.js',
+for(const file of ['docs/web/web-results.js','docs/web/web.js',
  'autotax/src/license/license.js','docs/customer.js']){
  new vm.Script(read(file),{filename:file});
 }

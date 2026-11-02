@@ -389,6 +389,7 @@ window.WebInvoiceApp={
  searchedBothKinds:()=>searchedBothKinds,
  busy:()=>busy,
  busyState,progress,show,download,loadDetails,
+ startTask:()=>{stopped=false;busyState(true);show('')},
  async fetchDetail(row){
   if(!row)throw Error('Không tìm thấy hóa đơn.');
   const existing=details.get(idOf(row));

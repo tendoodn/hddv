@@ -145,13 +145,13 @@
       <div class="tiles" role="group" aria-label="Định dạng tải về">
         <label class="tile"><input type="checkbox" name="fmt" value="excel" checked /><span>Excel</span></label>
         <label class="tile"><input type="checkbox" name="fmt" value="xml" checked /><span>XML</span></label>
-        <label class="tile" title="Chỉ tải PDF thực từ link nhà phát hành được phép. Nếu cần CAPTCHA, AutoTax ghi link và mã tra cứu; không tạo PDF giả."><input type="checkbox" name="fmt" value="pdf" /><span>PDF gốc</span></label>
+        <label class="tile" title="Thử lấy PDF gốc từ nhà phát hành; nếu không thấy, bị chặn hoặc thất bại thì tự dựng PDF từ dữ liệu Thuế và ghi rõ KHÔNG PHẢI GỐC."><input type="checkbox" name="fmt" value="pdf" /><span>PDF (gốc → dựng lại)</span></label>
         <label class="tile"><input type="checkbox" name="fmt" value="html" /><span>HTML</span></label>
       </div>
       <div class="issuer-permission-wrap">
         <button id="issuerPdfPermission" type="button" class="outline">Kiểm tra quyền truy cập 21 cổng HĐĐT</button>
         <button id="issuerOpenNext" type="button" class="outline" hidden>Tra PDF gốc đang chờ</button>
-        <small id="issuerPdfPermissionStatus">Có link + mã tra cứu: thử PDF gốc, nếu bị chặn sẽ đưa vào hàng đợi tra cứu. Sau khi nhập CAPTCHA trên cổng nhà phát hành, dùng nút AutoTax để tải PDF thực. Thiếu link/mã: xuất PDF dựng và ghi rõ không phải gốc.</small>
+        <small id="issuerPdfPermissionStatus">Tải PDF: ưu tiên bản gốc; nếu không lấy được sẽ xuất PDF dựng có nhãn KHÔNG PHẢI GỐC và ghi kèm lý do/link/mã. Có link và mã tra cứu nhưng bị chặn sẽ vào hàng đợi để tải PDF gốc sau khi xác thực ở cổng phát hành.</small>
       </div>
       <!-- Sheet thêm trong file Excel (DS hóa đơn + Chi tiết sản phẩm luôn có) -->
       <fieldset id="sheetOpts" class="sheet-opts">

@@ -383,8 +383,9 @@ async function exportFile(kind){
 // and fetchInvoice() implementation as the extension.
 window.WebInvoiceApp={
  getRows:()=>rows,
- getMst:()=>govtMst||$('mst').value.replace(/\\D/g,''),
+ getMst:()=>govtMst||$('mst').value.replace(/\D/g,''),
  getAccount:()=>account,
+ getClient:()=>client,
  searchedBothKinds:()=>searchedBothKinds,
  busy:()=>busy,
  busyState,progress,show,download,loadDetails,

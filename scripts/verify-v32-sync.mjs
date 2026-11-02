@@ -202,9 +202,9 @@ assert(panelHtml.includes('id="lic-gift-open"') && panelHtml.includes('id="lic-u
 assert(panelHtml.includes('id="lic-unlock-form"'),'Gift code requires Enter-submit form');
 assert(licenseJs.includes("dialog.showModal()") && licenseJs.includes("dialog.close()"),'Gift code popup open and close handlers missing');
 assert(licenseJs.includes('trialActivationConfirmed=true'),'Trial panel must hide immediately after activation');
-assert(panelHtml.includes('Nhập MST 10 hoặc 12 chữ số'),'Wrong MST trial hint');
-assert(licenseJs.includes('Nhập MST 10 hoặc 12 chữ số hợp lệ.'),'Wrong MST trial error text');
-assert(customerJs.includes('MST phải có 10 hoặc 12 chữ số.'),'Customer portal MST error mismatch');
+assert(panelHtml.includes('MST 10, 12 hoặc 13 số'),'Wrong MST trial hint');
+assert(licenseJs.includes('Nhập MST 10, 12 hoặc 13 chữ số hợp lệ.'),'Wrong MST trial error text');
+assert(customerJs.includes('MST phải có 10, 12 hoặc 13 chữ số.'),'Customer portal MST error mismatch');
 assert(panelCss.includes('--accent:#e60012') && panelCss.includes('--accent-strong:#b80010'),'Missing Tendoo/Viettel red palette');
 assert(panelCss.includes('grid-template-columns:repeat(5,minmax(0,1fr))'),'Five date preset buttons must stay on one row');
 assert(panelCss.includes('.sheet-opts .sheet-grid'),'Excel sheets must form two columns');

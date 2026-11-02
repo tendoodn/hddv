@@ -9,15 +9,24 @@ const safe=v=>String(v||'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,65);
    It stays in this browser tab's memory; NO backend upload, localStorage or
    automatic claims about the document's issuer/signature/provenance. */
 const suppliedPdf=new Map();
-let suppliedBytes=0;
+let suppliedBytes=0,activeAccount='';
 const MAX_SUPPLIED_FILES=16, MAX_SUPPLIED_TOTAL=64*1024*1024, MAX_PDF_BYTES=12*1024*1024;
+// Clear in-memory files when the logged-in account changes, including logout.
+function scopedAccount(){
+ const id=String(window.WebInvoiceApp?.getAccount?.()?.id||'');
+ if(id!==activeAccount){suppliedPdf.clear();suppliedBytes=0;activeAccount=id}
+ return id;
+}
 const invoiceKey=row=>JSON.stringify([
- row?.kind||'',row?.form||'',String(row?.nbmst||'').replace(/\D/g,''),
+ scopedAccount(),row?.kind||'',row?.form||'',
+ String(row?.nbmst||'').replace(/\D/g,''),
+ String(row?.nmmst||'').replace(/\D/g,''),
  row?.khmshdon||'',row?.khhdon||'',String(row?.shdon??'')
 ]);
 const isPdf=bytes=>bytes instanceof Uint8Array&&bytes.byteLength>=5&&
  bytes[0]===37&&bytes[1]===80&&bytes[2]===68&&bytes[3]===70&&bytes[4]===45;
 function attachUserPdf(row,bytes,filename=''){
+ if(!scopedAccount())throw Error('Cần đăng nhập AutoTax trước khi gắn PDF.');
  if(!row?.shdon||!row?.nbmst)throw Error('Chọn hóa đơn có số và MST bên bán trước khi gắn tệp.');
  if(!isPdf(bytes)||bytes.byteLength>MAX_PDF_BYTES)
   throw Error('Tệp phải là PDF hợp lệ và không vượt quá 12 MB.');

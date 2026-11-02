@@ -15,6 +15,7 @@ on:
       - "scripts/verify-mst-lookup.mjs"
       - "scripts/verify-mst-official.mjs"
       - "scripts/verify-issuer-pdf.mjs"
+      - "scripts/verify-autotax-icons.mjs"
       - "tests/v32/**"
       - ".github/workflows/verify-v32.yml"
   pull_request:
@@ -31,6 +32,7 @@ on:
       - "scripts/verify-mst-lookup.mjs"
       - "scripts/verify-mst-official.mjs"
       - "scripts/verify-issuer-pdf.mjs"
+      - "scripts/verify-autotax-icons.mjs"
       - ".github/workflows/verify-v32.yml"
 permissions:
   contents: read
@@ -48,6 +50,7 @@ jobs:
       - run: node scripts/verify-web-results.mjs
       - run: node scripts/verify-web-vault-pdf-audit.mjs
       - run: node scripts/verify-web-vault-v2.mjs
+      - run: node scripts/verify-autotax-icons.mjs
       - run: node scripts/verify-issuer-pdf.mjs
       - run: node scripts/verify-mst-official.mjs
       - run: LIVE_MST_LOOKUP=1 node scripts/verify-mst-lookup.mjs

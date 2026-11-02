@@ -37,7 +37,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 <section id="app" class="hidden">
 <div class="row"><div><h1>Quản lý khách hàng</h1><div class="muted">Tối đa 500 tài khoản gần nhất · gói hóa đơn, MST và trạng thái dùng thử V3.2.</div></div><button id="reload">Làm mới dữ liệu</button></div>
 <div class="panel"><div class="row"><input id="search" placeholder="Tìm theo email..." type="search"><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
-<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">Giá mới chỉ áp dụng cho đơn tạo sau khi lưu. Đơn chờ và lịch sử cũ giữ nguyên giá đã chốt.</p><div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div><p class="sub">Thời hạn các gói MST cố định 1 năm (365 ngày) từ lúc kích hoạt. Admin vẫn được chỉnh giá.</p><h3>Thêm gói mới</h3>
+<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
+<h3>10 gói mặc định</h3>
+<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
+<h3>Gói tự tạo · khu vực thứ hai</h3><p class="sub">Gói mới luôn xuất hiện ở đây, không chen vào 10 gói mặc định. Chỉ gói tự tạo có nút Xóa: nếu đã có khách mua/cấp hoặc mã unlock, gói sẽ được ẩn khỏi danh mục nhưng lịch sử và quyền đã cấp vẫn giữ nguyên.</p>
+<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packageCustomPrices"></tbody></table></div>
+<p class="sub">Gói MST cố định 365 ngày. Admin được chỉnh giá và trạng thái của mọi gói đang hiển thị.</p><h3>Thêm gói mới</h3>
 <p class="sub">Mã gói gồm 2–24 ký tự A–Z, 0–9 hoặc dấu gạch dưới (_). Ví dụ <b>T300</b>, <b>MST_100</b>. Khoảng trắng và dấu gạch nối được tự đổi thành dấu _.</p>
 <form id="createPackageForm" class="new-package-form" autocomplete="off">
   <label>Mã gói *<input id="newCode" type="text" maxlength="64" placeholder="Ví dụ T300" required autocapitalize="characters" spellcheck="false"></label>
@@ -85,15 +90,68 @@ async function boot(){const {data:{session}}=await client.auth.getSession();$("a
 const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){await client.auth.signOut();msg("authMsg","Tài khoản này không có quyền quản trị.",true);$("auth").classList.remove("hidden");return}
 $("app").classList.remove("hidden");await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
 
-async function loadPlans(){const {data,error}=await client.rpc("addon_admin_list_packages");if(error)return msg("msg","Không tải được danh mục gói: "+error.message,true);allPackages=data||[];$("packagePrices").innerHTML=(data||[]).map(p=>'<tr><td><b>'+esc(p.code)+'</b></td><td>'+(p.family==="invoice"?"Hóa đơn":"MST")+'</td><td>'+p.quantity+'</td><td><input type="number" min="0" value="'+p.price_vnd+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td><td>'+(p.family==="mst"?(Number(p.validity_days)===365?'<b>1 năm</b><div class="sub">365 ngày</div>':'<span class="pill off">Chưa áp dụng SQL 020</span>'):'—')+'</td><td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td><td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button><button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button></div></td></tr>').join("")||'<tr><td colspan="7">Chưa có gói.</td></tr>';
-$("unlockPackage").innerHTML=(data||[]).filter(p=>p.active).map(p=>'<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' ('+p.quantity+')</option>').join("");
-const grantPackage=$("grantPackage"),selected=grantPackage.value;
-grantPackage.innerHTML='<option value="">Chọn gói cấp</option>'+allPackages.filter(p=>p.active).map(p=>'<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' · '+(p.family==="mst"?"365 ngày":p.quantity+" lượt")+'</option>').join("");
-if(allPackages.some(p=>p.code===selected&&p.active))grantPackage.value=selected;
-
+const DEFAULT_CODES=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
+async function loadPlans(){
+ const {data,error}=await client.rpc("addon_admin_list_packages");
+ if(error)return msg("msg","Không tải được danh mục gói: "+error.message,true);
+ allPackages=Array.isArray(data)?data:[];
+ const defaults=DEFAULT_CODES.map(code=>allPackages.find(p=>p.code===code)).filter(Boolean);
+ const custom=allPackages.filter(p=>!DEFAULT_CODES.includes(p.code));
+ const renderRow=(p,canDelete)=>'<tr><td><b>'+esc(p.code)+'</b></td>'+
+  '<td>'+(p.family==="invoice"?"Số tờ":"MST")+'</td><td>'+Number(p.quantity).toLocaleString('vi-VN')+'</td>'+
+  '<td><input type="number" min="0" value="'+Number(p.price_vnd)+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td>'+
+  '<td>'+(p.family==="mst"?"365 ngày":"—")+'</td>'+
+  '<td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td>'+
+  '<td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button>'+
+  '<button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button>'+
+  (canDelete?'<button class="danger" data-delete-package="'+esc(p.code)+'" title="Xóa/ẩn gói tự tạo, giữ nguyên dữ liệu lịch sử">Xóa</button>':'')+
+  '</div></td></tr>';
+ $("packagePrices").innerHTML=defaults.map(p=>renderRow(p,false)).join("")||
+   '<tr><td colspan="7">Không tải được danh sách 10 gói mặc định.</td></tr>';
+ $("packageCustomPrices").innerHTML=custom.map(p=>renderRow(p,true)).join("")||
+   '<tr><td colspan="7">Chưa có gói tự tạo.</td></tr>';
+ $("unlockPackage").innerHTML=allPackages.filter(p=>p.active).map(p=>
+  '<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' ('+p.quantity+')</option>').join('');
+ const grant=$("grantPackage"),selected=grant.value;
+ grant.innerHTML='<option value="">Chọn gói cấp</option>'+allPackages.filter(p=>p.active).map(p=>
+  '<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' · '+
+   (p.family==="mst"?"365 ngày":p.quantity+" lượt")+'</option>').join('');
+ if(allPackages.some(p=>p.code===selected&&p.active))grant.value=selected;
 }
-$("packagePrices").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const code=b.dataset.save||b.dataset.active;if(!code)return;b.disabled=true;let error;if(b.dataset.save){const price=Number($("packagePrices").querySelector('[data-price="'+CSS.escape(code)+'"]').value);if(!Number.isSafeInteger(price)||price<0){b.disabled=false;return msg("msg","Giá không hợp lệ.",true)}({error}=await client.rpc("addon_admin_set_package_price",{p_code:code,p_price_vnd:price}));}else{({error}=await client.rpc("addon_admin_set_package_active",{p_code:code,p_active:b.dataset.value==="true"}))}b.disabled=false;if(error)msg("msg","Thao tác thất bại: "+error.message,true);else msg("msg","Đã cập nhật gói.");await loadPlans()};
-// The Supabase catalog RPC enforces ^[A-Z0-9_]{2,24}$; normalize before sending.
+async function updateCatalogRow(e){
+ const b=e.target.closest("button");if(!b)return;
+ const target=b.closest("tbody");
+ const code=b.dataset.save||b.dataset.active||b.dataset.deletePackage;
+ if(!code)return;
+ b.disabled=true;
+ try{
+  if(b.dataset.deletePackage){
+   if(DEFAULT_CODES.includes(code))throw Error('Không thể xóa 10 gói mặc định.');
+   if(!confirm('Xóa gói tự tạo '+code+'? Nếu gói đã phát sinh giao dịch, chỉ ẩn gói khỏi danh mục và giữ nguyên quyền/lịch sử.'))return;
+   const {data,error}=await client.rpc('addon_admin_delete_custom_package',{p_code:code});
+   if(error)throw error;
+   msg('msg',data?.mode==='archived'?
+     'Đã ẩn gói '+code+'. Quyền đã cấp và lịch sử giao dịch vẫn được giữ.':
+     'Đã xóa gói tự tạo '+code+'.');
+  }else if(b.dataset.save){
+   const el=target.querySelector('[data-price="'+CSS.escape(code)+'"]');
+   const price=Number(el?.value);
+   if(!Number.isSafeInteger(price)||price<0)throw Error('Giá bán phải là số nguyên không âm.');
+   const {error}=await client.rpc('addon_admin_set_package_price',{p_code:code,p_price_vnd:price});
+   if(error)throw error;
+   msg('msg','Đã lưu giá gói '+code+'.');
+  }else{
+   const {error}=await client.rpc('addon_admin_set_package_active',{p_code:code,p_active:b.dataset.value==='true'});
+   if(error)throw error;
+   msg('msg','Đã cập nhật trạng thái gói '+code+'.');
+  }
+  await loadPlans();
+ }catch(error){msg('msg','Không thể thay đổi gói '+code+': '+(error.message||error),true)}
+ finally{b.disabled=false}
+}
+$("packagePrices").addEventListener("click",updateCatalogRow);
+$("packageCustomPrices").addEventListener("click",updateCatalogRow);
+// New package creation remains bound below with server-side input validation.
 const normalizePackageCode=value=>String(value||"").trim().normalize("NFD")
  .replace(/[\u0300-\u036f]/g,"").replace(/[đĐ]/g,"D").toUpperCase()
  .replace(/[^A-Z0-9_]+/g,"_").replace(/^_+|_+$/g,"");

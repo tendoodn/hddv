@@ -51,7 +51,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 <option value="all">Mọi trạng thái gói</option><option value="invoice">Còn lượt hóa đơn</option>
 <option value="mst">Còn quyền MST</option><option value="trial">Đang dùng thử</option>
 <option value="expired">Không còn quyền hoạt động</option></select><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
-<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST hoặc email đang liên kết..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
+<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
 <div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
 <h3>10 gói mặc định</h3>
 <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
@@ -442,7 +442,7 @@ function renderUsers(){
   const trial='<div>'+(u.trial_used?'<span class="pill off">Đã dùng thử</span>':'<span class="pill">Chưa dùng thử</span>')+'</div>'+
    (u.trial_expires_at?'<div class="sub">Hạn thử: '+fmt(u.trial_expires_at)+'</div>':'')+
    '<div class="sub">Liên kết: '+(linked||'Chưa có')+'</div>';
-  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Đặt lại mật khẩu</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button><button class="danger" data-reset-vault="'+esc(u.user_id)+'">Reset kho mật khẩu</button></div></td></tr>';
+  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Đặt lại mật khẩu</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button></div></td></tr>';
  }).join('');
  $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
  $("count").textContent=filtered.length+"/"+allUsers.length+" tài khoản đang hiển thị (tối đa 500 tài khoản gần nhất)";
@@ -464,19 +464,6 @@ $("clearAdminFilters").onclick=()=>{
 };
 $("users").onclick=async e=>{
  const b=e.target.closest("button");if(!b)return;
- if(b.dataset.resetVault){
-  const customer=allUsers.find(u=>u.user_id===b.dataset.resetVault);
-  if(!customer)return msg("msg","Không tìm thấy khách hàng.",true);
-  if(!confirm("Reset kho mật khẩu của "+customer.email+"?\nMã khôi phục tạm: 0000.\nLần mở Web kế tiếp sẽ xóa kho mật khẩu đã mã hóa trên trình duyệt đó. Không thể khôi phục mật khẩu Thuế cũ và khách phải tạo kho mới.\nTiếp tục?"))return;
-  b.disabled=true;
-  try{
-   const {data,error}=await client.rpc("addon_admin_reset_vault",{p_user_id:customer.user_id});
-   if(error)throw error;
-   msg("msg","Đã gửi reset kho cho "+customer.email+". Mã khôi phục tạm 0000; dữ liệu cũ sẽ bị xóa khi Web đồng bộ. Khách phải tạo mật khẩu kho mới.");
-  }catch(e){msg("msg","Không reset được kho: "+(e.message||e),true)}
-  finally{b.disabled=false}
-  return;
- }
  if(b.dataset.history){openPackageHistory(b.dataset.history);return;}if(b.dataset.grant){$("grantCustomer").value=b.dataset.grant;$("adminPackageGrant").scrollIntoView({behavior:"smooth",block:"center"});$("grantPackage").focus();return;}if(b.dataset.reset){if(!confirm("Gửi email đặt lại mật khẩu tới "+b.dataset.reset+"?"))return;b.disabled=true;const {error}=await client.auth.resetPasswordForEmail(b.dataset.reset,{redirectTo:"https://tendoodn.github.io/hddv/"});b.disabled=false;if(error)msg("msg","Không gửi được email: "+error.message,true);else msg("msg","Đã gửi yêu cầu đặt lại mật khẩu tới "+b.dataset.reset+".");return;}
 };
 document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");const logs=b.dataset.tab==="logs";$("logsPanel").classList.toggle("hidden",!logs);$("search").parentElement.parentElement.classList.toggle("hidden",logs);if(logs)await loadLogs()});

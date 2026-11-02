@@ -103,6 +103,24 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
     onWarn: (text) => send({ type: 'log', level: 'warn', text }),
     // Cổng chậm: đếm giây ngay trên dòng trạng thái để người dùng biết vẫn đang chờ, không phải treo
     onWait: (w) => send({ type: 'status', text: `${w.label}: ${waitText(w)}${w.slow && !w.rate ? ' (tra máy tính tiền thường chậm, chờ tối đa 90 giây)' : ''}` }) });
+  // If the GDT profile response has no name, infer it only from invoice
+  // parties whose own MST is exactly the signed-in GDT MST.
+  if(!profile.company){
+   const names=new Map(),digits=v=>String(v||'').replace(/\D/g,'');
+   for(const r of res.rows||[]){
+    const same=r.kind==='purchase'?digits(r.nmmst)===digits(profile.mst):
+      digits(r.nbmst)===digits(profile.mst);
+    if(!same)continue;
+    const name=String((r.kind==='purchase'?r.nmten:r.nbten)||'')
+      .replace(/\s+/g,' ').trim();
+    if(name.length>=3&&name.length<=120&&/[\p{L}]/u.test(name)&&
+       !/^(khách lẻ|khach le)$/i.test(name))
+      names.set(name,(names.get(name)||0)+1);
+   }
+   const probable=[...names.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0];
+   if(probable)send({type:'mst-name',mst:profile.mst,name:probable,
+     source:'Tên người mua/bán có MST trùng phiên Thuế'});
+  }
   let rows = res.rows;
   // Chỉ HĐ thay thế / điều chỉnh / hủy: lọc theo tthai ngay sau tra cứu, trước khi tải chi tiết (tthai 1 = hóa đơn mới)
   if (adjOnly) {

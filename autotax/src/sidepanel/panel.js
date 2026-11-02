@@ -692,6 +692,29 @@ $('historyExport')?.addEventListener('click',()=>{
   const blob=new Blob(['\uFEFF'+csv.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='autotax-lich-su-hoa-don.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+// Explicit user gesture is required for optional publisher-domain access.
+// Permissions are not requested during startup, and no GDT password is sent.
+$('issuerPdfPermission')?.addEventListener('click',()=>{
+ const button=$('issuerPdfPermission'),label=$('issuerPdfPermissionStatus');
+ const origins=[
+  'https://www.meinvoice.vn/*','https://tra-cuu.meinvoice.vn/*',
+  'https://sinvoice.viettel.vn/*','https://vinvoice.viettel.vn/*',
+  'https://xemhoadon32.vnpt.vn/*','https://vinaphone-portal.vnpt-invoice.com.vn/*'
+ ];
+ button.disabled=true;
+ if(!chrome.permissions?.request){
+  label.textContent='Chrome chưa hỗ trợ cấp quyền nhà phát hành ở phiên bản này.';
+  button.disabled=false;return;
+ }
+ chrome.permissions.request({origins}).then(granted=>{
+  label.textContent=granted?
+   'Đã cấp quyền truy cập các cổng phát hành đã chọn. AutoTax chỉ tải link PDF trực tiếp hợp lệ.':
+   'Bạn chưa cấp quyền. PDF cần thao tác thủ công tại trang tra cứu của nhà phát hành.';
+ }).catch(e=>{
+  label.textContent='Không cấp được quyền tải PDF gốc: '+(e.message||e);
+ }).finally(()=>{button.disabled=false});
+});
+
 // Navigation shortcuts open a real browser tab and then close the Chrome side
 // panel where the host API supports it. Never close it before tab creation succeeds.
 document.querySelectorAll('a[data-close-panel]').forEach(link=>{

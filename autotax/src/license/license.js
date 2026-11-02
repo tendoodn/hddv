@@ -92,7 +92,7 @@
     const description=document.createElement('small');
     description.textContent=p.family==='mst'
       ? (p.description?p.description+' · ':'')+(p.validity_days?p.validity_days+' ngày · ':'')+'Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.'
-      : (p.description?p.description+' · ':'')+'Không giới hạn MST tra cứu; mỗi hóa đơn mới trừ 1 lượt.';
+      : (p.description?p.description+' · ':'')+'Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc.';
     const price=document.createElement('strong');price.textContent=money(p.price_vnd);
     details.append(name,description,price);
     const button=document.createElement('button');button.type='button';button.textContent='Chọn mua';

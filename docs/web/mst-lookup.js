@@ -81,8 +81,9 @@ function render(){
     const record=checks[portal];
     if(!record)continue;
     const source=document.createElement('div');source.className='mst-address';
-    source.textContent=label+' (người dùng dán): '+record.name+
-      (record.status?' · '+record.status:'');
+    source.textContent=record.found===false?
+      label+': người dùng ghi nhận không thấy kết quả (chưa xác minh máy chủ)':
+      label+' (người dùng dán): '+record.name+(record.status?' · '+record.status:'');
     info.append(source);
    }
   }
@@ -122,8 +123,8 @@ function render(){
   createCell(tr,v.office||'Chưa có dữ liệu');
   const cell=document.createElement('td'),pill=document.createElement('span');
   pill.className='mst-pill '+(v.verified?'ok':'error');
-  pill.textContent=numberOfChecks===2?'Đã nhập cả 2 cổng · chưa xác minh tự động':
-   numberOfChecks===1?'Đã nhập 1 cổng · chưa xác minh tự động':v.verified?
+  pill.textContent=numberOfChecks===2?'Đã ghi nhận cả 2 cổng · chưa xác minh tự động':
+   numberOfChecks===1?'Đã ghi nhận 1 cổng · chưa xác minh tự động':v.verified?
    (v.status&&v.status!=='Chưa có dữ liệu trạng thái'?v.status:'Có dữ liệu API · chưa xác minh trạng thái'):
    '⚠ Chưa có dữ liệu xác minh';
   cell.append(pill);
@@ -248,7 +249,9 @@ function exportXlsx(){
  if(!rows.length||!window.Xlsx)return status('Chưa có kết quả để xuất Excel.');
  const array=rows.map((r,i)=>{
   const checks=r.officialChecks||{};
-  const fields=(p)=>p?['Đã nhập thủ công · chưa xác minh máy chủ',p.name||'',
+  const fields=(p)=>p?[p.found===false?
+     'Người dùng ghi nhận không tìm thấy · chưa xác minh máy chủ':
+     'Có dữ liệu người dùng nhập · chưa xác minh máy chủ',p.name||'',
     p.address||'',p.office||'',p.status||'']:
     ['Chưa đối chiếu','','','',''];
   return [i+1,r.mst,r.type==='personal'?'Cá nhân':r.type==='branch'?'Chi nhánh':'Tổ chức',
@@ -274,6 +277,7 @@ function clearOfficial(){
   $(id).value='';
  $('mstOfficialConfirm').checked=false;
  $('mstOfficialSave').disabled=true;
+ $('mstOfficialNoResult').disabled=true;
  $('mstOfficialNotice').textContent='';
 }
 function selectOfficialPortal(portal){
@@ -309,6 +313,7 @@ function officialSaveState(){
  $('mstOfficialSave').disabled=!officialSelection||!officialParsed?.ok||
   officialParsed?.portal!==officialSelection?.portal||
   !$('mstOfficialConfirm').checked||!$('mstOfficialName').value.trim();
+ $('mstOfficialNoResult').disabled=!officialSelection||!$('mstOfficialConfirm').checked;
 }
 $('mstOfficialParse').addEventListener('click',()=>{
  if(!officialSelection)return;
@@ -336,7 +341,7 @@ $('mstOfficialSave').addEventListener('click',()=>{
  if(running||sequence!==s.stamp||!row||
   normalize(row.mst)?.digits!==normalize(s.code)?.digits)
   return $('mstOfficialNotice').textContent='Danh sách đã đổi. Hãy tra cứu và đối chiếu lại.';
- const record={
+ const record={found:true,
   name:$('mstOfficialName').value.trim().slice(0,250),
   address:$('mstOfficialAddress').value.trim().slice(0,450),
   office:$('mstOfficialOffice').value.trim().slice(0,250),
@@ -351,6 +356,22 @@ $('mstOfficialSave').addEventListener('click',()=>{
  status('Đã ghi nhận dữ liệu do người dùng dán cho '+s.code+' từ cổng '+
   (s.portal==='business'?'doanh nghiệp':'TNCN')+
   '. Cổng còn lại vẫn phải kiểm tra riêng; AutoTax không xác minh máy chủ.');
+});
+// An absent result is also a user-reported observation, not a government
+// response verified by AutoTax. It must not erase the other portal's check.
+$('mstOfficialNoResult').addEventListener('click',()=>{
+ const s=officialSelection,row=s&&state[s.index];
+ if(!s||!row||running||s.stamp!==sequence||!$('mstOfficialConfirm').checked||
+  normalize(row.mst)?.digits!==normalize(s.code)?.digits)return;
+ const record={found:false,name:'',address:'',office:'',
+  status:'Người dùng ghi nhận không tìm thấy kết quả',
+  source:window.MstOfficial.officialUrl(s.code,s.portal),
+  matchedClipboard:false,manuallyCheckedAt:new Date().toISOString()};
+ state[s.index]={...row,officialChecks:{...(row.officialChecks||{}),[s.portal]:record}};
+ $('mstOfficialDialog').close();render();
+ status('Đã ghi nhận người dùng KHÔNG thấy kết quả ở cổng '+
+  (s.portal==='business'?'DN':'TNCN')+' cho '+s.code+
+  '. Điều này không xác nhận MST không tồn tại và không thay thế tra cứu nguồn chính thức.');
 });
 $('mstOfficialClose').addEventListener('click',()=>$('mstOfficialDialog').close());
 $('mstOfficialDialog').addEventListener('close',clearOfficial);

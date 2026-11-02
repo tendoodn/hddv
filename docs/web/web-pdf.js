@@ -85,14 +85,6 @@ async function pdfForInvoice(row,index,total,mode){
    data:rendered,kind:'representation',reason:'Chế độ PDF Thuế: luôn dựng từ dữ liệu CQT',
    providerName:lookup.name||'',providerLink:lookup.link||'',lookupCode:lookup.code||''};
  }
- // Original-first: user-supplied PDF stays explicitly unverified rather than
- // being relabelled "issuer original". It only belongs to the signed-in account.
- const uploaded=suppliedPdf.get(invoiceKey(row));
- if(uploaded){
-  return {name:'PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH/'+name+'.pdf',
-   data:uploaded.bytes,kind:'user_supplied',providerName:lookup.name||'',
-   providerLink:lookup.link||'',lookupCode:lookup.code||''};
- }
  let bytes=null,failure='';
  if(lookup.link){
   try{bytes=await readPdf(lookup.link);
@@ -104,6 +96,14 @@ async function pdfForInvoice(row,index,total,mode){
  if(bytes&&validPdf(bytes)){
   return {name:'PDF_goc_nha_phat_hanh/'+name+'.pdf',
    data:bytes,kind:'original',providerName:lookup.name||'',
+   providerLink:lookup.link||'',lookupCode:lookup.code||''};
+ }
+ // If a PDF was downloaded and attached by the user, keep it distinct
+ // from a source-verified PDF. The issuer endpoint was attempted first.
+ const uploaded=suppliedPdf.get(invoiceKey(row));
+ if(uploaded){
+  return {name:'PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH/'+name+'.pdf',
+   data:uploaded.bytes,kind:'user_supplied',providerName:lookup.name||'',
    providerLink:lookup.link||'',lookupCode:lookup.code||''};
  }
  // V1.1 fallback requested by user: an unsuccessful genuine source attempt

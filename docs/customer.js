@@ -102,7 +102,17 @@ async function refresh(){
 async function loadPackages(){
  const rows=await rpc("addon_list_packages");
  const list=$("packageList");list.replaceChildren();
- for(const item of rows||[]){
+ const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
+ const sorted=[...defaults.map(code=>(rows||[]).find(p=>p.code===code)).filter(Boolean),
+   ...(rows||[]).filter(p=>!defaults.includes(p.code))];
+ let customHeadingAdded=false;
+ for(const item of sorted){
+  if(!defaults.includes(item.code)&&!customHeadingAdded){
+   const heading=document.createElement('h3');
+   heading.textContent='Các gói mới · danh sách bổ sung';
+   heading.style.cssText='grid-column:1/-1;margin:12px 0 0;color:#9f1239';
+   list.append(heading);customHeadingAdded=true;
+  }
   const card=document.createElement("div");card.className="plan";
   addText(card,"h3",item.name);
   addText(card,"p",item.family==="invoice"

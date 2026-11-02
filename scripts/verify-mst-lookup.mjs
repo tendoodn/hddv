@@ -14,7 +14,7 @@ assert(frontend.includes("autotax-mst-lookup")&&!frontend.includes("invoy.io.vn"
 assert(broker.includes('api.vietqr.io/v2/business/')&&
  broker.includes('PAY2S_PERSONAL_ENABLED')&&broker.includes('PAY2S_SECRET_KEY'),
  'Broker must use documented providers, protecting personal identifiers unless approved.');
-assert(broker.includes('method:"POST"')&&broker.includes('body.codes.length>20')&&
+assert(broker.includes('req.method!=="POST"')&&broker.includes('body.codes.length>20')&&
  broker.includes('recentRequests'),'Broker must rate limit and cap batches.');
 assert(broker.includes('if(n.kind==="personal")return null'),'Never send 12-digit personal IDs to public business API.');
 assert(customer.includes('10, 12 hoặc 13 chữ số')&&

@@ -1,4 +1,5 @@
-// AutoTax Web adapter — copied from the extension's invoice engine; only token and fetch transport differ.\n// Mọi URL + tham số API của hoadondientu.gdt.gov.vn nằm ở đây.
+// AutoTax Web adapter — copied from the extension's invoice engine; only token and fetch transport differ.
+// Mọi URL + tham số API của hoadondientu.gdt.gov.vn nằm ở đây.
 // Khi Tổng cục Thuế đổi API, chỉ cần sửa file này.
 (() => {
   // Không thao tác giao diện của cổng: mọi việc đi qua fetch tới API của cổng, kèm đúng các header

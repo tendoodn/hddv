@@ -60,7 +60,9 @@ assert.equal(a.parseCopiedRow(company+'\n'+company.replace('3600675874','3600675
  '3600675874').ok,false,'Cannot use a multi-row selection');
 assert.equal(a.parseCopiedRow('<script>alert(1)</script>','3600675874').ok,false);
 assert(page.includes('id="mstOfficialDialog"')&&page.includes('id="mstOfficialConfirm"'));
-assert(page.includes('mst-official.js?v=2')&&page.includes('mst-lookup.js?v=8'));
+assert(page.includes('mst-official.js?v=2')&&page.includes('mst-lookup.js?v=9'));
+assert(page.includes('id="mstOfficialNoResult"'));
+assert(frontend.includes('found:false')&&frontend.includes('matchedClipboard:false'));
 assert(page.includes('id="mstOfficialSource"')&&
  page.includes('id="mstOfficialPortalBusiness"')&&page.includes('id="mstOfficialPortalPersonal"'));
 assert(frontend.includes("window.MstOfficial.officialUrl(v.mst,portal)"));

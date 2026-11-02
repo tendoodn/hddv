@@ -50,7 +50,7 @@ begin
     ('addon_invoice_deductions','addon_deductions_read'),
     ('addon_mst_assignments','addon_mst_assignments_read')
    )
-   and qual like '%(SELECT auth.uid()%') <> 4 then
+   and qual like '%SELECT auth.uid()%') <> 4 then
   raise exception 'Four optimized read policies must keep initPlan auth identity';
  end if;
 end $$;

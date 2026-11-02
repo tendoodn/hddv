@@ -165,21 +165,41 @@ function mappingStorageKey(){
 function fingerprint(items){
  let h=2166136261;
  for(const p of items){
-  const text=p.sku+'|'+p.name;
+  const text=p.sku+'|'+p.name+'\n';
   for(const ch of text)h=Math.imul(h^ch.charCodeAt(0),16777619)>>>0;
  }
- return items.length+'-'+h.toString(16);
+ return stockPlatform+'-catalog-'+items.length+'-'+h.toString(16);
 }
-function loadLinks(){
+async function loadLinks(){
  skuLinks={};if(!catalog.length)return;
+ const available=new Set(catalog.map(p=>p.sku));
  try{
   const value=JSON.parse(localStorage.getItem(mappingStorageKey())||'{}');
-  const available=new Set(catalog.map(p=>p.sku));
   skuLinks=Object.fromEntries(Object.entries(value).filter(([,sku])=>available.has(sku)));
  }catch{}
+ const client=app()?.getClient?.(), userId=app()?.getAccount?.()?.id;
+ if(!client||!userId)return;
+ try{
+  const {data,error}=await client.from('addon_user_sku_mappings')
+   .select('product_key,sku').eq('user_id',userId).eq('platform',stockPlatform)
+   .eq('catalog_key',catalogKey).limit(1000);
+  if(error)throw error;
+  for(const item of data||[]){
+   if(item.product_key&&available.has(item.sku))skuLinks[item.product_key]=item.sku;
+  }
+  try{localStorage.setItem(mappingStorageKey(),JSON.stringify(skuLinks))}catch{}
+ }catch(e){stockStatus('Đang dùng ánh xạ cục bộ: '+(e.message||e),true)}
 }
-function saveLinks(){
+async function saveLinks(){
  try{localStorage.setItem(mappingStorageKey(),JSON.stringify(skuLinks))}catch{}
+ const client=app()?.getClient?.(), userId=app()?.getAccount?.()?.id;
+ if(!client||!userId||!Object.keys(skuLinks).length)return;
+ const data=Object.entries(skuLinks).map(([product_key,sku])=>({
+  user_id:userId,platform:stockPlatform,catalog_key:catalogKey,product_key,sku,
+  updated_at:new Date().toISOString()
+ }));
+ const {error}=await client.from('addon_user_sku_mappings').upsert(data,{onConflict:'user_id,platform,catalog_key,product_key'});
+ if(error)throw new Error('Đã lưu cục bộ nhưng đồng bộ tài khoản lỗi: '+error.message);
 }
 async function loadCatalog(event){
  const file=event.target.files?.[0];
@@ -189,8 +209,8 @@ async function loadCatalog(event){
  try{
   catalog=await window.TendooImport.catalog(file);
   catalogKey=fingerprint(catalog);
-  loadLinks();
-  stockStatus('Đã tải '+catalog.length+' SKU, '+Object.keys(skuLinks).length+' liên kết đã lưu trên trình duyệt.');
+  await loadLinks();
+  stockStatus('Đã tải '+catalog.length+' SKU, '+Object.keys(skuLinks).length+' liên kết đã đồng bộ từ tài khoản AutoTax.');
  }catch(e){stockStatus(e.message,true)}
 }
 function updateStock(){
@@ -261,11 +281,12 @@ async function openMapping(){
   });
  }catch(e){stockStatus(e.message,true)}
 }
-function persistMappings(){
+async function persistMappings(){
  const known=new Set(catalog.map(p=>p.sku));
  for(const [k,sku] of Object.entries(pendingSku))
   if(k&&sku&&known.has(sku))skuLinks[k]=sku;
- saveLinks();stockStatus('Đã lưu '+Object.keys(skuLinks).length+' liên kết SKU trên trình duyệt này.');
+ await saveLinks();
+ stockStatus('Đã đồng bộ '+Object.keys(skuLinks).length+' liên kết SKU với tài khoản AutoTax.');
 }
 async function exportStock(){
  try{
@@ -308,9 +329,13 @@ function init(){
  $('exportMonth').addEventListener('change',updateScope);
  $('closeInvoiceDetail').addEventListener('click',()=>$('invoiceDetailDialog').close());
  $('closeSkuMap').addEventListener('click',()=>$('skuMapDialog').close());
- $('saveSkuMap').addEventListener('click',()=>{persistMappings();$('skuMapDialog').close()});
- $('downloadMappedStock').addEventListener('click',()=>{
-  persistMappings();$('skuMapDialog').close();void exportStock();
+ $('saveSkuMap').addEventListener('click',async()=>{
+  try{await persistMappings();$('skuMapDialog').close()}
+  catch(e){stockStatus(e.message,true)}
+ });
+ $('downloadMappedStock').addEventListener('click',async()=>{
+  try{await persistMappings();$('skuMapDialog').close();await exportStock()}
+  catch(e){stockStatus(e.message,true)}
  });
  $('stockCatalog').addEventListener('change',loadCatalog);
  $('stockPlatform').addEventListener('change',updateStock);

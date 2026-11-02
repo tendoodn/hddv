@@ -121,7 +121,8 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
 
   // 2. Chi tiết từng hóa đơn, gom zip theo loại + tháng.
   // Hóa đơn không mã (ttxly 6): cổng không lưu XML gốc → chỉ gọi API chi tiết khi cần dòng hàng hóa cho Excel.
-  // PDF: bản thể hiện tự dựng trên máy từ XML (HĐ không mã: JSON chi tiết), không phải PDF gốc của nhà cung cấp
+  // PDF gốc: chỉ nhận file PDF thực từ link nhà phát hành đã được cấp quyền.
+  // Trang yêu cầu CAPTCHA/đăng nhập hoặc chỉ có XML phải có báo cáo thiếu PDF, KHÔNG dựng giả.
   const needDetail = formats.xml || formats.html || formats.pdf || formats.lines;
   const details = new Map();
   let errors = 0, saved = 0, done = 0;
@@ -169,11 +170,35 @@ async function runJob({ tuNgay, denNgay, kinds, forms, filters, formats, adjOnly
           send({ type: 'log', level: 'warn', text: `${row.khhdon}-${row.shdon}: cổng không trả được XML gốc (chỉ có trong Excel${formats.pdf ? ', PDF' : ''})` });
         }
         if (formats.pdf) {
+          const source = HDDT.originalLookup(row, inv.head);
           try {
-            const pdf = await Pdf.buildInvoicePdf(row, inv, HDDT.originalLookup(row, inv.head));
-            if (pdf) { add(`PDF/${sub}${base}.pdf`, pdf); invoiceFormats.pdf = true; }
+            if (!source.link) throw Error('Hóa đơn không cung cấp link nhà phát hành.');
+            // The background service worker checks trusted origin, user-granted
+            // permission, HTTPS, PDF header, size and redirect policy.
+            const result = await chrome.runtime.sendMessage({ type: 'fetch-issuer-pdf', url: source.link });
+            if (!result?.ok || !result.pdfBase64)
+              throw Error(result?.error || 'Nhà phát hành chưa trả PDF gốc.');
+            const pdf = Uint8Array.from(atob(result.pdfBase64), char => char.charCodeAt(0));
+            if (pdf.length < 5 || pdf[0]!==37 || pdf[1]!==80 || pdf[2]!==68 || pdf[3]!==70 || pdf[4]!==45)
+              throw Error('Tệp nhận được không phải PDF hợp lệ.');
+            add(`PDF_Goc_Nha_Phat_Hanh/${sub}${base}.pdf`, pdf);
+            invoiceFormats.pdf = true;
           } catch (e) {
-            send({ type: 'log', level: 'warn', text: `${row.khhdon}-${row.shdon}: không dựng được PDF (${e.message})` });
+            errors++;
+            const guide = [
+              'AutoTax - PDF GOC CHUA TAI DUOC',
+              'Khong xuat ban the hien tu dong thay PDF goc.',
+              'MST ben ban: '+(row.nbmst||''),
+              'Ky hieu / so hoa don: '+(row.khhdon||'')+' / '+(row.shdon||''),
+              'Nha phat hanh: '+(source.name||'Chua xac dinh'),
+              'Link tra cuu: '+(source.link||'Chua co trong du lieu'),
+              'Ma tra cuu / bao mat: '+(source.code||'Chua co trong XML'),
+              'Ly do: '+(e.message||String(e)),
+              'Neu cong yeu cau CAPTCHA, vui long mo trang nha phat hanh va xac thuc hop le de tai PDF goc.'
+            ];
+            add(`PDF_Chua_Tai_Goc/${sub}${base}.txt`, new TextEncoder().encode(guide.join('\n')));
+            send({ type: 'log', level: 'warn', text:
+              `${row.khhdon}-${row.shdon}: chưa tải được PDF gốc. ${e.message}. Xem file PDF_Chua_Tai_Goc trong ZIP.` });
           }
         }
         // Lưu chính xác các định dạng hóa đơn đã đóng góp tệp vào ZIP.

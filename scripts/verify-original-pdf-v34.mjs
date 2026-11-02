@@ -11,7 +11,7 @@ const panel=read('autotax/src/sidepanel/index.html');
 const assist=read('autotax/src/content/issuer-assist.js');
 const bytes=Uint8Array.from([37,80,68,70,45,49,46,55,10]);
 
-assert.equal(manifest.version,'1.1.1');
+assert.equal(manifest.version,'1.1.2');
 assert(manifest.host_permissions.includes('https://*.kiotviet.vn/*'));
 assert(manifest.host_permissions.includes('https://*.vinvoice.vn/*'));
 assert(manifest.host_permissions.includes('https://*.viettel.vn/*'));
@@ -32,10 +32,10 @@ for(const [path,js] of [
  ['autotax/src/content/content.js',addon],
  ['autotax/src/background/service-worker.js',worker]])
  new vm.Script(js,{filename:path});
-assert(web.includes('decision.shouldReconstruct')&&
+assert(web.includes('fallbackAfterFailure:true')&&
  web.includes('window.Pdf.buildInvoicePdf(row,detail,lookup)')&&
  web.includes('PDF_DUNG_LAI_TU_DU_LIEU_CQT_KHONG_PHAI_GOC'));
-assert(addon.includes('decision.shouldReconstruct')&&
+assert(addon.includes('if(!invoiceFormats.pdf)')&&
  addon.includes('Pdf.buildInvoicePdf(row,inv,source)')&&
  addon.includes('PDF_Dung_Lai_Tu_CQT_Khong_Phai_Goc'));
 assert(addon.includes('PDF_Chua_Lay_Duoc_Goc')&&

@@ -66,7 +66,29 @@ function render(){
   const address=document.createElement('div');
   address.className='mst-address';
   address.textContent=v.address||v.source||'—';
-  info.append(tag,name,address);tr.append(info);
+  info.append(tag,name,address);
+  if(v.type==='personal'&&!v.verified){
+   // Never send personal ID in a public URL. Only copy after user action.
+   const actions=document.createElement('div');
+   actions.className='mst-personal-actions';
+   const official=document.createElement('a');
+   official.href='https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp';
+   official.target='_blank';official.rel='noopener noreferrer';
+   official.textContent='Mở cổng Thuế cá nhân';
+   const copy=document.createElement('button');
+   copy.type='button';copy.className='mst-personal-copy';
+   copy.textContent='Sao chép 12 số';
+   copy.addEventListener('click',async()=>{
+    try{
+     await navigator.clipboard.writeText(v.mst);
+     status('Đã sao chép mã 12 số. Hãy xác minh qua cổng Thuế, eTax Mobile hoặc tài khoản định danh hợp lệ.');
+    }catch{
+     status('Trình duyệt không cho sao chép tự động. Hãy chọn mã 12 số trong bảng để sao chép thủ công.');
+    }
+   });
+   actions.append(official,copy);info.append(actions);
+  }
+  tr.append(info);
   createCell(tr,v.office||'Chưa có dữ liệu');
   const cell=document.createElement('td'),pill=document.createElement('span');
   pill.className='mst-pill '+(v.verified?'ok':'error');

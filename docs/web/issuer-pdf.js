@@ -3,7 +3,7 @@
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let current=null;
+let current=null,sequence=0;
 const title=v=>String(v??'').slice(0,200);
 const safe=v=>title(v).replace(/[\\/:*?"<>|\x00-\x1f]/g,'_');
 function verifiedHttps(value){
@@ -11,9 +11,28 @@ function verifiedHttps(value){
  catch{return ''}
 }
 const status=message=>{$('issuerPdfStatus').textContent=message};
+const directPdfLink=link=>{
+ try{
+  const u=new URL(link);
+  return u.protocol==='https:'&&(/\.pdf$/i.test(u.pathname)||
+   /\/download[^/]*pdf|\/pdf(?:\/|$)|format=pdf/i.test(u.pathname+u.search));
+ }catch{return false}
+};
+function providerInstructions(name){
+ if(/misa|meinvoice/i.test(name))
+  return 'MISA meInvoice: dùng mã tra cứu trên hóa đơn, nhập mã xác nhận tại cổng MISA và tải PDF từ trang chính thức.';
+ if(/viettel|sinvoice/i.test(name))
+  return 'Viettel SInvoice: chuẩn bị MST bên bán, số hóa đơn, ngày lập, mã bí mật; điền mã xác nhận tại cổng Viettel.';
+ if(/vnpt/i.test(name))
+  return 'VNPT Invoice: dùng đúng đường dẫn cổng được đơn vị bán cung cấp, nhập mã tra cứu và mã xác nhận để tải PDF.';
+ return 'Nếu cổng yêu cầu mã xác nhận hoặc đăng nhập, xác thực trên chính trang nhà phát hành rồi tải PDF xuống máy.';
+}
+
 async function open(row){
- const d=$('issuerPdfDialog'),app=window.WebInvoiceApp;
+ const d=$('issuerPdfDialog'),app=window.WebInvoiceApp,stamp=++sequence;
  current=null;
+ $('issuerPdfFile').value='';
+ $('issuerPdfAttach').disabled=true;
  $('issuerPdfName').value='';$('issuerPdfCode').value='';
  $('issuerPdfLink').hidden=true;$('issuerPdfLink').removeAttribute('href');
  $('tryIssuerPdf').disabled=true;$('copyIssuerCode').disabled=true;
@@ -23,7 +42,7 @@ async function open(row){
  if(!d.open)d.showModal();
  try{
   const detail=await app.fetchDetail(row);
-  if(!d.open)return;
+  if(!d.open||stamp!==sequence)return;
   const source=window.HDDT.originalLookup(row,detail.head||{});
   const link=verifiedHttps(source?.link);
   const code=title(source?.code);
@@ -32,11 +51,15 @@ async function open(row){
   $('copyIssuerCode').disabled=!code;
   if(link){$('issuerPdfLink').href=link;$('issuerPdfLink').hidden=false;}
   current={row,link,code,detail};
-  $('tryIssuerPdf').disabled=!link;
-  status(link?
-   (code?'Đã lấy được link và mã tra cứu. Có thể mở cổng nhà phát hành để nhập CAPTCHA nếu có.':
-    'Có link nhà phát hành, nhưng dữ liệu Thuế không cung cấp mã bảo mật riêng.'):
-   'Không có link HTTPS của nhà phát hành trong dữ liệu này. Không thể tự đoán endpoint PDF gốc.');
+  $('issuerPdfAttach').disabled=false;
+  $('tryIssuerPdf').disabled=!directPdfLink(link);
+  $('issuerPdfHelp').textContent=providerInstructions(source?.name||'');
+  const previouslyAttached=window.WebPdfExport?.hasUserPdf(row);
+  status((previouslyAttached?'Đã có tệp PDF được gắn trong phiên làm việc. ':
+    'Bạn có thể gắn PDF tải từ cổng nhà phát hành vào đúng hóa đơn này. ')+
+   (link?'Mở trang tra cứu để tải nếu cần. ':
+    'Dữ liệu không có link trực tiếp; hãy lấy link từ người bán. ')+
+   'Tệp do người dùng gắn KHÔNG được tự động coi là PDF gốc đã xác minh.');
  }catch(err){
   status('Chưa đọc được dữ liệu nhà phát hành: '+(err.message||String(err)));
  }
@@ -67,8 +90,27 @@ async function downloadDirect(){
   '. Nếu cổng yêu cầu CAPTCHA, mở link tra cứu rồi nhập mã để tải bằng trang chính thức.');
  }finally{clearTimeout(timer);btn.disabled=!current?.link}
 }
+async function attachDownloaded(){
+ if(!current?.row)return status('Chưa chọn hóa đơn cần gắn tệp.');
+ const file=$('issuerPdfFile').files?.[0];
+ if(!file)return status('Hãy chọn PDF đã tải từ trang nhà phát hành trước.');
+ if(file.size>12*1024*1024)return status('PDF không được vượt quá 12 MB.');
+ const row=current.row,btn=$('issuerPdfAttach');
+ btn.disabled=true;
+ try{
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  if(current?.row!==row)return;
+  const result=window.WebPdfExport.attachUserPdf(row,bytes,file.name);
+  status('Đã gắn tệp '+file.name+' vào hóa đơn này trong bộ nhớ phiên ('+
+   result.count+'/16 tệp). Khi xuất báo cáo PDF, AutoTax sẽ lấy tệp này và đặt trong '+
+   'thư mục CHƯA XÁC MINH. Nội dung/chữ ký số cần được kiểm tra riêng; không tải lên máy chủ.');
+ }catch(e){status('Không gắn được PDF: '+(e.message||String(e)))}
+ finally{btn.disabled=!current?.row}
+}
 function init(){
+ $('issuerPdfDialog').addEventListener('close',()=>{sequence++;current=null});
  $('closeIssuerPdf').addEventListener('click',()=>$('issuerPdfDialog').close());
+ $('issuerPdfAttach').addEventListener('click',()=>void attachDownloaded());
  $('copyIssuerCode').addEventListener('click',async()=>{
   const code=$('issuerPdfCode').value;
   if(!code)return;

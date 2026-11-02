@@ -148,4 +148,4 @@ jobs:
         with:
           name: autotax-verified-zip-optional-enterprise-crx
           path: dist/*
-          retention-days: 30
+          retention-days: 1

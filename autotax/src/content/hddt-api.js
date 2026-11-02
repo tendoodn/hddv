@@ -25,15 +25,15 @@
   // PDF gốc khi cần. Extension không gọi các cổng này (đa số có captcha) – chỉ ghi link vào Excel / PDF.
   // Khảo sát 24/10/2026 (docs/FINDINGS.md). Link trong XML (TTKhac, vd PortalLink) được ưu tiên hơn link ở đây.
   const PROVIDERS = {
-    '0101243150': { name: 'MISA meInvoice', url: 'https://www.meinvoice.vn/tra-cuu' },
-    '0105987432': { name: 'EasyInvoice', url: 'https://tracuu.easyinvoice.vn' },
-    '0101300842': { name: 'Thái Sơn E-invoice', url: 'https://einvoice.vn/tra-cuu' },
+    '0101243150': { name: 'MISA meInvoice', url: 'https://www.meinvoice.vn/tra-cuu/' },
+    '0105987432': { name: 'EasyInvoice', url: 'https://tracuu.easyinvoice.vn/Search/Index' },
+    '0101300842': { name: 'Thái Sơn E-invoice', url: 'https://hoadon.thaison.vn/' },
     '0100109106': { name: 'Viettel SInvoice', url: 'https://vinvoice.viettel.vn/utilities/invoice-search' },
-    '0100727825': { name: 'FAST e-Invoice', url: 'https://einvoice.fast.com.vn' },
-    '0106713804': { name: 'Hilo', url: 'https://tracuuhddt78.hilo.com.vn' },
+    '0100727825': { name: 'FAST e-Invoice', url: 'https://einvoice.fast.com.vn/' },
+    '0106713804': { name: 'Hilo', url: 'https://tracuuhddt78.hilo.com.vn/' },
     '0100684378': { name: 'VNPT Invoice' },
-    '0101360697': { name: 'BKAV eHoaDon' },
-    '0104128565': { name: 'FPT eInvoice' },
+    '0101360697': { name: 'BKAV eHoaDon', url: 'https://tchd.ehoadon.vn/TCHD' },
+    '0104128565': { name: 'FPT eInvoice', url: 'https://tracuuhoadon.fpt.com.vn/' },
   };
 
   // Loại hóa đơn (mua vào / bán ra) × hình thức (tab trên trang tra cứu của cổng).
@@ -523,7 +523,7 @@
   // Tra cứu hóa đơn gốc (PDF của nhà cung cấp) để người dùng tự tải: { name, link, code } – cột Excel (khi chọn PDF) và chân trang PDF
   function originalLookup(row, head) {
     const mst = head?.msttcgp || row.msttcgp || '', p = PROVIDERS[mst] || {};
-    return { name: p.name || (mst ? `MST ${mst}` : ''), link: head?.lookup?.link || p.url || '', code: head?.lookup?.code || '' };
+    return { name: p.name || (mst ? `MST ${mst}` : ''), link: head?.lookup?.link || row.lookup?.link || p.url || '', code: head?.lookup?.code || row.lookup?.code || '' };
   }
 
   // ---- Đối chiếu MST với DS công khai sử dụng hóa đơn không hợp pháp ----

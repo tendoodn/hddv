@@ -345,11 +345,17 @@ async function exportStock(){
    const tmpl=window.TendooImport.builtinTemplate(stockPlatform);
    const result=window.TendooImport.makePackage(target,detailMap,catalog,tmpl,skuLinks,
      {warehouse:$('stockWarehouse').value.trim(),lastDocNumber:$('stockLastDoc').value.trim()});
-   const name='NhapKho_'+stockPlatform.toUpperCase()+'_'+
-     (app().getMst()||'MST')+'_'+new Date().toISOString().slice(0,10)+exportSuffix()+'.zip';
-   app().download(name,result.zip,'application/zip');
-   stockStatus('Đã tạo '+result.count+' phiếu nhập kho; '+result.missing+' sản phẩm thiếu mã; '+
-    result.skipped+' hóa đơn không đủ dòng chi tiết.');
+   const files=await window.Zip.readZip(result.zip);
+   let count=0;
+   for(const [name,data] of Object.entries(files)){
+    if(!/\.xlsx$/i.test(name))continue;
+    await app().saveFile('nhap_hang/'+name,data,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    count++;
+   }
+   if(!count)throw Error('Không có tệp nhập kho Excel trong kết quả.');
+   stockStatus('Đã lưu riêng '+count+' phiếu vào nhap_hang/; '+result.missing+
+     ' sản phẩm thiếu mã; '+result.skipped+' hóa đơn không đủ dòng chi tiết.');
   });
  }catch(e){stockStatus('Không xuất được: '+(e.message||e),true)}
 }

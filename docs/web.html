@@ -118,7 +118,7 @@
       <p>Chỉ áp dụng hóa đơn mua vào thuộc phạm vi xuất bên trên. Dữ liệu danh mục tải trên máy; biểu mẫu nhập kho dùng chung với AutoTax Extension.</p>
       <div class="stock-grid">
         <label>Nền tảng<select id="stockPlatform"><option value="tendoo">Tendoo</option><option value="misa">MISA eShop</option></select></label>
-        <label>Danh mục sản phẩm (.xlsx hoặc .csv)<input id="stockCatalog" type="file" accept=".xlsx,.csv"></label>
+        <label>Danh mục sản phẩm (.xlsx hoặc .csv)<input id="stockCatalog" type="file" accept=".xlsx,.csv"></label><small>Danh mục lưu cục bộ trên máy; gói DATA365 mở quyền đồng bộ khi chuyển máy.</small>
         <label id="warehouseWrap" hidden>Mã kho MISA (*)<input id="stockWarehouse" placeholder="KHO01" maxlength="60"></label>
         <label id="stockDocWrap" hidden>Số chứng từ MISA gần nhất (*)<input id="stockLastDoc" placeholder="NK0001" maxlength="50"></label>
       </div>
@@ -174,7 +174,7 @@
   </dialog>
   <dialog id="skuMapDialog" class="stock-map-dialog" aria-labelledby="skuMapTitle">
     <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
-    <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p>
+    <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p><div class="stock-actions"><button id="stockCatalogUpdate" type="button" class="outline">Cập nhật lại file mẫu mới</button><input id="stockCatalogReplacement" type="file" accept=".xlsx,.csv" hidden></div>
     <div id="skuMapList"></div>
     <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất phiếu</button></div>
   </dialog>
@@ -198,6 +198,7 @@
 <script src="./web/hddt-api.js?v=1"></script>
 <script src="./web/report.js?v=1"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
+<script src="./web/stock-cache.js?v=113"></script>
 <script src="./web/vault.js?v=5"></script>
 <script src="./web/pdf.js?v=1"></script>
 <script src="./web/web-pdf.js?v=9"></script>

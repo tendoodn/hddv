@@ -102,9 +102,9 @@ async function refresh(){
 async function loadPackages(){
  const rows=await rpc("addon_list_packages");
  const list=$("packageList");list.replaceChildren();
- const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50','DATA365'];
+ const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
  const sorted=[...defaults.map(code=>(rows||[]).find(p=>p.code===code)).filter(Boolean),
-   ...(rows||[]).filter(p=>!defaults.includes(p.code))];
+   ...(rows||[]).filter(p=>!defaults.includes(p.code)).sort((a,b)=>(a.code==='DATA365'?-1:b.code==='DATA365'?1:0))];
  let customHeadingAdded=false;
  for(const item of sorted){
   if(!defaults.includes(item.code)&&!customHeadingAdded){

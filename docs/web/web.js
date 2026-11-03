@@ -10,7 +10,7 @@ const gatewayUrl=()=>GATEWAY+'?forceFunctionRegion='+gatewayRegion;
 const $=id=>document.getElementById(id);
 const client=window.supabase?.createClient(SUPABASE,PUBLIC_KEY);
 let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
-let busy=false,stopped=false,selectedMode='mst',profileMsts=[],searchedBothKinds=false;
+let busy=false,stopped=false,selectedMode='mst',profileMsts=[],profileAllowedMsts=[],searchedBothKinds=false;
 const vn=(iso)=>iso.split('-').reverse().join('/');
 const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const idOf=r=>JSON.stringify([r.kind,r.form,r.khhdon,r.shdon,r.nbmst,r.nmmst]);
@@ -179,8 +179,9 @@ async function getCaptcha(){
 }
 // Account-owned display name: prefer the authenticated GDT profile name;
  // fall back only to an invoice buyer/seller name whose MST matches this session.
-const profileDisplayNames=new Map();
+const profileDisplayNames=new Map(),profileVerifiedNames=new Set();
 const normalizedMst=v=>String(v||'').replace(/\D/g,'');
+const currentSearchMst=()=>normalizedMst($('mstFree')?.value||$('mst').value);
 const validProfileLabel=v=>{
  const s=String(v||'').trim().replace(/\s+/g,' ');
  return s.length>=3&&s.length<=120&&/[\p{L}]/u.test(s)&&
@@ -188,15 +189,19 @@ const validProfileLabel=v=>{
 };
 async function assignAutoMstName(mst,candidate,source){
  const label=validProfileLabel(candidate),id=normalizedMst(mst);
- if(!label||!account||!profileMsts.includes(id)||profileDisplayNames.get(id))return false;
+ const verifiedSource=source==='cổng Thuế đã đăng nhập';
+ if(!label||!account||!profileMsts.includes(id))return false;
+ if(verifiedSource?profileVerifiedNames.has(id):!!profileDisplayNames.get(id))return false;
  try{
-  const {error}=await client.rpc('addon_set_mst_profile_name',
+  const {error}=await client.rpc(
+   verifiedSource?'addon_confirm_gdt_mst_name':'addon_set_mst_profile_name',
    {p_mst:id,p_display_name:label});
   if(error)throw error;
   profileDisplayNames.set(id,label);
+  if(verifiedSource)profileVerifiedNames.add(id);
   // Reload account-scoped labels in the MST picker, preserving the selection.
   const {data}=await client.rpc('addon_list_my_mst_assignments');
-  if(data)await window.GdtVault?.setUser(account.id,data);
+  if(data)await window.GdtVault?.setUser(account.id,data,selectedMode);
   $('gdtStatus').textContent='Tên hồ sơ '+id+' được nhận từ '+source+': '+label;
   return true;
  }catch(e){console.warn('Không đồng bộ được tên hồ sơ MST:',e.message);return false}
@@ -213,12 +218,25 @@ function nameFromMatchedInvoices(rows,mst){
  return [...names.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
 }
 
+function maybeRemindTaxPassword(profiles){
+ if(selectedMode!=='mst'||!account)return;
+ const due=profiles.find(p=>p.password_updated_at&&
+  Date.now()-new Date(p.password_updated_at).getTime()>=80*86400000);
+ if(!due)return;
+ if(!window.GdtVault?.claimPasswordReminder?.(due.mst))return;
+ const popup=$('mstPasswordReminder');if(!popup||popup.open)return;
+ const days=Math.floor((Date.now()-new Date(due.password_updated_at).getTime())/86400000);
+ $('mstPasswordReminderText').textContent='MST '+due.mst+' đã '+days+
+  ' ngày kể từ lần ghi nhận mật khẩu. Hãy kiểm tra và đổi mật khẩu nếu cần.';
+ popup.showModal();
+}
 async function refreshAccount(){
  if(!client){show('Không tải được thư viện đăng nhập Supabase. Vui lòng tải lại trang.');return}
  try{
   const {data:{session}}=await client.auth.getSession();
   account=session?.user||null;
   if(!account){
+   profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
    window.GdtVault?.setUser(null,[]);
    $('authStatus').textContent='Chưa đăng nhập — đăng nhập ở trang tài khoản trước.';
    show('Phiên bản Web dùng chung tài khoản AutoTax. Hãy đăng nhập và đăng ký hồ sơ MST ở trang Tài khoản rồi quay lại trang này.');
@@ -232,17 +250,23 @@ async function refreshAccount(){
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   selectedMode=ent.data?.mode||'mst';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
-  profileDisplayNames.clear();
-  for(const item of profiles.data||[])
+  profileAllowedMsts=(profiles.data||[]).filter(x=>x.mst_allowed===true)
+   .map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
+  profileDisplayNames.clear();profileVerifiedNames.clear();
+  for(const item of profiles.data||[]){
    profileDisplayNames.set(normalizedMst(item.mst),String(item.display_name||'').trim());
-  await window.GdtVault?.setUser(account.id,profiles.data||[]);
+   if(item.name_verified_at)profileVerifiedNames.add(normalizedMst(item.mst));
+  }
+  await window.GdtVault?.setUser(account.id,profiles.data||[],selectedMode);
+  maybeRemindTaxPassword(profiles.data||[]);
   document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
-  if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
-  else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
+  if(selectedMode==='invoice')show('Chế độ số tờ: nhập MST bất kỳ, không cần thêm vào danh sách hồ sơ. Hệ thống sẽ trừ lượt hóa đơn mới.',true);
+  else if(!profileAllowedMsts.length)show('Chưa cấp quyền MST nào. Mở Quản lý tài khoản, tick MST rồi bấm Cấp quyền.');
+  else show('Gói MST: đã cấp quyền '+profileAllowedMsts.length+' MST. Chỉ các MST trong danh sách cấp quyền được tra cứu.',true);
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
 }
 async function signIntoTax(mst){
- const username=$('mst').value.trim();
+ const username=mst;
  const password=$('gdtPassword').value;
  if(!password)throw Error('Hãy nhập mật khẩu cổng Thuế.');
  if(!captchaKey||Date.now()-captchaIssuedAt>120000)await getCaptcha();
@@ -268,7 +292,18 @@ async function signIntoTax(mst){
     if(!token||!sub)throw Error('Cổng Thuế chưa trả phiên đăng nhập hợp lệ. Vui lòng kiểm tra tên đăng nhập và dịch vụ kết nối.');
     if(sub!==mst)throw Error('MST đăng nhập cổng Thuế khác MST hồ sơ AutoTax đang chọn.');
     govtToken=token;govtMst=mst;$('captchaBox').hidden=true;
-    await window.GdtVault?.saveAfterLogin(mst,password);
+    if(selectedMode==='invoice'&&!profileMsts.includes(mst)){
+     try{
+      const {error}=await client.rpc('addon_add_mst_profile_v33',{p_mst:mst});
+      if(error)throw error;
+      profileMsts.push(mst);
+     }catch(error){console.warn('Không lưu được MST vào hồ sơ:',error.message)}
+    }
+    const vaultSaved=await window.GdtVault?.saveAfterLogin(mst,password);
+    if(vaultSaved?.changed&&profileMsts.includes(mst)){
+     const {error:stampError}=await client.rpc('addon_mark_mst_password_updated',{p_mst:mst});
+     if(stampError)console.warn('Chưa lưu được mốc mật khẩu:',stampError.message);
+    }
     $('gdtStatus').textContent='Đã xác thực cổng Thuế cho MST '+mst+' · phiên chỉ ở bộ nhớ tab.';
     $('captchaStatus').textContent='Đã đăng nhập bằng mã xác nhận tự xử lý.';
     return;
@@ -299,7 +334,12 @@ async function signIntoTax(mst){
 async function ensurePermission(mst){
  const {data,error}=await client.rpc('addon_verify_session_mst_v33',{p_mst:mst});
  if(error)throw Error(error.message);
- if(!data?.allowed)throw Error('MST này chưa được cấp quyền hoặc gói đã hết hạn: '+(data?.reason||''));
+ if(!data?.allowed){
+  if(data?.reason==='mst_not_whitelisted'){
+   const dlg=$('mstLimitDialog');if(dlg&&!dlg.open)dlg.showModal();
+  }
+  throw Error('MST này chưa được cấp quyền hoặc gói đã hết hạn: '+(data?.reason||''));
+ }
  selectedMode=data.mode||selectedMode;
 }
 async function claimRows(all,mst){
@@ -325,10 +365,16 @@ function renderResults(list,warnings=[]){
 }
 async function search(e){
  e.preventDefault();if(busy)return;
- const mst=String($('mst').value||'').replace(/\D/g,'');
+ const mst=currentSearchMst();
  const start=$('fromDate').value,end=$('toDate').value;
  if(!account)return show('Đăng nhập tài khoản AutoTax trước khi tra cứu.');
- if(!profileMsts.includes(mst))return show('MST chưa nằm trong danh sách hồ sơ AutoTax của bạn.');
+ if(!/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))
+  return show('MST phải có 10, 12 hoặc 13 chữ số hợp lệ.');
+ if(selectedMode==='mst'&&!profileAllowedMsts.includes(mst)){
+  const dlg=$('mstLimitDialog');
+  if(dlg&&!dlg.open)dlg.showModal();
+  return show('MST '+mst+' chưa nằm trong danh sách được Cấp quyền theo gói MST. Hãy tick chọn MST ở trang khách hàng rồi bấm Cấp quyền.');
+ }
  if(!start||!end||start>end)return show('Khoảng ngày chưa hợp lệ.');
  if(!selected('kind').length||!selected('form').length)return show('Chọn ít nhất một loại và một hình thức hóa đơn.');
  // Select the output folder from this Search click before network requests.
@@ -355,7 +401,7 @@ async function search(e){
     onWarn:msg=>show(msg),onWait:w=>progress(w.label+' · đang đợi cổng Thuế '+(w.secs||0)+' giây')});
   if(stopped)throw Error('Đã dừng theo yêu cầu.');
   rows=await claimRows(result.rows,mst);details.clear();
-  if(!profileDisplayNames.get(mst))
+  if(!profileVerifiedNames.has(mst)&&!profileDisplayNames.get(mst))
    await assignAutoMstName(mst,nameFromMatchedInvoices(rows,mst),
     'tên người mua/người bán khớp MST trên hóa đơn');
   searchedBothKinds=selected('kind').includes('purchase')&&selected('kind').includes('sold');
@@ -481,7 +527,7 @@ async function exportFile(kind){
 // and fetchInvoice() implementation as the extension.
 window.WebInvoiceApp={
  getRows:()=>rows,
- getMst:()=>govtMst||$('mst').value.replace(/\D/g,''),
+ getMst:()=>govtMst||currentSearchMst(),
  getAccount:()=>account,
  getClient:()=>client,
  refreshAccount,
@@ -517,8 +563,13 @@ function init(){
   if(ok)show('Đã lấy CAPTCHA thành công. Nhấn Tìm kiếm hóa đơn để tiếp tục.',true);
  });
  $('clearGdt').addEventListener('click',()=>{clearGov();show('Đã xóa phiên cổng Thuế khỏi bộ nhớ.',true)});
+ $('mstFree').addEventListener('change',()=>{
+  if(govtToken&&currentSearchMst()!==govtMst)clearGov();
+ });
+ $('mstLimitClose').addEventListener('click',()=>$('mstLimitDialog').close());
+ $('mstPasswordReminderClose').addEventListener('click',()=>$('mstPasswordReminder').close());
  $('mst').addEventListener('change',()=>{
-  const x=$('mst').value.replace(/\D/g,'');
+  const x=currentSearchMst();
   if(govtToken&&x!==govtMst)clearGov();
   // GdtVault handles the selection event and encrypted credential autofill.
  });

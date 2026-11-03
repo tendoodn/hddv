@@ -236,6 +236,7 @@ async function refreshAccount(){
   for(const item of profiles.data||[])
    profileDisplayNames.set(normalizedMst(item.mst),String(item.display_name||'').trim());
   await window.GdtVault?.setUser(account.id,profiles.data||[]);
+  document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
   if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
   else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}

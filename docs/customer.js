@@ -10,6 +10,7 @@ const DUP_EMAIL="Email đã được đăng ký. Vui lòng thử email khác ho�
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
 let paymentCountdownTimer=null,paymentChannel=null,paymentOrder=null;
 let paymentStatusPromise=null,postExpiryTimer=null;
+let mstEditing='',mstEditOriginalName='';
 function showMessage(text,bad=false,target="accountMessage"){
  const el=$(target);el.textContent=text;el.hidden=!text;el.classList.toggle("error",bad);
 }
@@ -25,7 +26,9 @@ function prettyError(error){
   trial_email_already_used:"Email này đã sử dụng quyền dùng thử. Vui lòng mua gói để tiếp tục.",
   trial_mst_already_used:"MST này đã từng dùng thử ở tài khoản khác. Bạn có thể mua gói để sử dụng.",
   existing_package_account_not_eligible_for_trial:"Tài khoản này đã từng nhận gói, không thể đăng ký dùng thử.",
-  mst_capacity_reached:"Đã đủ số MST được phép quản lý.",
+  mst_capacity_reached:"Đã chọn nhiều MST hơn số lượng được phép theo gói. Hãy mua thêm hoặc bỏ tick bớt hồ sơ.",
+  mst_not_whitelisted:"MST này chưa được cấp quyền tra cứu bằng gói MST. Hãy tick chọn rồi bấm Cấp quyền ở danh sách hồ sơ.",
+  mst_profile_not_saved:"Có MST chưa được lưu trong hồ sơ. Vui lòng thêm hồ sơ trước khi cấp quyền.",
   mst_unlink_requires_active_package:"Gói MST đã hết hạn, chỉ admin mới có quyền gỡ MST.",
   trial_mst_not_reserved:"MST chưa được đăng ký dùng thử hợp lệ.",
   invoice_mode_not_selected:"Vui lòng chọn chế độ sử dụng hóa đơn.",
@@ -82,6 +85,7 @@ async function refresh(){
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
   $("modeSection").hidden=!(invTotal>0&&mstCapacity>0);
   $("usageMode").value=selected;
+  $("mstAllowControls").hidden=selected!=="mst";
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
   $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":(license.ever_had_package?"Tài khoản đã có lịch sử gói.":"");
   await Promise.all([loadMstAssignments(),loadPackages()]);
@@ -128,41 +132,90 @@ async function loadPackages(){
  }
  if(!list.children.length)addText(list,"p","Hiện chưa mở bán gói nào.","muted");
 }
+function passwordAgeDays(when){
+ if(!when)return null;
+ const days=Math.floor((Date.now()-new Date(when).getTime())/86400000);
+ return Number.isFinite(days)?Math.max(0,days):null;
+}
+function maybeRemindMstPassword(profile,userId){
+ const days=passwordAgeDays(profile.password_updated_at);
+ if(days===null||days<80||!userId)return;
+ const tag='autotax-password-80-'+userId+':'+profile.mst;
+ const today=new Date().toISOString().slice(0,10);
+ try{if(localStorage.getItem(tag)===today)return;localStorage.setItem(tag,today)}catch{}
+ const dlg=$('mstPassword80Dialog');
+ if(!dlg.open){
+  $('mstPassword80Text').textContent='MST '+profile.mst+
+   ' đã '+days+' ngày kể từ lần lưu/sửa mật khẩu. Vui lòng kiểm tra và đổi mật khẩu nếu cần.';
+  dlg.showModal();
+ }
+}
+function openMstEditor(profile=null){
+ mstEditing=profile?.mst||'';
+ mstEditOriginalName=String(profile?.display_name||'').trim();
+ $('mstProfileTitle').textContent=mstEditing?'Sửa hồ sơ MST '+mstEditing:'Thêm hồ sơ MST';
+ $('mstProfileName').value=mstEditOriginalName;
+ $('mstProfileNumber').value=mstEditing;
+ $('mstProfileNumber').readOnly=!!mstEditing;
+ $('mstProfilePassword').value='';
+ $('mstProfilePassword').placeholder=mstEditing?'Để trống nếu không đổi mật khẩu':'Mật khẩu cổng Thuế (không bắt buộc lúc tạo)';
+ $('mstProfilePasswordDate').value=profile?.password_updated_at?
+  vnDate(profile.password_updated_at):'Chưa nhập mật khẩu';
+ $('mstProfileDialog').showModal();
+ (mstEditing?$('mstProfileName'):$('mstProfileNumber')).focus();
+}
 async function loadMstAssignments(){
  const list=$("mstList");list.replaceChildren();
  const rows=await rpc("addon_list_my_mst_assignments");
  $("mstWebCount").textContent=String((rows||[]).length);
- for(const a of rows||[]){
+ const {data:{session}}=await client.auth.getSession();
+ const userId=session?.user?.id;
+ for(const item of rows||[]){
   const line=document.createElement("div");line.className="mst-row";
-  const name=document.createElement("div");
-  addText(name,"strong",a.mst);
-  const label=addText(name,"div",a.display_name||"Chưa đặt tên hồ sơ","mst-name");
-  addText(name,"small","Liên kết: "+vnDate(a.assigned_at),"muted");
+  const allow=document.createElement("label");allow.className="mst-allow-check";
+  allow.title="Chọn MST này để được tra cứu trong chế độ gói MST";
+  const check=document.createElement("input");check.type="checkbox";check.className="mst-allow-checkbox";
+  check.value=item.mst;check.checked=item.mst_allowed===true;
+  check.disabled=state?.mode!=="mst";
+  const caption=document.createElement("span");caption.textContent="Cho phép";
+  allow.append(check,caption);line.append(allow);
+  const name=document.createElement("div");name.className="mst-name";
+  addText(name,"strong",item.mst);
+  addText(name,"div",item.display_name||"Tên NNT chưa được xác minh","mst-name");
+  addText(name,"small","Liên kết: "+vnDate(item.assigned_at),"muted");
+  const days=passwordAgeDays(item.password_updated_at);
+  addText(name,"small",
+   item.password_updated_at?
+    'Mật khẩu cập nhật: '+vnDate(item.password_updated_at)+
+    ' · '+(days>=80?'Đã đến hạn nhắc đổi':(80-days)+' ngày đến mốc nhắc đổi'):
+    'Chưa ghi nhận ngày nhập/sửa mật khẩu',"muted");
   const actions=document.createElement("div");actions.className="mst-row-actions";
-  const rename=addText(actions,"button","Đổi tên");rename.className="secondary";
-  rename.addEventListener("click",async()=>{
-   const entered=prompt("Tên hiển thị hồ sơ "+a.mst+" (tối đa 120 ký tự):",a.display_name||"");
-   if(entered===null)return;
-   const display=entered.trim();
-   if(display.length>120){showMessage("Tên hồ sơ tối đa 120 ký tự.",true);return}
-   rename.disabled=true;
-   try{
-    await rpc("addon_set_mst_profile_name",{p_mst:a.mst,p_display_name:display});
-    showMessage("Đã cập nhật tên hồ sơ "+a.mst);
-    await loadMstAssignments();
-   }catch(e){showMessage(prettyError(e),true);rename.disabled=false}
-  });
+  const edit=addText(actions,"button","Sửa");edit.className="secondary";
+  edit.type='button';edit.addEventListener('click',()=>openMstEditor(item));
   const button=addText(actions,"button","Xóa MST");button.className="secondary";
-  button.addEventListener("click",async()=>{
-   if(!confirm("Xóa hồ sơ MST "+a.mst+"? Lịch sử cũ và dùng thử vẫn được giữ."))return;
+  button.type='button';button.addEventListener("click",async()=>{
+   const warning='Xóa hồ sơ '+item.mst+' sẽ xóa dữ liệu quản lý và lịch sử các hóa đơn đã ghi nhận của MST này trên AutoTax. '+
+    'Lượt đã trừ KHÔNG được hoàn. Nếu thêm lại, các hóa đơn cũ có thể bị trừ lượt mới. '+
+    'Các tệp đã tải về ổ đĩa KHÔNG thể tự xóa; bạn cần tự xóa trong thư mục đã lưu. Tiếp tục?';
+   if(!confirm(warning))return;
    button.disabled=true;
-   try{await rpc("addon_remove_mst_profile_v33",{p_mst:a.mst});showMessage("Đã xóa hồ sơ "+a.mst);await loadMstAssignments()}
-   catch(e){showMessage(prettyError(e),true);button.disabled=false}
+   try{
+    await rpc("addon_remove_mst_profile_v113",{p_mst:item.mst,p_confirm:true});
+    if(userId)await window.AutoTaxProfileVault?.forget(userId,item.mst);
+    showMessage("Đã xóa dữ liệu máy chủ của MST "+item.mst+
+      ". Các file đã lưu trên ổ đĩa phải xóa thủ công.");
+    await loadMstAssignments();
+   }catch(e){showMessage(prettyError(e),true);button.disabled=false}
   });
   line.append(name,actions);list.append(line);
+  if(state?.mode==='mst')maybeRemindMstPassword(item,userId);
  }
- if(!list.children.length)addText(list,"p","Chưa có hồ sơ MST nào. Hãy thêm MST của phiên cổng Thuế.","muted");
+ if(!list.children.length)addText(list,"p","Chưa có hồ sơ. Bấm Thêm MST để quản lý.","muted");
+ const cap=Number(state?.packages?.mst?.active_quantity||0);
+ const granted=(rows||[]).filter(x=>x.mst_allowed===true).length;
+ $("mstAllowedSummary").textContent="Đã cấp quyền "+granted+" / "+cap+" MST";
 }
+
 // Bank QR is displayed for five minutes, based on the server-issued deadline.
 // A transfer cannot be technically revoked at the bank; late confirmation
 // continues to be accepted and reflected in the entitlement balance.
@@ -317,13 +370,59 @@ $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
 }));
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
 $("refreshBtn").addEventListener("click",refresh);
-$("webAddMstForm").addEventListener("submit",async e=>{
- e.preventDefault();const input=$("webAddMst"),mst=input.value.trim().replace(/[ -]/g,"");
- if(!/^(\d{10}|\d{12}|\d{13})$/.test(mst)){showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);return}
- const submit=$("webAddMstForm").querySelector('button[type="submit"]');submit.disabled=true;
- try{await rpc("addon_add_mst_profile_v33",{p_mst:mst});input.value="";await loadMstAssignments();showMessage("Đã thêm hồ sơ MST "+mst)}
- catch(e){showMessage(prettyError(e),true)}
- finally{submit.disabled=false}
+$("webAddMstForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ openMstEditor();
+});
+$("mstGrantAllow").addEventListener("click",async()=>{
+ if(state?.mode!=="mst")return showMessage("Hãy chuyển sang chế độ MST trước khi cấp quyền.",true);
+ const all=[...document.querySelectorAll("#mstList .mst-allow-checkbox:checked")].map(x=>x.value);
+ const capacity=Number(state?.packages?.mst?.active_quantity||0);
+ if(all.length>capacity){
+  if(!$("mstProfileLimitDialog").open)$("mstProfileLimitDialog").showModal();
+  return showMessage("Bạn chọn "+all.length+" MST nhưng gói chỉ cho phép "+capacity+". Bỏ tick hoặc mua thêm gói MST.",true);
+ }
+ const button=$("mstGrantAllow");button.disabled=true;
+ try{
+  const result=await rpc("addon_set_allowed_msts_v115",{p_msts:all});
+  showMessage("Đã cấp quyền "+result.count+" / "+result.capacity+
+   " MST. Add-on và Web sẽ dùng danh sách này để kiểm tra quyền tra cứu.");
+  await loadMstAssignments();
+ }catch(error){
+  if(/mst_capacity_reached|mst_package_expired|trial_mst_already_used/i.test(String(error.message||error)))
+   if(!$("mstProfileLimitDialog").open)$("mstProfileLimitDialog").showModal();
+  showMessage(prettyError(error),true);
+ }finally{button.disabled=false}
+});
+$("mstProfileCancel").addEventListener("click",()=>$("mstProfileDialog").close());
+$("mstProfileLimitClose").addEventListener("click",()=>$("mstProfileLimitDialog").close());
+$("mstPassword80Close").addEventListener("click",()=>$("mstPassword80Dialog").close());
+$("mstProfileEditorForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const mst=$("mstProfileNumber").value.replace(/\D/g,''),name=$("mstProfileName").value.trim(),
+  password=$("mstProfilePassword").value;
+ if(!/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))return showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);
+ if(name.length>120)return showMessage("Tên NNT tối đa 120 ký tự.",true);
+ const submit=$("mstProfileSave");submit.disabled=true;
+ try{
+  if(!mstEditing)await rpc("addon_add_mst_profile_v33",{p_mst:mst});
+  if(name!==mstEditOriginalName)
+   await rpc("addon_set_mst_profile_name",{p_mst:mst,p_display_name:name});
+  if(password){
+   const {data:{session}}=await client.auth.getSession();
+   if(!session?.user?.id)throw Error('Đăng nhập lại để mã hóa mật khẩu.');
+   const result=await window.AutoTaxProfileVault.save(session.user.id,mst,password);
+   if(result.changed)await rpc("addon_mark_mst_password_updated",{p_mst:mst});
+  }
+  $("mstProfileDialog").close();await loadMstAssignments();
+  showMessage((mstEditing?'Đã sửa':'Đã thêm')+' hồ sơ MST '+mst+'. Chỉ mật khẩu được thay đổi mới cập nhật bộ đếm 80 ngày.');
+ }catch(error){
+  const text=prettyError(error);
+  if(/mst_capacity_reached|mst_profile_limit_reached|mst_package_expired|trial_mst_already_used/i.test(String(error.message||''))){
+   if(!$("mstProfileLimitDialog").open)$("mstProfileLimitDialog").showModal();
+  }
+  showMessage(text,true);
+ }finally{submit.disabled=false}
 });
 $("giftWebBtn").addEventListener("click",()=>{$("giftWebDialog").showModal();$("unlockCode").focus()});
 $("closeGiftWebBtn").addEventListener("click",()=>$("giftWebDialog").close());
@@ -336,11 +435,9 @@ $("passwordOpenBtn").addEventListener("click",()=>{
 $("passwordCloseBtn").addEventListener("click",()=>{$("passwordPanel").hidden=true});
 
 $("trialBtn").addEventListener("click",()=>action("trialBtn",async()=>{
- const mst=$("trialMst").value.trim().replace(/[ -]/g,"");
- if(!/^(\d{10}|\d{12}|\d{13})$/.test(mst))throw Error("MST phải có 10, 12 hoặc 13 chữ số.");
- const granted=await rpc("addon_start_mst_trial",{p_mst:mst});
- $("trialMst").value="";
- await refresh();showMessage("Dùng thử 1 MST đến "+vnDate(granted.expires_at));
+ const granted=await rpc("addon_start_dual_trial");
+ await refresh();
+ showMessage("Dùng thử 7 ngày đã kích hoạt: 1 MST + 100 hóa đơn. Hạn đến "+vnDate(granted.expires_at));
 }));
 $("redeemBtn").addEventListener("click",()=>action("redeemBtn",async()=>{
  const code=$("unlockCode").value.trim().toUpperCase();

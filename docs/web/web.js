@@ -583,6 +583,18 @@ function init(){
  const today=new Date();$('toDate').value=dateOnly(today);
  $('fromDate').value=dateOnly(new Date(today.getFullYear(),today.getMonth(),1));
  $('searchForm').addEventListener('submit',search);
+ // Bring MST profiles and mode from Supabase whenever this tab becomes active.
+ // Both Web and Add-on use the same account records; never sync tax passwords.
+ let profileRefreshBusy=false;
+ const refreshVisibleProfiles=async()=>{
+  if(busy||document.hidden||profileRefreshBusy)return;
+  profileRefreshBusy=true;
+  try{await refreshAccount()}finally{profileRefreshBusy=false}
+ };
+ document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)void refreshVisibleProfiles()
+ });
+ window.addEventListener('focus',()=>void refreshVisibleProfiles());
  $('webUsageMode').addEventListener('change',async event=>{
   const input=event.currentTarget,previous=selectedMode;
   if(input.value===previous)return;

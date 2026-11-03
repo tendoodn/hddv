@@ -102,7 +102,7 @@ async function refresh(){
 async function loadPackages(){
  const rows=await rpc("addon_list_packages");
  const list=$("packageList");list.replaceChildren();
- const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
+ const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50','DATA365'];
  const sorted=[...defaults.map(code=>(rows||[]).find(p=>p.code===code)).filter(Boolean),
    ...(rows||[]).filter(p=>!defaults.includes(p.code))];
  let customHeadingAdded=false;
@@ -115,7 +115,9 @@ async function loadPackages(){
   }
   const card=document.createElement("div");card.className="plan";
   addText(card,"h3",item.name);
-  addText(card,"p",item.family==="invoice"
+  addText(card,"p",item.family==="storage"
+   ? (item.description||"Đồng bộ danh mục MISA/Tendoo khi đổi máy")+" · "+(item.validity_days||365)+" ngày. Không ảnh hưởng số lượt và MST."
+   : item.family==="invoice"
    ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm). Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
    : item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn")+". Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.","muted");
   addText(card,"strong",vnMoney(item.price_vnd),"price");

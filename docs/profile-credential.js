@@ -55,7 +55,10 @@ async function save(user,mst,password){
   throw Error('Cần tài khoản, MST và mật khẩu hợp lệ.');
  let prior=null;
  try{prior=await decrypt(user,await read(user,mst))}catch{}
- if(prior===password)return {stored:true,changed:false};
+ if(prior===password){
+  try{await window.AutoTaxSharedMstVault?.importLocal(mst,password);return {stored:true,changed:false,synced:true}}
+  catch(e){return {stored:true,changed:false,synced:false,error:e.message}}
+ }
  const secret=await key(user),iv=crypto.getRandomValues(new Uint8Array(12));
  const data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},
   secret,new TextEncoder().encode(password)));
@@ -65,7 +68,11 @@ async function save(user,mst,password){
   tx.objectStore('credentials').put({v:2,iv:[...iv],data:[...data]},user+':'+normalize(mst));
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
  });
- return {stored:true,changed:true};
+ try{
+  await window.AutoTaxSharedMstVault?.save(mst,password);
+  return {stored:true,changed:true,synced:true};
+ }catch(e){return {stored:true,changed:true,synced:false,error:e.message}}
+
 }
 async function forget(user,mst){
  if(!user||!valid(mst))return;
@@ -75,6 +82,11 @@ async function forget(user,mst){
   tx.objectStore('credentials').delete(user+':'+normalize(mst));
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
  });
+}
+async function migrate(user,mst){
+ const saved=await read(user,mst);
+ if(!saved)return false;
+ return window.AutoTaxSharedMstVault?.importLocal(mst,await decrypt(user,saved));
 }
 async function transfer(user,mst){
  if(!user||!valid(mst))throw Error('Hồ sơ MST không hợp lệ.');
@@ -99,5 +111,5 @@ async function transfer(user,mst){
  if(!response?.ok)throw Error(response?.error||'Add-on không nhận được mật khẩu.');
  return true;
 }
-window.AutoTaxProfileVault=Object.freeze({save,forget,transfer});
+window.AutoTaxProfileVault=Object.freeze({save,forget,migrate});
 })();

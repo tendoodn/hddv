@@ -162,7 +162,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 
  <details id="mstProfilesWeb" class="panel mst-accordion">
   <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp lại quyền tra cứu hoặc xóa hồ sơ</small></summary>
-  <p class="muted">Chuyển mật khẩu MST sang Add-on bằng nút riêng của từng hồ sơ. Chỉ gửi khi bạn chủ động bấm và Add-on đang đăng nhập cùng tài khoản.</p>
+  <p class="muted">Mật khẩu Thuế được mã hóa AES-GCM trước khi đồng bộ lên Supabase, Web và Add-on dùng chung theo tài khoản AutoTax. Đăng nhập cùng tài khoản để tự điền mật khẩu đã lưu; không cần bấm chuyển thủ công.</p>
    <p class="muted">Danh sách hồ sơ được lưu theo tài khoản AutoTax, không giới hạn bởi gói số tờ. Chỉ các MST được tick rồi bấm Cấp quyền mới được tra cứu bằng gói MST.</p>
   <form id="webAddMstForm" class="actions">
    <input id="webAddMst" hidden>
@@ -272,8 +272,9 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a href="admin.html">Trang quản trị</a>.</footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./profile-credential.js?v=113"></script>
-<script src="./customer.js?v=113"></script>
+<script src="./mst-sync.js?v=118"></script>
+<script src="./profile-credential.js?v=118"></script>
+<script src="./customer.js?v=118"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>
 </body>

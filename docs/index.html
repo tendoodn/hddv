@@ -94,6 +94,17 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 .portal-quick-actions button{min-width:0;white-space:nowrap;padding:9px 5px}
 #passwordPanel{border-color:var(--tendoo-line)}
 @media(max-width:450px){.portal-quick-actions{gap:5px}.portal-quick-actions button{font-size:11px;padding:8px 3px}}
+
+/* V1.1.5: explicit MST grant checkboxes in the customer portal. */
+#mstProfilesWeb summary{display:flex;align-items:center;gap:10px;cursor:pointer}
+#mstProfilesWeb summary strong{font-size:16px}
+#mstProfilesWeb summary small{font-size:12px}
+#mstAllowControls{margin:12px 0;padding:12px;border:1px solid #edc1c6;border-radius:10px}
+#mstAllowControls[hidden]{display:none!important}
+.mst-allow-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;flex:0 0 auto;padding:7px}
+.mst-allow-check input{width:19px;height:19px;accent-color:#c40017}
+.mst-row{display:flex;gap:10px;align-items:flex-start}
+.mst-row>.mst-name{flex:1}
 </style>
 </head>
 <body>
@@ -129,22 +140,31 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
  </div>
  <div class="activation-grid">
  <div id="trialArea" class="panel" hidden>
-  <h2>Dùng thử 7 ngày · 1 MST</h2>
-  <p class="muted">Email và MST chỉ được dùng thử một lần. Tài khoản đã mua gói vẫn được quản lý MST theo hạn mức đã mua.</p>
-  <label for="trialMst">MST muốn dùng thử</label><input id="trialMst" inputmode="numeric" autocomplete="off" placeholder="10 / 12 / 13 chữ số (10-001)">
+  <h2>Dùng thử 7 ngày · 1 MST + 100 hóa đơn</h2>
+  <p class="muted">Kích hoạt mà không cần nhập MST. Bạn có thể tra cứu ngay theo số tờ hoặc thêm 1 hồ sơ MST sau khi chuyển chế độ. Mỗi email chỉ có một lượt dùng thử.</p>
+  <input id="trialMst" hidden aria-hidden="true">
   <div class="actions"><button id="trialBtn">Kích hoạt dùng thử</button></div>
  </div>
 
  </div>
 
- <section id="mstProfilesWeb" class="panel mst-accordion mst-always-visible">
-  <h2>Hồ sơ MST đã liên kết <span id="mstWebCount">0</span></h2><p class="muted">Luôn hiển thị và đồng bộ theo tài khoản AutoTax trên Web, Add-on và Admin.</p>
+ <details id="mstProfilesWeb" class="panel mst-accordion">
+  <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp quyền hoặc xóa hồ sơ</small></summary>
+  <p class="muted">Danh sách hồ sơ được lưu theo tài khoản AutoTax, không giới hạn bởi gói số tờ. Chỉ các MST được tick rồi bấm Cấp quyền mới được tra cứu bằng gói MST.</p>
   <form id="webAddMstForm" class="actions">
-    <input id="webAddMst" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="MST 10 / 12 / 13 số (10-001)" aria-label="Thêm MST" required>
-    <button type="submit">+ Thêm MST</button>
+   <input id="webAddMst" hidden>
+   <button type="submit">+ Thêm MST</button>
   </form>
+  <div id="mstAllowControls" hidden>
+   <p><strong>Thiết lập danh sách MST được phép tra cứu theo gói MST</strong></p>
+   <p class="muted">Tick MST cần sử dụng, sau đó bấm Cấp quyền. Số MST tối đa bằng tổng hạn mức MST còn hiệu lực. Khi chuyển sang chế độ số tờ, bạn vẫn được tra cứu MST tự do.</p>
+   <div class="actions">
+    <button id="mstGrantAllow" type="button">Cấp quyền</button>
+    <span id="mstAllowedSummary" class="muted" role="status"></span>
+   </div>
+  </div>
   <div id="mstList"></div>
- </section>
+ </details>
 
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
@@ -165,6 +185,38 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
  </div>
 </section>
+<dialog id="mstProfileDialog" class="payment-success-modal" aria-labelledby="mstProfileTitle">
+ <h2 id="mstProfileTitle">Thêm hồ sơ MST</h2>
+ <form id="mstProfileEditorForm">
+  <label for="mstProfileName">Tên người nộp thuế</label>
+  <input id="mstProfileName" type="text" maxlength="120" autocomplete="organization" placeholder="Tên NNT (sẽ xác nhận lại sau lần đăng nhập Thuế)">
+  <label for="mstProfileNumber">Mã số thuế</label>
+  <input id="mstProfileNumber" type="text" inputmode="numeric" maxlength="14" required placeholder="MST 10 / 12 / 13 số">
+  <label for="mstProfilePassword">Mật khẩu cổng hóa đơn điện tử</label>
+  <input id="mstProfilePassword" type="password" maxlength="256" autocomplete="off" placeholder="Mật khẩu (chỉ lưu mã hóa trên thiết bị này)">
+  <label for="mstProfilePasswordDate">Ngày nhập / sửa mật khẩu</label>
+  <input id="mstProfilePasswordDate" type="text" readonly placeholder="Tự cập nhật khi lưu mật khẩu">
+  <small>Nhắc đổi mật khẩu sau 80 ngày. Không thay đổi ngày khi chỉ sửa tên NNT. Nếu cổng Thuế không cung cấp ngày đổi gần nhất, hệ thống tính từ ngày bạn lưu mật khẩu.</small>
+  <div class="actions">
+   <button id="mstProfileSave" type="submit">Lưu hồ sơ</button>
+   <button id="mstProfileCancel" type="button" class="secondary">Hủy</button>
+  </div>
+ </form>
+ </dialog>
+ <dialog id="mstProfileLimitDialog" class="payment-success-modal">
+  <h2>Đã đạt giới hạn MST</h2>
+  <p>Hạn mức hồ sơ MST không còn chỗ trống. Bạn có thể mua gói MST lớn hơn hoặc xóa bớt một hồ sơ đang có.</p>
+  <div class="actions"><button id="mstProfileLimitClose" type="button">Đóng</button></div>
+ </dialog>
+ <dialog id="mstPassword80Dialog" class="payment-success-modal">
+  <h2>Nhắc đổi mật khẩu cổng Thuế</h2>
+  <p id="mstPassword80Text"></p>
+  <p class="muted">Mốc 80 ngày được tính từ lần lưu/sửa mật khẩu gần nhất, không khẳng định mật khẩu đã hết hạn theo quy định của cơ quan thuế.</p>
+  <div class="actions">
+   <a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Đổi mật khẩu cổng Thuế</a>
+   <button id="mstPassword80Close" type="button" class="secondary">Để sau</button>
+  </div>
+ </dialog>
 <dialog id="giftWebDialog" class="payment-success-modal" aria-labelledby="giftWebTitle">
  <h2 id="giftWebTitle">🎁 Kích hoạt mã quà tặng</h2>
  <p class="muted">Mã quà tặng chỉ sử dụng một lần.</p>
@@ -181,6 +233,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a href="admin.html">Trang quản trị</a>.</footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./customer.js?v=34"></script>
+<script src="./profile-credential.js?v=113"></script>
+<script src="./customer.js?v=113"></script>
 </body>
 </html>

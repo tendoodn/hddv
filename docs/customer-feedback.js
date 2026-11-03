@@ -25,6 +25,34 @@
    if(f.size>MAX_BYTES)throw Error('Mỗi ảnh phải nhỏ hơn hoặc bằng 2 MB: '+f.name);
   }
  }
+ async function showImages(row,owner,article){
+  const prefix=owner+'/'+row.id;
+  const {data:files,error}=await client.storage.from(BUCKET).list(prefix,{limit:6});
+  if(error)return;
+  const holder=document.createElement('div');
+  holder.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:8px 0';
+  for(const file of (files||[]).filter(f=>f.name&&!f.name.startsWith('.')).slice(0,5)){
+   const {data}=await client.storage.from(BUCKET).createSignedUrl(prefix+'/'+file.name,300);
+   if(!data?.signedUrl)continue;
+   const link=document.createElement('a');link.href=data.signedUrl;link.target='_blank';link.rel='noopener noreferrer';
+   const img=document.createElement('img');img.src=data.signedUrl;img.loading='lazy';
+   img.alt='Ảnh đính kèm phản ánh';img.style.cssText='width:120px;height:95px;object-fit:cover;border-radius:8px';
+   link.append(img);holder.append(link);
+  }
+  if(holder.children.length)article.append(holder);
+ }
+ async function deleteThread(row,owner){
+  const prefix=owner+'/'+row.id;
+  const {data:files,error:readError}=await client.storage.from(BUCKET).list(prefix,{limit:100});
+  if(readError)throw readError;
+  const paths=(files||[]).filter(f=>f.name&&!f.name.startsWith('.')).map(f=>prefix+'/'+f.name);
+  if(paths.length){
+   const {error}=await client.storage.from(BUCKET).remove(paths);
+   if(error)throw error;
+  }
+  const {error}=await client.rpc('addon_feedback_delete_thread',{p_feedback_id:row.id});
+  if(error)throw error;
+ }
  async function inbox(){
   const box=$('feedbackInboxList');if(!box)return;
   const {data:{session}}=await client.auth.getSession();
@@ -56,7 +84,14 @@
     });
     boxReply.append(title,text,until,del);article.append(boxReply);
    }
-   box.append(article);
+   const remove=button('Xóa phản ánh',async()=>{
+    if(!confirm('Xóa toàn bộ phản ánh này, tin nhắn và ảnh đính kèm?'))return;
+    remove.disabled=true;
+    try{await deleteThread(row,session.user.id);await inbox();}
+    catch(e){status('Không xóa được: '+e.message,true);remove.disabled=false;}
+   });
+   article.append(remove);box.append(article);
+   void showImages(row,session.user.id,article);
   }
  }
  async function submit(event){

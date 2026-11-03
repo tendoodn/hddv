@@ -67,7 +67,14 @@
     p.textContent='Quản trị đã trả lời: '+reply.body+' · '+
      new Date(reply.created_at).toLocaleString('vi-VN')+
      ' (xóa sau '+new Date(reply.expires_at).toLocaleString('vi-VN')+')';
-    art.append(p);
+    const delReply=btn('Xóa tin này',async()=>{
+     if(!confirm('Xóa tin trả lời này khỏi cuộc trò chuyện?'))return;
+     delReply.disabled=true;
+     const {error}=await client.rpc('addon_admin_feedback_delete_reply',{p_reply_id:reply.id});
+     if(error){message('Không xóa được tin: '+error.message,true);delReply.disabled=false;return}
+     await load();
+    });
+    const item=document.createElement('div');item.append(p,delReply);art.append(item);
    }
    const textarea=document.createElement('textarea');
    textarea.rows=3;textarea.maxLength=4000;

@@ -76,6 +76,12 @@
    finally{btn.disabled=false}
   });
   $('reloadSiteLinks').addEventListener('click',()=>void load());
+  // The customer/Admin inline bootstrap can resolve before this external
+  // script loads, so also initialize after the whole document is ready.
+  if(!$('app')?.classList.contains('hidden'))void load();
+  client.auth.onAuthStateChange(()=>{
+   setTimeout(()=>{if(!$('app')?.classList.contains('hidden'))void load()},150);
+  });
  }
  window.AdminSiteLinks=Object.freeze({load});
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();

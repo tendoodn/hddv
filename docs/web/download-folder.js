@@ -108,51 +108,104 @@ async function fromFullTab(){
  try{return await waitingForPicker}
  finally{waitingForPicker=null}
 }
-async function prepare({force=false}={}){
- await restore;
- if(!('showDirectoryPicker' in window))
-  throw Error('Chrome chưa hỗ trợ chọn thư mục theo ý người dùng.');
- const prior=root;
- if(force)root=null;
- if(root){
-  const status=await root.queryPermission({mode:'readwrite'});
-  if(status==='granted')return root.name;
- }
- const isExtensionSidePanel=window.location?.protocol==='chrome-extension:'&&
-  /\/index\.html$/i.test(window.location?.pathname||'');
- if(isExtensionSidePanel){
-  try{return await fromFullTab()}catch(error){root=prior;throw error}
- }
- try{
-  root=await window.showDirectoryPicker({
-   id:'autotax-invoices-v113',mode:'readwrite',startIn:'downloads'
-  });
-  await access('put',root);
-  return root.name;
- }catch(error){root=prior;throw error}
-}
 
+const DEFAULT_DIR='Hoa Don';
+function folderFor(path){
+ const all=String(path||'').replace(/\\/g,'/').split('/').filter(Boolean);
+ const profile=all.find(p=>/^(?:\d{10}|\d{12}|\d{13})(?:\s|$|[-–_])/.test(p))||'';
+ const fromFile=(profile.match(/^(\d{10,13})/)||[])[1]||'';
+ const fromWeb=String(window.WebInvoiceApp?.getMst?.()||window.AutoTaxGdtProfile?.mst||'').replace(/\D/g,'');
+ const mst=fromFile||(/^(?:\d{10}|\d{12}|\d{13})$/.test(fromWeb)?fromWeb:'Chua_Xac_Dinh_MST');
+ return [DEFAULT_DIR,mst,...outputPath(path)];
+}
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function restored(){
+ // A blocked IDB must never prevent an invoice from being downloaded.
+ await Promise.race([restore,delay(650)]);
+}
+function shownName(){
+ return root?.name?root.name+'/'+DEFAULT_DIR:'Downloads/'+DEFAULT_DIR;
+}
+async function prepare(){
+ await restored();
+ return shownName();
+}
+async function pickChange(){
+ await restored();
+ const previous=root;
+ const isPanel=window.location?.protocol==='chrome-extension:'&&
+  /\/index\.html$/i.test(window.location?.pathname||'');
+ if(isPanel){
+  try{return await fromFullTab()}catch(error){root=previous;throw error}
+ }
+ if(typeof window.showDirectoryPicker!=='function')
+  throw Error('Trình duyệt không hỗ trợ chọn thư mục. AutoTax vẫn tải vào Downloads/Hoa Don.');
+ try{
+  const chosen=await window.showDirectoryPicker({id:'autotax-invoices-v113',mode:'readwrite',startIn:'downloads'});
+  if(await chosen.queryPermission({mode:'readwrite'})!=='granted'){
+   const allowed=await chosen.requestPermission({mode:'readwrite'});
+   if(allowed!=='granted')throw Error('Bạn chưa cấp quyền ghi thư mục.');
+  }
+  await access('put',chosen);root=chosen;
+  return shownName();
+ }catch(error){root=previous;throw error}
+}
+async function tryHandle(parts,data,mime){
+ if(!root)return false;
+ const permission=await root.queryPermission({mode:'readwrite'}).catch(()=>null);
+ if(permission!=='granted')return false;
+ try{
+  let folder=root;
+  for(const segment of parts.slice(0,-1))
+   folder=await folder.getDirectoryHandle(segment,{create:true});
+  const fh=await folder.getFileHandle(parts.at(-1),{create:true});
+  const writable=await fh.createWritable();
+  try{await writable.write(data instanceof Blob?data:new Blob([data],{type:mime}));await writable.close()}
+  catch(error){try{await writable.abort()}catch{}throw error}
+  return true;
+ }catch(error){
+  // An invalid/revoked directory cannot hold a tax invoice hostage.
+  console.warn('AutoTax: using browser download fallback:',error.message);
+  return false;
+ }
+}
+function dataURL(data,mime){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=()=>resolve(reader.result);
+  reader.onerror=()=>reject(reader.error||Error('Không đọc được tệp để tải.'));
+  reader.readAsDataURL(data instanceof Blob?data:new Blob([data],{type:mime}));
+ });
+}
+async function browserDownload(parts,data,mime){
+ const path=parts.join('/');
+ if(window.location?.protocol==='chrome-extension:'&&typeof chrome!=='undefined'&&chrome.runtime?.sendMessage){
+  const answer=await chrome.runtime.sendMessage({type:'download',url:await dataURL(data,mime),filename:path});
+  if(answer?.error||!answer?.complete)throw Error(answer?.error||'Chrome chưa xác nhận đã lưu tệp.');
+  return path;
+ }
+ // HTTPS cannot place downloads into arbitrary directories without user permission.
+ // If permission expired, download the file anyway with its logical folder in its filename.
+ const name=parts.slice(1).join('__'),blob=data instanceof Blob?data:new Blob([data],{type:mime});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download=name;document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+ return name;
+}
 async function save(path,data,mime='application/octet-stream'){
- if(!root)throw Error('Chưa chọn thư mục lưu. Hãy bấm Tìm kiếm để chọn thư mục trước.');
- if(await root.queryPermission({mode:'readwrite'})!=='granted')
-  throw Error('Quyền ghi thư mục đã hết hạn. Hãy bấm Tìm kiếm để cấp quyền lại.');
- const names=outputPath(path);
- let dir=root;
- for(const p of names.slice(0,-1))dir=await dir.getDirectoryHandle(p,{create:true});
- const fh=await dir.getFileHandle(names.at(-1),{create:true});
- const writable=await fh.createWritable();
- try{await writable.write(data instanceof Blob?data:new Blob([data],{type:mime}));await writable.close()}
- catch(error){try{await writable.abort()}catch{}throw error}
- return names.join('/');
+ await restored();
+ const parts=folderFor(path);
+ if(await tryHandle(parts,data,mime))return parts.join('/');
+ return browserDownload(parts,data,mime);
 }
 async function saveMany(files){
  let count=0;
  for(const file of files){await save(file.name,file.data,file.mime);count++}
  return count;
 }
-async function change(){return prepare({force:true})}
+async function change(){return pickChange()}
 window.AutoTaxDownloadFolder=Object.freeze({
- prepare,change,save,saveMany,outputPath,
- get label(){return root?.name||''}
+ prepare,change,save,saveMany,outputPath,folderFor,
+ get label(){return shownName()}
 });
 })();

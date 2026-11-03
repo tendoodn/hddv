@@ -105,6 +105,13 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 .mst-allow-check input{width:19px;height:19px;accent-color:#c40017}
 .mst-row{display:flex;gap:10px;align-items:flex-start}
 .mst-row>.mst-name{flex:1}
+.feedback-thread{margin:12px 0;padding:13px 15px;border:1px solid var(--tendoo-line);border-radius:11px;background:#fff}
+.feedback-thread p{white-space:pre-wrap;overflow-wrap:anywhere;margin:9px 0}
+.feedback-reply{padding:11px;margin-top:9px;border-left:4px solid var(--tendoo);background:#fff1f2;border-radius:7px}
+.feedback-reply small{display:block;margin:6px 0}
+#feedbackDialog{width:min(680px,94vw);max-height:88vh;overflow-y:auto}
+#feedbackBody{display:block;width:100%;font:inherit;line-height:1.5;padding:10px;resize:vertical;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px}
+#feedbackImages{margin:8px 0}
 </style>
 </head>
 <body>
@@ -126,7 +133,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 </section>
 <section id="dashboard" hidden>
  <div class="panel">
-  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tendoodn.github.io/t/k.html" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tendoodn.github.io/t/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="refreshBtn" class="secondary" title="Làm mới">Làm mới</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
+  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tendoodn.github.io/t/k.html" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tendoodn.github.io/t/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="refreshBtn" class="secondary" title="Làm mới">Làm mới</button><button id="feedbackOpen" type="button" class="secondary">Phản hồi</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
   <div class="portal-mode-toolbar">
    <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><p class="muted">Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</p></div>
@@ -149,7 +156,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
  </div>
 
  <details id="mstProfilesWeb" class="panel mst-accordion">
-  <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp quyền hoặc xóa hồ sơ</small></summary>
+  <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp lại quyền tra cứu hoặc xóa hồ sơ</small></summary>
   <p class="muted">Danh sách hồ sơ được lưu theo tài khoản AutoTax, không giới hạn bởi gói số tờ. Chỉ các MST được tick rồi bấm Cấp quyền mới được tra cứu bằng gói MST.</p>
   <form id="webAddMstForm" class="actions">
    <input id="webAddMst" hidden>
@@ -157,15 +164,23 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   </form>
   <div id="mstAllowControls" hidden>
    <p><strong>Thiết lập danh sách MST được phép tra cứu theo gói MST</strong></p>
-   <p class="muted">Tick MST cần sử dụng, sau đó bấm Cấp quyền. Số MST tối đa bằng tổng hạn mức MST còn hiệu lực. Khi chuyển sang chế độ số tờ, bạn vẫn được tra cứu MST tự do.</p>
+   <p class="muted">Quyền đã lưu sẽ bị khóa không cho tick tùy ý. Muốn chỉnh danh sách, chọn Cấp lại quyền tra cứu, tick các MST rồi Lưu lại. Số MST có quyền không được vượt hạn mức gói.</p>
    <div class="actions">
-    <button id="mstGrantAllow" type="button">Cấp quyền</button>
+    <button id="mstGrantUnlock" type="button" class="secondary">Cấp lại quyền tra cứu</button>
+    <button id="mstGrantAllow" type="button" hidden disabled>Lưu lại quyền đã chọn</button>
+    <button id="mstGrantCancel" type="button" class="secondary" hidden>Hủy chỉnh sửa</button>
     <span id="mstAllowedSummary" class="muted" role="status"></span>
    </div>
   </div>
   <div id="mstList"></div>
  </details>
 
+ <section id="customerInbox" class="panel">
+  <div class="row"><h2>Tin nhắn từ quản trị</h2>
+   <button id="feedbackInboxRefresh" type="button" class="secondary">Làm mới hộp thư</button></div>
+  <p class="muted">Tin trả lời từ quản trị sẽ tự biến mất sau 7 ngày. Bạn có thể xóa tin ngay sau khi đọc.</p>
+  <div id="feedbackInboxList" aria-live="polite">Đang tải hộp thư…</div>
+ </section>
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
   <p id="paymentInfo" class="notice"></p>
@@ -217,6 +232,24 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
    <button id="mstPassword80Close" type="button" class="secondary">Để sau</button>
   </div>
  </dialog>
+<dialog id="feedbackDialog" class="payment-success-modal" aria-labelledby="feedbackTitle">
+ <h2 id="feedbackTitle">Gửi phản hồi AutoTax</h2>
+ <form id="feedbackForm">
+  <label for="feedbackBody">Nội dung phản hồi (tối đa 1.000 từ)</label>
+  <textarea id="feedbackBody" rows="7" maxlength="7000" required
+   placeholder="Mô tả tính năng cần hỗ trợ, lỗi xảy ra và các bước thực hiện…"></textarea>
+  <label for="feedbackImages">Ảnh đính kèm (tối đa 5 ảnh, mỗi ảnh không quá 2 MB)</label>
+  <input id="feedbackImages" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+  <small id="feedbackWordCount">0 / 1000 từ · 0 / 5 ảnh</small>
+  <p id="feedbackStatus" class="notice" role="status"></p>
+  <div class="actions">
+   <button id="feedbackSubmit" type="submit">Gửi phản hồi</button>
+   <button id="feedbackClose" type="button" class="secondary">Đóng</button>
+   <a href="https://zalo.me/0393906086" target="_blank" rel="noopener noreferrer"
+    class="extension-download-link">Liên hệ Zalo 0393906086</a>
+  </div>
+ </form>
+</dialog>
 <dialog id="giftWebDialog" class="payment-success-modal" aria-labelledby="giftWebTitle">
  <h2 id="giftWebTitle">🎁 Kích hoạt mã quà tặng</h2>
  <p class="muted">Mã quà tặng chỉ sử dụng một lần.</p>
@@ -235,5 +268,6 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./profile-credential.js?v=113"></script>
 <script src="./customer.js?v=113"></script>
+<script src="./customer-feedback.js?v=115"></script>
 </body>
 </html>

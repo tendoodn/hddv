@@ -13,9 +13,9 @@ let paymentStatusPromise=null,postExpiryTimer=null;
 let mstEditing='',mstEditOriginalName='',mstGrantUnlocked=false,canDeleteMstProfiles=false;
 function setMstGrantUnlocked(value){
  mstGrantUnlocked=!!value&&state?.mode==='mst';
- $('mstGrantAllow').hidden=!mstGrantUnlocked;
+ $('mstGrantAllow').hidden=false;
  $('mstGrantAllow').disabled=!mstGrantUnlocked;
- $('mstGrantCancel').hidden=!mstGrantUnlocked;
+ $('mstGrantCancel').hidden=true;
  $('mstGrantUnlock').disabled=mstGrantUnlocked||state?.mode!=='mst';
  for(const box of document.querySelectorAll('#mstList .mst-allow-checkbox'))
   box.disabled=!mstGrantUnlocked;
@@ -396,13 +396,13 @@ $("webAddMstForm").addEventListener("submit",e=>{
 $("mstGrantUnlock").addEventListener("click",()=>{
  if(state?.mode!=='mst')return showMessage("Chuyển sang chế độ MST để cấp quyền.",true);
  setMstGrantUnlocked(true);
- showMessage("Đã mở khóa danh sách. Tick các MST cần tra cứu, sau đó bấm Lưu lại.");
+ showMessage("Đã mở khóa danh sách. Tick các MST cần tra cứu, sau đó bấm Khoá quyền để lưu.");
 });
 $("mstGrantCancel").addEventListener("click",()=>{
  setMstGrantUnlocked(false);void loadMstAssignments();
 });
 $("mstGrantAllow").addEventListener("click",async()=>{
- if(!mstGrantUnlocked)return showMessage("Bấm Cấp lại quyền tra cứu để mở khóa danh sách.",true);
+ if(!mstGrantUnlocked)return showMessage("Bấm Cấp lại để mở khóa danh sách.",true);
  if(state?.mode!=="mst")return showMessage("Hãy chuyển sang chế độ MST trước khi cấp quyền.",true);
  const all=[...document.querySelectorAll("#mstList .mst-allow-checkbox:checked")].map(x=>x.value);
  const capacity=Number(state?.packages?.mst?.active_quantity||0);

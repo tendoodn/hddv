@@ -5,7 +5,7 @@
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax V1.1 — Tài khoản và gói sử dụng</title>
+<title>AutoTax V1.1.6 — Tài khoản và gói sử dụng</title>
 <style>
 :root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#291b1f;background:#fff8f8;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
 *{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
@@ -164,10 +164,10 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   </form>
   <div id="mstAllowControls" hidden>
    <p><strong>Thiết lập danh sách MST được phép tra cứu theo gói MST</strong></p>
-   <p class="muted">Quyền đã lưu sẽ bị khóa không cho tick tùy ý. Muốn chỉnh danh sách, chọn Cấp lại quyền tra cứu, tick các MST rồi Lưu lại. Số MST có quyền không được vượt hạn mức gói.</p>
+   <p class="muted">Quyền đã lưu sẽ bị khóa không cho tick tùy ý. Bấm Cấp lại để mở tick, chọn các MST được tra cứu rồi bấm Khoá quyền để lưu và khóa chỉnh sửa. Số MST có quyền không được vượt hạn mức gói.</p>
    <div class="actions">
-    <button id="mstGrantUnlock" type="button" class="secondary">Cấp lại quyền tra cứu</button>
-    <button id="mstGrantAllow" type="button" hidden disabled>Lưu lại quyền đã chọn</button>
+    <button id="mstGrantUnlock" type="button" class="secondary">Cấp lại</button>
+    <button id="mstGrantAllow" type="button" disabled>Khoá quyền</button>
     <button id="mstGrantCancel" type="button" class="secondary" hidden>Hủy chỉnh sửa</button>
     <span id="mstAllowedSummary" class="muted" role="status"></span>
    </div>
@@ -269,5 +269,6 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <script src="./profile-credential.js?v=113"></script>
 <script src="./customer.js?v=113"></script>
 <script src="./customer-feedback.js?v=115"></script>
+<script src="./password-toggle.js?v=116"></script>
 </body>
 </html>

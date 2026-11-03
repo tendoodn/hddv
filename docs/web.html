@@ -7,11 +7,29 @@
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax V1.1 Web · Tra cứu và tải hóa đơn điện tử</title>
+<title>AutoTax V1.1.6 Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
 <link rel="stylesheet" href="./web/web.css?v=10">
 </head>
 <body>
+<style>
+#autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}
+#autotaxZaloDock.collapsed{transform:translateX(calc(100% - 47px))}
+#autotaxZaloDock>a{background:#0564dc;border:1px solid #c0e7ff;color:white;text-decoration:none;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 2px 14px #0002}
+#autotaxZaloSlide{background:#0564dc;color:#fff;border:1px solid #fff6;border-radius:12px;padding:9px;cursor:pointer;min-width:47px}
+@media(max-width:600px){#autotaxZaloDock{top:58px;right:4px}}
+</style>
+<div id="autotaxZaloDock" class="collapsed">
+ <button type="button" id="autotaxZaloSlide" aria-expanded="false" aria-label="Trượt mở liên hệ Zalo">Zalo ◀</button>
+ <a href="https://zalo.me/0393906086" target="_blank" rel="noopener noreferrer">Nhắn Zalo 0393906086</a>
+ <a href="tel:0393906086">Gọi 0393906086</a>
+</div>
+<script>
+document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
+ const dock=document.getElementById('autotaxZaloDock'),open=dock.classList.toggle('collapsed')===false;
+ this.setAttribute('aria-expanded',String(open));this.textContent=open?'Zalo ▶':'Zalo ◀';
+});
+</script>
 <main class="wrap">
   <div class="topbar"><a class="logo" href="./"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB</span></a>
     <div class="toplinks"><a href="./">Tài khoản</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
@@ -108,6 +126,7 @@
       <button id="clearVisibleMonth" type="button" class="outline">Mọi tháng</button>
       <span id="selectionCount" class="selection-count">Đã chọn 0 hóa đơn</span>
       <div class="exports">
+         <button id="exportAllZip" type="button" title="Gói tổng hợp theo MST, chỉ tải một ZIP">Tải tất cả thành 1 ZIP</button>
         <button id="exportExcel" type="button">Tải Excel</button>
         <button id="exportXml" type="button">Tải XML</button>
         <button id="exportHtml" type="button">Tải HTML</button>
@@ -130,6 +149,7 @@
       <div class="stock-actions">
         <button id="stockMapBtn" type="button" class="outline">Ánh xạ mã hàng</button>
         <button id="stockDownloadBtn" type="button">Tải phiếu nhập kho ZIP</button>
+         <button id="stockSingleBtn" type="button" class="outline" title="Tải từng phiếu nhập hàng Excel độc lập">Tải riêng từng phiếu</button>
         <span id="stockStatus" role="status"></span>
       </div>
     </section>
@@ -181,7 +201,7 @@
     <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
     <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p><input id="stockCatalogReplacement" type="file" accept=".xlsx,.csv" hidden>
     <div id="skuMapList"></div>
-    <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất phiếu</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
+    <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất ZIP</button><button id="downloadSingleMappedStock" type="button" class="outline">Tải từng tờ nhập hàng</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
   </dialog>
   <dialog id="mstLimitDialog" class="stock-map-dialog">
   <h2>Đã đạt giới hạn MST</h2>
@@ -224,4 +244,5 @@
 <script src="./web/web-results.js?v=6"></script>
 <script src="./web/issuer-pdf.js?v=4"></script>
 <script src="./web/audit.js?v=1"></script>
+<script src="./password-toggle.js?v=116"></script>
 </body></html>

@@ -84,8 +84,18 @@
    try{await uncrypt(newKey,rows[0]);}
    catch{
     if(cached){
-     try{await uncrypt(cached,rows[0]);return {unlocked:true,needsRekey:true};}
-     catch{/* Neither key matches existing cloud data. */}
+     try{
+      await uncrypt(cached,rows[0]);
+      // The user has successfully logged in with a newer AutoTax password,
+      // but this device still holds the previous non-exportable vault key.
+      // Automatically rewrap cloud records with the new account password.
+      await rekey(password);
+      return {unlocked:true,needsRekey:false,rekeyed:true};
+     }catch(e){
+      // Retain the old key rather than accidentally destroying recoverable data.
+      console.warn('MST vault rekey deferred:',e.message);
+      return {unlocked:true,needsRekey:true};
+     }
     }
     throw Error('Mật khẩu đồng bộ đã thay đổi, không thể giải mã dữ liệu cũ. Hãy đăng nhập trên thiết bị từng lưu MST để khôi phục và cập nhật khóa.');
    }

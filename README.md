@@ -2,7 +2,7 @@
 
 ![Logo AutoTax](docs/favicon.svg)
 
-**AutoTax V1.1.2 · Tendoo**
+**AutoTax V1.1.7 · Tendoo**
 
 Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa đơn mua vào/bán ra, xuất Excel/XML/HTML/PDF, kiểm tra rủi ro và đối chiếu sản phẩm.
 
@@ -15,12 +15,17 @@ Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa
 - Add-on Chrome ưu tiên PDF gốc và hỗ trợ bản dựng lại khi chưa lấy được bản gốc.
 - Đồng bộ SKU, xuất dữ liệu nhập kho MISA/Tendoo và theo dõi lịch sử hóa đơn.
 - Quản lý gói sử dụng, gia hạn, tài khoản và hồ sơ MST.
+- Ghi nhận hóa đơn đã đọc dùng chung giữa chế độ MST và số tờ, tránh trừ lượt khi đọc lại.
+- Admin cấp lại mật khẩu qua email hoặc mật khẩu tạm có yêu cầu đổi lại khi đăng nhập.
 
 ## Sử dụng
 
-- [AutoTax – Tài khoản](https://tendoodn.github.io/hddv/)
-- [Tra cứu hóa đơn Web](https://tendoodn.github.io/hddv/docs/web.html)
-- [Tra cứu MST](https://tendoodn.github.io/hddv/docs/mst.html)
+- [AutoTax – Tài khoản](https://tracuuhoadon.top/)
+- [Tra cứu hóa đơn Web](https://tracuuhoadon.top/web.html)
+- [Tra cứu MST](https://tracuuhoadon.top/mst.html)
+- [Trang tạo PDF đối chiếu](https://tracuuhoadon.top/pdf/)
+- [Báo giá thiết bị & HDĐT Viettel](https://tracuuhoadon.top/baogia/)
+- [Theo dõi hệ số K](https://tracuuhoadon.top/k/)
 - [Bộ cài Chrome](https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF)
 
 **Lưu ý:** PDF dựng lại không phải PDF gốc; một số cổng nhà phát hành cần phiên đăng nhập hoặc CAPTCHA hợp lệ.

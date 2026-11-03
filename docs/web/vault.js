@@ -105,9 +105,18 @@ function renderPicker(){
  const remembered=owner?localStorage.getItem(lastKey()):null;
  select.replaceChildren();
  const empty=document.createElement('option');
- empty.value='';empty.textContent='Chọn MST';select.append(empty);
+ empty.value='';empty.textContent='＋ Thêm MST mới';select.append(empty);
  const menu=$('mstPickerMenu');menu.replaceChildren();
- for(const p of profiles){
+ const add=document.createElement('button');
+ add.type='button';add.className='mst-picker-choice';add.textContent='＋ Thêm MST mới';
+ add.addEventListener('click',()=>{
+  select.value='';$('mstFree').value='';$('mstFree').hidden=false;
+  menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
+  $('gdtPassword').value='';updateChosen();$('mstFree').focus();
+ });
+ menu.append(add);
+ const visibleProfiles=invoiceMode?profiles:profiles.filter(p=>p.mst_allowed);
+ for(const p of visibleProfiles){
   const mst=p.mst;
   const opt=document.createElement('option');
   opt.value=mst;opt.textContent=mst+' — '+mstName(p);
@@ -119,7 +128,7 @@ function renderPicker(){
   const alias=document.createElement('small');alias.textContent=mstName(p);
   pick.append(number,alias);
   pick.addEventListener('click',()=>{
-   select.value=mst;select.dispatchEvent(new Event('change',{bubbles:true}));
+   $('mstFree').value='';$('mstFree').hidden=true;select.value=mst;select.dispatchEvent(new Event('change',{bubbles:true}));
    menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
   });
   card.append(pick);
@@ -131,16 +140,19 @@ function renderPicker(){
 
   card.append(manage);menu.append(card);
  }
- const wanted=profiles.some(p=>p.mst===old)?old:
-  profiles.some(p=>p.mst===remembered)?remembered:profiles[0]?.mst||'';
- select.value=wanted;
- $('mstProfileCount').textContent=profiles.length+' hồ sơ';
+ const typed=normalize($('mstFree').value);
+ const wanted=visibleProfiles.some(p=>p.mst===typed)?typed:
+  visibleProfiles.some(p=>p.mst===old)?old:
+  visibleProfiles.some(p=>p.mst===remembered)?remembered:visibleProfiles[0]?.mst||'';
+ select.value=wanted;$('mstFree').hidden=!!wanted;
+ if(wanted)$('mstFree').value='';
+ $('mstProfileCount').textContent=visibleProfiles.length+' / '+profiles.length+' hồ sơ';
  updateChosen();
 }
 function updateChosen(){
  const mst=$('mst').value,p=profiles.find(x=>x.mst===mst);
  $('mstPickerToggle').textContent=p?
-  p.mst+' · '+mstName(p)+' ▾':'Chọn hồ sơ MST ▾';
+  p.mst+' · '+mstName(p)+' ▾':'＋ Thêm MST mới ▾';
  for(const card of $('mstPickerMenu').children){
   const chosen=card.querySelector('.mst-picker-choice');
   const selected=!!chosen&&chosen.querySelector('strong')?.textContent===mst;
@@ -158,24 +170,24 @@ async function select(mst){
  const stamp=++requestSeq;
  updateChosen();
  if(!owner||!(/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))||
-   (!invoiceMode&&!profiles.some(p=>p.mst===mst)))return;
+   false)return;
  try{localStorage.setItem(lastKey(),mst)}catch{}
  try{
   const record=await readStore('credentials',entryKey(mst));
-  if(stamp!==requestSeq||$('mst').value!==mst)return;
+  if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
   if(!record){
    notify('Chưa lưu mật khẩu cổng Thuế trên thiết bị này. Nhập một lần để tự ghi nhớ sau khi đăng nhập thành công.');
    return;
   }
   const password=await decryptPassword(record);
-  if(stamp!==requestSeq||$('mst').value!==mst)return;
+  if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
   input.value=password;
   notify('Đã tự điền mật khẩu mã hóa của MST '+mst+' trên thiết bị này.');
  }catch(e){if(stamp===requestSeq)notify('Không đọc được mật khẩu đã lưu. Hãy nhập lại: '+(e.message||e),true)}
 }
 async function setUser(userId,rows,mode='mst'){
  invoiceMode=mode==='invoice';
- $('mstPickerToggle').hidden=invoiceMode;
+ $('mstPickerToggle').hidden=false;
  $('mstFree').placeholder=invoiceMode?'Nhập MST bất kỳ (gói số tờ)':'Nhập MST mới để thêm vào gói MST';
  const changed=(userId||'')!==owner;
  if(changed){
@@ -185,7 +197,7 @@ async function setUser(userId,rows,mode='mst'){
  const previous=changed?[]:[...profiles];
  profiles=[...new Map((rows||[]).map(x=>{
   const mst=normalize(typeof x==='object'?x.mst:x);
-  return [mst,{mst,display_name:typeof x==='object'?String(x.display_name||'').slice(0,120):''}];
+  return [mst,{mst,display_name:typeof x==='object'?String(x.display_name||'').slice(0,120):'',mst_allowed:typeof x==='object'?x.mst_allowed===true:false}];
  }).filter(([mst])=>/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))).values()];
  if(owner&&!invoiceMode){
   const allowed=new Set(profiles.map(p=>p.mst));
@@ -193,12 +205,12 @@ async function setUser(userId,rows,mode='mst'){
    await deleteStore('credentials',entryKey(old.mst)).catch(()=>{});
  }
  renderPicker();
- if(owner&&(invoiceMode?$('mstFree').value:$('mst').value))
-  await select(invoiceMode?normalize($('mstFree').value):$('mst').value);
+ if(owner&&($('mstFree').value||$('mst').value))
+  await select(normalize($('mstFree').value||$('mst').value));
  if(!owner)notify('Đăng nhập AutoTax để xem hồ sơ MST đã liên kết.');
 }
 async function saveAfterLogin(mst,password){
- if(!owner||(!invoiceMode&&!profiles.some(p=>p.mst===mst))||
+ if(!owner||
     !/^(?:\d{10}|\d{12}|\d{13})$/.test(mst)||!password||password.length>MAX_PASS)return {stored:false};
  try{
   let previous=null;
@@ -234,10 +246,13 @@ function init(){
   $('mstPickerToggle').setAttribute('aria-expanded',String(!menu.hidden));
  });
  $('mst').addEventListener('change',()=>{
-  $('mstFree').value='';
+  $('mstFree').value='';$('mstFree').hidden=!!$('mst').value;
+  if(!$('mst').value)$('mstFree').focus();
   void select($('mst').value);
  });
- $('mstFree').addEventListener('change',()=>void select(normalize($('mstFree').value)));
+ $('mstFree').addEventListener('change',()=>{
+  $('mst').value='';void select(normalize($('mstFree').value));
+ });
  $('mstForgetPassword').addEventListener('click',()=>{
   if(confirm('Xóa mật khẩu cổng Thuế đã lưu của MST đang chọn trên thiết bị này?'))
    void forget().catch(e=>notify(e.message,true));

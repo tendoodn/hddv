@@ -46,6 +46,8 @@
           <select id="mst" name="mst" aria-label="MST đang chọn" class="mst-hidden-select">
             <option value="">Chọn MST từ hồ sơ AutoTax</option>
           </select>
+          <input id="mstFree" name="mstFree" type="text" inputmode="numeric" maxlength="14" autocomplete="off"
+            placeholder="Hoặc nhập MST cần tra cứu (10/12/13 số)" aria-label="Nhập MST mới hoặc MST tự do theo số tờ">
           <button id="mstPickerToggle" class="mst-picker-toggle" type="button" aria-controls="mstPickerMenu" aria-expanded="false">Chọn hồ sơ MST ▾</button>
           <div id="mstPickerMenu" class="mst-picker-menu" hidden aria-label="Danh sách hồ sơ MST"></div>
           <div class="vault-inline"><a href="./" target="_blank" rel="noopener noreferrer">Quản lý / đổi tên hồ sơ MST</a><span id="mstProfileCount"></span></div>
@@ -181,7 +183,19 @@
     <div id="skuMapList"></div>
     <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất phiếu</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
   </dialog>
-  <dialog id="kWarningDialog" class="k-warning-dialog" aria-labelledby="kWarningTitle">
+  <dialog id="mstLimitDialog" class="stock-map-dialog">
+  <h2>Đã đạt giới hạn MST</h2>
+  <p>Gói MST đang sử dụng không đủ số hồ sơ. Hãy mua thêm hoặc xóa hồ sơ không còn dùng trong trang Quản lý tài khoản.</p>
+  <p><a href="./" target="_blank" rel="noopener noreferrer">Mở Quản lý tài khoản</a></p>
+  <button id="mstLimitClose" type="button">Đóng</button>
+ </dialog>
+ <dialog id="mstPasswordReminder" class="stock-map-dialog">
+  <h2>Đến hạn nhắc đổi mật khẩu cổng Thuế</h2>
+  <p id="mstPasswordReminderText"></p>
+  <p><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Đổi mật khẩu trên cổng Thuế</a></p>
+  <button id="mstPasswordReminderClose" type="button">Để sau</button>
+ </dialog>
+ <dialog id="kWarningDialog" class="k-warning-dialog" aria-labelledby="kWarningTitle">
     <h2 id="kWarningTitle">Cảnh báo rủi ro hệ số K</h2>
     <p id="kWarningText"></p>
     <label><input type="checkbox" id="disableKPopup"> Tắt popup cảnh báo hệ số K trên trình duyệt này</label>

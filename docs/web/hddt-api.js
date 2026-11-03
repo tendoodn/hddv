@@ -447,13 +447,14 @@
 
   function invoiceFromXml(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
-    const t = (el, tag) => el.getElementsByTagName(tag)[0]?.textContent?.trim() ?? '';
+    // Use localName so <ns:HHDVu>/<ns:MHHDVu> work as well as unprefixed XML.
+    const t = (el, tag) => el ? (Array.from(el.children).find(child=>child.localName===tag)?.textContent?.trim()??'') : '';
     // Thông tin khác của dòng (TTKhac/TTin): nhiều phần mềm hóa đơn ghi tiền thuế từng dòng ở "VATAmount"
     const extra = (h, re) => {
-      const tin = [...h.getElementsByTagName('TTin')].find((x) => re.test(t(x, 'TTruong')));
+      const tin = byName(h, 'TTin').find((x) => re.test(t(x, 'TTruong')));
       return tin ? num(t(tin, 'DLieu')) : null;
     };
-    const lines = [...doc.getElementsByTagName('HHDVu')].map((h) => {
+    const lines = byName(doc, 'HHDVu').map((h) => {
       const tc = t(h, 'TChat'), thtien = signed(tc, num(t(h, 'ThTien'))), tsuat = t(h, 'TSuat'), r = rateOf(tsuat);
       const tinh = r !== null && thtien !== null ? Math.round(thtien * r) : null;
       // Có phần mềm ghi VATAmount = 0 cho dòng 8% (trường để trống) → coi như không ghi khi tự tính ra khác 0
@@ -464,14 +465,14 @@
         tthue: ghi ?? tinh, tthueTinh: ghi === null && tinh !== null };
     });
     // Phí, lệ phí ngoài hàng hóa (vd lệ phí đăng kiểm, thuế/phí khác của vé máy bay)
-    const fees = [...doc.getElementsByTagName('LPhi')]
+    const fees = byName(doc, 'LPhi')
       .map((p) => ({ ten: t(p, 'TLPhi'), tien: num(t(p, 'TPhi')) }))
       .filter((p) => p.tien);
     return { lines, fees, head: headFromXml(doc) };
   }
   function linesFromDetail(det) {
     return (det.hdhhdvu || []).map((h) => ({
-      tchat: TCHAT[h.tchat] || h.tchat || '', ma: h.mhhdvu || '', ten: h.ten, dvt: h.dvtinh, sl: num(h.sluong), dgia: signed(h.tchat, num(h.dgia)), ck: num(h.stckhau),
+      tchat: TCHAT[h.tchat] || h.tchat || '', ma: String(h.mhhdvu??'').trim(), ten: h.ten, dvt: h.dvtinh, sl: num(h.sluong), dgia: signed(h.tchat, num(h.dgia)), ck: num(h.stckhau),
       thtien: signed(h.tchat, num(h.thtien)), tsuat: h.ltsuat || (h.tsuat !== null && h.tsuat !== undefined ? `${Math.round(h.tsuat * 100)}%` : ''),
       tthue: signed(h.tchat, num(h.tthue)), tthueTinh: false,
     }));

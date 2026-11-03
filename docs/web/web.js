@@ -331,7 +331,15 @@ async function search(e){
  if(!profileMsts.includes(mst))return show('MST chưa nằm trong danh sách hồ sơ AutoTax của bạn.');
  if(!start||!end||start>end)return show('Khoảng ngày chưa hợp lệ.');
  if(!selected('kind').length||!selected('form').length)return show('Chọn ít nhất một loại và một hình thức hóa đơn.');
- stopped=false;busyState(true);show('');
+ // Select the output folder from this Search click before network requests.
+ try{
+  const folder=await AutoTaxDownloadFolder.prepare();
+  show('Thư mục lưu: '+folder,true);
+ }catch(error){
+  if(error.name!=='AbortError')show('Không chọn được thư mục lưu: '+error.message);
+  return;
+ }
+ stopped=false;busyState(true);
  $('results').hidden=true;$('searchTotals').hidden=true;
  try{
   await ensurePermission(mst);
@@ -391,11 +399,21 @@ async function loadDetails(scopeRows=rows){
  return good;
 }
 
+async function saveFile(filename,data,mime){
+ return AutoTaxDownloadFolder.save(filename,data,mime);
+}
 function download(filename,data,mime){
+ // Legacy single-file buttons also use the folder if already selected.
+ if(AutoTaxDownloadFolder?.label){
+  const result=saveFile(filename,data,mime);
+  result.catch(error=>show('Không lưu được '+filename+': '+error.message));
+  return result;
+ }
  const b=new Blob([data],{type:mime});
  const u=URL.createObjectURL(b),a=document.createElement('a');
  a.href=u;a.download=filename;document.body.append(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(u),30000);
+ return Promise.resolve();
 }
 async function exportFile(kind){
  if(busy)return;
@@ -413,7 +431,7 @@ async function exportFile(kind){
     withLines:true,withPdf:true,
     sheets:{reduction:true,hdkd:true,risk:true,seller:false,adjust:true,gtgt:false}
    });
-   download('BangKe_'+fileBase+'.xlsx',Xlsx.buildXlsx(book),
+   await saveFile('BangKe_'+fileBase+'.xlsx',Xlsx.buildXlsx(book),
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
    show('Đã tạo Excel '+book.length+' sheet.'+(book.notes?.length?' Ghi chú: '+book.notes.join('; '):''),true);
   }else if(kind==='xml'){
@@ -427,8 +445,22 @@ async function exportFile(kind){
     }
    }
    if(!z.length)throw Error('Không tìm thấy XML gốc từ cổng Thuế trong danh sách hóa đơn. Không xuất dữ liệu giả.');
-   download('HoaDon_XML_'+fileBase+'.zip',Zip.writeZip(z),'application/zip');
-   show('Đã đóng gói '+z.length+' XML gốc từ cổng Thuế.',true);
+   for(const file of z)await saveFile('xml/'+file.name,file.data,'application/xml');
+   show('Đã lưu '+z.length+' file XML gốc riêng lẻ vào xml/.',true);
+  }else if(kind==='html'){
+   const detail=await loadDetails(targetRows);
+   let n=0;
+   for(const row of targetRows){
+    const inv=detail.get(row.key);
+    if(!inv?.files)continue;
+    const prefix=safe(row.kind+'_'+row.khhdon+'_'+row.shdon);
+    for(const [name,data] of Object.entries(inv.files)){
+     if(/\.(?:xml|pdf)$/i.test(name))continue;
+     await saveFile('html/'+prefix+'/'+name,data,'text/html');n++;
+    }
+   }
+   if(!n)throw Error('Cổng Thuế chưa cung cấp HTML để xuất.');
+   show('Đã lưu '+n+' file HTML/tài nguyên vào html/.',true);
   }else if(kind==='pdf'||kind==='pdfTax'){
    if(!window.WebPdfExport)throw Error('Bộ xử lý PDF chưa tải xong; vui lòng làm mới trang.');
    const mode=kind==='pdfTax'?'tax':'original';
@@ -455,7 +487,7 @@ window.WebInvoiceApp={
  refreshAccount,
  searchedBothKinds:()=>searchedBothKinds,
  busy:()=>busy,
- busyState,progress,show,download,loadDetails,
+ busyState,progress,show,download,saveFile,loadDetails,
  startTask:()=>{stopped=false;busyState(true);show('')},
  async fetchDetail(row){
   if(!row)throw Error('Không tìm thấy hóa đơn.');
@@ -471,6 +503,10 @@ function init(){
  const today=new Date();$('toDate').value=dateOnly(today);
  $('fromDate').value=dateOnly(new Date(today.getFullYear(),today.getMonth(),1));
  $('searchForm').addEventListener('submit',search);
+ $('changeOutputFolderWeb').addEventListener('click',async()=>{
+  try{show('Đã chọn thư mục '+await AutoTaxDownloadFolder.change(),true)}
+  catch(error){if(error.name!=='AbortError')show(error.message)}
+ });
  $('stopBtn').addEventListener('click',()=>{stopped=true;progress('Đang dừng sau yêu cầu hiện tại…')});
  $('reloadCaptcha').addEventListener('click',getCaptcha);
  $('retryConnectionBtn').addEventListener('click',async()=>{
@@ -488,7 +524,7 @@ function init(){
  });
  $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
  $('closeGdtLoginError').addEventListener('click',()=>$('gdtLoginErrorDialog').close());
- for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportPdf','pdf'],['exportPdfTax','pdfTax']])
+ for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportHtml','html'],['exportPdf','pdf'],['exportPdfTax','pdfTax']])
   $(id).addEventListener('click',()=>exportFile(kind));
  window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value='';window.GdtVault?.lock()});
  refreshAccount();

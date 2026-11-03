@@ -16,7 +16,8 @@ const invoiceMonth=r=>{
  return m?m[3]+'-'+m[2].padStart(2,'0'):'';
 };
 let dataset=[],checked=new Set(),visible=[],catalog=[],skuLinks={},pendingSku={},catalogKey='';
-let stockPlatform='tendoo',mappingReady=false;
+let stockPlatform='tendoo',mappingReady=false,catalogRestoreSeq=0,catalogFilename='';
+const cache=()=>window.AutoTaxWebStockCache;
 const stockStatus=(text,error=false)=>{
  const el=$('stockStatus');el.textContent=text;el.style.color=error?'#ff8b94':'#b5efce';
 };
@@ -218,17 +219,45 @@ async function saveLinks(){
  const {error}=await client.from('addon_user_sku_mappings').upsert(data,{onConflict:'user_id,platform,catalog_key,product_key'});
  if(error)throw new Error('Đã lưu cục bộ nhưng đồng bộ tài khoản lỗi: '+error.message);
 }
-async function loadCatalog(event){
- const file=event.target.files?.[0];
- catalog=[];catalogKey='';skuLinks={};mappingReady=false;
- if(!file){stockStatus('Chưa chọn danh mục sản phẩm.');return}
- stockStatus('Đang đọc file sản phẩm trên thiết bị…');
- try{
-  catalog=await window.TendooImport.catalog(file);
+async function commitCatalogFile(file){
+ const user=app()?.getAccount?.()?.id,client=app()?.getClient?.();
+ if(!user)throw Error('Đăng nhập AutoTax trước khi lưu danh mục.');
+ const platform=stockPlatform;
+ const items=await window.TendooImport.catalog(file);
+ if(user!==app()?.getAccount?.()?.id||platform!==stockPlatform)
+  throw Error('Tài khoản hoặc nền tảng đã thay đổi, vui lòng chọn file lại.');
+ const payload=cache().makePayload(file.name,items);
+ await cache().saveLocal(user,platform,payload);
+ catalog=items;catalogFilename=payload.filename;catalogKey=fingerprint(items);
+ skuLinks={};mappingReady=false;
+ await loadLinks();
+ let online=false;
+ try{online=await cache().saveCloud(user,platform,payload,client)}
+ catch(error){stockStatus('Đã lưu trên máy, chưa đồng bộ online: '+error.message,true)}
+ return {count:items.length,online};
+}
+async function restoreCatalog(){
+ const seq=++catalogRestoreSeq,user=app()?.getAccount?.()?.id,platform=stockPlatform;
+ catalog=[];catalogKey='';skuLinks={};mappingReady=false;catalogFilename='';
+ if(!user)return;
+ const result=await cache().restore(user,platform,app()?.getClient?.());
+ if(seq!==catalogRestoreSeq||user!==app()?.getAccount?.()?.id||platform!==stockPlatform)return;
+ if(result.catalog){
+  catalog=result.catalog.products;catalogFilename=result.catalog.filename||'';
   catalogKey=fingerprint(catalog);
   await loadLinks();
-  stockStatus('Đã tải '+catalog.length+' SKU, '+Object.keys(skuLinks).length+' liên kết đã đồng bộ từ tài khoản AutoTax.');
- }catch(e){stockStatus(e.message,true)}
+  stockStatus('Đã khôi phục '+catalog.length+' SKU từ '+(result.source==='online'?'lưu trữ online':'bộ nhớ cục bộ')+
+   (result.warning?'; '+result.warning:''));
+ }
+}
+async function loadCatalog(event){
+ const file=event.target.files?.[0];
+ if(!file)return;
+ stockStatus('Đang đọc và lưu danh mục sản phẩm…');
+ try{
+  const r=await commitCatalogFile(file);
+  stockStatus('Đã ghi nhớ '+r.count+' mã hàng trên máy'+(r.online?' và online.':'. Gói DATA365 hỗ trợ đồng bộ máy khác.'));
+ }catch(error){stockStatus(error.message,true)}
 }
 function updateStock(){
  stockPlatform=$('stockPlatform').value;
@@ -236,8 +265,8 @@ function updateStock(){
  $('stockDocWrap').hidden=stockPlatform!=='misa';
  catalog=[];catalogKey='';skuLinks={};
  $('stockCatalog').value='';
- stockStatus(stockPlatform==='misa'?'Tải danh sách hàng hóa MISA và nhập mã kho/số chứng từ.':
-   'Tải BC_San_Pham_*.xlsx từ Tendoo để ánh xạ SKU.');
+ stockStatus('Đang tải danh mục đã lưu '+stockPlatform.toUpperCase()+'…');
+ void restoreCatalog().catch(error=>stockStatus('Chưa khôi phục được: '+error.message,true));
 }
 async function withPurchaseDetails(task){
  const target=pickedRows().filter(r=>r.kind==='purchase');
@@ -368,6 +397,17 @@ function init(){
   catch(e){stockStatus(e.message,true)}
  });
  $('stockCatalog').addEventListener('change',loadCatalog);
+ $('stockCatalogUpdate').addEventListener('click',()=>$('stockCatalogReplacement').click());
+ $('stockCatalogReplacement').addEventListener('change',async event=>{
+  const file=event.target.files?.[0];if(!file)return;
+  try{
+   const result=await commitCatalogFile(file);
+   stockStatus('Đã ghi đè danh mục mới: '+result.count+' SKU'+(result.online?' · đồng bộ online':' · cục bộ'));
+   if($('skuMapDialog').open){$('skuMapDialog').close();await openMapping()}
+  }catch(error){stockStatus('Không cập nhật được: '+error.message,true)}
+  finally{event.target.value=''}
+ });
+ document.addEventListener('autotax-web-user-ready',()=>void updateStock());
  $('stockPlatform').addEventListener('change',updateStock);
  $('stockMapBtn').addEventListener('click',openMapping);
  $('stockDownloadBtn').addEventListener('click',exportStock);

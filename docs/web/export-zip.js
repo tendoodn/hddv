@@ -1,4 +1,4 @@
-/* AutoTax 1.1.6: stage output files and save one ZIP with an MST folder tree. */
+/* AutoTax 1.1.7: stage output files and save one ZIP with an MST folder tree. */
 (() => {
  'use strict';
  let pending = null;
@@ -69,7 +69,7 @@
    pending = null;
    const mst = safe(window.WebInvoiceApp?.getMst?.() || 'MST');
    const stamp = new Date().toISOString().replace(/\D/g, '').slice(0,14);
-   const name = 'AutoTax_V1.1.6_' + mst + '_' + safe(label || 'TatCa') + '_' + stamp + '.zip';
+   const name = 'AutoTax_V1.1.7_' + mst + '_' + safe(label || 'TatCa') + '_' + stamp + '.zip';
    await window.AutoTaxDownloadFolder.saveRootArchive(name,zip);
    window.WebInvoiceApp?.show?.('Đã lưu 1 tệp ZIP chứa '+files.length+' tệp: '+name,true);
    return result;

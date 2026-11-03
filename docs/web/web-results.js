@@ -334,14 +334,14 @@ async function persistMappings(){
  await saveLinks();
  stockStatus('Đã đồng bộ '+Object.keys(skuLinks).length+' liên kết SKU với tài khoản AutoTax.');
 }
-async function exportStock(){
+async function exportStock(single=false){
  try{
   if(stockPlatform==='misa'){
    if(!$('stockWarehouse').value.trim())throw Error('Nhập mã kho MISA.');
    window.TendooImport.nextDocumentNumber($('stockLastDoc').value.trim(),1);
   }
   stockStatus('Đang tạo phiếu nhập kho theo phạm vi xuất…');
-  await withPurchaseDetails(async(target,detailMap)=>{
+  const createFiles=()=>withPurchaseDetails(async(target,detailMap)=>{
    const tmpl=window.TendooImport.builtinTemplate(stockPlatform);
    const result=window.TendooImport.makePackage(target,detailMap,catalog,tmpl,skuLinks,
      {warehouse:$('stockWarehouse').value.trim(),lastDocNumber:$('stockLastDoc').value.trim()});
@@ -357,6 +357,8 @@ async function exportStock(){
    stockStatus('Đã lưu riêng '+count+' phiếu vào nhap_hang/; '+result.missing+
      ' sản phẩm thiếu mã; '+result.skipped+' hóa đơn không đủ dòng chi tiết.');
   });
+  if(single)await createFiles();
+  else await window.AutoTaxZipExport.batch(createFiles,'NhapHang');
  }catch(e){stockStatus('Không xuất được: '+(e.message||e),true)}
 }
 function init(){
@@ -399,7 +401,11 @@ function init(){
   catch(e){stockStatus(e.message,true)}
  });
  $('downloadMappedStock').addEventListener('click',async()=>{
-  try{await persistMappings();$('skuMapDialog').close();await exportStock()}
+  try{await persistMappings();$('skuMapDialog').close();await exportStock(false)}
+  catch(e){stockStatus(e.message,true)}
+ });
+ $('downloadSingleMappedStock').addEventListener('click',async()=>{
+  try{await persistMappings();$('skuMapDialog').close();await exportStock(true)}
   catch(e){stockStatus(e.message,true)}
  });
  $('stockCatalog').addEventListener('change',loadCatalog);
@@ -416,7 +422,8 @@ function init(){
  document.addEventListener('autotax-web-user-ready',()=>void updateStock());
  $('stockPlatform').addEventListener('change',updateStock);
  $('stockMapBtn').addEventListener('click',openMapping);
- $('stockDownloadBtn').addEventListener('click',exportStock);
+ $('stockDownloadBtn').addEventListener('click',()=>void exportStock(false));
+ $('stockSingleBtn').addEventListener('click',()=>void exportStock(true));
  $('disableKPopup').checked=getPopupDisabled();
  $('closeKWarning').addEventListener('click',()=>{
   setPopupDisabled($('disableKPopup').checked);

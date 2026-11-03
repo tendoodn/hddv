@@ -20,7 +20,7 @@ const selected=name=>[...document.querySelectorAll('input[name="'+name+'"]:check
 const show=(msg,ok=false)=>{const box=$('notice');box.hidden=!msg;box.textContent=msg||'';box.classList.toggle('success',!!ok)};
 const progress=msg=>{$('progressText').textContent=msg;};
 const busyState=value=>{busy=!!value;$('progress').hidden=!value;$('searchBtn').disabled=!!value;
-  for(const id of ['exportExcel','exportXml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
+  for(const id of ['exportAllZip','exportExcel','exportXml','exportHtml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
 window.WebTaxState=govSession;
 const showGatewayHelp=visible=>{$('gdtConnectionHelp').hidden=!visible;};
@@ -454,6 +454,7 @@ async function loadDetails(scopeRows=rows){
 }
 
 async function saveFile(filename,data,mime){
+ if(window.AutoTaxZipExport?.isCapturing())return window.AutoTaxZipExport.capture(filename,data,mime);
  return AutoTaxDownloadFolder.save(filename,data,mime);
 }
 function download(filename,data,mime){
@@ -469,7 +470,7 @@ function download(filename,data,mime){
  setTimeout(()=>URL.revokeObjectURL(u),30000);
  return Promise.resolve();
 }
-async function exportFile(kind){
+async function exportFileCore(kind){
  if(busy)return;
  const targetRows=window.WebResults?.exportRows?.()||rows;
  if(!targetRows.length)return show('Không có hóa đơn trong phạm vi xuất. Kiểm tra các ô đã tick hoặc tháng được chọn.');
@@ -528,8 +529,22 @@ async function exportFile(kind){
     ' Chế độ '+(mode==='tax'?'PDF Thuế: tất cả là bản dựng.':'PDF gốc: ưu tiên bản gốc, nếu không tải được sẽ dùng bản dựng có ghi nhãn.')+' Mọi PDF dựng đều ghi rõ KHÔNG PHẢI GỐC.',
     result.errors.length===0);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}
- }catch(e){show('Không xuất được tệp: '+e.message)}
+ }catch(e){show('Không xuất được tệp: '+e.message);throw e}
  finally{busyState(false)}
+}
+async function exportFile(kind){
+ try{
+  if(!window.AutoTaxZipExport)throw Error('Thiếu bộ ZIP.');
+  if(kind==='all'){
+   const warnings=[];
+   await window.AutoTaxZipExport.batch(async()=>{
+    for(const type of ['excel','xml','html','pdf']){
+     try{await exportFileCore(type)}catch(e){warnings.push(type+': '+e.message)}
+    }
+   },'TatCa');
+   if(warnings.length)show('ZIP đã tạo; thiếu dữ liệu ở định dạng: '+warnings.join('; '),true);
+  }else await window.AutoTaxZipExport.batch(()=>exportFileCore(kind),kind);
+ }catch(e){show('Không xuất được ZIP: '+e.message)}
 }
 // Shared in-page adapter: export and stock tools use the exact same invoice rows
 // and fetchInvoice() implementation as the extension.
@@ -583,7 +598,7 @@ function init(){
  });
  $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
  $('closeGdtLoginError').addEventListener('click',()=>$('gdtLoginErrorDialog').close());
- for(const [id,kind] of [['exportExcel','excel'],['exportXml','xml'],['exportHtml','html'],['exportPdf','pdf'],['exportPdfTax','pdfTax']])
+ for(const [id,kind] of [['exportAllZip','all'],['exportExcel','excel'],['exportXml','xml'],['exportHtml','html'],['exportPdf','pdf'],['exportPdfTax','pdfTax']])
   $(id).addEventListener('click',()=>exportFile(kind));
  window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value='';window.GdtVault?.lock()});
  refreshAccount();

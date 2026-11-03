@@ -22,7 +22,8 @@
     if(!file||file.size>15*1024*1024)throw Error('File cần nhỏ hơn 15 MB.');
     if(/\.csv$/i.test(file.name))return csv(await file.text());
     if(!/\.xlsx$/i.test(file.name))throw Error('Chỉ hỗ trợ .xlsx hoặc .csv. File .xls cần chuyển sang .xlsx.');
-    const files=await Zip.readZip(new Uint8Array(await file.arrayBuffer()));
+    if(!globalThis.Zip?.readZip)throw Error('Không tải được thư viện đọc Excel. Hãy tải lại trang và chọn file.');
+    const files=await globalThis.Zip.readZip(new Uint8Array(await file.arrayBuffer()));
     const name=Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/i.test(k)).sort()[0];
     if(!name)throw Error('File Excel không có bảng dữ liệu.');
     const parse=src=>{const x=new DOMParser().parseFromString(src,'application/xml');
@@ -75,9 +76,33 @@
     if(best.score<min)throw Error('Không nhận dạng được hàng tiêu đề trong file Excel Tendoo.');
     return best;
   }
-  async function catalog(file){
-    const rows=await workbook(file),h=header(rows,2);
-    if(h.columns.sku==null||h.columns.name==null)throw Error('BC_San_Pham cần cột SKU và Tên sản phẩm.');
+  // Layouts are pinned to the two real merchant exports supplied by users:
+  // MISA: "Danh sách hàng hóa" with a title on row 1 and 7 headers on row 3.
+  // Tendoo: "BÁO CÁO SẢN PHẨM" with SKU in column G on row 2.
+  // Do NOT loosely accept an unrelated spreadsheet just because two columns
+  // happen to be named SKU and name; otherwise mappings can be corrupted.
+  function validateCatalogLayout(rows,expectedPlatform){
+    const hMisa=(rows[2]||[]).map(norm),hTendoo=(rows[1]||[]).map(norm);
+    const misa=norm(rows[0]?.[0])==='danh sach hang hoa' &&
+      ['stt','ma hang hoa','ten hang hoa','gia ban','don vi tinh','loai hang hoa','trang thai']
+        .every((v,i)=>hMisa[i]===v);
+    const tendoo=['stt','ten san pham','nhom phan loai 1','ten phan loai 1',
+      'nhom phan loai 2','ten phan loai 2','ma san pham sku','trang thai']
+        .every((v,i)=>hTendoo[i]===v);
+    const platform=expectedPlatform==='misa'?'misa':expectedPlatform==='tendoo'?'tendoo':null;
+    if(!(platform==='misa'?misa:platform==='tendoo'?tendoo:misa||tendoo))
+      throw Error('File không hợp lệ, vui lòng tải lại. Chỉ hỗ trợ Danh sách hàng hóa MISA hoặc BC_San_Pham Tendoo đúng cấu trúc.');
+    return misa?'misa':'tendoo';
+  }
+  async function catalog(file,expectedPlatform){
+    const rows=await workbook(file);
+    const format=validateCatalogLayout(rows,expectedPlatform);
+    const h=header(rows,2);
+    if(h.columns.sku==null||h.columns.name==null)
+      throw Error('File không hợp lệ, vui lòng tải lại. Thiếu cột mã SKU hoặc tên sản phẩm.');
+    if(format==='misa'&&(h.index!==2||h.columns.sku!==1||h.columns.name!==2)||
+       format==='tendoo'&&(h.index!==1||h.columns.sku!==6||h.columns.name!==1))
+      throw Error('File không hợp lệ, vui lòng tải lại. Cột SKU không đúng vị trí mẫu.');
     const out=[],seen=new Set();
     for(const row of rows.slice(h.index+1)){
       const sku=String(row[h.columns.sku]??'').trim(),name=String(row[h.columns.name]??'').trim();
@@ -295,5 +320,5 @@
       (skipped?'Bo qua '+skipped+' hoa don thieu chi tiet.\n':'')});
     return {zip:Zip.writeZip(files),count,skipped,missing:misses.length,lastIssued};
   }
-  window.TendooImport={normalize:norm,workbook,catalog,template,builtinTemplate,nextDocumentNumber,searchCatalog,missing,makePackage};
+  window.TendooImport={normalize:norm,workbook,catalog,validateCatalogLayout,template,builtinTemplate,nextDocumentNumber,searchCatalog,missing,makePackage};
 })();

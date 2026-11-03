@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://ucqqjdsoyvvaxswzbhaw.supabase.co" crossorigin>
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
@@ -119,8 +120,8 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <body>
 <main class="wrap">
 <header>
-  <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./web.html" class="portal-admin-link">Tra cứu Web</a><a href="./admin.html?v=1.1" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
+  <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.8</span></div>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./web.html" class="portal-admin-link">Tra cứu Web</a><a href="./admin.html?v=1.1.8" id="adminLink" class="portal-admin-link">Quản trị</a></nav>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
@@ -162,8 +163,8 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 
  <details id="mstProfilesWeb" class="panel mst-accordion">
   <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp lại quyền tra cứu hoặc xóa hồ sơ</small></summary>
-  <p class="muted">Mật khẩu Thuế được mã hóa AES-GCM trước khi đồng bộ lên Supabase, Web và Add-on dùng chung theo tài khoản AutoTax. Đăng nhập cùng tài khoản để tự điền mật khẩu đã lưu; không cần bấm chuyển thủ công.</p>
-   <p class="muted">Danh sách hồ sơ được lưu theo tài khoản AutoTax, không giới hạn bởi gói số tờ. Chỉ các MST được tick rồi bấm Cấp quyền mới được tra cứu bằng gói MST.</p>
+  
+   
   <form id="webAddMstForm" class="actions">
    <input id="webAddMst" hidden>
    <button type="submit">+ Thêm MST</button>
@@ -196,7 +197,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
  </div>
  <div class="panel" id="planSection">
-  <div class="row"><h2>Mua gói mới</h2></div><p class="muted">Gói MST: Không giới hạn số hóa đơn tra cứu trong các MST đã đăng ký, theo thời hạn gói. Gói T (số tờ): Không giới hạn MST tra cứu; số hóa đơn mới được xử lý theo số lượt đã mua. Lượt gói T được cộng dồn khi mua thêm.</p>
+  <div class="row"><h2>Mua gói mới</h2></div>
   <div id="packageList" class="grid package-grid"></div>
  </div>
 

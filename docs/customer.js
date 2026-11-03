@@ -15,6 +15,24 @@ let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
 let paymentCountdownTimer=null,paymentChannel=null,paymentOrder=null;
 let paymentStatusPromise=null,postExpiryTimer=null;
 let mstEditing='',mstEditOriginalName='',mstGrantUnlocked=false,canDeleteMstProfiles=false;
+// Limit old MST migration to 2 concurrent background reads to keep the UI responsive.
+const legacyMstQueue=[],legacyMstQueued=new Set();
+let legacyMstActive=0;
+function enqueueLegacyMstMigration(userId,mst){
+ const key=userId+':'+mst;
+ if(legacyMstQueued.has(key))return;
+ legacyMstQueued.add(key);legacyMstQueue.push({userId,mst});
+ drainLegacyMstQueue();
+}
+function drainLegacyMstQueue(){
+ while(legacyMstActive<2&&legacyMstQueue.length){
+  const {userId,mst}=legacyMstQueue.shift();
+  legacyMstActive++;
+  Promise.resolve(window.AutoTaxProfileVault?.migrate(userId,mst))
+   .catch(e=>{legacyMstQueued.delete(userId+':'+mst);console.warn('Khôi phục mật khẩu MST '+mst+':',e.message)})
+   .finally(()=>{legacyMstActive--;drainLegacyMstQueue()});
+ }
+}
 function setMstGrantUnlocked(value){
  mstGrantUnlocked=!!value&&state?.mode==='mst';
  $('mstGrantAllow').hidden=false;
@@ -217,8 +235,7 @@ async function loadMstAssignments(){
   const actions=document.createElement("div");actions.className="mst-row-actions";
   const edit=addText(actions,"button","Sửa");edit.className="secondary";
   edit.type='button';edit.addEventListener('click',()=>openMstEditor(item));
-  if(userId)void window.AutoTaxProfileVault?.migrate(userId,item.mst).catch(e=>
-   console.warn('MST đồng bộ đang chờ:',e.message));
+  if(userId)enqueueLegacyMstMigration(userId,item.mst);
   const button=addText(actions,"button","Xóa MST");button.className="secondary";
   button.type='button';button.disabled=!canDeleteMstProfiles;
   if(!canDeleteMstProfiles){

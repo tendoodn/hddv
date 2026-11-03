@@ -137,7 +137,7 @@
   // Chi tiết của hóa đơn có dòng hàng hóa (details có thể chỉ có head khi không chọn Chi tiết sản phẩm)
   const withLinesOf = (details, r) => { const d = details.get(r.key); return d?.lines ? d : null; };
 
-  function linesSheet(rows, details) {
+  function linesSheet(rows, details, name = 'Chi tiết sản phẩm') {
     const out = [], sums = new Map();
     for (const r of sorted(rows)) {
       const d = withLinesOf(details, r);
@@ -160,7 +160,7 @@
       out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency]);
     }
     return {
-      name: 'Chi tiết sản phẩm', boldRows,
+      name, boldRows,
       columns: [
         { header: 'STT', width: 6, type: N }, { header: 'Loại', width: 9 }, { header: 'Mẫu số', width: 8 }, { header: 'Ký hiệu', width: 10 },
         { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Ngày lập', width: 11 }, { header: 'MST đối tác', width: 15, type: T },
@@ -753,7 +753,10 @@
       invoiceSheet('Mua vào', rows.filter((r) => r.kind === 'purchase'), details, opts.withPdf, want.seller, opts.illegal),
       invoiceSheet('Bán ra', rows.filter((r) => r.kind === 'sold'), details, opts.withPdf, want.seller, opts.illegal),
     ];
-    if (opts.withLines) sheets.push(linesSheet(rows, details));
+    if (opts.withLines) {
+      sheets.push(linesSheet(rows.filter(r=>r.kind==='purchase'),details,'Chi tiết mua vào'));
+      sheets.push(linesSheet(rows.filter(r=>r.kind==='sold'),details,'Chi tiết bán ra'));
+    }
     if (want.risk) sheets.push(riskSheet(rows, details, opts));
     if (want.adjust) { const s = adjustSheet(rows, details, opts); if (s) sheets.push(s); }
     if (want.reduction) sheets.push(reductionSheet(rows, details));

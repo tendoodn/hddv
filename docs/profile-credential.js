@@ -1,0 +1,80 @@
+/* Customer portal: AES-GCM encrypted MST passwords using the SAME origin/database
+ * and account-specific nonextractable key as docs/web/vault.js.
+ * Never uploads passwords, keys, or ciphertext to Supabase.
+ */
+(()=>{
+'use strict';
+const DB='autotax_gdt_device_credentials_v2';
+const normalize=v=>String(v||'').replace(/\D/g,'');
+const valid=v=>/^(?:\d{10}|\d{12}|\d{13})$/.test(normalize(v));
+let pendingDB=null;
+function database(){
+ if(pendingDB)return pendingDB;
+ pendingDB=new Promise((resolve,reject)=>{
+  const req=indexedDB.open(DB,1);
+  req.onupgradeneeded=()=>{
+   const db=req.result;
+   if(!db.objectStoreNames.contains('keys'))db.createObjectStore('keys');
+   if(!db.objectStoreNames.contains('credentials'))db.createObjectStore('credentials');
+  };
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error||Error('Bộ nhớ mật khẩu không sẵn sàng.'));
+ }).catch(e=>{pendingDB=null;throw e});
+ return pendingDB;
+}
+async function key(user){
+ const proposed=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+ const db=await database();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('keys','readwrite'),obj=tx.objectStore('keys');
+  const req=obj.get('account:'+user);let result;
+  req.onsuccess=()=>{
+   if(req.result)result=req.result;
+   else{result=proposed;obj.put(proposed,'account:'+user)}
+  };
+  tx.oncomplete=()=>resolve(result);
+  tx.onerror=()=>reject(tx.error);
+ });
+}
+async function read(user,mst){
+ const db=await database();
+ return new Promise((resolve,reject)=>{
+  const q=db.transaction('credentials','readonly').objectStore('credentials').get(user+':'+normalize(mst));
+  q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);
+ });
+}
+async function decrypt(user,record){
+ if(!record?.iv||!record?.data)return null;
+ const secret=await key(user);
+ const bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(record.iv)},
+  secret,new Uint8Array(record.data));
+ return new TextDecoder().decode(bytes);
+}
+async function save(user,mst,password){
+ if(!user||!valid(mst)||typeof password!=='string'||!password||password.length>256)
+  throw Error('Cần tài khoản, MST và mật khẩu hợp lệ.');
+ let prior=null;
+ try{prior=await decrypt(user,await read(user,mst))}catch{}
+ if(prior===password)return {stored:true,changed:false};
+ const secret=await key(user),iv=crypto.getRandomValues(new Uint8Array(12));
+ const data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},
+  secret,new TextEncoder().encode(password)));
+ const db=await database();
+ await new Promise((resolve,reject)=>{
+  const tx=db.transaction('credentials','readwrite');
+  tx.objectStore('credentials').put({v:2,iv:[...iv],data:[...data]},user+':'+normalize(mst));
+  tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+ });
+ return {stored:true,changed:true};
+}
+async function forget(user,mst){
+ if(!user||!valid(mst))return;
+ const db=await database();
+ await new Promise((resolve,reject)=>{
+  const tx=db.transaction('credentials','readwrite');
+  tx.objectStore('credentials').delete(user+':'+normalize(mst));
+  tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+ });
+}
+window.AutoTaxProfileVault=Object.freeze({save,forget});
+})();

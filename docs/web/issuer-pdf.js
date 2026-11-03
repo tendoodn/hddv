@@ -89,8 +89,8 @@ async function downloadDirect(){
   if(bytes.length<5||bytes.length>12000000||bytes[0]!==37||bytes[1]!==80||
    bytes[2]!==68||bytes[3]!==70||bytes[4]!==45)
    throw Error('Không nhận được tệp PDF thực (có thể là trang CAPTCHA hoặc HTML đăng nhập).');
-  window.WebInvoiceApp.download(
-   'PDF_Goc_'+safe(current.row.khhdon)+'_'+safe(current.row.shdon)+'.pdf',
+  await window.WebInvoiceApp.saveFile(
+   'pdf_goc/PDF_Goc_'+safe(current.row.khhdon)+'_'+safe(current.row.shdon)+'.pdf',
    bytes,'application/pdf');
   status('Đã tải tệp PDF trực tiếp. Hãy đối chiếu thông tin nhà phát hành, chữ ký số và mã tra cứu.');
  }catch(err){status('Chưa thể tải PDF trực tiếp: '+(err.message||String(err))+

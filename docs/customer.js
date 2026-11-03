@@ -12,6 +12,27 @@ const vnDate=value=>value?new Date(value).toLocaleString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
 const DUP_EMAIL="Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.";
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
+let adminRoleCheckedUser='',adminRoleCheckedAt=0,adminRoleRequest=0;
+function setAdminVisibility(show){
+ for(const id of ['adminLink','adminFooterLink']){
+  const el=$(id);if(el)el.hidden=!show;
+ }
+}
+async function refreshAdminVisibility(userId){
+ if(!userId){adminRoleCheckedUser='';adminRoleCheckedAt=0;++adminRoleRequest;setAdminVisibility(false);return}
+ if(adminRoleCheckedUser===userId&&Date.now()-adminRoleCheckedAt<60000)return;
+ setAdminVisibility(false);
+ const request=++adminRoleRequest;
+ adminRoleCheckedUser=userId;
+ try{
+  const {data,error}=await client.rpc('addon_is_admin');
+  if(request!==adminRoleRequest)return;
+  const {data:{session}}=await client.auth.getSession();
+  if(request!==adminRoleRequest||session?.user?.id!==userId)return;
+  setAdminVisibility(!error&&data===true);
+  adminRoleCheckedAt=Date.now();
+ }catch(error){if(request===adminRoleRequest){setAdminVisibility(false);adminRoleCheckedAt=0;console.warn('Không xác minh được quyền admin:',error.message)}}
+}
 let paymentCountdownTimer=null,paymentChannel=null,paymentOrder=null;
 let paymentStatusPromise=null,postExpiryTimer=null;
 let mstEditing='',mstEditOriginalName='',mstGrantUnlocked=false,canDeleteMstProfiles=false;
@@ -33,6 +54,12 @@ function drainLegacyMstQueue(){
    .finally(()=>{legacyMstActive--;drainLegacyMstQueue()});
  }
 }
+function updateMstGrantPreview(){
+ const cap=Number(state?.packages?.mst?.active_quantity||0);
+ const granted=document.querySelectorAll('#mstList .mst-allow-checkbox:checked').length;
+ $('mstAllowedSummary').textContent=(mstGrantUnlocked?'Đang chọn (chưa lưu): ':'Đã cấp quyền ')+granted+' / '+cap+' MST';
+ $('mstAllowedSummary').classList.toggle('error',granted>cap);
+}
 function setMstGrantUnlocked(value){
  mstGrantUnlocked=!!value&&state?.mode==='mst';
  $('mstGrantAllow').hidden=false;
@@ -41,6 +68,7 @@ function setMstGrantUnlocked(value){
  $('mstGrantUnlock').disabled=mstGrantUnlocked||state?.mode!=='mst';
  for(const box of document.querySelectorAll('#mstList .mst-allow-checkbox'))
   box.disabled=!mstGrantUnlocked;
+ updateMstGrantPreview();
 }
 function showMessage(text,bad=false,target="accountMessage"){
  const el=$(target);el.textContent=text;el.hidden=!text;el.classList.toggle("error",bad);
@@ -107,7 +135,8 @@ async function refresh(){
   if(forceChange)$('passwordPanel').hidden=false;
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
-  if(!signedIn){state=null;closePayment();return}
+  if(!signedIn){state=null;refreshAdminVisibility(null);closePayment();return}
+  void refreshAdminVisibility(session.user.id);
   $("userEmail").textContent=session.user.email||"";
   const license=await rpc("addon_my_entitlements");
   state=license;
@@ -220,7 +249,17 @@ async function loadMstAssignments(){
   const check=document.createElement("input");check.type="checkbox";check.className="mst-allow-checkbox";
   check.value=item.mst;check.checked=item.mst_allowed===true;
   check.disabled=state?.mode!=="mst"||!mstGrantUnlocked;
-  const caption=document.createElement("span");caption.textContent="Cho phép";
+  const caption=document.createElement("span");
+  caption.className='mst-permission-status';
+  const syncCaption=()=>{
+   const granted=check.checked;
+   caption.textContent=granted?'Cho phép':'Không cấp phép';
+   caption.classList.toggle('is-granted',granted);
+   caption.classList.toggle('is-denied',!granted);
+   check.setAttribute('aria-label',(granted?'Cho phép':'Không cấp phép')+' tra cứu MST '+item.mst);
+  };
+  check.addEventListener('change',()=>{syncCaption();updateMstGrantPreview()});
+  syncCaption();
   allow.append(check,caption);line.append(allow);
   const name=document.createElement("div");name.className="mst-name";
   addText(name,"strong",item.mst);
@@ -261,9 +300,7 @@ async function loadMstAssignments(){
   if(state?.mode==='mst')maybeRemindMstPassword(item,userId);
  }
  if(!list.children.length)addText(list,"p","Chưa có hồ sơ. Bấm Thêm MST để quản lý.","muted");
- const cap=Number(state?.packages?.mst?.active_quantity||0);
- const granted=(rows||[]).filter(x=>x.mst_allowed===true).length;
- $("mstAllowedSummary").textContent="Đã cấp quyền "+granted+" / "+cap+" MST";
+ updateMstGrantPreview();
 }
 
 // Bank QR is displayed for five minutes, based on the server-issued deadline.
@@ -425,7 +462,7 @@ $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
  showMessage("Đã gửi hướng dẫn khôi phục nếu email hợp lệ.",false,"authMessage");
 }));
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
-$("refreshBtn").addEventListener("click",refresh);
+
 $("webAddMstForm").addEventListener("submit",e=>{
  e.preventDefault();
  openMstEditor();

@@ -149,7 +149,8 @@
         // Không cộng gộp giá trị của các loại tiền tệ khác nhau.
         const p = pctOf(l.tsuat), thue = l.tthue === null ? null : roundVND(l.tthue);
         out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), dateVN(r.tdlap), mst, ten,
-          l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue, currency]);
+          l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue, currency,
+          String(l.ma??'').trim()]);
         sum.amount += l.thtien || 0; sum.tax += thue || 0;
       }
     }
@@ -157,7 +158,7 @@
     for (const currency of currencies) {
       const sum = sums.get(currency) || { amount: 0, tax: 0 };
       boldRows.add(out.length);
-      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency]);
+      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '']);
     }
     return {
       name, boldRows,
@@ -168,6 +169,7 @@
         { header: 'ĐVT', width: 9 }, { header: 'Số lượng', width: 11, type: D }, { header: 'Đơn giá', width: 14, type: D },
         { header: 'Chiết khấu', width: 12, type: N }, { header: 'Thành tiền', width: 16, type: N }, { header: 'Thuế suất', width: 10, type: P },
         { header: 'Tiền thuế', width: 14, type: N }, { header: 'Tiền tệ', width: 9 },
+        { header: 'Mã hàng hóa gốc (XML/JSON)', width: 29, type: T },
       ],
       rows: out,
     };

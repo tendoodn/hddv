@@ -25,7 +25,7 @@
       <div><strong>Phiên AutoTax</strong><span id="authStatus">Đang xác minh đăng nhập…</span></div>
       <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
     </div>
-      <div class="profile-sync-note">Hồ sơ MST được đồng bộ theo tài khoản AutoTax. Mật khẩu cổng Thuế được mã hóa riêng trên thiết bị sau khi đăng nhập thành công; không cần mật khẩu kho.</div>
+
     <div id="searchTotals" class="search-total-mini" hidden aria-live="polite">
       <div><span>Tổng thanh toán kỳ tra cứu</span><strong id="searchTotalPay">0 ₫</strong></div>
       <div><span>Tổng tiền thuế kỳ tra cứu</span><strong id="searchTotalVat">0 ₫</strong></div>
@@ -83,6 +83,8 @@
       </div>
       <div class="privacy">Mật khẩu Thuế chỉ được sử dụng để đăng nhập cổng Thuế qua kênh bảo mật. Trên thiết bị này, mật khẩu được mã hóa bằng AES-GCM với khóa không xuất được khỏi IndexedDB và tách biệt theo tài khoản. Mật khẩu không được đồng bộ lên Supabase; thiết bị khác cần nhập lại lần đầu. Kho cũ có mật khẩu riêng không bị xóa tự động. Nếu cổng Thuế báo sai mật khẩu, AutoTax sẽ hiện cảnh báo và yêu cầu nhập lại. CAPTCHA chỉ được xử lý khi cổng trả dữ liệu hợp lệ.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
+      <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
+      <small>Chọn thư mục lưu lần đầu khi bấm Tìm kiếm. Các lần sau dùng lại thư mục đã chọn khi trình duyệt còn cấp quyền.</small>
       <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
     </form>
   </section>
@@ -106,11 +108,12 @@
       <div class="exports">
         <button id="exportExcel" type="button">Tải Excel</button>
         <button id="exportXml" type="button">Tải XML</button>
+        <button id="exportHtml" type="button">Tải HTML</button>
         <button id="exportPdfTax" type="button">Tải PDF Thuế</button>
         <button id="exportPdf" type="button" title="Ưu tiên tệp gốc của nhà phát hành; nếu chưa tải được sẽ xuất PDF dựng lại và ghi rõ không phải bản gốc.">Tải PDF gốc (có dự phòng)</button>
       </div>
     </div>
-    <p class="result-help"><strong>Hai chế độ PDF:</strong> <b>PDF Thuế</b> luôn dựng lại toàn bộ hóa đơn từ dữ liệu Thuế và ghi nhãn <b>KHÔNG PHẢI GỐC</b>. <b>PDF gốc (có dự phòng)</b> thử lấy PDF thật từ nhà phát hành hoặc tệp đã gắn; nếu không có, không truy cập được, bị CAPTCHA hoặc thất bại thì dựng PDF thay thế có nhãn <b>KHÔNG PHẢI GỐC</b>, đồng thời lưu lý do cùng link/mã tra cứu vào báo cáo trong ZIP.</p>
+    <p class="result-help"><strong>Hai chế độ PDF:</strong> <b>PDF Thuế</b> luôn dựng lại toàn bộ hóa đơn từ dữ liệu Thuế và ghi nhãn <b>KHÔNG PHẢI GỐC</b>. <b>PDF gốc (có dự phòng)</b> thử lấy PDF thật từ nhà phát hành hoặc tệp đã gắn; nếu không có, không truy cập được, bị CAPTCHA hoặc thất bại thì dựng PDF thay thế có nhãn <b>KHÔNG PHẢI GỐC</b>, đồng thời lưu lý do cùng link/mã tra cứu trong tệp NGUON_PDF.txt riêng.</p>
     <p class="result-help">Phạm vi tải được xác định tự động: nếu có hóa đơn đã tick trong danh sách đang hiển thị thì chỉ tải các hóa đơn đó; nếu không tick, tải tất cả hóa đơn thuộc bộ lọc hiện tại. Không cần chọn thêm chế độ xuất. Việc lấy PDF gốc phụ thuộc nhà phát hành và bước xác thực hợp lệ.</p>
     <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Chi tiết / Hợp lệ / PDF nguồn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <section id="stockExport" class="stock-export">
@@ -174,9 +177,9 @@
   </dialog>
   <dialog id="skuMapDialog" class="stock-map-dialog" aria-labelledby="skuMapTitle">
     <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
-    <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p><div class="stock-actions"><button id="stockCatalogUpdate" type="button" class="outline">Cập nhật lại file mẫu mới</button><input id="stockCatalogReplacement" type="file" accept=".xlsx,.csv" hidden></div>
+    <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p><input id="stockCatalogReplacement" type="file" accept=".xlsx,.csv" hidden>
     <div id="skuMapList"></div>
-    <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất phiếu</button></div>
+    <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất phiếu</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
   </dialog>
   <dialog id="kWarningDialog" class="k-warning-dialog" aria-labelledby="kWarningTitle">
     <h2 id="kWarningTitle">Cảnh báo rủi ro hệ số K</h2>
@@ -199,6 +202,7 @@
 <script src="./web/report.js?v=1"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
 <script src="./web/stock-cache.js?v=113"></script>
+<script src="./web/download-folder.js?v=113"></script>
 <script src="./web/vault.js?v=5"></script>
 <script src="./web/pdf.js?v=1"></script>
 <script src="./web/web-pdf.js?v=9"></script>

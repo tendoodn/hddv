@@ -526,7 +526,11 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
   });
   const data=await res.json().catch(()=>({}));
   if(!res.ok||!data.ok)throw Error(data.error||'Không đổi được mật khẩu tạm.');
-  await client.auth.refreshSession();
+  await client.auth.signOut();
+  $('newPassword').value='';
+  await refresh();
+  showMessage('Đã đổi mật khẩu tạm. Hãy đăng nhập lại bằng mật khẩu mới.',false,'authMessage');
+  return;
  }else{
   const {error}=await client.auth.updateUser({password});
   if(error)throw error;

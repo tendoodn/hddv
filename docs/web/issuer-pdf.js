@@ -14,8 +14,7 @@ const status=message=>{$('issuerPdfStatus').textContent=message};
 const directPdfLink=link=>{
  try{
   const u=new URL(link);
-  return u.protocol==='https:'&&(/\.pdf$/i.test(u.pathname)||
-   /\/download[^/]*pdf|\/pdf(?:\/|$)|format=pdf/i.test(u.pathname+u.search));
+  return u.protocol==='https:'&&(/\.(?:pdf|zip)$/i.test(u.pathname)||/\/(?:download|export)[^/]*|\/pdf(?:\/|$)|format=(?:pdf|zip)/i.test(u.pathname+u.search));
  }catch{return false}
 };
 function providerInstructions(name,link){
@@ -42,7 +41,8 @@ async function open(row){
  $('issuerPdfLink').hidden=true;$('issuerPdfLink').removeAttribute('href');
  $('tryIssuerPdf').disabled=true;$('copyIssuerCode').disabled=true;
  $('issuerPdfMeta').textContent='Hóa đơn '+title(row.khhdon)+' / '+title(row.shdon)+
-  ' · MST bên bán '+title(row.nbmst);
+  ' · MST bên bán '+title(row.nbmst)+
+  (row.nmmst?' · MST bên mua '+title(row.nmmst):'');
  status('Đang lấy dữ liệu nguồn về trang tra cứu và mã bảo mật...');
  if(!d.open)d.showModal();
  try{
@@ -78,17 +78,21 @@ async function downloadDirect(){
  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),14000);
  try{
   const link=new URL(current.link);
-  if(!/\.pdf(?:$)|\/pdf(?:\/|$)|download.*pdf|format=pdf/i.test(link.pathname+link.search))
+  if(!/\.(?:pdf|zip)(?:$|\?)|\/(?:download|export)[^/]*|format=(?:pdf|zip)/i.test(link.pathname+link.search))
    throw Error('Đây là trang tra cứu, không phải đường dẫn tải PDF trực tiếp. Hãy mở trang bên cạnh để xác thực.');
   const res=await fetch(current.link,{method:'GET',mode:'cors',credentials:'omit',
    redirect:'error',signal:abort.signal,cache:'no-store'});
   if(!res.ok)throw Error('Nhà phát hành phản hồi HTTP '+res.status);
   const n=Number(res.headers.get('content-length')||0);
-  if(n>12000000)throw Error('PDF lớn hơn 12 MB.');
-  const bytes=new Uint8Array(await res.arrayBuffer());
-  if(bytes.length<5||bytes.length>12000000||bytes[0]!==37||bytes[1]!==80||
-   bytes[2]!==68||bytes[3]!==70||bytes[4]!==45)
-   throw Error('Không nhận được tệp PDF thực (có thể là trang CAPTCHA hoặc HTML đăng nhập).');
+  if(n>24*1024*1024)throw Error('PDF/ZIP lớn hơn 24 MB.');
+  let bytes=new Uint8Array(await res.arrayBuffer());
+  if(bytes.length>24*1024*1024||bytes.length<5)
+   throw Error('Không nhận được PDF/ZIP thực.');
+  if(bytes[0]===80&&bytes[1]===75&&bytes[2]===3&&bytes[3]===4)
+   bytes=(await window.AutoTaxIssuerArchive.extractPdf(bytes)).pdf;
+  if(bytes.length>12*1024*1024||bytes[0]!==37||bytes[1]!==80||
+    bytes[2]!==68||bytes[3]!==70||bytes[4]!==45)
+   throw Error('Không nhận được PDF gốc từ nhà phát hành (có thể là CAPTCHA hoặc HTML đăng nhập).');
   await window.WebInvoiceApp.saveFile(
    'pdf_goc/PDF_Goc_'+safe(current.row.khhdon)+'_'+safe(current.row.shdon)+'.pdf',
    bytes,'application/pdf');
@@ -123,6 +127,7 @@ function init(){
   const {row,detail,link,code}=current,head=detail?.head||{};
   const information=[
    'MST bên bán: '+String(head.nbmst||row.nbmst||''),
+   'MST bên mua: '+String(head.nmmst||row.nmmst||''),
    'Ngày lập: '+String(head.nlap||row.nlap||''),
    'Mẫu số hóa đơn: '+String(head.khmshdon||row.khmshdon||''),
    'Ký hiệu hóa đơn: '+String(head.khhdon||row.khhdon||''),

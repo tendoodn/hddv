@@ -136,8 +136,7 @@ async function create(rows,mode='original'){
   attachments=results.filter(x=>x.kind==='tax_attachment').length,
   userSupplied=results.filter(x=>x.kind==='user_supplied').length,
   sourceOriginals=results.filter(x=>x.sourceOriginal).length;
- // Even if all provider downloads fail, export a useful source/status report,
- // never manufacture an invoice representation or claim a fake original.
+ // Save every PDF independently; preserve a separate provenance report for rebuilt files.
  const guide=[
   'AutoTax Web V1.1 - BAO CAO NGUON PDF',
   'Che do: '+(mode==='tax'?'PDF THUE (tat ca PDF dung lai)':'PDF GOC UU TIEN (neu that bai thi dung lai)'),
@@ -157,14 +156,12 @@ async function create(rows,mode='original'){
    'Ly do: '+(x.reason||'Chua xac minh nguon tai'));
  }
  if(errors.length)guide.push('LOI KHONG XUAT DUOC:',...errors);
- if(results.length===1&&!errors.length&&results[0].kind==='original'){
-  const file=results[0];app.download(file.name.split('/').pop(),file.data,'application/pdf');
- }else{
-  const files=results.map(x=>({name:x.name,data:x.data}));
-  files.push({name:'NGUON_PDF_MA_TRA_CUU.txt',data:guide.join('\n')});
-  app.download('AutoTax_'+(mode==='tax'?'PDF_THUE':'PDF_GOC_UU_TIEN')+'_'+safe(app.getMst())+'_'+new Date().toISOString().slice(0,10)+'.zip',
-   window.Zip.writeZip(files),'application/zip');
- }
+ if(!results.length)throw Error('Không có PDF hợp lệ từ nhà phát hành hoặc dữ liệu Thuế.');
+ for(const file of results)
+  await app.saveFile(file.name,file.data,'application/pdf');
+ if(errors.length||rendered||userSupplied)
+  await app.saveFile('NGUON_PDF_MA_TRA_CUU.txt',guide.join('\n'),'text/plain');
+
  return {mode,count:results.length,originals,rendered,attachments,userSupplied,sourceOriginals,errors};
 }
 

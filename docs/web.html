@@ -36,7 +36,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>
     <p>Tra cứu hóa đơn → Chọn hồ sơ → Xuất Excel, XML và PDF nhà phát hành</p>
-    <div class="sync"><span class="dot"></span> Dùng chung tài khoản, hồ sơ MST và quyền sử dụng với AutoTax Extension</div>
+    <div class="sync"><span class="dot"></span> Dùng chung tài khoản, hồ sơ MST và quyền sử dụng với AutoTax Extension · V1.1.7</div>
   </header>
   <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
     <div class="account-line">
@@ -48,7 +48,15 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
       <div><span>Tổng thanh toán kỳ tra cứu</span><strong id="searchTotalPay">0 ₫</strong></div>
       <div><span>Tổng tiền thuế kỳ tra cứu</span><strong id="searchTotalVat">0 ₫</strong></div>
     </div>
-    <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
+    <div class="web-mode-controls" id="webModeControls">
+  <label for="webUsageMode">Chế độ sử dụng</label>
+  <select id="webUsageMode" aria-label="Chuyển chế độ gói MST và số tờ" disabled>
+   <option value="mst">Chỉ sử dụng MST</option>
+   <option value="invoice">Chỉ sử dụng số tờ hóa đơn</option>
+  </select>
+  <small id="webUsageModeHint">Đang đồng bộ chế độ với Add-on…</small>
+ </div>
+ <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
     <div id="gdtConnectionHelp" class="gdt-connection-help" role="status" hidden>
       <strong>Máy chủ chưa lấy được CAPTCHA từ cổng Thuế</strong>
       <p>Không có ảnh thì cũng không thể nhập mã xác nhận thủ công. Bạn có thể thử kết nối lại hoặc kiểm tra trực tiếp cổng Thuế. AutoTax không trừ lượt hóa đơn khi chưa tra cứu thành công.</p>
@@ -222,7 +230,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
     <div class="stock-actions"><button id="closeKWarning" type="button">Đã hiểu</button></div>
     <small>Hệ số K chỉ để tham khảo, không phải kết luận vi phạm thuế.</small>
   </dialog>
-  <footer><a href="./">Tài khoản AutoTax</a> · <a href="https://tendoodn.github.io/t/">Báo giá &amp; tiện ích</a> · <a href="https://tendoodn.github.io/t/k.html">Theo dõi hệ số K</a>
+  <footer><a href="./">Tài khoản AutoTax</a> · <a href="https://tracuuhoadon.top/baogia/">Báo giá &amp; tiện ích</a> · <a href="https://tracuuhoadon.top/k/">Theo dõi hệ số K</a>
     <p>Tra cứu dựa trên dữ liệu cổng Thuế. Việc kết nối thực tế còn phụ thuộc phản hồi và cơ chế xác thực của cổng Thuế.</p>
   </footer>
 </main>

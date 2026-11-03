@@ -75,6 +75,7 @@ async function refresh(){
  try{
   const {data:{session}}=await client.auth.getSession();
   const signedIn=!!session;
+  if(signedIn&&session.user?.email){try{localStorage.setItem('autotax_recent_email',session.user.email)}catch{}}
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
   if(!signedIn){state=null;closePayment();return}

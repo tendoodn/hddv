@@ -115,7 +115,7 @@ function renderPicker(){
   $('gdtPassword').value='';updateChosen();$('mstFree').focus();
  });
  menu.append(add);
- const visibleProfiles=invoiceMode?profiles:profiles.filter(p=>p.mst_allowed);
+ const visibleProfiles=profiles; // Always display all saved MSTs; authorization is checked on search.
  for(const p of visibleProfiles){
   const mst=p.mst;
   const opt=document.createElement('option');
@@ -127,6 +127,10 @@ function renderPicker(){
   const number=document.createElement('strong');number.textContent=mst;
   const alias=document.createElement('small');alias.textContent=mstName(p);
   pick.append(number,alias);
+  const permission=document.createElement('small');
+  permission.textContent=p.mst_allowed?'Đã được cấp quyền MST':'Chưa cấp quyền MST · vẫn có thể dùng gói số tờ';
+  permission.className=p.mst_allowed?'mst-picker-allowed':'mst-picker-not-allowed';
+  pick.append(permission);
   pick.addEventListener('click',()=>{
    $('mstFree').value='';$('mstFree').hidden=true;select.value=mst;select.dispatchEvent(new Event('change',{bubbles:true}));
    menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
@@ -241,10 +245,19 @@ function claimPasswordReminder(mst){
 }
 function lock(){requestSeq++;deviceKey=null;$('gdtPassword').value=''}
 function init(){
+ const closePicker=()=>{
+  $('mstPickerMenu').hidden=true;
+  $('mstPickerToggle').setAttribute('aria-expanded','false');
+ };
  $('mstPickerToggle').addEventListener('click',()=>{
   const menu=$('mstPickerMenu');menu.hidden=!menu.hidden;
   $('mstPickerToggle').setAttribute('aria-expanded',String(!menu.hidden));
  });
+ document.addEventListener('pointerdown',event=>{
+  if(!$('mstPickerMenu').hidden&&!$('mstPickerMenu').contains(event.target)&&
+     !$('mstPickerToggle').contains(event.target))closePicker();
+ },{capture:true});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')closePicker()});
  $('mst').addEventListener('change',()=>{
   $('mstFree').value='';$('mstFree').hidden=!!$('mst').value;
   if(!$('mst').value)$('mstFree').focus();

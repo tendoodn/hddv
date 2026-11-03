@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123b35">
+<title>Quản lý K rủi ro cùng Tendoo</title>
+<style>
+:root{color-scheme:light;--bg:#f3f6f4;--card:#fff;--ink:#172a25;--muted:#66756f;--line:#dce5e0;--green:#176b52;--green2:#e3f3eb;--orange:#fff1dc;--red:#a43d36}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink)}
+header{background:linear-gradient(120deg,#123b35,#176b52);color:white;padding:26px 18px 30px}
+.wrap{max-width:980px;margin:auto}header h1{margin:0 0 5px;font-size:clamp(24px,4vw,34px)}header p{margin:0;color:#d5e8df}
+main{max-width:980px;margin:-14px auto 40px;padding:0 14px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 5px 20px #173c2a0a}
+.row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:150px}label{font-size:13px;font-weight:700;color:var(--muted)}
+input,select,button{font:inherit;border-radius:11px;border:1px solid var(--line);padding:11px 12px;min-width:0}input,select{background:#fff;color:var(--ink);width:100%}button{cursor:pointer;font-weight:700;background:var(--green);border-color:var(--green);color:white}button.secondary{background:white;color:var(--green);border-color:var(--line)}button.danger{background:#fff;color:var(--red);border-color:#efcfcc}button:active{transform:translateY(1px)}
+.section-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:0 0 14px}.section-title h2{font-size:18px;margin:0}.sub{color:var(--muted);font-size:13px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metric{padding:14px;border-radius:14px;background:#f7faf8;border:1px solid var(--line)}.metric .label{font-size:12px;color:var(--muted);font-weight:700}.metric .value{font-size:clamp(19px,3.4vw,26px);font-weight:800;overflow-wrap:anywhere;margin-top:5px}.metric.k{background:var(--green2);border-color:#cce8d8}.metric.k .value{color:var(--green)}
+.add-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.item-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 0}.item-row button{padding:8px 10px}.item-row input{min-width:0}.hint{font-size:13px;color:var(--muted);margin:10px 0 0}.history{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:650px}th,td{text-align:right;padding:11px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:12px;color:var(--muted);background:#f7faf8}th:first-child,td:first-child{text-align:left}tbody tr.active{background:#eff8f2}td strong{color:var(--green)}.actions{display:flex;gap:8px;flex-wrap:wrap}.empty{text-align:center;padding:24px;color:var(--muted)}
+.k.warning{background:#fde7e7!important;border-color:#e7a5a5!important}.k.warning .value{color:#b42318!important}.profile-bar{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.profile-bar .field{min-width:180px}.overlay{position:fixed;inset:0;background:#10251fd1;display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}.overlay.show{display:flex}.dialog{width:min(100%,480px);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:22px;box-shadow:0 20px 80px #0005}.dialog h2{margin:0 0 8px;font-size:22px}.dialog p{color:var(--muted);margin:0 0 16px}.dialog .field{margin:12px 0}.dialog .buttons{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}.dialog .secret-hint{background:#fff5df;border:1px solid #f0d6a2;padding:12px;border-radius:12px;font-size:14px}.profile-meta{font-size:12px;color:var(--muted)}.tabbar{display:flex;gap:8px;margin:0 0 14px}.tabbar button{flex:1}.tabbar button[aria-selected="true"]{background:#123b35;color:white}.tab-page{display:none}.tab-page.active{display:block}.transaction-table{min-width:680px}.footer-links{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:10px}.footer-links a{color:var(--green);font-weight:700}.delete-transaction{padding:6px 10px;font-size:13px}.warning-text{color:#b42318;font-weight:800}.report-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.report-options label{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;color:var(--ink)}.report-options input{width:auto}.live-warning{display:none;margin-top:10px;padding:12px;border:1px solid #e7a5a5;background:#fde7e7;color:#a4231b;border-radius:12px;font-weight:700}.live-warning.show{display:block}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 28px}
+@media(max-width:560px){.metrics{grid-template-columns:1fr}.metric{display:flex;align-items:center;justify-content:space-between;gap:12px}.metric .value{margin:0;text-align:right}.add-grid{grid-template-columns:1fr}.card{padding:15px}main{padding:0 10px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>Quản lý K rủi ro cùng Tendoo</h1><p>Theo dõi mua vào, bán ra, tồn kho và hệ số K theo từng hồ sơ.</p></div></header>
+<main>
+  
+<section class="card">
+  <div class="section-title">
+    <h2>Hồ sơ quản lý</h2>
+    <span id="profileCount" class="sub">0 hồ sơ</span>
+  </div>
+
+  <div class="profile-bar">
+    <div class="field">
+      <label for="profileSelect">Hồ sơ đang sử dụng</label>
+      <select id="profileSelect"></select>
+      <div id="profileMeta" class="profile-meta"></div>
+    </div>
+
+    <button id="addProfileBtn" type="button">+ Thêm hồ sơ</button>
+
+    <button id="deleteProfileBtn" type="button" class="secondary">
+      🗑️ Xóa hồ sơ
+    </button>
+  </div>
+
+  <p class="hint">Mỗi hồ sơ có dữ liệu tháng và nhóm thuế riêng.</p>
+</section>
+  <nav class="tabbar" aria-label="Các mục quản lý">
+    <button type="button" class="tab-btn" data-tab="overview" aria-selected="true">Tổng quan</button>
+    <button type="button" class="tab-btn secondary" data-tab="transactions" aria-selected="false">Quản lý giao dịch</button>
+  </nav>
+  <section class="card tab-page active" data-page="overview">
+    <div class="section-title"><h2>1. Chọn kỳ theo dõi</h2><span class="sub">Dữ liệu lưu tự động</span></div>
+    <div class="row">
+      <div class="field"><label for="periodMode">Chế độ tổng hợp</label><select id="periodMode"><option value="month">Theo tháng</option><option value="quarter">Theo quý</option></select></div><div class="field"><label for="month">Tháng ghi nhận giao dịch / kỳ neo</label><input id="month" type="month"></div>
+      <div id="openingStockField" class="field" style="flex:0 1 170px"><label for="startStock">Tồn đầu kỳ (chỉ nhập một lần)</label><input id="startStock" type="text" inputmode="decimal" value="0" autocomplete="off"></div>
+      <button id="saveStock" class="secondary">Lưu tồn đầu kỳ</button><button id="deleteStock" class="danger" hidden>Xóa tồn đầu kỳ</button>
+    </div>
+    <p class="hint">Tồn cuối kỳ = tồn đầu kỳ + mua vào − giá vốn hàng đã bán. Chế độ quý tổng hợp 3 tháng; giao dịch vẫn được ghi vào tháng đang chọn.</p>
+  </section>
+
+  <section class="card tab-page active" data-page="overview">
+    <div class="section-title"><h2>2. Tổng kết kỳ</h2><span id="monthLabel" class="sub"></span></div>
+    <div class="metrics">
+      <div class="metric"><div><div class="label">MUA VÀO</div><div class="sub">Tổng kỳ</div></div><div id="purchaseTotal" class="value">0</div></div>
+      <div class="metric"><div><div class="label">BÁN RA</div><div class="sub">Tổng kỳ</div></div><div id="salesTotal" class="value">0</div></div>
+      <div class="metric"><div><div class="label">TỒN CUỐI KỲ (GIÁ VỐN)</div><div class="sub">Sau khi trừ giá vốn hàng xuất</div></div><div id="stockTotal" class="value">0</div></div>
+    </div>
+    <div class="metric k" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div><div class="label">HỆ SỐ K CỦA KỲ</div><div class="sub">Doanh thu bán ra ÷ (mua vào + tồn đầu kỳ)</div></div>
+      <div id="kValue" class="value">—</div>
+    </div>
+    <p id="kNote" class="hint">K sẽ tự tính khi có mẫu số khác 0.</p><div id="liveWarning" class="live-warning" role="status"></div>
+  </section>
+
+  <section class="card tab-page active" data-page="overview">
+    <div class="section-title"><h2>3. Nhập số liệu phát sinh</h2><span class="sub">Cộng dồn vào tổng tháng</span></div>
+    <form id="addForm">
+      <div class="section-title"><h3 style="margin:0">Mua vào</h3><button type="button" class="secondary" id="addPurchaseRow">+ Thêm dòng mua</button></div>
+      <div id="purchaseRows"></div>
+      <div class="section-title" style="margin-top:18px"><h3 style="margin:0">Bán ra</h3><button type="button" class="secondary" id="addSalesRow">+ Thêm dòng bán</button></div>
+      <div id="salesRows"></div>
+      <datalist id="productNames"></datalist>
+      <div class="field" style="margin-top:14px"><label for="profitRate">Tỷ lệ lợi nhuận bán hàng (%)</label><input id="profitRate" type="number" min="0" max="10000" step="0.1" value="10" inputmode="decimal"></div>
+      <div class="row" style="margin-top:12px"><button type="submit">+ Lưu giao dịch</button><button type="button" id="resetInputs" class="secondary">Xóa ô nhập</button></div>
+      <p class="hint">Mỗi dòng gồm tên hàng và tiền hàng. Có thể chọn tên đã nhập trước đó trong danh sách gợi ý; nếu nhập cùng tên nhiều lần, giá trị sẽ được cộng dồn. Giá vốn phần bán = tổng tiền bán ÷ (1 + tỷ lệ lợi nhuận).</p>
+    </form>
+  </section>
+
+
+
+
+<section class="card tab-page" data-page="transactions" id="annualReportCard">
+  <div class="section-title"><h2>📊 5. Báo cáo và sổ kế toán</h2><span class="sub">Mẫu tham chiếu năm 2026</span></div>
+  <div class="row">
+    <div class="field"><label for="reportStart">Từ ngày</label><input id="reportStart" type="date"></div>
+    <div class="field"><label for="reportEnd">Đến ngày</label><input id="reportEnd" type="date"></div>
+    <div class="field"><label for="reportPeriod">Chọn nhanh theo kỳ</label><select id="reportPeriod"><option value="custom">Khoảng ngày tùy chọn</option><option value="month">Tháng đang chọn</option><option value="quarter">Quý chứa tháng đang chọn</option><option value="year">Năm chứa tháng đang chọn</option></select></div>
+  </div>
+  <p class="hint">Chọn một hoặc nhiều sổ cần xuất. S2b-HKD là sổ doanh thu; S2d-HKD là sổ chi tiết vật liệu, dụng cụ, sản phẩm, hàng hóa. Sổ K là sổ quản trị nội bộ.</p>
+  <div class="report-options" style="margin-top:12px">
+    <label><input type="checkbox" name="reportBook" value="s2b" checked> S2b-HKD — Doanh thu bán ra</label>
+    <label><input type="checkbox" name="reportBook" value="s2d" checked> S2d-HKD — Nhập xuất tồn</label>
+    <label><input type="checkbox" name="reportBook" value="purchase" checked> Sổ mua vào (có ngày giờ)</label>
+    <label><input type="checkbox" name="reportBook" value="k" checked> Sổ theo dõi hệ số K</label>
+  </div>
+  <div class="row" style="margin-top:12px"><button type="button" id="exportAnnualExcel">Xuất sổ đã chọn (.xlsx)</button><button type="button" id="exportAnnualPDF" class="secondary">Xuất PDF / In</button></div>
+  <p class="hint">Lưu ý: ứng dụng hiện quản lý giá trị tiền, chưa có chi tiết mã hàng, đơn vị tính và số lượng. Sổ S2d xuất ra sẽ đánh dấu các trường chưa có dữ liệu, không tự bịa thông tin.</p>
+</section>
+
+  <section class="card tab-page active" data-page="overview">
+    <div class="section-title"><h2>6. Lịch sử theo tháng</h2><div class="actions"><button id="exportBtn" class="secondary">Xuất bản sao</button><button id="importBtn" class="secondary">Nhập bản sao</button><button id="clearBtn" class="danger">Xóa toàn bộ</button></div></div>
+    <div class="history"><table><thead><tr><th>Tháng</th><th>Mua vào</th><th>Bán ra</th><th>Tồn cuối</th><th>Hệ số K</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div>
+    <p id="emptyMsg" class="empty" hidden>Chưa có dữ liệu. Chọn tháng và nhập số liệu để bắt đầu.</p>
+    <input id="importFile" type="file" accept="application/json,.json" hidden>
+  </section>
+  <section class="card tab-page" data-page="transactions">
+    <div class="section-title"><h2>Quản lý giao dịch</h2><span id="transactionMonth" class="sub"></span></div>
+    <p class="hint" style="margin-top:0;margin-bottom:12px">Danh sách các lần cộng mua vào/bán ra của tháng đang chọn. Bạn có thể xóa từng giao dịch; tổng tháng và hệ số K sẽ tự cập nhật.</p>
+    <div class="history"><table class="transaction-table"><thead><tr><th>Thời gian</th><th>Mua vào</th><th>Bán ra</th><th></th></tr></thead><tbody id="transactionBody"></tbody></table></div>
+    <p id="transactionEmpty" class="empty" hidden>Tháng này chưa có giao dịch được ghi nhận.</p>
+    <div class="section-title" style="margin-top:24px"><h3 style="margin:0">Quản lý K từng mặt hàng</h3><span class="sub">Theo tháng đang chọn</span></div>
+    <p class="hint" style="margin-top:0">Với mỗi mặt hàng, tháng đầu tiên có dữ liệu được tính tồn đầu riêng = 0. K mặt hàng = tiền bán ra ÷ tiền mua vào trong tháng đang chọn; nếu chưa có tiền mua thì chưa tính được K.</p>
+    <div class="history"><table><thead><tr><th>Mặt hàng</th><th>Tồn đầu riêng (tháng đầu = 0)</th><th>Mua vào</th><th>Bán ra</th><th>K mặt hàng</th></tr></thead><tbody id="productKBody"></tbody></table></div>
+    <p id="productKEmpty" class="empty" hidden>Chưa có dữ liệu mặt hàng trong tháng này.</p>
+  </section>
+
+<section class="card" id="cloudSyncCard">
+  <div class="section-title"><h2>☁️ Tài khoản & đồng bộ online</h2><span id="syncStatus" class="sub">Chưa đăng nhập</span></div>
+  <p class="hint" style="margin-top:0">Đăng ký hoặc đăng nhập tài khoản Tendoo K để lưu dữ liệu online và sử dụng trên nhiều thiết bị. Bạn không cần tạo dự án Supabase hay nhập khóa kết nối.</p>
+  <div id="authArea" style="margin-top:14px">
+    <div class="row"><div class="field"><label for="sbEmail">Email</label><input id="sbEmail" type="email" autocomplete="username" placeholder="email@example.com"></div><div class="field"><label for="sbPassword">Mật khẩu</label><input id="sbPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu (tối thiểu 6 ký tự)"></div></div>
+    <div class="row" style="margin-top:10px"><button type="button" id="sbSignIn">Đăng nhập & đồng bộ</button><button type="button" id="sbSignUp" class="secondary">Tạo tài khoản</button><button type="button" id="sbForgotPassword" class="secondary">Quên mật khẩu?</button><button type="button" id="sbSignOut" class="danger" hidden>Đăng xuất</button></div>
+    <div id="sbRecoveryArea" hidden style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px">
+      <label for="sbNewPassword">Mật khẩu mới</label>
+      <input id="sbNewPassword" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
+      <button type="button" id="sbUpdatePassword" style="margin-top:8px">Lưu mật khẩu mới</button>
+    </div>
+  </div>
+  <p class="hint">Dữ liệu của mỗi tài khoản được phân quyền riêng. Hãy giữ kín mật khẩu và xuất bản sao JSON định kỳ để dự phòng.</p>
+</section>
+
+</main>
+<footer>Dữ liệu được lưu trên thiết bị và đồng bộ online theo tài khoản; hãy sao lưu JSON định kỳ để dự phòng.
+  <div class="footer-links"><a href="https://tendoodn.github.io/t" target="_blank" rel="noopener noreferrer">Báo giá và tiện ích Tendoo</a><a href="https://taihoadon.online" target="_blank" rel="noopener noreferrer">Đăng ký mua tools tra cứu hóa đơn chứng từ</a><a href="https://chromewebstore.google.com/detail/bbdeblbinfjmbeljddnaghfombblfppp" target="_blank" rel="noopener noreferrer">Tải add-on chrome tra cứu và tải hoá đơn TCT</a><a href="https://zalo.me/0393906086" target="_blank" rel="noopener noreferrer">Liên hệ Zalo: 0393906086</a></div>
+</footer>
+<div id="profileModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+  <form id="profileForm" class="dialog">
+    <h2 id="profileModalTitle">Tạo hồ sơ quản lý</h2>
+    <p>Nhập thông tin hồ sơ để bắt đầu. Mã số thuế, tên và nhóm thuế sẽ được lưu trên thiết bị này.</p>
+    <div class="field"><label for="profileMst">Mã số thuế (MST)</label><input id="profileMst" required autocomplete="off" placeholder="Nhập mã số thuế"></div>
+    <div class="field"><label for="profileName">Tên hồ sơ / tên người nộp thuế</label><input id="profileName" required autocomplete="organization" placeholder="Nhập tên hồ sơ"></div>
+    <div class="field"><label for="profileTax">Nhóm thuế</label><select id="profileTax" required><option value="1.5">Nhóm 1,5% — cảnh báo khi K &gt; 2</option><option value="4.5">Nhóm 4,5% — cảnh báo khi K &gt; 4</option></select></div>
+    <div class="buttons"><button id="cancelProfileBtn" type="button" class="secondary" hidden>Hủy</button><button type="submit">Lưu hồ sơ</button></div>
+  </form>
+</div>
+<div id="unlockModal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="unlockTitle">
+  <form id="unlockForm" class="dialog">
+    <h2 id="unlockTitle">Kích hoạt hồ sơ thứ 3 trở đi</h2>
+    <p>Để thêm hồ sơ, vui lòng nhập mã kích hoạt.</p>
+    <div class="field"><label for="unlockCode">Mã kích hoạt</label><input id="unlockCode" type="password" required autocomplete="off" placeholder="Nhập mã kích hoạt"></div>
+    <div class="secret-hint">Liên hệ Zalo <strong>0393906086</strong> để nhận mã kích hoạt.</div>
+    <div class="buttons"><button id="cancelUnlockBtn" type="button" class="secondary">Hủy</button><button type="submit">Xác nhận mã</button></div>
+  </form>
+</div>
+<div id="warningModal" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="warningTitle">
+  <div class="dialog">
+    <h2 id="warningTitle">Cảnh báo hệ số K</h2>
+    <p id="warningMessage"></p>
+    <label style="display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:500"><input id="muteWarnings" type="checkbox" style="width:auto"> Tạm ẩn các pop-up cảnh báo trong phiên này</label>
+    <div class="buttons"><button id="closeWarningBtn" type="button">Đã hiểu</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+(() => {
+  const MONTH_KEY = 'monthly-purchase-sales-v1';
+  const PROFILE_KEY = 'monthly-purchase-sales-profiles-v1';
+  const $ = id => document.getElementById(id);
+  const now = new Date();
+  $('month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const parseNum = value => {
+    let s = String(value ?? '').trim().replace(/\s/g,'');
+    if (!s) return 0;
+    if (s.includes(',')) s = s.replace(/\./g,'').replace(',', '.'); else s = s.replace(/\./g,'');
+    const n = Number(s); return Number.isFinite(n) ? n : 0;
+  };
+  const fmt = v => Number(v || 0).toLocaleString('vi-VN',{maximumFractionDigits:4});
+  const fmtInput = v => v === '' || v == null ? '' : fmt(parseNum(v));
+  const kFmt = v => v === null || !Number.isFinite(v) ? '—' : v.toLocaleString('vi-VN',{maximumFractionDigits:6});
+  const monthName = key => { const [y,m] = key.split('-'); return `Tháng ${Number(m)}/${y}`; };
+  const newId = () => 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  let profiles = [];
+  let activeId = '';
+  let months = {};
+  let pendingProfile = false;
+  let muteWarnings = false;
+  const shownWarnings = new Set();
+  try { profiles = JSON.parse(localStorage.getItem(PROFILE_KEY) || '[]'); if (!Array.isArray(profiles)) profiles=[]; } catch { profiles=[]; }
+  // Migrate data created by earlier versions into a default profile.
+  if (!profiles.length) {
+    let old = {};
+    try { old = JSON.parse(localStorage.getItem(MONTH_KEY) || '{}') || {}; } catch { old={}; }
+    if (Object.keys(old).length) {
+      profiles.push({id:newId(),mst:'',name:'Hồ sơ mặc định',taxGroup:'1.5',months:old});
+      saveProfiles();
+    }
+  }
+  function saveProfiles(){ localStorage.setItem(PROFILE_KEY,JSON.stringify(profiles)); scheduleCloudSync(); }
+  function activeProfile(){ return profiles.find(p=>p.id===activeId) || null; }
+  function saveMonths(){ const p=activeProfile(); if(p){p.months=months;saveProfiles();} }
+  function loadProfile(id){
+    activeId=id; const p=activeProfile(); months=p ? (p.months||{}) : {};
+    try { localStorage.setItem(MONTH_KEY,JSON.stringify(months)); } catch {}
+    renderProfileControls(); refreshProductNames(); render();
+  }
+  function renderProfileControls(){
+    const select=$('profileSelect'); select.innerHTML='';
+    profiles.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name || p.mst || 'Hồ sơ';select.appendChild(o);});
+    if(activeId) select.value=activeId;
+    $('profileCount').textContent=`${profiles.length} hồ sơ`;
+    const p=activeProfile(); $('profileMeta').textContent=p ? `MST: ${p.mst || 'chưa nhập'} · Nhóm thuế ${p.taxGroup}%` : '';
+  }
+  // Khi chưa đăng nhập (hoặc tài khoản mới chưa có hồ sơ), tạo hồ sơ cục bộ trống
+  // để người dùng có thể làm việc ngay; không tự bật hộp thoại tạo hồ sơ.
+  function ensureWorkingProfile(){
+    if(profiles.length){
+      if(!activeId || !profiles.every(p=>p.id!==activeId)) activeId=profiles[0].id;
+      const p=activeProfile();
+      months=p ? (p.months||{}) : {};
+      renderProfileControls();
+      return;
+    }
+    const profile={id:newId(),mst:'',name:'Hồ sơ cục bộ',taxGroup:'1.5',months:{},localDefault:true};
+    profiles=[profile];
+    activeId=profile.id;
+    months=profile.months;
+    try{
+      localStorage.setItem(PROFILE_KEY,JSON.stringify(profiles));
+      localStorage.setItem(MONTH_KEY,JSON.stringify(months));
+    }catch{}
+    renderProfileControls();
+  }
+  function hasMeaningfulLocalData(){
+    return profiles.some(p => p && (String(p.mst||'').trim() ||
+      (p.name && p.name!=='Hồ sơ cục bộ') ||
+      Object.keys(p.months||{}).length>0));
+  }
+  const keys = () => Object.keys(months).filter(k=>/^\d{4}-\d{2}$/.test(k)).sort();
+  const ensure = key => { if(!months[key]) months[key]={purchase:0,sales:0,costOfGoods:0,startStock:0,startStockSet:false,transactions:[]}; if(months[key].startStock==null)months[key].startStock=0; if(months[key].startStockSet==null)months[key].startStockSet=false; if(!Array.isArray(months[key].transactions))months[key].transactions=[]; };
+  function hasOpeningStock(){return Object.values(months).some(m=>m&&m.startStockSet===true);}
+  function renderOpeningStockControl(key,c){const d=months[key]||{};const saved=d.startStockSet===true;const allowed=saved||!hasOpeningStock();$('openingStockField').hidden=!allowed;$('saveStock').hidden=!allowed;$('deleteStock').hidden=!saved;$('startStock').disabled=!allowed;$('startStock').value=fmt(saved?Number(d.startStock)||0:c.prevStock);}
+  function calc(key){
+    const sorted=keys(),idx=sorted.indexOf(key),d=months[key]||{purchase:0,sales:0,startStock:0};
+    let prevStock=Math.max(0,Number(d.startStock)||0); if(idx>0&&d.startStockSet!==true)prevStock=calcStock(sorted[idx-1]);
+    const purchase=Math.max(0,Number(d.purchase)||0),sales=Math.max(0,Number(d.sales)||0);
+    const costOfGoods=d.costOfGoods==null?sales:Math.max(0,Number(d.costOfGoods)||0);
+    const denominator=purchase+prevStock;
+    return {purchase,sales,costOfGoods,prevStock,stock:Math.max(0,denominator-costOfGoods),k:denominator?sales/denominator:null,denominator};
+  }
+  function calcStock(key){return calc(key).stock;}
+  function threshold(){const p=activeProfile();return p&&p.taxGroup==='4.5'?4:2;}
+  function maybeWarn(key,c){
+    const limit=threshold(),token=`${activeId}:${key}`,exceeds=c.k!==null&&c.k>limit;
+    if(!exceeds){shownWarnings.delete(token);return;}
+    if(shownWarnings.has(token))return;
+    shownWarnings.add(token);
+    if(muteWarnings)return;
+    $('warningTitle').textContent='Cảnh báo hệ số K';
+    $('warningMessage').textContent=`${monthName(key)} của hồ sơ “${activeProfile()?.name||''}” có K = ${kFmt(c.k)}, vượt ngưỡng ${limit} của nhóm thuế ${activeProfile()?.taxGroup}%. Hãy kiểm tra lại số liệu.`;
+    $('muteWarnings').checked=false; $('warningModal').classList.add('show');
+  }
+  function activePeriodKeys(anchor){
+    const mode=$('periodMode')?.value||'month';
+    if(mode==='month')return [anchor];
+    const [y,m]=anchor.split('-').map(Number), first=Math.floor((m-1)/3)*3+1;
+    return [0,1,2].map(i=>`${y}-${String(first+i).padStart(2,'0')}`);
+  }
+  function calcPeriod(anchor, extraPurchase=0, extraSales=0, extraCost=0){
+    const mode=$('periodMode')?.value||'month', periodKeys=activePeriodKeys(anchor);
+    const startKey=periodKeys[0], endKey=periodKeys[periodKeys.length-1];
+    const prior=keys().filter(k=>k<startKey).sort();
+    const opening=prior.length?calcStock(prior[prior.length-1]):Math.max(0,Number(months[startKey]?.startStock)||0);
+    let purchase=0,sales=0,costOfGoods=0;
+    periodKeys.forEach(k=>{
+      const d=months[k]||{};
+      purchase+=Math.max(0,Number(d.purchase)||0);
+      sales+=Math.max(0,Number(d.sales)||0);
+      costOfGoods+=d.costOfGoods==null?(Number(d.sales)||0):Math.max(0,Number(d.costOfGoods)||0);
+    });
+    purchase+=extraPurchase;sales+=extraSales;costOfGoods+=extraCost;
+    const denominator=purchase+opening;
+    const last=months[endKey];
+    const stock=Math.max(0,denominator-costOfGoods);
+    return {purchase,sales,costOfGoods,prevStock:opening,stock,k:denominator?sales/denominator:null,denominator,startKey,endKey,mode};
+  }
+  function collectItems(containerId){
+    const items=[];
+    $(containerId).querySelectorAll('.item-row').forEach(row=>{
+      const name=row.querySelector('[data-name]').value.trim();
+      const amount=Math.max(0,parseNum(row.querySelector('[data-amount]').value));
+      if(name && amount>0) items.push({name,amount});
+    });
+    return items;
+  }
+  function totalItems(items){return items.reduce((sum,item)=>sum+(Number(item.amount)||0),0);}
+  function addItemRow(type,name='',amount=''){
+    const container=$(type==='purchase'?'purchaseRows':'salesRows');
+    const row=document.createElement('div');row.className='item-row';
+    const nameInput=document.createElement('input');nameInput.type='text';nameInput.placeholder='Tên hàng';nameInput.setAttribute('list','productNames');nameInput.dataset.name='1';nameInput.value=name;nameInput.setAttribute('aria-label','Tên hàng');
+    const amountInput=document.createElement('input');amountInput.type='text';amountInput.inputMode='decimal';amountInput.placeholder='Tiền hàng';amountInput.dataset.amount='1';amountInput.value=amount;amountInput.setAttribute('aria-label','Tiền hàng');
+    const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Xóa';remove.addEventListener('click',()=>{if(container.querySelectorAll('.item-row').length>1)row.remove();else{nameInput.value='';amountInput.value='';}livePreview();});
+    [nameInput,amountInput].forEach(el=>{el.addEventListener('input',livePreview);el.addEventListener('blur',()=>{if(el===amountInput)el.value=fmtInput(el.value);livePreview();});});
+    row.append(nameInput,amountInput,remove);container.appendChild(row);
+  }
+  function refreshProductNames(){
+    const names=new Set();
+    profiles.forEach(p=>Object.values(p.months||{}).forEach(m=>(m.transactions||[]).forEach(tx=>{
+      [...(tx.purchaseItems||[]),...(tx.salesItems||[])].forEach(item=>{if(item.name)names.add(item.name);});
+    })));
+    const list=$('productNames');list.innerHTML='';
+    [...names].sort((a,b)=>a.localeCompare(b,'vi')).forEach(name=>{const opt=document.createElement('option');opt.value=name;list.appendChild(opt);});
+  }
+  function livePreview(){
+    const key=$('month').value;if(!key)return;
+    const p=totalItems(collectItems('purchaseRows')),sAdd=totalItems(collectItems('salesRows'));
+    const rate=Math.max(0,Number($('profitRate')?.value)||0), saleCost=sAdd/(1+rate/100);
+    const c=calcPeriod(key,p,sAdd,saleCost);
+    const over=c.k!==null&&c.k>threshold(), card=$('kValue').closest('.metric');
+    card.classList.toggle('warning',over);
+  }
+  function renderProductK(key){
+    const d=months[key]||{}, txs=Array.isArray(d.transactions)?d.transactions:[], products=new Map();
+    txs.forEach(tx=>{
+      (tx.purchaseItems||[]).forEach(item=>{const name=String(item.name||'').trim();if(!name)return;const id=name.toLocaleLowerCase('vi');if(!products.has(id))products.set(id,{name,purchase:0,sales:0});products.get(id).purchase+=Math.max(0,Number(item.amount)||0);});
+      (tx.salesItems||[]).forEach(item=>{const name=String(item.name||'').trim();if(!name)return;const id=name.toLocaleLowerCase('vi');if(!products.has(id))products.set(id,{name,purchase:0,sales:0});products.get(id).sales+=Math.max(0,Number(item.amount)||0);});
+    });
+    const body=$('productKBody');body.innerHTML='';$('productKEmpty').hidden=products.size>0;
+    [...products.values()].sort((a,b)=>a.name.localeCompare(b.name,'vi')).forEach(p=>{const tr=document.createElement('tr');[p.name,fmt(0),fmt(p.purchase),fmt(p.sales),p.purchase>0?kFmt(p.sales/p.purchase):'—'].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===4&&p.purchase>0){const strong=document.createElement('strong');strong.textContent=v;td.textContent='';td.appendChild(strong);}tr.appendChild(td);});body.appendChild(tr);});
+  }
+  function renderTransactions(key){
+    const d=months[key]||{}, txs=Array.isArray(d.transactions)?d.transactions:[];
+    $('transactionMonth').textContent=monthName(key);
+    const body=$('transactionBody');body.innerHTML='';$('transactionEmpty').hidden=txs.length>0;
+    [...txs].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).forEach(tx=>{
+      const tr=document.createElement('tr');
+      const when=document.createElement('td');when.textContent=tx.createdAt?new Date(tx.createdAt).toLocaleString('vi-VN'):'—';tr.appendChild(when);
+      const ptd=document.createElement('td');ptd.textContent=(tx.purchaseItems?.length?tx.purchaseItems.map(i=>`${i.name}: ${fmt(i.amount)}`).join(', ')+' · ':'')+fmt(tx.purchase||0);tr.appendChild(ptd);
+      const std=document.createElement('td');std.textContent=(tx.salesItems?.length?tx.salesItems.map(i=>`${i.name}: ${fmt(i.amount)}`).join(', ')+' · ':'')+fmt(tx.sales||0);tr.appendChild(std);
+      const td=document.createElement('td'),btn=document.createElement('button');btn.type='button';btn.className='danger delete-transaction';btn.textContent='Xóa';btn.setAttribute('aria-label','Xóa giao dịch');
+      btn.addEventListener('click',()=>{
+        if(!confirm('Xóa giao dịch này? Tổng mua vào/bán ra và hệ số K sẽ được tính lại.'))return;
+        const monthData=months[key];const index=(monthData.transactions||[]).findIndex(x=>x.id===tx.id);if(index<0)return;
+        const [removed]=monthData.transactions.splice(index,1);
+        monthData.purchase=Math.max(0,(Number(monthData.purchase)||0)-(Number(removed.purchase)||0));
+        monthData.sales=Math.max(0,(Number(monthData.sales)||0)-(Number(removed.sales)||0));
+        const removedCost=removed.costOfGoods==null?(Number(removed.sales)||0):(Number(removed.costOfGoods)||0);
+        if(monthData.costOfGoods!=null)monthData.costOfGoods=Math.max(0,(Number(monthData.costOfGoods)||0)-removedCost);
+        saveMonths();render();
+      });td.appendChild(btn);tr.appendChild(td);body.appendChild(tr);
+    });
+    renderProductK(key);
+  }
+  function render(){
+    const key=$('month').value;if(!key||!activeProfile())return;ensure(key);saveMonths();const c=calcPeriod(key),limit=threshold(),over=c.k!==null&&c.k>limit;
+    $('monthLabel').textContent=c.mode==='quarter'?`Quý ${Math.floor((Number(key.split('-')[1])-1)/3)+1}/${key.split('-')[0]} (${monthName(c.startKey)} – ${monthName(c.endKey)})`:monthName(key);
+    renderOpeningStockControl(key,c);$('purchaseTotal').textContent=fmt(c.purchase);$('salesTotal').textContent=fmt(c.sales);$('stockTotal').textContent=fmt(c.stock);$('kValue').textContent=kFmt(c.k);
+    $('kNote').textContent=c.k===null?'Chưa tính được K vì (mua vào + tồn đầu kỳ) bằng 0.':`K = ${fmt(c.sales)} / (${fmt(c.purchase)} + ${fmt(c.prevStock)}) = ${kFmt(c.k)} · Ngưỡng cảnh báo nhóm ${activeProfile().taxGroup}%: K > ${limit}`;
+    const kCard=$('kValue').closest('.metric');kCard.classList.toggle('warning',over);
+    const body=$('historyBody');body.innerHTML='';const all=keys().sort().reverse();$('emptyMsg').hidden=all.length!==0;
+    for(const k of all){const x=calc(k),tr=document.createElement('tr');if(k===key)tr.className='active';const vals=[monthName(k),fmt(x.purchase),fmt(x.sales),fmt(x.stock),kFmt(x.k)];vals.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===4){const b=document.createElement('strong');b.textContent=v;if(x.k!==null&&x.k>limit){b.style.color='#b42318';b.title=`Vượt ngưỡng K > ${limit}`;}td.textContent='';td.appendChild(b);}tr.appendChild(td);});
+      const td=document.createElement('td'),btn=document.createElement('button');btn.className='secondary';btn.textContent='Chọn';btn.style.padding='6px 10px';btn.onclick=()=>{$('month').value=k;render();window.scrollTo({top:0,behavior:'smooth'});};td.appendChild(btn);tr.appendChild(td);body.appendChild(tr);}
+    livePreview();renderTransactions(key);maybeWarn(c.mode==='quarter'?c.startKey:key,c);
+  }
+  function openProfileForm(){pendingProfile=true;$('profileForm').reset();$('profileTax').value='1.5';$('cancelProfileBtn').hidden=profiles.length===0;$('profileModal').classList.add('show');}
+  $('profileForm').addEventListener('submit',e=>{
+    e.preventDefault();const mst=$('profileMst').value.trim(),name=$('profileName').value.trim(),taxGroup=$('profileTax').value;
+    if(!mst||!name)return;
+    const profile={id:newId(),mst,name,taxGroup,months:{}};profiles.push(profile);saveProfiles();$('profileModal').classList.remove('show');pendingProfile=false;loadProfile(profile.id);
+  });
+  
+
+  $('addProfileBtn').addEventListener('click',()=>{
+    const nextNumber=profiles.length+1;
+    const codes={
+      3:'tendoocuibap',
+      6:'tendoosida',
+      10:'tendoolo'
+    };
+
+    const requiredCode=codes[nextNumber];
+    const unlockKey='tendoo_unlocked_profile_'+nextNumber;
+
+    // Đã mở khóa trước đó thì không hỏi lại mã
+    if(requiredCode && localStorage.getItem(unlockKey)!=='1'){
+      $('unlockCode').value='';
+      $('unlockModal').dataset.requiredCode=requiredCode;
+      $('unlockModal').dataset.unlockKey=unlockKey;
+      $('unlockModal').classList.add('show');
+    }else{
+      openProfileForm();
+    }
+  });
+
+  $('unlockForm').addEventListener('submit',e=>{
+    e.preventDefault();
+
+    const requiredCode=$('unlockModal').dataset.requiredCode;
+    const unlockKey=$('unlockModal').dataset.unlockKey;
+
+    if($('unlockCode').value===requiredCode){
+      // Ghi nhớ vĩnh viễn trên trình duyệt hiện tại
+      localStorage.setItem(unlockKey,'1');
+
+      $('unlockModal').classList.remove('show');
+      openProfileForm();
+    }else{
+      alert('Mã kích hoạt chưa đúng. Vui lòng kiểm tra lại.');
+      $('unlockCode').select();
+    }
+  });
+
+  $('cancelUnlockBtn').addEventListener('click',()=>{
+    $('unlockModal').classList.remove('show');
+  });
+  $('cancelProfileBtn').addEventListener('click',()=>{$('profileModal').classList.remove('show');pendingProfile=false;});
+  $('profileSelect').addEventListener('change',()=>loadProfile($('profileSelect').value));
+  $('closeWarningBtn').addEventListener('click',()=>{$('warningModal').classList.remove('show');if($('muteWarnings').checked)muteWarnings=true;});
+  ['profitRate','startStock'].forEach(id=>{const el=$(id);el.addEventListener('input',livePreview);el.addEventListener('blur',()=>{if(id!=='profitRate')el.value=fmtInput(el.value);livePreview();});});
+  $('addPurchaseRow').addEventListener('click',()=>addItemRow('purchase'));
+  $('addSalesRow').addEventListener('click',()=>addItemRow('sales'));
+  $('month').addEventListener('change',render);$('periodMode').addEventListener('change',render);
+  $('saveStock').addEventListener('click',()=>{const key=$('month').value;if(!key)return;ensure(key);if(hasOpeningStock()&&!months[key].startStockSet){alert('Tồn đầu kỳ đã được nhập ở tháng khác. Hãy xóa tồn đầu kỳ ở tháng đang lưu trước.');render();return;}months[key].startStock=Math.max(0,parseNum($('startStock').value));months[key].startStockSet=true;saveMonths();render();});
+  $('deleteStock').addEventListener('click',()=>{const key=$('month').value;if(!key||!months[key]||months[key].startStockSet!==true)return;if(!confirm(`Chỉ xóa giá trị tồn đầu kỳ đã lưu tại tháng ${monthName(key)}? Giao dịch và lịch sử tháng vẫn được giữ nguyên.`))return;months[key].startStock=0;months[key].startStockSet=false;saveMonths();render();});
+  $('addForm').addEventListener('submit',e=>{e.preventDefault();const key=$('month').value;if(!key)return;ensure(key);const purchaseItems=collectItems('purchaseRows'),salesItems=collectItems('salesRows'),p=totalItems(purchaseItems),sale=totalItems(salesItems),rate=Math.max(0,Number($('profitRate').value)||0),cost=sale/(1+rate/100);if(p===0&&sale===0){alert('Nhập ít nhất một dòng tên hàng và tiền hàng.');return;}const merge=items=>{const map=new Map();items.forEach(i=>{const k=i.name.toLocaleLowerCase('vi');const old=map.get(k);if(old)old.amount+=i.amount;else map.set(k,{name:i.name,amount:i.amount});});return [...map.values()];};const tx={id:newId(),createdAt:Date.now(),purchase:p,sales:sale,profitRate:rate,costOfGoods:cost,purchaseItems:merge(purchaseItems),salesItems:merge(salesItems)};months[key].purchase=(Number(months[key].purchase)||0)+p;months[key].sales=(Number(months[key].sales)||0)+sale;if(months[key].costOfGoods==null)months[key].costOfGoods=months[key].sales-sale;months[key].costOfGoods=(Number(months[key].costOfGoods)||0)+cost;months[key].transactions.push(tx);saveMonths();$('purchaseRows').innerHTML='';$('salesRows').innerHTML='';addItemRow('purchase');addItemRow('sales');refreshProductNames();render();});
+  $('resetInputs').addEventListener('click',()=>{$('purchaseRows').innerHTML='';$('salesRows').innerHTML='';addItemRow('purchase');addItemRow('sales');livePreview();});
+  $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({profiles,activeId},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='sao-luu-ho-so-mua-vao-ban-ra.json';a.click();URL.revokeObjectURL(url);});
+  $('importBtn').addEventListener('click',()=>$('importFile').click());
+  $('importFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const incoming=JSON.parse(await file.text());let list;if(Array.isArray(incoming))list=incoming;else if(incoming&&Array.isArray(incoming.profiles))list=incoming.profiles;else throw Error();for(const p of list){if(!p||typeof p!=='object'||!p.id||!p.name||!p.months||!['1.5','4.5'].includes(String(p.taxGroup)))throw Error();for(const [k,v] of Object.entries(p.months)){if(!/^\d{4}-\d{2}$/.test(k)||!v||typeof v!=='object')throw Error();}}if(confirm('Nhập bản sao sẽ thay thế toàn bộ hồ sơ hiện có. Tiếp tục?')){profiles=list;saveProfiles();loadProfile(incoming.activeId&&profiles.some(p=>p.id===incoming.activeId)?incoming.activeId:profiles[0]?.id);alert('Đã nhập dữ liệu.');}}catch{alert('Tệp không hợp lệ. Hãy chọn bản sao JSON được xuất từ ứng dụng này.');}e.target.value='';});
+  $('clearBtn').addEventListener('click',()=>{if(confirm('Bạn chắc chắn muốn xóa toàn bộ dữ liệu của hồ sơ đang dùng?')){months={};const p=activeProfile();if(p){p.months=months;saveProfiles();}ensure($('month').value);saveMonths();render();}});
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    const tab=btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>{const active=b===btn;b.setAttribute('aria-selected',String(active));b.classList.toggle('secondary',!active);});
+    document.querySelectorAll('.tab-page').forEach(page=>page.classList.toggle('active',page.dataset.page===tab));
+    if(tab==='transactions')renderTransactions($('month').value);
+  }));
+
+  // ===== SUPABASE CLOUD SYNC =====
+  // Cấu hình Supabase chung do Tendoo quản lý. Chỉ dùng Publishable key, không bao giờ nhúng Secret/service_role key.
+  const DEFAULT_SB_URL='https://vagetcrguyqimuarcxlr.supabase.co';
+  const DEFAULT_SB_KEY='sb_publishable_KALfsV4On7kr8dsGNIDyRA_BP2oQ_jS';
+  let sbClient=null, sbClientConfig='', cloudUser=null, syncTimer=null, syncing=false, suppressCloudSync=false;
+  function syncStatus(message, good=false){$('syncStatus').textContent=message;$('syncStatus').style.color=good?'#176b52':'var(--muted)';}
+  function buildSupabase(){
+    const url=DEFAULT_SB_URL, key=DEFAULT_SB_KEY;
+    if(!window.supabase?.createClient)throw Error('Không tải được thư viện Supabase. Hãy kiểm tra Internet rồi tải lại trang.');
+    if(!sbClient||sbClientConfig!==url+'|'+key){sbClient=window.supabase.createClient(url,key);sbClientConfig=url+'|'+key;cloudUser=null;}
+    return sbClient;
+  }
+  function scheduleCloudSync(){
+    if(suppressCloudSync||!cloudUser||!sbClient)return;
+    syncStatus('Có thay đổi · đang chờ đồng bộ…');clearTimeout(syncTimer);
+    syncTimer=setTimeout(()=>pushCloud().catch(e=>syncStatus('Lỗi đồng bộ: '+(e.message||'không xác định'))),900);
+  }
+  async function pushCloud(){
+    if(!cloudUser||!sbClient||syncing)return;
+    syncing=true;syncStatus('Đang tải dữ liệu lên…');
+    try{
+      const payload={profiles,activeId,version:1,updatedAt:new Date().toISOString()};
+      const {error}=await sbClient.from('k_user_data').upsert({user_id:cloudUser.id,payload,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+      if(error)throw error;syncStatus('Đã đồng bộ · '+new Date().toLocaleTimeString('vi-VN'),true);
+    }finally{syncing=false;}
+  }
+  async function pullCloud(){
+    const {data,error}=await sbClient.from('k_user_data').select('payload,updated_at').eq('user_id',cloudUser.id).maybeSingle();
+    if(error)throw error;
+    if(data?.payload){
+      // Cloud is authoritative for an existing account; never offer to overwrite it with another user's local data.
+      suppressCloudSync=true;
+      try{
+        const incoming=data.payload;
+        if(!Array.isArray(incoming.profiles))throw Error('Dữ liệu đám mây không đúng định dạng.');
+        profiles=incoming.profiles;activeId=incoming.activeId||profiles[0]?.id||'';
+        localStorage.setItem(PROFILE_KEY,JSON.stringify(profiles));
+        if(activeId&&profiles.some(p=>p.id===activeId))loadProfile(activeId);
+        else if(profiles[0])loadProfile(profiles[0].id);
+        else { months={}; renderProfileControls(); openProfileForm(); }
+      }finally{suppressCloudSync=false;}
+      syncStatus('Đã tải dữ liệu tài khoản từ đám mây',true);
+    }else{
+      // Chỉ hỏi nhập dữ liệu nếu thiết bị thực sự có hồ sơ/dữ liệu do người dùng tạo.
+      if(hasMeaningfulLocalData() && !confirm('Tài khoản mới chưa có dữ liệu online. Bạn có muốn chuyển hồ sơ đang lưu trên thiết bị lên tài khoản này không? Chỉ chọn Đồng ý nếu đây là dữ liệu của chính bạn.')){
+        profiles=[];activeId='';months={};localStorage.removeItem(PROFILE_KEY);localStorage.removeItem(MONTH_KEY);
+      }
+      ensureWorkingProfile();
+      await pushCloud();
+    }
+  }
+  async function refreshAuthUI(){
+    const {data}=await sbClient.auth.getSession();cloudUser=data.session?.user||null;
+    $('sbSignOut').hidden=!cloudUser;$('sbSignIn').hidden=!!cloudUser;$('sbSignUp').hidden=!!cloudUser;
+    $('sbEmail').disabled=!!cloudUser;$('sbPassword').disabled=!!cloudUser;
+    if(cloudUser){syncStatus('Đã đăng nhập: '+cloudUser.email,true);}
+    else syncStatus('Đã cấu hình · chưa đăng nhập');
+  }
+  $('sbForgotPassword').addEventListener('click',async()=>{
+    try{
+      const c=buildSupabase(),email=$('sbEmail').value.trim();
+      if(!email)throw Error('Hãy nhập email đã đăng ký trước.');
+      syncStatus('Đang gửi email khôi phục…');
+      const {error}=await c.auth.resetPasswordForEmail(email,{redirectTo:window.location.href.split('#')[0]});
+      if(error)throw error;
+      syncStatus('Đã gửi email khôi phục');
+      alert('Nếu email đã đăng ký, Supabase sẽ gửi liên kết đặt lại mật khẩu. Hãy mở email và nhấn vào liên kết để quay lại trang K.');
+    }catch(e){syncStatus('Không gửi được email khôi phục');alert(e.message||'Không thể gửi email khôi phục.');}
+  });
+  $('sbUpdatePassword').addEventListener('click',async()=>{
+    try{
+      const password=$('sbNewPassword').value;
+      if(password.length<6)throw Error('Mật khẩu mới cần tối thiểu 6 ký tự.');
+      const {error}=await buildSupabase().auth.updateUser({password});
+      if(error)throw error;
+      $('sbNewPassword').value='';$('sbRecoveryArea').hidden=true;
+      alert('Đã đổi mật khẩu thành công. Bạn có thể tiếp tục sử dụng tài khoản.');
+      await refreshAuthUI();
+    }catch(e){alert(e.message||'Không thể cập nhật mật khẩu.');}
+  });
+  sbClient.auth.onAuthStateChange((event)=>{
+    if(event==='PASSWORD_RECOVERY')$('sbRecoveryArea').hidden=false;
+  });
+  $('sbSignUp').addEventListener('click',async()=>{
+    try{
+      const c=buildSupabase(),email=$('sbEmail').value.trim(),password=$('sbPassword').value;
+      if(!email||password.length<6)throw Error('Nhập email hợp lệ và mật khẩu tối thiểu 6 ký tự.');
+      syncStatus('Đang tạo tài khoản…');
+      const {data,error}=await c.auth.signUp({email,password});
+      if(error)throw error;
+      if(!data.session){
+        syncStatus('Tài khoản đã tạo nhưng đang chờ xác nhận email');
+        alert('Supabase chưa cấp phiên đăng nhập. Hãy vào Supabase > Authentication > Sign In / Providers > Email và tắt Confirm email, sau đó thử tạo tài khoản bằng email khác. Nếu vẫn lỗi, kiểm tra Email provider và giới hạn đăng ký.');
+        return;
+      }
+      cloudUser=data.user;
+      await refreshAuthUI();
+      try{await pullCloud();syncStatus('Tạo tài khoản và đồng bộ thành công',true);}
+      catch(syncError){syncStatus('Tài khoản đã tạo · lỗi kết nối dữ liệu online');alert('Tài khoản đã được tạo và đăng nhập, nhưng chưa đồng bộ được dữ liệu. Kiểm tra bảng k_user_data và chính sách RLS trong Supabase. Chi tiết: '+(syncError.message||'không xác định'));}
+    }catch(e){syncStatus('Đăng ký chưa thành công');alert(e.message||'Không thể đăng ký.');}
+  });
+  $('sbSignIn').addEventListener('click',async()=>{
+    try{
+      const c=buildSupabase(),email=$('sbEmail').value.trim(),password=$('sbPassword').value;
+      if(!email||!password)throw Error('Hãy nhập email và mật khẩu.');
+      syncStatus('Đang đăng nhập…');
+      const {data,error}=await c.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      cloudUser=data.user;
+      await refreshAuthUI();
+      try{await pullCloud();}
+      catch(syncError){syncStatus('Đã đăng nhập · lỗi tải dữ liệu online');alert('Đăng nhập thành công, nhưng không tải được dữ liệu đám mây. Kiểm tra bảng k_user_data và chính sách RLS trong Supabase. Chi tiết: '+(syncError.message||'không xác định'));}
+    }catch(e){syncStatus('Đăng nhập chưa thành công');alert(e.message||'Không thể đăng nhập. Vui lòng thử lại hoặc liên hệ quản trị viên.');}
+  });
+  $('sbSignOut').addEventListener('click',async()=>{if(!sbClient)return;const {error}=await sbClient.auth.signOut();if(error){alert(error.message);return;}cloudUser=null;profiles=[];activeId='';months={};localStorage.removeItem(PROFILE_KEY);localStorage.removeItem(MONTH_KEY);ensureWorkingProfile();render();await refreshAuthUI();});
+  try{buildSupabase();(async()=>{await refreshAuthUI();if(cloudUser){try{await pullCloud();}catch(e){syncStatus('Lỗi tải dữ liệu: '+(e.message||'không xác định'));}}})().catch(()=>{});}catch(e){syncStatus('Không thể khởi tạo dịch vụ đồng bộ');}
+
+  addItemRow('purchase');addItemRow('sales');refreshProductNames();
+  if(profiles.length){loadProfile(profiles[0].id);}else{ensureWorkingProfile();render();}
+  
+$('deleteProfileBtn').addEventListener('click',()=>{
+  const profile=activeProfile();
+
+  if(!profile){
+    alert('Không có hồ sơ để xóa.');
+    return;
+  }
+
+  if(!confirm(
+    `Bạn có chắc chắn muốn xóa hồ sơ "${profile.name}" (MST: ${profile.mst})?\n\nToàn bộ dữ liệu mua vào, bán ra và tồn kho của hồ sơ này sẽ bị xóa.`
+  )){
+    return;
+  }
+
+  const deletedId=profile.id;
+
+  profiles=profiles.filter(p=>p.id!==deletedId);
+  saveProfiles();
+
+  if(profiles.length>0){
+    loadProfile(profiles[0].id);
+  }else{
+    months={};
+    activeId='';
+    ensureWorkingProfile();
+    render();
+  }
+
+  alert('Đã xóa hồ sơ.');
+});
+
+
+  // ===== BÁO CÁO SỔ KẾ TOÁN =====
+  function selectedRange(){
+    const anchor=$('month').value || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const [y,m]=anchor.split('-').map(Number);
+    const mode=$('reportPeriod').value;
+    let start=$('reportStart').value, end=$('reportEnd').value;
+    if(mode==='month'){start=`${y}-${String(m).padStart(2,'0')}-01`;end=(()=>{const d=new Date(y,m,0);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();}
+    if(mode==='quarter'){const first=Math.floor((m-1)/3)*3+1;start=`${y}-${String(first).padStart(2,'0')}-01`;end=(()=>{const d=new Date(y,first+2,0);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();}
+    if(mode==='year'){start=`${y}-01-01`;end=`${y}-12-31`;}
+    if(!start)start=`${y}-${String(m).padStart(2,'0')}-01`;
+    if(!end)end=(()=>{const d=new Date(y,m,0);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();
+    $('reportStart').value=start;$('reportEnd').value=end;
+    if(start>end)throw Error('Ngày bắt đầu không được sau ngày kết thúc.');
+    return {start,end};
+  }
+  function inRange(timestamp,range){const d=new Date(timestamp||0);if(!timestamp)return false;const day=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;return day>=range.start&&day<=range.end;}
+  function reportRows(){
+    const range=selectedRange(), rows={s2b:[['Mẫu S2b-HKD — SỔ DOANH THU BÁN HÀNG HÓA, DỊCH VỤ'],['Ngày chứng từ','Số hiệu chứng từ','Diễn giải','Doanh thu bán hàng (đồng)']],s2d:[['Mẫu S2d-HKD — SỔ CHI TIẾT VẬT LIỆU, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA'],['Ngày','Số hiệu chứng từ','Diễn giải','ĐVT','Đơn giá (đồng)','SL nhập','Giá trị nhập','SL xuất','Giá trị xuất theo giá vốn','SL tồn','Giá trị tồn']],purchase:[['SỔ MUA VÀO — THEO DÕI NỘI BỘ'],['Ngày giờ nhập','Số hiệu chứng từ','Diễn giải','Giá trị mua vào (đồng)']],k:[['SỔ THEO DÕI HỆ SỐ K — SỔ QUẢN TRỊ NỘI BỘ'],['Kỳ','Doanh thu bán ra','Mua vào','Tồn đầu kỳ','Mẫu số','Phép tính K','Hệ số K','Ngưỡng cảnh báo','Trạng thái']]};
+    rows.s2b.push([`Hồ sơ: ${activeProfile()?.name||''} | MST: ${activeProfile()?.mst||''} | Từ ${range.start} đến ${range.end}`]);
+    rows.s2d.push([`Hồ sơ: ${activeProfile()?.name||''} | MST: ${activeProfile()?.mst||''} | Từ ${range.start} đến ${range.end}`]);
+    const monthKeys=keys().filter(k=>{const [yy,mm]=k.split('-').map(Number);const first=`${yy}-${String(mm).padStart(2,'0')}-01`;const dt=new Date(yy,mm,0),last=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;return first<=range.end&&last>=range.start;});
+    for(const key of monthKeys){
+      const d=months[key]||{}, txs=Array.isArray(d.transactions)?d.transactions:[];
+      txs.filter(tx=>inRange(tx.createdAt,range)).forEach(tx=>{
+        const when=tx.createdAt?new Date(tx.createdAt).toLocaleString('vi-VN'):'';
+        if((Number(tx.sales)||0)>0){if(tx.salesItems?.length)tx.salesItems.forEach(item=>rows.s2b.push([when,'',`Bán hàng: ${item.name}`,Number(item.amount)||0]));else rows.s2b.push([when,'', 'Doanh thu bán hàng hóa, dịch vụ',Number(tx.sales)||0]);}
+        if((Number(tx.purchase)||0)>0){if(tx.purchaseItems?.length)tx.purchaseItems.forEach(item=>rows.purchase.push([when,'',`Mua hàng: ${item.name}`,Number(item.amount)||0]));else rows.purchase.push([when,'','Mua hàng hóa',Number(tx.purchase)||0]);}
+      });
+    }
+    // S2d value-based movements. Quantity and unit are not collected by this version.
+    let opening=0;
+    const before=keys().filter(k=>`${k}-01`<range.start).sort();
+    if(before.length)opening=calc(before[before.length-1]).stock;
+    rows.s2d.push([range.start,'','Tồn đầu kỳ (giá trị)', 'Chưa ghi nhận', '', '', opening, '', '', '', opening]);
+    let running=opening;
+    monthKeys.forEach(key=>{
+      const d=months[key]||{}, c=calc(key), txs=Array.isArray(d.transactions)?d.transactions:[];
+      txs.filter(tx=>inRange(tx.createdAt,range)).forEach(tx=>{
+        const buy=Number(tx.purchase)||0, sale=Number(tx.sales)||0, cost=tx.costOfGoods==null?sale:(Number(tx.costOfGoods)||0);
+        if(buy){running+=buy;rows.s2d.push([new Date(tx.createdAt).toLocaleString('vi-VN'),'','Nhập hàng — chưa có tên hàng/số lượng','Chưa ghi nhận','','',buy,'','', '',running]);}
+        if(sale){running=Math.max(0,running-cost);rows.s2d.push([new Date(tx.createdAt).toLocaleString('vi-VN'),'','Xuất hàng — giá vốn tính theo tỷ lệ lãi','Chưa ghi nhận','','','','',cost,'',running]);}
+      });
+    });
+    rows.s2d.push(['','','Tồn cuối kỳ theo giá trị','','','','','','','',running]);
+    // K report by month for exact auditable formula
+    monthKeys.forEach(key=>{const c=calc(key),limit=threshold();rows.k.push([monthName(key),c.sales,c.purchase,c.prevStock,c.denominator,`${fmt(c.sales)} / (${fmt(c.purchase)} + ${fmt(c.prevStock)})`,c.k===null?'':c.k,limit,c.k!==null&&c.k>limit?'VƯỢT NGƯỠNG':'Trong ngưỡng']);});
+    return {range,rows};
+  }
+  function getSelectedBooks(){return [...document.querySelectorAll('input[name="reportBook"]:checked')].map(x=>x.value);}
+  $('reportPeriod').addEventListener('change',()=>{try{selectedRange();}catch(e){alert(e.message);}});
+  $('exportAnnualExcel').addEventListener('click',()=>{
+    if(typeof XLSX==='undefined'){alert('Không tải được thư viện Excel. Hãy kiểm tra kết nối Internet.');return;}
+    const selected=getSelectedBooks();if(!selected.length){alert('Hãy chọn ít nhất một sổ cần xuất.');return;}
+    try{
+      const report=reportRows(), wb=XLSX.utils.book_new(), names={s2b:'S2b-HKD',s2d:'S2d-HKD',purchase:'So mua vao',k:'So he so K'};
+      selected.forEach(id=>{const ws=XLSX.utils.aoa_to_sheet(report.rows[id]);ws['!cols']=Array.from({length:Math.max(...report.rows[id].map(r=>r.length))},(_,i)=>({wch:i===0?26:20}));XLSX.utils.book_append_sheet(wb,ws,names[id]);});
+      const safe=String(activeProfile()?.name||'Ho_so').replace(/[\\/:*?"<>|]/g,'_');
+      XLSX.writeFile(wb,`So_ke_toan_${safe}_${report.range.start}_${report.range.end}.xlsx`);
+    }catch(e){alert(e.message||'Không thể tạo báo cáo.');}
+  });
+  $('exportAnnualPDF').addEventListener('click',()=>{
+    const selected=getSelectedBooks();if(!selected.length){alert('Hãy chọn ít nhất một sổ cần xuất.');return;}
+    try{
+      const report=reportRows(), escapeHTML=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      const blocks=selected.map(id=>`<h2>${escapeHTML(report.rows[id][0]?.[0]||id)}</h2><table><tbody>${report.rows[id].map((r,i)=>'<tr>'+r.map(v=>`<${i===1?'th':'td'}>${escapeHTML(typeof v==='number'?v.toLocaleString('vi-VN'):v)}</${i===1?'th':'td'}>`).join('')+'</tr>').join('')}</tbody></table>`).join('<div class="break"></div>');
+      const w=window.open('','_blank');if(!w){alert('Trình duyệt đã chặn cửa sổ in. Hãy cho phép cửa sổ bật lên.');return;}
+      w.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ kế toán</title><style>@page{size:A4 landscape;margin:10mm}body{font:10px Arial;color:#111}h2{text-align:center;font-size:15px;margin:0 0 12px}table{border-collapse:collapse;width:100%;margin-bottom:20px}td,th{border:1px solid #555;padding:5px;text-align:left;overflow-wrap:anywhere}th{background:#eee}.break{page-break-before:always}</style></head><body><p>Hồ sơ: ${escapeHTML(activeProfile()?.name||'')} | MST: ${escapeHTML(activeProfile()?.mst||'')} | Khoảng ${report.range.start} — ${report.range.end}</p>${blocks}<script>window.onload=()=>window.print()<\/script></body></html>`);
+      w.document.close();
+    }catch(e){alert(e.message||'Không thể tạo báo cáo.');}
+  });
+
+  
+})();
+</script>
+</body>
+</html>

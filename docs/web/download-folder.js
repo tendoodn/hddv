@@ -109,7 +109,7 @@ async function fromFullTab(){
  finally{waitingForPicker=null}
 }
 
-const DEFAULT_DIR='Hoa Don';
+const DEFAULT_DIR='HoaDon';
 function folderFor(path){
  const all=String(path||'').replace(/\\/g,'/').split('/').filter(Boolean);
  const profile=all.find(p=>/^(?:\d{10}|\d{12}|\d{13})(?:\s|$|[-–_])/.test(p))||'';
@@ -213,6 +213,13 @@ async function save(path,data,mime='application/octet-stream'){
  if(await tryHandle(relative,data,mime))return relative.join('/');
  return browserDownload(parts,data,mime);
 }
+async function saveRootArchive(filename,bytes){
+ await restored();
+ const name=safe(filename);
+ if(!/\.zip$/i.test(name))throw Error('Tệp xuất phải là ZIP.');
+ if(await tryHandle([name],bytes,'application/zip'))return name;
+ return browserDownload([name],bytes,'application/zip');
+}
 async function saveMany(files){
  let count=0;
  for(const file of files){await save(file.name,file.data,file.mime);count++}
@@ -220,7 +227,7 @@ async function saveMany(files){
 }
 async function change(){return pickChange()}
 window.AutoTaxDownloadFolder=Object.freeze({
- prepare,change,save,saveMany,outputPath,folderFor,
+ prepare,change,save,saveRootArchive,saveMany,outputPath,folderFor,
  get label(){return shownName()}
 });
 })();

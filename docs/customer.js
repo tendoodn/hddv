@@ -205,6 +205,19 @@ async function loadMstAssignments(){
   const actions=document.createElement("div");actions.className="mst-row-actions";
   const edit=addText(actions,"button","Sửa");edit.className="secondary";
   edit.type='button';edit.addEventListener('click',()=>openMstEditor(item));
+  const transferBtn=addText(actions,"button","Chuyển MK sang Add-on");
+  transferBtn.className='secondary';transferBtn.type='button';
+  transferBtn.title='Chuyển mật khẩu qua Chrome trực tiếp, không đưa lên Supabase.';
+  transferBtn.addEventListener('click',async()=>{
+   transferBtn.disabled=true;
+   try{
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.user?.id)throw Error('Bạn cần đăng nhập.');
+    await window.AutoTaxProfileVault.transfer(session.user.id,item.mst);
+    showMessage('Đã chuyển mật khẩu MST '+item.mst+' sang kho mã hóa Add-on. Chọn lại MST trong Add-on để tự điền.');
+   }catch(e){showMessage('Không thể chuyển mật khẩu: '+e.message,true)}
+   finally{transferBtn.disabled=false;}
+  });
   const button=addText(actions,"button","Xóa MST");button.className="secondary";
   button.type='button';button.disabled=!canDeleteMstProfiles;
   if(!canDeleteMstProfiles){

@@ -3,6 +3,10 @@
 const BASE="https://ucqqjdsoyvvaxswzbhaw.supabase.co";
 const PUBLIC_KEY="sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ";
 const client=window.supabase.createClient(BASE,PUBLIC_KEY);
+window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
+ const {data:{session}}=await client.auth.getSession();
+ return {userId:session?.user?.id,token:session?.access_token};
+});
 const $=id=>document.getElementById(id);
 const vnDate=value=>value?new Date(value).toLocaleString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
@@ -213,19 +217,8 @@ async function loadMstAssignments(){
   const actions=document.createElement("div");actions.className="mst-row-actions";
   const edit=addText(actions,"button","Sửa");edit.className="secondary";
   edit.type='button';edit.addEventListener('click',()=>openMstEditor(item));
-  const transferBtn=addText(actions,"button","Chuyển MK sang Add-on");
-  transferBtn.className='secondary';transferBtn.type='button';
-  transferBtn.title='Chuyển mật khẩu qua Chrome trực tiếp, không đưa lên Supabase.';
-  transferBtn.addEventListener('click',async()=>{
-   transferBtn.disabled=true;
-   try{
-    const {data:{session}}=await client.auth.getSession();
-    if(!session?.user?.id)throw Error('Bạn cần đăng nhập.');
-    await window.AutoTaxProfileVault.transfer(session.user.id,item.mst);
-    showMessage('Đã chuyển mật khẩu MST '+item.mst+' sang kho mã hóa Add-on. Chọn lại MST trong Add-on để tự điền.');
-   }catch(e){showMessage('Không thể chuyển mật khẩu: '+e.message,true)}
-   finally{transferBtn.disabled=false;}
-  });
+  if(userId)void window.AutoTaxProfileVault?.migrate(userId,item.mst).catch(e=>
+   console.warn('MST đồng bộ đang chờ:',e.message));
   const button=addText(actions,"button","Xóa MST");button.className="secondary";
   button.type='button';button.disabled=!canDeleteMstProfiles;
   if(!canDeleteMstProfiles){
@@ -387,9 +380,15 @@ $("loginForm").addEventListener("submit",event=>{
  event.preventDefault();
  if($("loginBtn").disabled)return;
  void action("loginBtn",async()=>{
- const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+ const password=$("password").value;
+ const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password});
  if(error)throw error;
- showMessage("");await refresh();
+ if(!data.user?.app_metadata?.autotax_force_password_change){
+  try{await window.AutoTaxSharedMstVault.unlock(data.user.id,password)}
+  catch(e){showMessage('Đã đăng nhập, nhưng kho MST cần mở khóa: '+e.message,true,'authMessage')}
+ }
+ $("password").value='';
+ await refresh();
  });
 });
 $("signupBtn").addEventListener("click",()=>action("signupBtn",async()=>{
@@ -469,6 +468,7 @@ $("mstProfileEditorForm").addEventListener("submit",async e=>{
    if(!session?.user?.id)throw Error('Đăng nhập lại để mã hóa mật khẩu.');
    const result=await window.AutoTaxProfileVault.save(session.user.id,mst,password);
    if(result.changed)await rpc("addon_mark_mst_password_updated",{p_mst:mst});
+   if(!result.synced)showMessage('Mật khẩu lưu cục bộ nhưng chưa đồng bộ MST: '+(result.error||'Đăng nhập lại AutoTax.'),true);
   }
   $("mstProfileDialog").close();await loadMstAssignments();
   showMessage(trialWarning||((mstEditing?'Đã sửa':'Đã thêm')+' hồ sơ MST '+mst+
@@ -526,6 +526,8 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
   });
   const data=await res.json().catch(()=>({}));
   if(!res.ok||!data.ok)throw Error(data.error||'Không đổi được mật khẩu tạm.');
+  try{await window.AutoTaxSharedMstVault?.rekey(password)}
+  catch(e){showMessage('Cần cập nhật lại khóa dữ liệu MST: '+e.message,true)}
   await client.auth.signOut();
   $('newPassword').value='';
   await refresh();
@@ -534,6 +536,8 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
  }else{
   const {error}=await client.auth.updateUser({password});
   if(error)throw error;
+  try{await window.AutoTaxSharedMstVault?.rekey(password)}
+  catch(e){showMessage('Khóa mật khẩu MST chưa chuyển sang mật khẩu tài khoản mới: '+e.message,true)}
  }
  $('newPassword').value='';
  showMessage('Mật khẩu đã được thay đổi.');

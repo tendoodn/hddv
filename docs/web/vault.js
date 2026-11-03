@@ -177,16 +177,27 @@ async function select(mst){
    false)return;
  try{localStorage.setItem(lastKey(),mst)}catch{}
  try{
-  const record=await readStore('credentials',entryKey(mst));
+  // First read the shared end-to-end encrypted cloud vault; then migrate old local data.
+  let cloud=null;
+  try{cloud=await window.AutoTaxSharedMstVault?.get(mst)}
+  catch(e){notify('Kho đồng bộ chưa sẵn sàng: '+e.message,true)}
   if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
+  if(cloud){
+   input.value=cloud;
+   notify('Đã tự điền mật khẩu MST '+mst+' từ kho mã hóa đồng bộ Web/Add-on.');
+   return;
+  }
+  const record=await readStore('credentials',entryKey(mst));
   if(!record){
-   notify('Chưa lưu mật khẩu cổng Thuế trên thiết bị này. Nhập một lần để tự ghi nhớ sau khi đăng nhập thành công.');
+   notify('MST chưa có mật khẩu đồng bộ. Nhập và đăng nhập cổng Thuế một lần để lưu.');
    return;
   }
   const password=await decryptPassword(record);
   if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
   input.value=password;
-  notify('Đã tự điền mật khẩu mã hóa của MST '+mst+' trên thiết bị này.');
+  try{await window.AutoTaxSharedMstVault?.importLocal(mst,password)}
+  catch(e){notify('Đã đọc mật khẩu cũ trên máy, nhưng chờ đồng bộ: '+e.message,true);return}
+  notify('Đã khôi phục mật khẩu MST '+mst+' và đồng bộ lên tài khoản.');
  }catch(e){if(stamp===requestSeq)notify('Không đọc được mật khẩu đã lưu. Hãy nhập lại: '+(e.message||e),true)}
 }
 async function setUser(userId,rows,mode='mst'){
@@ -223,14 +234,21 @@ async function saveAfterLogin(mst,password){
    if(old)previous=await decryptPassword(old);
   }catch{}
   await writeStore('credentials',entryKey(mst),await encryptPassword(password));
-  notify('Đã lưu mật khẩu Thuế đã mã hóa cho '+mst+' trên trình duyệt này. Không gửi lên Supabase.');
-  return {stored:true,changed:previous!==password};
+  try{
+   await window.AutoTaxSharedMstVault?.save(mst,password);
+   notify('Đã đồng bộ mật khẩu Thuế AES-GCM của MST '+mst+' với Web và Add-on.');
+   return {stored:true,changed:previous!==password,synced:true};
+  }catch(e){
+   notify('Đã lưu trên máy nhưng đồng bộ gặp lỗi: '+e.message,true);
+   return {stored:true,changed:previous!==password,synced:false,error:e.message};
+  }
  }catch(e){notify('Không thể lưu mật khẩu vào bộ nhớ được mã hóa: '+(e.message||e),true);return {stored:false}}
 }
 async function forget(mst=$('mst').value){
  if(!owner||!mst)return;
+ await window.AutoTaxSharedMstVault?.remove(mst);
  await deleteStore('credentials',entryKey(mst));
- $('gdtPassword').value='';notify('Đã xóa mật khẩu cổng Thuế đã lưu cho '+mst+'.');
+ $('gdtPassword').value='';notify('Đã xóa mật khẩu MST '+mst+' trên kho đồng bộ và thiết bị.');
 }
 const hasSaved=async mst=>!!owner&&!!await readStore('credentials',entryKey(mst)).catch(()=>null);
 function claimPasswordReminder(mst){

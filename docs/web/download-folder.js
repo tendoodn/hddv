@@ -124,7 +124,9 @@ async function restored(){
  await Promise.race([restore,delay(650)]);
 }
 function shownName(){
- return root?.name?root.name+'/'+DEFAULT_DIR:'Downloads/'+DEFAULT_DIR;
+ if(root?.name)return root.name.toLowerCase()===DEFAULT_DIR.toLowerCase()?
+  root.name:root.name+'/'+DEFAULT_DIR;
+ return 'Downloads/'+DEFAULT_DIR;
 }
 async function prepare(){
  await restored();
@@ -147,6 +149,17 @@ async function pickChange(){
    if(allowed!=='granted')throw Error('Bạn chưa cấp quyền ghi thư mục.');
   }
   await access('put',chosen);root=chosen;
+  // IndexedDB persists a serializable FileSystemDirectoryHandle across openings.
+  // Metadata is supplementary only: it cannot replace actual Chrome permission.
+  try{
+   if(window.location?.protocol==='chrome-extension:'){
+    await chrome.storage.local.set({autotax_folder_preference_v115:{
+      label:shownName(),saved_at:new Date().toISOString()
+    }});
+   }else{
+    localStorage.setItem('autotax_folder_preference_v115',shownName());
+   }
+  }catch{}
   return shownName();
  }catch(error){root=previous;throw error}
 }
@@ -181,7 +194,8 @@ async function browserDownload(parts,data,mime){
  const path=parts.join('/');
  if(window.location?.protocol==='chrome-extension:'&&typeof chrome!=='undefined'&&chrome.runtime?.sendMessage){
   const answer=await chrome.runtime.sendMessage({type:'download',url:await dataURL(data,mime),filename:path});
-  if(answer?.error||!answer?.complete)throw Error(answer?.error||'Chrome chưa xác nhận đã lưu tệp.');
+  if(answer?.error||(!answer?.accepted&&!answer?.complete))
+   throw Error(answer?.error||'Chrome chưa nhận lệnh tải tệp.');
   return path;
  }
  // HTTPS cannot place downloads into arbitrary directories without user permission.
@@ -195,7 +209,8 @@ async function browserDownload(parts,data,mime){
 async function save(path,data,mime='application/octet-stream'){
  await restored();
  const parts=folderFor(path);
- if(await tryHandle(parts,data,mime))return parts.join('/');
+ const relative=root?.name?.toLowerCase()===DEFAULT_DIR.toLowerCase()?parts.slice(1):parts;
+ if(await tryHandle(relative,data,mime))return relative.join('/');
  return browserDownload(parts,data,mime);
 }
 async function saveMany(files){

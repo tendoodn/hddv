@@ -52,7 +52,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 <option value="mst">Còn quyền MST</option><option value="trial">Đang dùng thử</option>
 <option value="expired">Không còn quyền hoạt động</option></select><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
 <div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
-<div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
+<div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option><option value="storage">Gói lưu trữ data</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
 <h3>10 gói mặc định</h3>
 <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
 <h3>Gói tự tạo · khu vực thứ hai</h3><p class="sub">Gói mới luôn xuất hiện ở đây, không chen vào 10 gói mặc định. Chỉ gói tự tạo có nút Xóa: nếu đã có khách mua/cấp hoặc mã unlock, gói sẽ được ẩn khỏi danh mục nhưng lịch sử và quyền đã cấp vẫn giữ nguyên.</p>
@@ -105,7 +105,7 @@ async function boot(){const {data:{session}}=await client.auth.getSession();$("a
 const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){await client.auth.signOut();msg("authMsg","Tài khoản này không có quyền quản trị.",true);$("auth").classList.remove("hidden");return}
 $("app").classList.remove("hidden");await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
 
-const DEFAULT_CODES=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
+const DEFAULT_CODES=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50','DATA365'];
 async function loadPlans(){
  const {data,error}=await client.rpc("addon_admin_list_packages");
  if(error)return msg("msg","Không tải được danh mục gói: "+error.message,true);
@@ -115,16 +115,16 @@ async function loadPlans(){
  const defaults=DEFAULT_CODES.map(code=>allPackages.find(p=>p.code===code)).filter(p=>p&&match(p));
  const custom=allPackages.filter(p=>!DEFAULT_CODES.includes(p.code)&&match(p));
  const renderRow=(p,canDelete)=>'<tr><td><b>'+esc(p.code)+'</b></td>'+
-  '<td>'+(p.family==="invoice"?"Số tờ":"MST")+'</td><td>'+Number(p.quantity).toLocaleString('vi-VN')+'</td>'+
+  '<td>'+(p.family==="invoice"?"Số tờ":p.family==="storage"?"Lưu trữ data":"MST")+'</td><td>'+Number(p.quantity).toLocaleString('vi-VN')+'</td>'+
   '<td><input type="number" min="0" value="'+Number(p.price_vnd)+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td>'+
-  '<td>'+(p.family==="mst"?"365 ngày":"—")+'</td>'+
+  '<td>'+(['mst','storage'].includes(p.family)?Number(p.validity_days||365)+' ngày':'—')+'</td>'+
   '<td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td>'+
   '<td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button>'+
   '<button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button>'+
   (canDelete?'<button class="danger" data-delete-package="'+esc(p.code)+'" title="Xóa/ẩn gói tự tạo, giữ nguyên dữ liệu lịch sử">Xóa</button>':'')+
   '</div></td></tr>';
  $("packagePrices").innerHTML=defaults.map(p=>renderRow(p,false)).join("")||
-   '<tr><td colspan="7">Không tải được danh sách 10 gói mặc định.</td></tr>';
+   '<tr><td colspan="7">Không tải được danh sách gói mặc định.</td></tr>';
  $("packageCustomPrices").innerHTML=custom.map(p=>renderRow(p,true)).join("")||
    '<tr><td colspan="7">Chưa có gói tự tạo.</td></tr>';
  $("unlockPackage").innerHTML=allPackages.filter(p=>p.active).map(p=>
@@ -132,7 +132,7 @@ async function loadPlans(){
  const grant=$("grantPackage"),selected=grant.value;
  grant.innerHTML='<option value="">Chọn gói cấp</option>'+allPackages.filter(p=>p.active).map(p=>
   '<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' · '+
-   (p.family==="mst"?"365 ngày":p.quantity+" lượt")+'</option>').join('');
+   (p.family==="storage"?'Lưu trữ · 365 ngày':p.family==="mst"?"365 ngày":p.quantity+" lượt")+'</option>').join('');
  if(allPackages.some(p=>p.code===selected&&p.active))grant.value=selected;
 }
 async function updateCatalogRow(e){
@@ -143,7 +143,7 @@ async function updateCatalogRow(e){
  b.disabled=true;
  try{
   if(b.dataset.deletePackage){
-   if(DEFAULT_CODES.includes(code))throw Error('Không thể xóa 10 gói mặc định.');
+   if(DEFAULT_CODES.includes(code))throw Error('Không thể xóa gói mặc định.');
    if(!confirm('Xóa gói tự tạo '+code+'? Nếu gói đã phát sinh giao dịch, chỉ ẩn gói khỏi danh mục và giữ nguyên quyền/lịch sử.'))return;
    const {data,error}=await client.rpc('addon_admin_delete_custom_package',{p_code:code});
    if(error)throw error;

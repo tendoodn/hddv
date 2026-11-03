@@ -223,7 +223,7 @@ async function commitCatalogFile(file){
  const user=app()?.getAccount?.()?.id,client=app()?.getClient?.();
  if(!user)throw Error('Đăng nhập AutoTax trước khi lưu danh mục.');
  const platform=stockPlatform;
- const items=await window.TendooImport.catalog(file);
+ const items=await window.TendooImport.catalog(file,platform);
  if(user!==app()?.getAccount?.()?.id||platform!==stockPlatform)
   throw Error('Tài khoản hoặc nền tảng đã thay đổi, vui lòng chọn file lại.');
  const payload=cache().makePayload(file.name,items);

@@ -12,7 +12,7 @@ const $=id=>document.getElementById(id);
 const normalize=v=>String(v||'').replace(/\D/g,'');
 const MAX_PASS=256;
 const DB_NAME='autotax_gdt_device_credentials_v2';
-let owner='',profiles=[],dbPromise=null,deviceKey=null,requestSeq=0;
+let owner='',profiles=[],dbPromise=null,deviceKey=null,requestSeq=0,invoiceMode=false;
 const lastKey=()=> 'autotax_last_mst_'+owner;
 const entryKey=mst=>owner+':'+mst;
 const asArray=v=>v instanceof Uint8Array?v:new Uint8Array(v);
@@ -123,25 +123,13 @@ function renderPicker(){
    menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
   });
   card.append(pick);
-  const remove=document.createElement('button');remove.type='button';
-  remove.className='mst-picker-remove';remove.textContent='🗑';
-  remove.title='Gỡ MST khỏi tài khoản (không xóa lịch sử hóa đơn)';
-  remove.setAttribute('aria-label','Xóa hồ sơ '+mst);
-  remove.addEventListener('click',async()=>{
-   if(!confirm('Xóa hồ sơ '+mst+'? Hạn mức và lịch sử hóa đơn không bị xóa.'))return;
-   remove.disabled=true;
-   try{
-    const client=window.WebInvoiceApp?.getClient?.();
-    if(!client)throw Error('Chưa kết nối Supabase.');
-    const {error}=await client.rpc('addon_remove_mst_profile_v33',{p_mst:mst});
-    if(error)throw error;
-    await deleteStore('credentials',entryKey(mst)).catch(()=>{});
-    if(select.value===mst){select.value='';$('gdtPassword').value=''}
-    await window.WebInvoiceApp?.refreshAccount?.();
-    notify('Đã gỡ '+mst+' khỏi tài khoản AutoTax.');
-   }catch(e){notify('Không gỡ được hồ sơ: '+(e.message||e),true);remove.disabled=false}
-  });
-  card.append(remove);menu.append(card);
+  // Deleting a profile now also removes backend invoice deduction history.
+  // Keep this destructive action only in the dedicated customer portal.
+  const manage=document.createElement('a');
+  manage.href='./';manage.target='_blank';manage.rel='noopener noreferrer';
+  manage.className='mst-picker-remove';manage.textContent='Quản lý';
+
+  card.append(manage);menu.append(card);
  }
  const wanted=profiles.some(p=>p.mst===old)?old:
   profiles.some(p=>p.mst===remembered)?remembered:profiles[0]?.mst||'';
@@ -169,7 +157,8 @@ async function select(mst){
  const input=$('gdtPassword');input.value='';
  const stamp=++requestSeq;
  updateChosen();
- if(!owner||!profiles.some(p=>p.mst===mst))return;
+ if(!owner||!(/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))||
+   (!invoiceMode&&!profiles.some(p=>p.mst===mst)))return;
  try{localStorage.setItem(lastKey(),mst)}catch{}
  try{
   const record=await readStore('credentials',entryKey(mst));
@@ -184,26 +173,43 @@ async function select(mst){
   notify('Đã tự điền mật khẩu mã hóa của MST '+mst+' trên thiết bị này.');
  }catch(e){if(stamp===requestSeq)notify('Không đọc được mật khẩu đã lưu. Hãy nhập lại: '+(e.message||e),true)}
 }
-async function setUser(userId,rows){
+async function setUser(userId,rows,mode='mst'){
+ invoiceMode=mode==='invoice';
+ $('mstPickerToggle').hidden=invoiceMode;
+ $('mstFree').placeholder=invoiceMode?'Nhập MST bất kỳ (gói số tờ)':'Nhập MST mới để thêm vào gói MST';
  const changed=(userId||'')!==owner;
  if(changed){
   owner=userId||'';deviceKey=null;requestSeq++;$('gdtPassword').value='';
   $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
  }
+ const previous=changed?[]:[...profiles];
  profiles=[...new Map((rows||[]).map(x=>{
   const mst=normalize(typeof x==='object'?x.mst:x);
   return [mst,{mst,display_name:typeof x==='object'?String(x.display_name||'').slice(0,120):''}];
  }).filter(([mst])=>/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))).values()];
+ if(owner&&!invoiceMode){
+  const allowed=new Set(profiles.map(p=>p.mst));
+  for(const old of previous)if(!allowed.has(old.mst))
+   await deleteStore('credentials',entryKey(old.mst)).catch(()=>{});
+ }
  renderPicker();
- if(owner&&$('mst').value)await select($('mst').value);
+ if(owner&&(invoiceMode?$('mstFree').value:$('mst').value))
+  await select(invoiceMode?normalize($('mstFree').value):$('mst').value);
  if(!owner)notify('Đăng nhập AutoTax để xem hồ sơ MST đã liên kết.');
 }
 async function saveAfterLogin(mst,password){
- if(!owner||!profiles.some(p=>p.mst===mst)||!password||password.length>MAX_PASS)return;
+ if(!owner||(!invoiceMode&&!profiles.some(p=>p.mst===mst))||
+    !/^(?:\d{10}|\d{12}|\d{13})$/.test(mst)||!password||password.length>MAX_PASS)return {stored:false};
  try{
+  let previous=null;
+  try{
+   const old=await readStore('credentials',entryKey(mst));
+   if(old)previous=await decryptPassword(old);
+  }catch{}
   await writeStore('credentials',entryKey(mst),await encryptPassword(password));
   notify('Đã lưu mật khẩu Thuế đã mã hóa cho '+mst+' trên trình duyệt này. Không gửi lên Supabase.');
- }catch(e){notify('Không thể lưu mật khẩu vào bộ nhớ được mã hóa: '+(e.message||e),true)}
+  return {stored:true,changed:previous!==password};
+ }catch(e){notify('Không thể lưu mật khẩu vào bộ nhớ được mã hóa: '+(e.message||e),true);return {stored:false}}
 }
 async function forget(mst=$('mst').value){
  if(!owner||!mst)return;
@@ -211,18 +217,32 @@ async function forget(mst=$('mst').value){
  $('gdtPassword').value='';notify('Đã xóa mật khẩu cổng Thuế đã lưu cho '+mst+'.');
 }
 const hasSaved=async mst=>!!owner&&!!await readStore('credentials',entryKey(mst)).catch(()=>null);
+function claimPasswordReminder(mst){
+ if(!owner||!mst)return false;
+ const key='autotax-tax-password-reminder-v115-'+owner+':'+normalize(mst);
+ const today=new Date().toISOString().slice(0,10);
+ try{
+  if(localStorage.getItem(key)===today)return false;
+  localStorage.setItem(key,today);
+ }catch{/* Storage disabled: still show a reminder for this session. */}
+ return true;
+}
 function lock(){requestSeq++;deviceKey=null;$('gdtPassword').value=''}
 function init(){
  $('mstPickerToggle').addEventListener('click',()=>{
   const menu=$('mstPickerMenu');menu.hidden=!menu.hidden;
   $('mstPickerToggle').setAttribute('aria-expanded',String(!menu.hidden));
  });
- $('mst').addEventListener('change',()=>void select($('mst').value));
+ $('mst').addEventListener('change',()=>{
+  $('mstFree').value='';
+  void select($('mst').value);
+ });
+ $('mstFree').addEventListener('change',()=>void select(normalize($('mstFree').value)));
  $('mstForgetPassword').addEventListener('click',()=>{
   if(confirm('Xóa mật khẩu cổng Thuế đã lưu của MST đang chọn trên thiết bị này?'))
    void forget().catch(e=>notify(e.message,true));
  });
 }
-window.GdtVault={setUser,select,saveAfterLogin,forget,lock,hasSaved};
+window.GdtVault={setUser,select,saveAfterLogin,forget,lock,hasSaved,claimPasswordReminder};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

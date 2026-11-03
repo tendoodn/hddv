@@ -1,0 +1,51 @@
+name: Repair AutoTax GitHub Pages source and custom domain
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-pages-domain.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check DNS and request GitHub Pages settings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+          domain = "tracuuhoadon.top"
+          for kind in ("A","AAAA","CNAME","CAA"):
+              try:
+                  url = "https://dns.google/resolve?name="+domain+"&type="+kind
+                  with urllib.request.urlopen(url, timeout=15) as resp:
+                      data = json.load(resp)
+                  answers = [x.get("data") for x in data.get("Answer",[]) if x.get("type") in (1,5,28,257)]
+                  print("DNS",kind,answers or "NO ANSWER","status",data.get("Status"))
+              except Exception as e:
+                  print("DNS",kind,"UNAVAILABLE",str(e))
+          api="https://api.github.com/repos/tendoodn/hddv/pages"
+          headers={"Accept":"application/vnd.github+json",
+                   "Authorization":"Bearer "+os.environ["GH_TOKEN"],
+                   "X-GitHub-Api-Version":"2026-03-10",
+                   "Content-Type":"application/json"}
+          payload=json.dumps({"cname":domain,"source":{"branch":"main","path":"/docs"}}).encode()
+          try:
+              with urllib.request.urlopen(urllib.request.Request(api,data=payload,headers=headers,method="PUT"), timeout=25) as res:
+                  print("Pages settings update HTTP",res.status)
+          except urllib.error.HTTPError as e:
+              print("Pages settings update FAILED HTTP",e.code,e.read().decode()[:600])
+              print("Owner action if API access denied: Settings > Pages > Source main /docs > Custom domain tracuuhoadon.top > Save")
+          except Exception as e:
+              print("Pages settings update UNAVAILABLE",str(e))
+          try:
+              with urllib.request.urlopen(urllib.request.Request(api,headers=headers),timeout=25) as res:
+                  body=json.load(res)
+              print("Current Pages:",json.dumps({k:body.get(k) for k in ("status","cname","source","https_enforced","https_certificate")},ensure_ascii=False))
+          except Exception as e:
+              print("Pages status UNAVAILABLE",str(e))
+          PY

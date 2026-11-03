@@ -75,6 +75,14 @@ async function refresh(){
  try{
   const {data:{session}}=await client.auth.getSession();
   const signedIn=!!session;
+  if(signedIn&&session.user?.email){try{localStorage.setItem('autotax_recent_email',session.user.email)}catch{}}
+  const {data:userResult,error:userError}=signedIn?
+   await client.auth.getUser():{data:{user:null},error:null};
+  if(userError)throw userError;
+  const forceChange=!!userResult?.user?.app_metadata?.autotax_force_password_change;
+  $('dashboard').classList.toggle('autotax-force-password',forceChange);
+  $('forcedPasswordNotice').hidden=!forceChange;
+  if(forceChange)$('passwordPanel').hidden=false;
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
   if(!signedIn){state=null;closePayment();return}
@@ -505,11 +513,32 @@ $("checkPaymentBtn").addEventListener("click",()=>{void checkPaymentStatus(true)
 $("closePaymentSuccessBtn").addEventListener("click",()=>$("paymentSuccessDialog").close());
 $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",async()=>{
  const password=$("newPassword").value;
- if(password.length<8)throw Error("Mật khẩu cần ít nhất 8 ký tự.");
- const {error}=await client.auth.updateUser({password});
- if(error)throw error;
- $("newPassword").value="";
- showMessage("Mật khẩu đã được thay đổi.");
+ const forced=$('dashboard').classList.contains('autotax-force-password');
+ if(password.length<(forced?10:8))throw Error('Mật khẩu mới phải có ít nhất '+(forced?10:8)+' ký tự.');
+ if(forced){
+  const {data:{session}}=await client.auth.getSession();
+  if(!session?.access_token)throw Error('Bạn cần đăng nhập lại.');
+  const res=await fetch('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-admin-password-reset',{
+   method:'POST',headers:{Authorization:'Bearer '+session.access_token,
+    apikey:'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ',
+    'Content-Type':'application/json'},
+   body:JSON.stringify({action:'complete',new_password:password})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok)throw Error(data.error||'Không đổi được mật khẩu tạm.');
+  await client.auth.signOut();
+  $('newPassword').value='';
+  await refresh();
+  showMessage('Đã đổi mật khẩu tạm. Hãy đăng nhập lại bằng mật khẩu mới.',false,'authMessage');
+  return;
+ }else{
+  const {error}=await client.auth.updateUser({password});
+  if(error)throw error;
+ }
+ $('newPassword').value='';
+ showMessage('Mật khẩu đã được thay đổi.');
+ await refresh();
 }));
 client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")$("passwordRecovery").hidden=false});
+try{const email=localStorage.getItem('autotax_recent_email');if(email&&!$('email').value)$('email').value=email}catch{}
 refresh();

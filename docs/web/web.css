@@ -20,7 +20,13 @@ a{color:inherit}.topbar{display:flex;align-items:center;justify-content:space-be
 .date-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .password-wrap{display:flex;padding:0 10px 0 0;align-items:center}
 .password-wrap input{background:transparent!important;border:0!important;box-shadow:none!important;min-width:0;flex:1}
-.password-wrap button{background:transparent;border:none;cursor:pointer;color:#9c9ca4;padding:8px 10px;font-size:20px}
+.password-wrap button{background:transparent;border:none;cursor:pointer;color:#9c9ca4;padding:8px 10px;font-size:20px;margin-left:auto;flex:none}
+.password-wrap input{width:0!important;flex:1 1 auto!important}
+.web-mode-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px;padding:12px 15px;background:#19191e;border:1px solid #393940;border-radius:13px}
+.web-mode-controls label{font-weight:750;font-size:13px}
+.web-mode-controls select{color:white;background:#292930;border:1px solid #55535c;border-radius:8px;padding:9px 12px;min-width:230px}
+.web-mode-controls small{font-size:11px;color:#aeb0ba}
+.mst-picker-not-allowed{color:#f0a9b1}.mst-picker-allowed{color:#96e8bc}
 .field-note p{margin:0 0 8px;font-size:12px;color:#bcbcc5;line-height:1.5}
 .captcha-status{color:#86efac!important;font-weight:650;line-height:1.5}
 .captcha-row:not([hidden]){border:1px solid #61454c;background:#20191d;padding:15px;border-radius:14px;margin-top:14px}

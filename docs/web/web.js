@@ -249,6 +249,17 @@ async function refreshAccount(){
   ]);
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   selectedMode=ent.data?.mode||'mst';
+  const modeSelect=$('webUsageMode');
+  modeSelect.value=selectedMode;
+  const inv=ent.data?.packages?.invoice||{},msts=ent.data?.packages?.mst||{};
+  const canInvoice=Number(inv.remaining||0)>0||!!ent.data?.can_reread_charged_invoices;
+  const canMst=Number(msts.active_quantity||0)>0;
+  modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
+  modeSelect.querySelector('[value="mst"]').disabled=!canMst;
+  modeSelect.disabled=!(canInvoice&&canMst);
+  $('webUsageModeHint').textContent=canInvoice&&canMst?
+    'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
+    'Chỉ chuyển được khi cả hai gói có quyền sử dụng còn hiệu lực.';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
   profileAllowedMsts=(profiles.data||[]).filter(x=>x.mst_allowed===true)
    .map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
@@ -350,7 +361,7 @@ async function ensurePermission(mst){
  selectedMode=data.mode||selectedMode;
 }
 async function claimRows(all,mst){
- if(selectedMode!=='invoice'||!all.length)return all;
+ if(!all.length)return all; // V1.1.7: record every invoice read in both account modes.
  const accepted=[],max=250;
  const key=r=>JSON.stringify([r.mst,r.direction,r.form_code,r.series,r.invoice_number]);
  for(let from=0;from<all.length;from+=max){
@@ -362,7 +373,7 @@ async function claimRows(all,mst){
   if(error)throw Error('Không kiểm tra được lượt hóa đơn: '+error.message);
   const allowed=new Set((data.allowed_items||[]).map(key));
   for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
-  progress('Đã ghi nhận '+Number(data.deducted||0)+' lượt mới; '+Number(data.previously_deducted||0)+' lượt cũ trong đợt.');
+  progress('Đã ghi nhận '+Number(data.recorded_without_charge||0)+' hóa đơn bằng gói MST, '+Number(data.deducted||0)+' lượt số tờ mới; '+Number(data.previously_deducted||0)+' hóa đơn đọc lại không trừ lượt.');
  }
  return accepted;
 }
@@ -572,6 +583,21 @@ function init(){
  const today=new Date();$('toDate').value=dateOnly(today);
  $('fromDate').value=dateOnly(new Date(today.getFullYear(),today.getMonth(),1));
  $('searchForm').addEventListener('submit',search);
+ $('webUsageMode').addEventListener('change',async event=>{
+  const input=event.currentTarget,previous=selectedMode;
+  if(input.value===previous)return;
+  input.disabled=true;
+  try{
+   const {error}=await client.rpc('addon_set_usage_mode',{p_mode:input.value});
+   if(error)throw error;
+   selectedMode=input.value;
+   clearGov();
+   await refreshAccount();
+   show('Đã chuyển sang chế độ '+(selectedMode==='mst'?'MST':'số tờ')+
+    '. Dữ liệu hồ sơ MST được giữ nguyên và đồng bộ với Add-on.',true);
+  }catch(error){input.value=previous;show('Không đổi được chế độ: '+error.message)}
+  finally{input.disabled=false}
+ });
  $('changeOutputFolderWeb').addEventListener('click',async()=>{
   try{show('Đã chọn thư mục '+await AutoTaxDownloadFolder.change(),true)}
   catch(error){if(error.name!=='AbortError')show(error.message)}

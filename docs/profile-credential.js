@@ -76,5 +76,28 @@ async function forget(user,mst){
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
  });
 }
-window.AutoTaxProfileVault=Object.freeze({save,forget});
+async function transfer(user,mst){
+ if(!user||!valid(mst))throw Error('Hồ sơ MST không hợp lệ.');
+ const record=await read(user,mst);
+ if(!record)throw Error('Mật khẩu MST chưa lưu trên trình duyệt này. Mở Sửa MST để nhập trước.');
+ const password=await decrypt(user,record);
+ if(!password)throw Error('Không giải mã được mật khẩu MST.');
+ if(!window.chrome?.runtime?.sendMessage)
+  throw Error('Cần dùng Chrome/Cốc Cốc với Add-on AutoTax 1.1.6 đã cài.');
+ const extensionId='bmdhpbmibdgdhabaeoggkdcmpkdblbla';
+ const response=await new Promise((resolve,reject)=>{
+  try{
+   chrome.runtime.sendMessage(extensionId,{
+    type:'autotax-transfer-tax-password',userId:user,mst:normalize(mst),password
+   },result=>{
+    const e=chrome.runtime.lastError;
+    if(e)reject(Error('Không kết nối được Add-on: '+e.message));
+    else resolve(result);
+   });
+  }catch(e){reject(e)}
+ });
+ if(!response?.ok)throw Error(response?.error||'Add-on không nhận được mật khẩu.');
+ return true;
+}
+window.AutoTaxProfileVault=Object.freeze({save,forget,transfer});
 })();

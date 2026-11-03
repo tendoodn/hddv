@@ -406,7 +406,21 @@
     for (const tag of ['PortalLink', 'LookupUrl', 'TraCuuURL', 'SearchUrl', 'URLTraCuu']) {
       link ||= linkValue(txt(byName(doc, tag)[0]));
     }
-    return { code, link };
+    // Some issuers include the lookup code in a signed URL query (?mtc=...).
+    // Extract only recognized keys; never fabricate codes or use auth tokens.
+    return { code: code || lookupCodeInUrl(link), link };
+  }
+  function lookupCodeInUrl(value) {
+    try {
+      const url=new URL(String(value||''));
+      if(url.protocol!=='https:')return '';
+      const names=new Set(['mtc','ma_tra_cuu','matracuu','lookupcode',
+        'searchkey','fkey','mabimat','securitycode','invoicecode']);
+      for(const [key,value] of url.searchParams){
+        if(names.has(key.toLowerCase())&&value.length>0&&value.length<=300)return value;
+      }
+    } catch {}
+    return '';
   }
   // Chữ ký số: tên đơn vị ký (CN, hoặc O), MST trong chứng thư (UID=MST:…), thời điểm ký (SigningTime)
   function signerOf(box) {
@@ -525,7 +539,9 @@
   // Tra cứu hóa đơn gốc (PDF của nhà cung cấp) để người dùng tự tải: { name, link, code } – cột Excel (khi chọn PDF) và chân trang PDF
   function originalLookup(row, head) {
     const mst = head?.msttcgp || row.msttcgp || '', p = PROVIDERS[mst] || {};
-    return { name: p.name || (mst ? `MST ${mst}` : ''), link: head?.lookup?.link || row.lookup?.link || p.url || '', code: head?.lookup?.code || row.lookup?.code || '' };
+    const link=head?.lookup?.link||row.lookup?.link||p.url||'';
+    const code=head?.lookup?.code||row.lookup?.code||lookupCodeInUrl(link)||'';
+    return { name: p.name || (mst ? `MST ${mst}` : ''), link, code };
   }
 
   // ---- Đối chiếu MST với DS công khai sử dụng hóa đơn không hợp pháp ----

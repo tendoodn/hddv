@@ -151,7 +151,7 @@ function route(info){
  catch{}
  let directPdf=false;
  try{const u=new URL(link);directPdf=u.protocol==='https:'&&
-  (/\.pdf$/i.test(u.pathname)||/\/pdf(?:\/|$)|download[^/]*(?:pdf|invoice)|format=pdf|type=pdf/i.test(u.pathname+u.search))}
+  (/\.(?:pdf|zip)$/i.test(u.pathname)||/\/pdf(?:\/|$)|\/(?:download|export)[^/]*|format=(?:pdf|zip)|type=(?:pdf|zip)/i.test(u.pathname+u.search))}
  catch{}
  return {source,link,code,directPdf,hasLookup:!!(trustedLookup&&validCode(code)),
   // A direct PDF URL may carry an existing access token in its URL.

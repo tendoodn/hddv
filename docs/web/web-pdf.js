@@ -45,16 +45,19 @@ const hasUserPdf=row=>suppliedPdf.has(invoiceKey(row));
 
 const readPdf=async url=>{
  const source=new URL(url);
- if(source.protocol!=='https:'||!(/\.pdf$/i.test(source.pathname)||/\/download[^/]*pdf|\/pdf(?:\/|$)|format=pdf/i.test(source.pathname+source.search)))return null;
+ if(source.protocol!=='https:'||!(/\.(?:pdf|zip)$/i.test(source.pathname)||/\/(?:download|export)[^/]*|\/pdf(?:\/|$)|format=(?:pdf|zip)/i.test(source.pathname+source.search)))return null;
  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),12000);
  try{
   const res=await fetch(source.toString(),{credentials:'omit',mode:'cors',signal:abort.signal,cache:'no-store'});
   if(!res.ok)throw Error('HTTP '+res.status);
-  if(Number(res.headers.get('content-length')||0)>12*1024*1024)throw Error('PDF vượt 12 MB.');
+  if(Number(res.headers.get('content-length')||0)>24*1024*1024)
+   throw Error('PDF/ZIP vượt 24 MB.');
   const b=new Uint8Array(await res.arrayBuffer());
-  if(b.byteLength>12*1024*1024||b.byteLength<5||
-     b[0]!==37||b[1]!==80||b[2]!==68||b[3]!==70||b[4]!==45)
-   throw Error('Nguồn không phải PDF hợp lệ.');
+  if(b.byteLength>24*1024*1024||b.byteLength<5)throw Error('PDF/ZIP không hợp lệ.');
+  if(b[0]===80&&b[1]===75&&b[2]===3&&b[3]===4)
+   return (await window.AutoTaxIssuerArchive.extractPdf(b)).pdf;
+  if(b.byteLength>12*1024*1024||b[0]!==37||b[1]!==80||
+     b[2]!==68||b[3]!==70||b[4]!==45)throw Error('Nguồn không phải PDF hợp lệ.');
   return b;
  }finally{clearTimeout(timer)}
 };

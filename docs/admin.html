@@ -450,7 +450,7 @@ function renderUsers(){
    (filter==="expired"&&!invoiceActive&&!mstActive&&!trialActive);
  });
  const rows=filtered.map(u=>{
-  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">Đặt lại mật khẩu</button></td></tr>';
+  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">Gửi link về email</button><button class="danger" data-temp="'+esc(u.user_id)+'">Reset tạm: 000000</button></td></tr>';
   const invoices='<b>'+Number(u.invoice_remaining||0).toLocaleString('vi-VN')+' / '+Number(u.invoice_purchased||0).toLocaleString('vi-VN')+'</b><div class="sub">Lượt còn lại / đã mua</div>'+(u.can_reread_charged_invoices?'<div class="sub">Được đọc lại hóa đơn đã trừ</div>':'');
   const mstQty=Number(u.mst_capacity||0);
   const mst='<b>'+mstQty+' MST</b><div class="sub">Hạn gần nhất: '+fmt(u.mst_nearest_expiry)+'</div><div class="sub">Hạn xa nhất: '+fmt(u.mst_farthest_expiry)+'</div>';
@@ -458,7 +458,7 @@ function renderUsers(){
   const trial='<div>'+(u.trial_used?'<span class="pill off">Đã dùng thử</span>':'<span class="pill">Chưa dùng thử</span>')+'</div>'+
    (u.trial_expires_at?'<div class="sub">Hạn thử: '+fmt(u.trial_expires_at)+'</div>':'')+
    '<div class="sub">Liên kết: '+(linked||'Chưa có')+'</div>';
-  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Đặt lại mật khẩu</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button></div></td></tr>';
+  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Gửi link về email</button><button class="danger" data-temp="'+esc(u.user_id)+'">Reset tạm: 000000</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button></div></td></tr>';
  }).join('');
  $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
  $("count").textContent=filtered.length+"/"+allUsers.length+" tài khoản đang hiển thị (tối đa 500 tài khoản gần nhất)";
@@ -483,7 +483,29 @@ $("clearAdminFilters").onclick=()=>{
 };
 $("users").onclick=async e=>{
  const b=e.target.closest("button");if(!b)return;
- if(b.dataset.history){openPackageHistory(b.dataset.history);return;}if(b.dataset.grant){$("grantCustomer").value=b.dataset.grant;$("adminPackageGrant").scrollIntoView({behavior:"smooth",block:"center"});$("grantPackage").focus();return;}if(b.dataset.reset){if(!confirm("Gửi email đặt lại mật khẩu tới "+b.dataset.reset+"?"))return;b.disabled=true;const {error}=await client.auth.resetPasswordForEmail(b.dataset.reset,{redirectTo:"https://tendoodn.github.io/hddv/"});b.disabled=false;if(error)msg("msg","Không gửi được email: "+error.message,true);else msg("msg","Đã gửi yêu cầu đặt lại mật khẩu tới "+b.dataset.reset+".");return;}
+ if(b.dataset.history){openPackageHistory(b.dataset.history);return;}if(b.dataset.grant){$("grantCustomer").value=b.dataset.grant;$("adminPackageGrant").scrollIntoView({behavior:"smooth",block:"center"});$("grantPackage").focus();return;}if(b.dataset.temp){
+  const user=allUsers.find(u=>u.user_id===b.dataset.temp);
+  if(!user||!confirm('Đổi ngay mật khẩu tài khoản '+(user.email||user.user_id)+
+   ' thành 000000 và yêu cầu khách đổi mật khẩu ngay khi đăng nhập?'))return;
+  b.disabled=true;
+  try{
+   const {data:{session}}=await client.auth.getSession();
+   if(!session?.access_token)throw Error('Phiên quản trị đã hết hạn.');
+   const res=await fetch('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-admin-password-reset',{
+    method:'POST',headers:{Authorization:'Bearer '+session.access_token,
+     apikey:'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ',
+     'Content-Type':'application/json'},
+    body:JSON.stringify({action:'temporary',user_id:user.user_id})
+   });
+   const data=await res.json().catch(()=>({}));
+   if(!res.ok||!data.ok)throw Error(data.error||'Không đặt lại được mật khẩu.');
+   msg('msg','Đã đặt mật khẩu tạm 000000 cho '+(user.email||user.user_id)+
+    '. Hãy thông báo riêng cho khách. Khách bắt buộc đổi mật khẩu mới khi đăng nhập.');
+  }catch(error){msg('msg','Reset tạm thất bại: '+error.message,true)}
+  finally{b.disabled=false}
+  return;
+ }
+ if(b.dataset.reset){if(!confirm("Gửi email đặt lại mật khẩu tới "+b.dataset.reset+"?"))return;b.disabled=true;const {error}=await client.auth.resetPasswordForEmail(b.dataset.reset,{redirectTo:"https://tracuuhoadon.top/"});b.disabled=false;if(error)msg("msg","Không gửi được email: "+error.message,true);else msg("msg","Đã gửi yêu cầu đặt lại mật khẩu tới "+b.dataset.reset+".");return;}
 };
 document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{
  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));

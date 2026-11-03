@@ -584,15 +584,17 @@ window.WebInvoiceApp={
  }
 };
 function init(){
+ // Both invoice forms start selected whenever Web is opened; users may untick later.
+ document.querySelectorAll('input[name="form"]').forEach(input=>{input.checked=true});
  const today=new Date();$('toDate').value=dateOnly(today);
  $('fromDate').value=dateOnly(new Date(today.getFullYear(),today.getMonth(),1));
  $('searchForm').addEventListener('submit',search);
  // Bring MST profiles and mode from Supabase whenever this tab becomes active.
  // Both Web and Add-on use the same account records; never sync tax passwords.
- let profileRefreshBusy=false;
+ let profileRefreshBusy=false,lastProfileRefreshAt=0;
  const refreshVisibleProfiles=async()=>{
-  if(busy||document.hidden||profileRefreshBusy)return;
-  profileRefreshBusy=true;
+  if(busy||document.hidden||profileRefreshBusy||Date.now()-lastProfileRefreshAt<9000)return;
+  profileRefreshBusy=true;lastProfileRefreshAt=Date.now();
   try{await refreshAccount()}finally{profileRefreshBusy=false}
  };
  document.addEventListener('visibilitychange',()=>{

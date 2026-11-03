@@ -201,6 +201,7 @@ async function select(mst){
  }catch(e){if(stamp===requestSeq)notify('Không đọc được mật khẩu đã lưu. Hãy nhập lại: '+(e.message||e),true)}
 }
 async function setUser(userId,rows,mode='mst'){
+ const wasInvoiceMode=invoiceMode,wasOwner=owner,previousProfilesJson=JSON.stringify(profiles);
  invoiceMode=mode==='invoice';
  $('mstPickerToggle').hidden=false;
  $('mstFree').placeholder=invoiceMode?'Nhập MST bất kỳ (gói số tờ)':'Nhập MST mới để thêm vào gói MST';
@@ -219,8 +220,9 @@ async function setUser(userId,rows,mode='mst'){
   for(const old of previous)if(!allowed.has(old.mst))
    await deleteStore('credentials',entryKey(old.mst)).catch(()=>{});
  }
- renderPicker();
- if(owner&&($('mstFree').value||$('mst').value))
+ const profilesChanged=wasOwner!==owner||wasInvoiceMode!==invoiceMode||previousProfilesJson!==JSON.stringify(profiles);
+ if(profilesChanged)renderPicker();
+ if(profilesChanged&&owner&&($('mstFree').value||$('mst').value))
   await select(normalize($('mstFree').value||$('mst').value));
  if(!owner)notify('Đăng nhập AutoTax để xem hồ sơ MST đã liên kết.');
 }

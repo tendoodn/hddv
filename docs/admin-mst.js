@@ -9,7 +9,8 @@ function renderMstAssignments(){
  body.replaceChildren();
  for(const a of filtered){
   const tr=document.createElement("tr");
-  for(const value of [a.email,a.mst,a.display_name||'Chưa đặt tên',fmt(a.assigned_at)]){
+  for(const value of [a.email,a.mst,a.display_name||'Chưa đặt tên',
+   a.mst_allowed===true?'Đã cấp quyền':'Chưa cấp quyền',fmt(a.assigned_at)]){
    const td=document.createElement("td");td.textContent=value||"—";tr.append(td);
   }
   const td=document.createElement("td");
@@ -37,7 +38,7 @@ function renderMstAssignments(){
   });
   td.append(rename,btn);tr.append(td);body.append(tr);
  }
- if(!body.children.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=5;td.textContent="Chưa có MST liên kết.";tr.append(td);body.append(tr);}
+ if(!body.children.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=6;td.textContent="Chưa có MST liên kết.";tr.append(td);body.append(tr);}
 }
 async function loadMstAssignments(){
  const {data,error}=await client.rpc("addon_admin_list_mst_assignments");

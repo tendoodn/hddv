@@ -361,7 +361,7 @@ async function ensurePermission(mst){
  selectedMode=data.mode||selectedMode;
 }
 async function claimRows(all,mst){
- if(selectedMode!=='invoice'||!all.length)return all;
+ if(!all.length)return all; // V1.1.7: record every invoice read in both account modes.
  const accepted=[],max=250;
  const key=r=>JSON.stringify([r.mst,r.direction,r.form_code,r.series,r.invoice_number]);
  for(let from=0;from<all.length;from+=max){
@@ -373,7 +373,7 @@ async function claimRows(all,mst){
   if(error)throw Error('Không kiểm tra được lượt hóa đơn: '+error.message);
   const allowed=new Set((data.allowed_items||[]).map(key));
   for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
-  progress('Đã ghi nhận '+Number(data.deducted||0)+' lượt mới; '+Number(data.previously_deducted||0)+' lượt cũ trong đợt.');
+  progress('Đã ghi nhận '+Number(data.recorded_without_charge||0)+' hóa đơn bằng gói MST, '+Number(data.deducted||0)+' lượt số tờ mới; '+Number(data.previously_deducted||0)+' hóa đơn đọc lại không trừ lượt.');
  }
  return accepted;
 }

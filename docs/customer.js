@@ -383,8 +383,10 @@ $("loginForm").addEventListener("submit",event=>{
  const password=$("password").value;
  const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password});
  if(error)throw error;
- try{await window.AutoTaxSharedMstVault.unlock(data.user.id,password)}
- catch(e){showMessage('Đã đăng nhập, nhưng kho MST cần mở khóa: '+e.message,true,'authMessage')}
+ if(!data.user?.app_metadata?.autotax_force_password_change){
+  try{await window.AutoTaxSharedMstVault.unlock(data.user.id,password)}
+  catch(e){showMessage('Đã đăng nhập, nhưng kho MST cần mở khóa: '+e.message,true,'authMessage')}
+ }
  $("password").value='';
  await refresh();
  });

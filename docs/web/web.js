@@ -236,6 +236,7 @@ async function refreshAccount(){
   for(const item of profiles.data||[])
    profileDisplayNames.set(normalizedMst(item.mst),String(item.display_name||'').trim());
   await window.GdtVault?.setUser(account.id,profiles.data||[]);
+  document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
   if(!profileMsts.length)show('Chưa có hồ sơ MST. Bạn cần đăng ký MST tại trang tài khoản AutoTax.');
   else{show('Đã đồng bộ '+profileMsts.length+' hồ sơ MST. '+(selectedMode==='invoice'?'Gói T: trừ lượt hóa đơn mới, không trừ lại hóa đơn đã đọc.':'Gói MST: tra cứu theo thời hạn hồ sơ.')+' CAPTCHA sẽ chỉ tải khi bạn bấm Tìm kiếm.',true)}
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
@@ -301,7 +302,23 @@ async function ensurePermission(mst){
  if(!data?.allowed)throw Error('MST này chưa được cấp quyền hoặc gói đã hết hạn: '+(data?.reason||''));
  selectedMode=data.mode||selectedMode;
 }
-// Tra cứu không được ghi nhận quota; backend tải tệp chưa xác minh nên không trừ lượt tại đây.
+async function claimRows(all,mst){
+ if(selectedMode!=='invoice'||!all.length)return all;
+ const accepted=[],max=250;
+ const key=r=>JSON.stringify([r.mst,r.direction,r.form_code,r.series,r.invoice_number]);
+ for(let from=0;from<all.length;from+=max){
+  const batch=all.slice(from,from+max);
+  const items=batch.map(r=>({mst,direction:r.kind||'',
+   form_code:(r.form||'')+':'+(r.khmshdon||''),
+   series:r.khhdon||'',invoice_number:String(r.shdon??'')}));
+  const {data,error}=await client.rpc('addon_claim_invoice_quota',{p_items:items});
+  if(error)throw Error('Không kiểm tra được lượt hóa đơn: '+error.message);
+  const allowed=new Set((data.allowed_items||[]).map(key));
+  for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
+  progress('Đã ghi nhận '+Number(data.deducted||0)+' lượt mới; '+Number(data.previously_deducted||0)+' lượt cũ trong đợt.');
+ }
+ return accepted;
+}
 function renderResults(list,warnings=[]){
  if(window.WebResults?.render)window.WebResults.render(list,warnings);
  else show('Đã có '+list.length+' hóa đơn. Giao diện kết quả chưa tải xong, vui lòng làm mới trang.');
@@ -329,13 +346,13 @@ async function search(e){
     onProgress:p=>progress(p.label+' · '+p.count+' hóa đơn'),
     onWarn:msg=>show(msg),onWait:w=>progress(w.label+' · đang đợi cổng Thuế '+(w.secs||0)+' giây')});
   if(stopped)throw Error('Đã dừng theo yêu cầu.');
-  rows=result.rows;details.clear();
+  rows=await claimRows(result.rows,mst);details.clear();
   if(!profileDisplayNames.get(mst))
    await assignAutoMstName(mst,nameFromMatchedInvoices(rows,mst),
     'tên người mua/người bán khớp MST trên hóa đơn');
   searchedBothKinds=selected('kind').includes('purchase')&&selected('kind').includes('sold');
   renderResults(rows,result.skipped||[]);
-  show('Đã tra cứu '+rows.length+' hóa đơn.'+
+  show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
    (result.skipped?.length?' Nguồn chưa hoàn tất: '+result.skipped.join(', '):''),true);
  }catch(error){show(error.message||'Tra cứu không thành công.');}
  finally{busyState(false)}

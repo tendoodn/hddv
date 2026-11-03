@@ -84,10 +84,20 @@ async function forget(user,mst){
  });
  await window.AutoTaxSharedMstVault?.remove(mst);
 }
+const migrationFinished=new Set(),migrationPending=new Map();
 async function migrate(user,mst){
- const saved=await read(user,mst);
- if(!saved)return false;
- return window.AutoTaxSharedMstVault?.importLocal(mst,await decrypt(user,saved));
+ const id=user+':'+normalize(mst);
+ if(migrationFinished.has(id))return false;
+ if(migrationPending.has(id))return migrationPending.get(id);
+ const run=(async()=>{
+  const record=await read(user,mst);
+  if(!record){migrationFinished.add(id);return false}
+  const imported=await window.AutoTaxSharedMstVault?.importLocal(mst,await decrypt(user,record));
+  migrationFinished.add(id);
+  return imported;
+ })();
+ migrationPending.set(id,run);
+ try{return await run}finally{migrationPending.delete(id)}
 }
 async function transfer(user,mst){
  if(!user||!valid(mst))throw Error('Hồ sơ MST không hợp lệ.');

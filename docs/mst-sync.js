@@ -62,7 +62,10 @@
   const url=BASE+(query?'?'+query:'');
   const r=await fetch(url,{method,cache:'no-store',headers:{...headers(ctx.token),...extra},...(body!==null?{body:JSON.stringify(body)}:{})});
   if(!r.ok)throw Error('Không đồng bộ được MST với Supabase (HTTP '+r.status+').');
-  return r.status===204?null:r.json();
+  // PostgREST upserts with Prefer:return=minimal can return HTTP 201
+  // with an empty body, not just HTTP 204. Treat both as success.
+  if(method!=='GET')return null;
+  return r.json();
  }
  const ownerFilter=(user)=>'user_id=eq.'+encodeURIComponent(user);
  async function getRows(ctx,mst){

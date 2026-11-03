@@ -82,6 +82,7 @@ async function forget(user,mst){
   tx.objectStore('credentials').delete(user+':'+normalize(mst));
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
  });
+ await window.AutoTaxSharedMstVault?.remove(mst);
 }
 async function migrate(user,mst){
  const saved=await read(user,mst);

@@ -9,6 +9,10 @@ let gatewayRegion='ap-southeast-1'; // Singapore, closer to Viet Nam than the pr
 const gatewayUrl=()=>GATEWAY+'?forceFunctionRegion='+gatewayRegion;
 const $=id=>document.getElementById(id);
 const client=window.supabase?.createClient(SUPABASE,PUBLIC_KEY);
+window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
+ const {data:{session}}=await client.auth.getSession();
+ return {userId:session?.user?.id,token:session?.access_token};
+});
 let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
 let busy=false,stopped=false,selectedMode='mst',profileMsts=[],profileAllowedMsts=[],searchedBothKinds=false;
 const vn=(iso)=>iso.split('-').reverse().join('/');

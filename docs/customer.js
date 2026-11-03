@@ -29,7 +29,7 @@ function drainLegacyMstQueue(){
   const {userId,mst}=legacyMstQueue.shift();
   legacyMstActive++;
   Promise.resolve(window.AutoTaxProfileVault?.migrate(userId,mst))
-   .catch(e=>console.warn('Khôi phục mật khẩu MST '+mst+':',e.message))
+   .catch(e=>{legacyMstQueued.delete(userId+':'+mst);console.warn('Khôi phục mật khẩu MST '+mst+':',e.message)})
    .finally(()=>{legacyMstActive--;drainLegacyMstQueue()});
  }
 }

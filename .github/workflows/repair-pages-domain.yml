@@ -53,6 +53,12 @@ jobs:
           for url in \
             "https://tracuuhoadon.top/" \
             "https://tracuuhoadon.top/web.html" \
+            "https://tracuuhoadon.top/admin.html" \
+            "https://tracuuhoadon.top/pdf/" \
+            "https://tracuuhoadon.top/baogia/" \
+            "https://tracuuhoadon.top/baogia/style.css" \
+            "https://tracuuhoadon.top/baogia/script.js" \
+            "https://tracuuhoadon.top/k/" \
             "https://tendoodn.github.io/hddv/"; do
             echo "$url"
             curl -4 -L -sS -o /dev/null -w 'HTTP %{http_code} | final %{url_effective} | TLS %{ssl_verify_result} | bytes %{size_download}\n' --max-time 25 "$url" || true

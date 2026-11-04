@@ -158,7 +158,18 @@
   // Bấm Dừng (shouldStop) hủy luôn request đang chờ thay vì đợi hết timeout.
   const STOPPED = 'Đã dừng theo yêu cầu';
   // 429 có lượt thử lại riêng (RATE_RETRIES); request kèm captcha (extra) thì ném ngay để searchGet chờ rồi lấy captcha mới.
-  async function get(url, act, { shouldStop = () => false, timeout = TIMEOUT, retries = RETRIES, onWait, onRetry, auth, extra, endPoint } = {}) {
+  // Keep requests strictly sequential for one authenticated GDT session.
+  // Parallel detail workers share this queue; they must not defeat the 2s
+  // inter-request gap or trigger avoidable HTTP 429 responses.
+  let requestTail = Promise.resolve();
+  function get(url, act, options = {}) {
+    const task = requestTail.then(
+      () => getWithRetry(url, act, options),
+      () => getWithRetry(url, act, options));
+    requestTail = task.then(() => undefined, () => undefined);
+    return task;
+  }
+  async function getWithRetry(url, act, { shouldStop = () => false, timeout = TIMEOUT, retries = RETRIES, onWait, onRetry, auth, extra, endPoint } = {}) {
     for (let i = 0, rated = 0; ; i++) {
       if (auth !== false && !token()) throw new HttpError('Chưa đăng nhập hoadondientu – hãy đăng nhập rồi bấm ↻', 401);
       const wait = lastAt + gap - Date.now();
@@ -318,7 +329,7 @@
         for (const d of j.datas || []) map.set(d.id, pick(d, kind, form, monthOf(d)));
         state = j.state;
         onPage(map.size);
-        await sleep(DELAY);
+        // get() already enforces the GDT cooldown before the next page.
       } while (state && map.size < total);
       if (map.size >= total) break;
     }
@@ -518,7 +529,7 @@
         if (shouldStop() || e.status === 401) throw e;
         // không có hồ sơ gốc / lỗi khác sau khi đã thử lại → thử API chi tiết
       }
-      await sleep(DELAY);
+      // The next GET is already rate-limited; no duplicate idle delay.
     }
     const det = await json(await get(URL_DETAIL(ep, row), action('Xem hóa đơn', row), { shouldStop, timeout: FORMS[row.form].timeout, retries: FORMS[row.form].retries, onWait }));
     // JSON chi tiết không có danh sách phí riêng → Excel bù dòng phí từ tgtphi của danh sách

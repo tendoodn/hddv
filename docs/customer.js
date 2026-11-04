@@ -488,7 +488,7 @@ $("signupForm").addEventListener("submit",event=>{
  const button=$("signupSubmitBtn");
  if(button.disabled)return;
  void (async()=>{
-  const name=$("signupName").value.trim().replace(/\\s+/g," ");
+  const name=$("signupName").value.trim().replace(/\s+/g," ");
   const email=$("signupEmail").value.trim().toLowerCase();
   const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
   if(name.length<2||name.length>100)return signupMessage("Tên người dùng phải từ 2 đến 100 ký tự.",true);

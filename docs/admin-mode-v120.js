@@ -33,12 +33,19 @@
    const {data,error}=await client.rpc('addon_admin_set_usage_mode_v120',{p_user_id:userId,p_mode:mode});
    if(error)throw error;
    if(!data?.success||data.mode!==mode)throw Error('Máy chủ chưa xác nhận thay đổi.');
-   user.mode=mode;
-   dialog.close();
-   renderUsers();
-   msg('msg','Đã chuyển '+(user.email||userId)+' sang chế độ '+(mode==='invoice'?'Số tờ':'MST')+'.');
-   await loadUsers();
-  }catch(error){fail('Không đổi được chế độ: '+(error.message||String(error)))}
+  }catch(error){
+   fail('Không lưu được chế độ: '+(error.message||String(error)));
+   save.disabled=false;
+   return;
+  }
+  // The database already committed. A separate UI-refresh failure must not
+  // falsely report that the change failed or reopen the closed dialog.
+  user.mode=mode;
+  if(dialog.open)dialog.close();
+  msg('msg','Đã lưu chế độ '+(mode==='invoice'?'Số tờ':'MST')+' cho '+(user.email||userId)+'.');
+  try{renderUsers();await loadUsers()}
+  catch(error){console.warn('Đã lưu chế độ; không làm mới được bảng:',error);
+   msg('msg','Đã lưu chế độ, nhưng chưa làm mới được danh sách. Bấm tải lại trang.',true)}
   finally{save.disabled=false}
  });
 })();

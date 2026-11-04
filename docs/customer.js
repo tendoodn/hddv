@@ -206,7 +206,7 @@ async function loadPackages(){
   addText(card,"p",item.family==="storage"
    ? (item.description||"Đồng bộ danh mục MISA/Tendoo khi đổi máy")+" · "+(item.validity_days||365)+" ngày. Không ảnh hưởng số lượt và MST."
    : item.family==="invoice"
-   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm). Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
+   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm)"+(item.validity_days?" · hiệu lực "+item.validity_days+" ngày.": " · không hết hạn.")+" Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
    : item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn")+". Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.","muted");
   addText(card,"strong",vnMoney(item.price_vnd),"price");
   const b=addText(card,"button","Chọn mua");

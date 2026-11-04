@@ -3,9 +3,9 @@
 'use strict';
 const BASE='https://ucqqjdsoyvvaxswzbhaw.supabase.co';
 const KEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
-const db=window.supabase?.createClient(BASE,KEY);
+const db=window.AutoTaxSharedClient||window.supabase?.createClient(BASE,KEY);
 const $=id=>document.getElementById(id);
-let teams=[],memberships=[],myId='',activeTeam='',myMsts=[];
+let teams=[],memberships=[],myId='',activeTeam='',myMsts=[],editingPerson=null;
 const make=(tag,text,className)=>{const node=document.createElement(tag);if(text!==undefined&&text!==null)node.textContent=String(text);if(className)node.className=className;return node};
 const notice=(msg,error=false)=>{const n=$('autotaxTeamMessage');n.hidden=!msg;n.textContent=msg||'';n.classList.toggle('error',!!error)};
 const rpc=async(name,args)=>{const {data,error}=await db.rpc(name,args);if(error)throw error;return data};
@@ -75,6 +75,7 @@ async function showDetail(id){
  $('autotaxTeamInviteForm').hidden=!owner;
  $('autotaxTeamLeave').hidden=owner;
  $('autotaxTeamUsageTab').hidden=!owner;
+ $('autotaxTeamMembersTab').hidden=!owner;
  $('autotaxTeamUsagePanel').hidden=true;
  $('autotaxTeamMembersPanel').hidden=false;
  $('autotaxTeamMembersBody').closest('table').querySelectorAll('thead th').forEach((th,i)=>{th.hidden=!owner&&i!==0});
@@ -89,32 +90,38 @@ async function showDetail(id){
   if(!owner){tr.append(name);tbody.append(tr);continue}
   const email=make('td',person.email||'—');
   const modes=make('td'),msts=make('td'),actions=make('td');
-  const editing=()=>actions.dataset.editing==='true';
   const modeValues=Array.isArray(person.allowed_modes)?person.allowed_modes:[];
   const mstValues=Array.isArray(person.allowed_msts)?person.allowed_msts:[];
-  for(const [value,label] of [['mst','MST'],['invoice','Số tờ']])modes.append(modeCheck(value,label,modeValues.includes(value),true));
-  const allMsts=[...new Set([...myMsts.map(x=>x.mst),...mstValues])].filter(Boolean);
-  if(allMsts.length)for(const mst of allMsts){
-   const label=myMsts.find(x=>x.mst===mst)?.display_name;
-   msts.append(modeCheck(mst,mst+(label?' · '+label:''),mstValues.includes(mst),true));
-  }
-  else msts.append(make('span','Chưa có MST được cấp','muted'));
-  if(owner){
-   const edit=make('button','Sửa quyền','secondary'),save=make('button','Lưu');
-   edit.type='button';save.type='button';save.hidden=true;
-   edit.addEventListener('click',()=>{
-    actions.dataset.editing='true';for(const box of tr.querySelectorAll('input[type=checkbox]'))box.disabled=false;
-    edit.hidden=true;save.hidden=false;
-   });
-   save.addEventListener('click',()=>run(async()=>{
-    const selected=cell=>[...cell.querySelectorAll('input:checked')].map(x=>x.value);
-    await rpc('autotax_team_set_permissions_v118',{p_team:id,p_user:person.user_id,p_modes:selected(modes),p_msts:selected(msts)});
-    notice('Đã lưu và khóa quyền.');await showDetail(id);
-   }));
-   const remove=make('button','Xóa khỏi nhóm','secondary');remove.type='button';
-   remove.addEventListener('click',()=>{if(!confirm('Xóa '+(person.email||'thành viên')+' khỏi nhóm?'))return;void run(async()=>{await rpc('autotax_team_remove_v118',{p_team:id,p_user:person.user_id});notice('Đã xóa thành viên.');await showDetail(id)})});
-   actions.append(edit,save,remove);
-  }else actions.append(make('span','Chỉ xem','muted'));
+  const openEditor=section=>{
+   editingPerson=person;
+   $('autotaxTeamPermissionTitle').textContent='Phân quyền · '+(person.display_name||person.email);
+   $('autotaxTeamPermissionHelp').textContent='Chọn hình thức sử dụng và MST cho phép. Trạng thái chỉ lưu khi bấm Lưu.';
+   const mc=$('autotaxTeamPermissionModes'),sc=$('autotaxTeamPermissionMsts');
+   mc.replaceChildren();sc.replaceChildren();
+   for(const [value,label] of [['mst','MST'],['invoice','Số tờ']])
+    mc.append(modeCheck(value,label,modeValues.includes(value),false));
+   const allowedMsts=[...new Set([...myMsts.map(x=>x.mst),...mstValues])].filter(Boolean);
+   for(const mst of allowedMsts){
+    const label=myMsts.find(x=>x.mst===mst)?.display_name;
+    sc.append(modeCheck(mst,mst+(label?' · '+label:''),mstValues.includes(mst),false));
+   }
+   if(!allowedMsts.length)sc.append(make('span','Chưa có MST nào được trưởng nhóm quản lý.','muted'));
+   $('autotaxTeamPermissionStatus').hidden=true;
+   $('autotaxTeamPermissionDialog').showModal();
+   (section==='mst'?sc:mc).querySelector('input')?.focus();
+  };
+  const gear=(cell,section,summary)=>{
+   const btn=make('button','⚙','secondary');btn.type='button';
+   btn.title='Thiết lập '+(section==='mst'?'MST':'hình thức sử dụng');
+   btn.setAttribute('aria-label',btn.title+' cho '+(person.display_name||person.email));
+   btn.addEventListener('click',()=>openEditor(section));
+   cell.append(btn,make('span',summary,'muted'));
+  };
+  gear(modes,'mode',modeValues.map(x=>x==='invoice'?'Số tờ':'MST').join(', ')||'Chưa cấp');
+  gear(msts,'mst',mstValues.length?mstValues.length+' MST':'Chưa cấp');
+  const remove=make('button','Xóa khỏi nhóm','secondary');remove.type='button';
+  remove.addEventListener('click',()=>{if(!confirm('Xóa '+(person.email||'thành viên')+' khỏi nhóm?'))return;void run(async()=>{await rpc('autotax_team_remove_v118',{p_team:id,p_user:person.user_id});notice('Đã xóa thành viên.');await showDetail(id)})});
+  actions.append(remove);
   tr.append(name,email,modes,msts,actions);tbody.append(tr);
   const used=make('tr');
   const counts=usageByMember.get(person.user_id)||{invoice_count:0,mst_count:0};
@@ -125,6 +132,25 @@ async function showDetail(id){
  }
  if(!allPeople.length)tbody.append(make('tr',''));
 }
+$('autotaxTeamPermissionClose').addEventListener('click',()=>$('autotaxTeamPermissionDialog').close());
+$('autotaxTeamPermissionForm').addEventListener('submit',e=>{
+ e.preventDefault();if(!editingPerson)return;
+ void run(async()=>{
+  const btn=$('autotaxTeamPermissionSave');btn.disabled=true;
+  const selected=id=>[...$(id).querySelectorAll('input:checked')].map(x=>x.value);
+  try{
+   await rpc('autotax_team_set_permissions_v118',{
+    p_team:activeTeam,p_user:editingPerson.user_id,
+    p_modes:selected('autotaxTeamPermissionModes'),p_msts:selected('autotaxTeamPermissionMsts')
+   });
+   $('autotaxTeamPermissionDialog').close();editingPerson=null;
+   notice('Đã cập nhật quyền sử dụng thành viên.');await showDetail(activeTeam);
+  }catch(err){
+   const el=$('autotaxTeamPermissionStatus');el.hidden=false;
+   el.textContent=friendly(err);el.classList.add('error');
+  }finally{btn.disabled=false}
+ });
+});
 async function run(fn){try{await fn()}catch(e){notice(friendly(e),true)}}
 $('autotaxBasicTab').addEventListener('click',()=>showTab(false));
 $('autotaxTeamTab').addEventListener('click',()=>showTab(true));

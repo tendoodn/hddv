@@ -50,6 +50,11 @@ async function decorateTeamBalance(){
   let hint=document.getElementById('autotaxTeamInvoiceBalanceHint');
   if(!hint){hint=document.createElement('small');hint.id='autotaxTeamInvoiceBalanceHint';hint.className='muted';document.getElementById('invoiceBalance')?.after(hint)}
   hint.hidden=remaining<=0;
+  const teamMstCount=Number(data?.team_mst_count||0);
+  let mstHint=document.getElementById('autotaxTeamMstBalanceHint');
+  if(!mstHint){mstHint=document.createElement('small');mstHint.id='autotaxTeamMstBalanceHint';mstHint.className='muted';document.getElementById('mstExpiry')?.after(mstHint)}
+  mstHint.hidden=teamMstCount<=0;
+  if(teamMstCount>0)mstHint.textContent='Nhóm cấp quyền xem '+teamMstCount.toLocaleString('vi-VN')+' MST: '+(data.team_mst_allowed_msts||[]).join(', ')+'. Không sử dụng suất MST cá nhân.';
   if(remaining>0){
    hint.textContent='Nhóm dùng chung còn '+remaining.toLocaleString('vi-VN')+' lượt (ưu tiên trừ trước gói cá nhân).';
    const title=document.getElementById('licenseTitle');

@@ -3,7 +3,7 @@
 'use strict';
 const list=document.getElementById('packageList');
 if(!list||!window.supabase)return;
-const db=window.supabase.createClient('https://ucqqjdsoyvvaxswzbhaw.supabase.co','sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ');
+const db=window.AutoTaxSharedClient||window.supabase.createClient('https://ucqqjdsoyvvaxswzbhaw.supabase.co','sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ');
 const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
 let pending=false,lastAt=0,cache=null;
 async function getCatalog(){

@@ -154,7 +154,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 </section>
 <div id="logsPanel" class="panel hidden"><h2>Nhật ký thao tác</h2><div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Khách hàng</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody id="logs"></tbody></table></div></div>
 </section></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js?v=34"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js?v=121pager2"></script><script>
 const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
 const $=id=>document.getElementById(id);let allUsers=[],allPackages=[],customerPage=1,packagePage=1;
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}

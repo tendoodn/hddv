@@ -18,13 +18,16 @@ jobs:
           python3 - <<'PY'
           import urllib.request, urllib.error, time, sys
           checks = {
-            "https://tracuuhoadon.top/admin-combo.html": ["Gói combo", "id=\"createForm\""],
-            "https://tracuuhoadon.top/": ['id="autotaxTeamTab"', 'id="signupDialog"', 'id="signupName"', 'id="signupPasswordConfirm"'],
+            "https://tracuuhoadon.top/admin-combo.html": ["admin.html#packageCatalog"],
+            "https://tracuuhoadon.top/": ['id="autotaxTeamTab"', 'id="signupDialog"', 'id="signupName"', 'id="signupPasswordConfirm"', 'VÀO TRA CỨU PHIÊN BẢN WEB', 'id="paymentCouponCode"', 'id="mstProfilesWeb"'],
             "https://tracuuhoadon.top/web.html": ['id="kIndustry"', 'web-results.js?v=1118k4', 'web.js?v=1118terminal3', 'id="progressLog"'],
             "https://tracuuhoadon.top/web/web.js": ["keepLog=false", "log.children.length>5", "Đã hoàn tất tải"],
             "https://tracuuhoadon.top/web/web.css": ["terminal-error", "terminal-success"],
             "https://tracuuhoadon.top/customer.js": ["signupDialog", "signupPasswordConfirm", "Supabase Auth"],
-            "https://tracuuhoadon.top/admin.html": ["admin-combo.html"],
+            "https://tracuuhoadon.top/admin.html": ['id="couponCreateForm"', 'id="newInvoiceQtyWrap"', 'admin-discounts-v119.js'],
+            "https://tracuuhoadon.top/admin-discounts-v119.js": ["autotax_admin_create_discount_v119", "autotax_admin_list_discounts_v119"],
+            "https://tracuuhoadon.top/team-v118.js": ["autotax_team_create_v118", "autotax_team_usage_stats_v118", "autotaxTeamUsageTab"],
+            "https://tracuuhoadon.top/customer.js": ["hasInvoice!==hasMst", "applyPaymentCoupon"],
             "https://tracuuhoadon.top/web/period-k.js": ["purchase+stock", "shouldWarn"],
             "https://tracuuhoadon.top/team-v118.js": ["autotax_team_create_v118", "autotax_team_usage_stats_v118"],
           }

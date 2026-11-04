@@ -107,11 +107,24 @@ function renderPicker(){
  const empty=document.createElement('option');
  empty.value='';empty.textContent='＋ Thêm MST mới';select.append(empty);
  const menu=$('mstPickerMenu');menu.replaceChildren();
+ const search=document.createElement('input');
+ search.id='mstPickerSearch';search.type='search';search.autocomplete='off';
+ search.placeholder='Tìm nhanh MST hoặc tên người nộp thuế';
+ search.setAttribute('aria-label','Tìm MST trong danh sách');
+ search.className='mst-picker-search';
+ search.addEventListener('input',()=>{
+  const query=search.value.trim().toLocaleLowerCase('vi-VN');
+  for(const card of menu.querySelectorAll('.mst-picker-card'))
+   card.hidden=!card.textContent.toLocaleLowerCase('vi-VN').includes(query);
+ });
+ search.addEventListener('keydown',event=>event.stopPropagation());
+ menu.append(search);
  const add=document.createElement('button');
  add.type='button';add.className='mst-picker-choice';add.textContent='＋ Thêm MST mới';
  add.addEventListener('click',()=>{
   select.value='';$('mstFree').value='';$('mstFree').hidden=false;
   menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
+  $('mstPickerToggle').dataset.userPicked='yes';
   $('gdtPassword').value='';updateChosen();$('mstFree').focus();
  });
  menu.append(add);
@@ -134,6 +147,7 @@ function renderPicker(){
   pick.addEventListener('click',()=>{
    $('mstFree').value='';$('mstFree').hidden=true;select.value=mst;select.dispatchEvent(new Event('change',{bubbles:true}));
    menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
+   $('mstPickerToggle').dataset.userPicked='yes';updateChosen();
   });
   card.append(pick);
   // Deleting a profile now also removes backend invoice deduction history.
@@ -155,8 +169,8 @@ function renderPicker(){
 }
 function updateChosen(){
  const mst=$('mst').value,p=profiles.find(x=>x.mst===mst);
- $('mstPickerToggle').textContent=p?
-  p.mst+' · '+mstName(p)+' ▾':'＋ Thêm MST mới ▾';
+ $('mstPickerToggle').textContent=$('mstPickerToggle').dataset.userPicked==='yes'&&p?
+  p.mst+' · '+mstName(p)+' ▾':'Chọn MST ▾';
  for(const card of $('mstPickerMenu').children){
   const chosen=card.querySelector('.mst-picker-choice');
   const selected=!!chosen&&chosen.querySelector('strong')?.textContent===mst;
@@ -207,6 +221,7 @@ async function setUser(userId,rows,mode='mst'){
  $('mstFree').placeholder=invoiceMode?'Nhập MST bất kỳ (gói số tờ)':'Nhập MST mới để thêm vào gói MST';
  const changed=(userId||'')!==owner;
  if(changed){
+  $('mstPickerToggle').dataset.userPicked='';
   owner=userId||'';deviceKey=null;requestSeq++;$('gdtPassword').value='';
   $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
  }
@@ -272,6 +287,11 @@ function init(){
  $('mstPickerToggle').addEventListener('click',()=>{
   const menu=$('mstPickerMenu');menu.hidden=!menu.hidden;
   $('mstPickerToggle').setAttribute('aria-expanded',String(!menu.hidden));
+  if(!menu.hidden){
+   const search=$('mstPickerSearch');if(search){search.value='';
+    menu.querySelectorAll('.mst-picker-card').forEach(card=>card.hidden=false);
+    search.focus();}
+  }
  });
  document.addEventListener('pointerdown',event=>{
   if(!$('mstPickerMenu').hidden&&!$('mstPickerMenu').contains(event.target)&&

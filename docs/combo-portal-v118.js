@@ -40,8 +40,25 @@ async function decorate(){
  }catch(e){console.warn('AutoTax: chưa hiển thị được quyền lợi combo',e)}
  finally{pending=false}
 }
+async function decorateTeamBalance(){
+ try{
+  const {data:{session}}=await db.auth.getSession();
+  if(!session?.user)return;
+  const {data,error}=await db.rpc('autotax_my_entitlements_v118');
+  if(error)throw error;
+  const remaining=Number(data?.team_invoice_remaining||0);
+  let hint=document.getElementById('autotaxTeamInvoiceBalanceHint');
+  if(!hint){hint=document.createElement('small');hint.id='autotaxTeamInvoiceBalanceHint';hint.className='muted';document.getElementById('invoiceBalance')?.after(hint)}
+  hint.hidden=remaining<=0;
+  if(remaining>0){
+   hint.textContent='Nhóm dùng chung còn '+remaining.toLocaleString('vi-VN')+' lượt (ưu tiên trừ trước gói cá nhân).';
+   const title=document.getElementById('licenseTitle');
+   if(title&&title.textContent==='Chưa có gói hiệu lực')title.textContent='Đang có quyền sử dụng qua nhóm';
+  }
+ }catch(e){console.warn('AutoTax: chưa đồng bộ được lượt nhóm',e)}
+}
 const observer=new MutationObserver(()=>{void decorate()});
 observer.observe(list,{childList:true});
-void decorate();
-window.addEventListener('focus',()=>{cache=null;void decorate()});
+void decorate();void decorateTeamBalance();
+window.addEventListener('focus',()=>{cache=null;void decorate();void decorateTeamBalance()});
 })();

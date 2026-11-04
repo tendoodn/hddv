@@ -74,7 +74,11 @@ async function showDetail(id){
  $('autotaxTeamDetailTitle').textContent=team.name+(owner?' · Trưởng nhóm':' · Thành viên');
  $('autotaxTeamInviteForm').hidden=!owner;
  $('autotaxTeamLeave').hidden=owner;
- const people=await rpc('autotax_team_people_v118',{p_team:id});
+ const [people,usageStats]=await Promise.all([
+  rpc('autotax_team_people_v118',{p_team:id}),
+  rpc('autotax_team_usage_stats_v118',{p_team:id})
+ ]);
+ const usageByMember=new Map((usageStats||[]).map(x=>[x.user_id,x]));
  const tbody=$('autotaxTeamMembersBody'),usage=$('autotaxTeamUsageBody');
  tbody.replaceChildren();usage.replaceChildren();
  const allPeople=[...people];
@@ -110,7 +114,10 @@ async function showDetail(id){
   }else actions.append(make('span','Chỉ xem','muted'));
   tr.append(name,email,modes,msts,actions);tbody.append(tr);
   const used=make('tr');
-  used.append(make('td',person.display_name||'—'),make('td',person.email||'—'),make('td','Chưa đồng bộ'),make('td','Chưa đồng bộ'));
+  const counts=usageByMember.get(person.user_id)||{invoice_count:0,mst_count:0};
+  used.append(make('td',person.display_name||'—'),make('td',person.email||'—'),
+   make('td',Number(counts.invoice_count||0).toLocaleString('vi-VN')),
+   make('td',Number(counts.mst_count||0).toLocaleString('vi-VN')));
   usage.append(used);
  }
  if(!allPeople.length)tbody.append(make('tr',''));

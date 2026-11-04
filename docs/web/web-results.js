@@ -22,7 +22,24 @@ const stockStatus=(text,error=false)=>{
  const el=$('stockStatus');el.textContent=text;el.style.color=error?'#ff8b94':'#b5efce';
 };
 const normalSku=product=>window.TendooImport.normalize(product.name);
+let lastStats=null;
 const alertPref='autotax_web_disable_k_popup_v1';
+function bothKindsChecked(){
+ const all=[...document.querySelectorAll('input[name="kind"]:checked')].map(x=>x.value);
+ return all.includes('purchase')&&all.includes('sold');
+}
+function syncOpeningStock(){
+ const on=bothKindsChecked(),wrap=$('openingStockControl');
+ wrap.hidden=!on;
+ if(!on){$('openingStockEditor').hidden=true;$('openingStockToggle').setAttribute('aria-expanded','false')}
+ const first=$('fromDate').value;
+ if(first&&/^\d{4}-\d{2}-\d{2}$/.test(first)){
+  const [year,month,day]=first.split('-');
+  $('openingStockHint').textContent='Gợi ý: nhập giá trị hàng còn tồn tại ngày '+day+'/'+month+'/'+year+
+   ', tức ngày bắt đầu lấy hóa đơn.';
+ }
+}
+
 const getPopupDisabled=()=>{try{return localStorage.getItem(alertPref)==='1'}catch{return false}};
 const setPopupDisabled=value=>{try{localStorage.setItem(alertPref,value?'1':'0')}catch{}};
 function filterRows(){
@@ -60,19 +77,32 @@ function totals(list){
   excluded:list.length-active.length
  };
 }
-function kAlert(stats){
- const valid=app()?.searchedBothKinds?.()&&stats.buy>0&&stats.sold/stats.buy>2;
- const ratio=stats.buy>0?stats.sold/stats.buy:null;
- $('kRatio').textContent=ratio!==null?ratio.toFixed(2):'—';
- $('kRatio').classList.toggle('warning',!!valid);
- if(!valid||getPopupDisabled())return;
+function kAlert(stats,allowPopup=true){
+ lastStats=stats;
+ const k=window.AutoTaxPeriodK?.calculate(stats.buy,stats.sold,$('openingStockInput').value);
+ const ready=app()?.searchedBothKinds?.();
+ const ratio=ready?k?.value:null;
+ $('kRatio').textContent=ratio!==null&&Number.isFinite(ratio)?ratio.toFixed(2):'—';
+ const reason={
+  'no-invoices':'Không có mua vào và bán ra: K = 1 (quy ước)',
+  'stock-blank':'Chưa nhập tồn đầu kỳ: K = 9 (quy ước)',
+  'zero-denominator':'Mẫu số bằng 0: K = 9 (quy ước)',
+  'invalid':'Tồn đầu kỳ không hợp lệ, vui lòng nhập số không âm.',
+  'calculated':'Đã tính với tồn đầu kỳ được nhập.'
+ };
+ $('kRatioSource').textContent=ready?(reason[k?.mode]||''):'Chỉ hiện khi tra cả Mua vào và Bán ra.';
+ const warn=ready&&Number.isFinite(ratio)&&ratio>2&&k.mode!=='no-invoices';
+ $('kRatio').classList.toggle('warning',!!warn);
+ if(!warn||!allowPopup||getPopupDisabled())return;
  $('disableKPopup').checked=false;
  $('kWarningText').textContent='Tổng bán ra '+money(stats.sold)+
-  ' / tổng mua vào '+money(stats.buy)+' = '+ratio.toFixed(2)+
-  ' (chỉ là Bán/Mua). K chính thức = Tổng bán ra / (Tồn trước kỳ + Tổng mua vào). Do không biết tồn trước kỳ, chưa thể xác định K thực tế. NNT vui lòng rà soát tồn đầu, đầu vào và chứng từ.';
+  ' / (Tổng mua vào '+money(stats.buy)+' + tồn đầu kỳ '+
+  (k.stock===null?'chưa nhập':money(k.stock))+') = '+ratio.toFixed(2)+
+  '. '+reason[k.mode]+' Hệ số K chỉ mang tính tham khảo và cần đối chiếu số liệu thực tế.';
  if(!$('kWarningDialog').open)$('kWarningDialog').showModal();
 }
 function render(list,warnings=[]){
+ syncOpeningStock();
  dataset=Array.isArray(list)?list.slice():[];
  checked.clear();visible=[];
  $('visibleKind').value='all';$('visibleMonth').value='';
@@ -424,7 +454,16 @@ function init(){
  $('stockMapBtn').addEventListener('click',openMapping);
  $('stockDownloadBtn').addEventListener('click',()=>void exportStock(false));
  $('stockSingleBtn').addEventListener('click',()=>void exportStock(true));
- $('disableKPopup').checked=getPopupDisabled();
+ syncOpeningStock();
+ document.querySelectorAll('input[name="kind"]').forEach(el=>el.addEventListener('change',syncOpeningStock));
+ $('fromDate').addEventListener('change',()=>{$('openingStockInput').value='';syncOpeningStock();if(lastStats)kAlert(lastStats,false)});
+ $('openingStockToggle').addEventListener('click',()=>{
+  const input=$('openingStockEditor'),now=input.hidden;
+  input.hidden=!now;$('openingStockToggle').setAttribute('aria-expanded',String(now));
+  if(now)$('openingStockInput').focus();
+ });
+ $('openingStockInput').addEventListener('input',()=>{if(lastStats)kAlert(lastStats,false)});
+  $('disableKPopup').checked=getPopupDisabled();
  $('closeKWarning').addEventListener('click',()=>{
   setPopupDisabled($('disableKPopup').checked);
   $('kWarningDialog').close();

@@ -9,7 +9,7 @@
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax V1.1.8 Web · Tra cứu và tải hóa đơn điện tử</title>
+<title>AutoTax V1.1.18 Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
 <link rel="stylesheet" href="./web/web.css?v=10">
 </head>
@@ -33,12 +33,12 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 });
 </script>
 <main class="wrap">
-  <div class="topbar"><a class="logo" href="./"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB V1.1.8</span></a>
+  <div class="topbar"><a class="logo" href="./"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB V1.1.18</span></a>
     <div class="toplinks"><a href="./">Tài khoản</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>
     <p>Tra cứu hóa đơn → Chọn hồ sơ → Xuất Excel, XML và PDF nhà phát hành</p>
-    <div class="sync"><span class="dot"></span> Dùng chung tài khoản, hồ sơ MST và quyền sử dụng với AutoTax Extension · V1.1.8</div>
+    <div class="sync"><span class="dot"></span> Dùng chung tài khoản, hồ sơ MST và quyền sử dụng với AutoTax Extension · V1.1.18</div>
   </header>
   <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
     <div class="account-line">
@@ -99,6 +99,13 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
           <label class="check"><input type="checkbox" name="kind" value="purchase" checked><span>Hóa đơn mua vào</span></label>
           <label class="check"><input type="checkbox" name="kind" value="sold"><span>Hóa đơn bán ra</span></label>
           <small class="k-hint">Cảnh báo hệ số K chỉ hoạt động khi chọn cả Mua vào và Bán ra.</small>
+          <div id="openingStockControl" class="opening-stock-control" hidden>
+            <button id="openingStockToggle" type="button" class="outline" aria-expanded="false">Nhập giá trị tồn kho đầu kỳ</button>
+            <label id="openingStockEditor" hidden for="openingStockInput">Giá trị tồn kho đầu kỳ (đồng)
+              <input id="openingStockInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Để trống: K = 9">
+            </label>
+            <small id="openingStockHint">Nhập giá trị tồn tại ngày đầu tiên của kỳ tra cứu.</small>
+          </div>
         </fieldset>
         <fieldset class="field checks"><legend>Hình thức</legend>
           <label class="check"><input type="checkbox" name="form" value="hddt" checked><span>Hóa đơn điện tử</span></label>
@@ -120,12 +127,12 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   </section>
   <section id="results" class="result-card" hidden>
     <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
-    <p class="k-description">Cảnh báo hệ số K <strong>chỉ khả dụng khi tick cả Mua vào lẫn Bán ra</strong>. K = Tổng bán ra / (Tồn trước kỳ + Tổng mua vào). Không xác định được tồn đầu nên chỉ có tính tham khảo, NNT vui lòng kiểm tra lại.</p>
+    <p class="k-description">K = Tổng bán ra / (Tồn đầu kỳ + Tổng mua vào). Nếu chưa nhập tồn kho, K mặc định 9 để tham khảo; khi cả mua vào và bán ra đều bằng 0, K = 1. Đây không phải kết luận của cơ quan Thuế.</p>
     <div class="invoice-stats">
       <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
       <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
       <div><span>Mua vào / Bán ra</span><strong id="purchaseSaleTotals">—</strong></div>
-      <div><span>Ước tính Bán / Mua (không gồm tồn đầu)</span><strong id="kRatio">—</strong></div>
+      <div><span>Hệ số K (tham khảo)</span><strong id="kRatio">—</strong><small id="kRatioSource" class="k-ratio-source"></small></div>
     </div>
     <div class="export-toolbar">
       <label for="visibleKind">Lọc hiển thị
@@ -242,6 +249,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/captcha-svg-templates.js?v=1"></script>
 <script src="./web/captcha-svg.js?v=1"></script>
 <script src="./web/issuer-portals.js?v=119"></script>
+<script src="./web/period-k.js?v=118"></script>
 <script src="./web/hddt-api.js?v=119"></script>
 <script src="./web/report.js?v=118sku"></script>
 <script src="./web/tendoo-import.js?v=2"></script>

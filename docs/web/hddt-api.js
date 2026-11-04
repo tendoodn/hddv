@@ -429,7 +429,9 @@
     const subject = txt(byName(sig, 'X509SubjectName')[0]);
     const cn = /(?:^|,)\s*CN=([^,]+)/.exec(subject)?.[1] || /(?:^|,)\s*O=([^,]+)/.exec(subject)?.[1] || '';
     return { subject, name: cn.trim(), mst: /MST:\s*(\d{10}(?:-\d{3}|\d{3})?|\d{12})/i.exec(subject)?.[1] || '',
-      time: txt(byName(sig, 'SigningTime')[0]), hasCert: !!byName(sig, 'X509Certificate')[0] };
+      time: txt(byName(sig, 'SigningTime')[0])||
+        txt(byName(sig, 'TgKy')[0])||txt(byName(sig, 'NgayKy')[0]),
+      hasCert: !!byName(sig, 'X509Certificate')[0] };
   }
   function headFromXml(doc) {
     const tc = byName(doc, 'TTChung')[0], nb = byName(doc, 'NBan')[0], nm = byName(doc, 'NMua')[0], tt = byName(doc, 'TToan')[0];
@@ -444,6 +446,10 @@
       related: lq ? { tchdon: v(lq, 'TCHDon'), khmshdon: v(lq, 'KHMSHDCLQuan'), khhdon: v(lq, 'KHHDCLQuan'), shdon: v(lq, 'SHDCLQuan'), nlap: v(lq, 'NLHDCLQuan'), gchu: v(lq, 'GChu') } : null,
       mccqt: txt(byName(doc, 'MCCQT')[0]),
       seller: signerOf(kid(ck, 'NBan')), cqtSigned: !!signerOf(kid(ck, 'CQT')), hasSignBox: !!ck,
+      // Never infer a signature date from the invoice issue date.
+      signatureTime: txt(byName(kid(ck, 'NBan'), 'SigningTime')[0])||
+        txt(byName(kid(ck, 'NBan'), 'TgKy')[0])||
+        txt(byName(kid(ck, 'NBan'), 'NgayKy')[0]),
       lookup: lookupOf(doc), msttcgp: v(tc, 'MSTTCGP'),
     };
   }
@@ -454,7 +460,9 @@
       dvtte: d.dvtte || 'VND', tgia: num(d.tgia), httt: d.thtttoan || '',
       nbmst: d.nbmst || '', nbten: d.nbten || '', nbdchi: d.nbdchi || '', nmmst: d.nmmst || '', nmten: d.nmten || d.nmtnmua || '', nmdchi: d.nmdchi || '',
       tgtcthue: num(d.tgtcthue), tgtthue: num(d.tgtthue), tgtttbso: num(d.tgtttbso), ttcktmai: num(d.ttcktmai),
-      related: null, mccqt: d.mhdon || '', seller: null, cqtSigned: false, hasSignBox: false, lookup: { code: '', link: '' },
+      related: null, mccqt: d.mhdon || '', seller: null,
+      signatureTime: String(d.nky??d.ngayKy??d.ngayky??'').trim(),
+      cqtSigned: false, hasSignBox: false, lookup: { code: '', link: '' },
       msttcgp: d.msttcgp || '',
     };
   }

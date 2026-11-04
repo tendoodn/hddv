@@ -188,3 +188,10 @@ td.audit-info{color:#c6c6db}
 .mst-picker-notice{color:#97c8d9;font-size:11px;line-height:1.5;margin-top:7px}
 .mst-picker-notice.error{color:#ff8693}
 .profile-sync-note{padding:9px 12px;border:1px solid #283744;border-radius:9px;background:#101b23;color:#b9d6e4;font-size:11px;line-height:1.5;margin-bottom:12px}
+
+/* Opening stock is requested only when the user selects both directions. */
+.opening-stock-control{display:flex;flex-direction:column;align-items:stretch;gap:9px;margin-top:6px;padding:11px;border:1px solid #42424a;border-radius:11px;background:#202025}
+.opening-stock-control .outline{align-self:flex-start}
+.opening-stock-control label{font-size:12px;color:#e2e2eb;font-weight:700}
+.opening-stock-control input{margin-top:6px;width:100%;min-height:42px;border-radius:9px;border:1px solid #68686f;background:#17171b;color:#fff;padding:8px 10px;outline:none}
+.opening-stock-control small,.k-ratio-source{display:block;font-size:11px;color:#babac6;line-height:1.45}

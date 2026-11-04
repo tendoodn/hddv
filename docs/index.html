@@ -176,13 +176,27 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 .autotax-avatar-picker{display:flex;align-items:center;gap:10px;padding:4px 0}.autotax-avatar-picker input[type=file]{font-size:11px;width:100%;max-width:245px}.autotax-avatar-picker small{font-size:10px;display:block;color:#64748b}
 .autotax-team-permissions-dialog .autotax-permission-field{padding:9px;background:#fff8f8;border:1px solid #f2d1d5;border-radius:9px}.autotax-permission-field>div{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding:5px 0}.autotax-permission-field label{display:flex;gap:8px;align-items:center}.autotax-permission-field input[type=checkbox]{width:auto;min-height:0}
 @media(max-width:480px){.autotax-welcome-copy strong{font-size:15px}.autotax-welcome-copy span{font-size:11px}.autotax-welcome img{width:43px;height:43px}.autotax-primary-nav{gap:5px}.autotax-primary-nav .autotax-tab,.autotax-primary-nav>a{font-size:11px;padding:7px}}
+
+/* Customer requested compact header tabs, signup email link and explicit MST grant */
+.portal-head-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}
+.portal-head-tools .autotax-primary-nav{margin:0;gap:4px;flex-wrap:nowrap}
+.portal-head-tools .autotax-primary-nav button{font-size:11px;padding:8px 9px;white-space:nowrap}
+.portal-account-head{flex-wrap:wrap!important}
+.autotax-signup-mail-link{display:block;background:#e5fff1;color:#065f46;padding:10px;border-radius:9px;border:1px solid #59c7a1;font-size:12px;margin-top:8px;text-decoration:underline}
+.autotax-signup-mail-link[hidden]{display:none!important}
+.mst-auto-grant-row{display:flex!important;align-items:center;gap:10px;border:1px solid #b4dcc3;background:#f0fff5;border-radius:9px;padding:9px;font-size:13px}
+.mst-auto-grant-row input{flex:0 0 auto;width:18px;height:18px;min-height:auto}
+.web-search-blink{display:inline-flex;justify-content:center;align-items:center;border:1px solid #15803d!important;background:#ecfdf5!important;color:#166534!important;animation:autotaxWebPulse 2.2s ease-in-out infinite}
+@keyframes autotaxWebPulse{50%{box-shadow:0 0 0 5px rgba(34,197,94,.18),0 0 15px rgba(34,197,94,.3)}}
+@media(prefers-reduced-motion:reduce){.web-search-blink{animation:none}}
+@media(max-width:640px){.portal-head-tools{width:100%;justify-content:flex-end}.portal-head-tools .autotax-primary-nav button{font-size:10px;padding:7px 6px}.portal-header-actions{flex-wrap:wrap}.portal-header-actions a{white-space:normal;font-size:11px}}
 </style>
 </head>
 <body>
 <main class="wrap">
 <header>
   <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.18</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a id="webSearchLink" class="portal-admin-link portal-header-download web-search-blink" href="./web.html">VÀO TRA CỨU PHIÊN BẢN WEB</a><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
 </header>
 <h1>Tài khoản AutoTax</h1>
 
@@ -193,6 +207,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  <label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
  <div class="actions"><button id="loginBtn" type="submit">Đăng nhập</button><button id="signupBtn" class="secondary" type="button">Tạo tài khoản</button><button id="resetBtn" class="secondary" type="button">Quên mật khẩu</button><a class="account-link-btn" href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer">Liên hệ Admin cấp lại mật khẩu · Zalo</a></div>
  <div id="authMessage" class="notice" hidden></div>
+ <a id="signupEmailSent" class="autotax-signup-mail-link" href="https://mail.google.com/mail/u/0/#all" target="_blank" rel="noopener noreferrer" hidden>Đã gửi yêu cầu đăng ký. Hãy kiểm tra email để xác minh tài khoản trước khi đăng nhập. Thư có thể mang tiêu đề Supabase Auth; vui lòng kiểm tra cả mục Spam. Nhấn vào đây để mở Gmail.</a>
  </form>
 </section>
 <dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
@@ -233,7 +248,12 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
     <img id="accountAvatar" src="./favicon.svg?v=20261102b" alt="Ảnh đại diện" width="52" height="52">
     <div class="autotax-welcome-copy"><strong id="accountGreeting">Xin chào bạn !!!</strong><span>Chúc bạn có một ngày mới tốt lành.</span><span id="userEmail" hidden></span></div>
    </div>
-   <div class="autotax-settings-wrap">
+   <div class="portal-head-tools">
+    <nav class="autotax-account-tabs autotax-primary-nav" aria-label="Trang tài khoản">
+      <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Trang chủ</button>
+      <button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button>
+    </nav>
+    <div class="autotax-settings-wrap">
     <button id="accountSettingsToggle" type="button" class="autotax-settings-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="accountSettingsMenu" aria-label="Cài đặt tài khoản" title="Cài đặt tài khoản">⚙</button>
     <div id="accountSettingsMenu" class="autotax-settings-menu" hidden>
      <button type="button" id="accountEditProfile">Cập nhật thông tin</button>
@@ -241,13 +261,9 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
      <button type="button" id="accountGiftMenu">🎁 Quà tặng</button>
      <button type="button" id="accountLogoutMenu">Đăng xuất</button>
     </div>
+    </div>
    </div>
   </div>
-  <nav class="autotax-account-tabs autotax-primary-nav" aria-label="Trang tài khoản">
-   <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Trang chủ</button>
-   <button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button>
-   <a id="webSearchLink" class="account-link-btn web-search-blink" href="./web.html">VÀO TRA CỨU PHIÊN BẢN WEB</a>
-  </nav>
   <div class="autotax-hidden-actions" hidden>
    <a id="extensionDownloadBtn" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk">Tải Extension Chrome</a>
    <button id="feedbackOpen" type="button">Phản hồi</button>
@@ -327,12 +343,6 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 
 
 
- <section id="customerInbox" class="panel">
-  <div class="row"><h2>Tin nhắn từ quản trị</h2>
-   <button id="feedbackInboxRefresh" type="button" class="secondary">Làm mới hộp thư</button></div>
-  <p class="muted">Tin trả lời từ quản trị sẽ tự biến mất sau 7 ngày. Bạn có thể xóa tin ngay sau khi đọc.</p>
-  <div id="feedbackInboxList" aria-live="polite">Đang tải hộp thư…</div>
- </section>
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
   <p id="paymentInfo" class="notice"></p>
@@ -358,6 +368,12 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
   <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
  </div>
+ <section id="customerInbox" class="panel">
+  <div class="row"><h2>Tin nhắn từ quản trị</h2>
+   <button id="feedbackInboxRefresh" type="button" class="secondary">Làm mới hộp thư</button></div>
+  <p class="muted">Tin trả lời từ quản trị sẽ tự biến mất sau 7 ngày. Bạn có thể xóa tin ngay sau khi đọc.</p>
+  <div id="feedbackInboxList" aria-live="polite">Đang tải hộp thư…</div>
+ </section>
 </section>
 <dialog id="mstProfileDialog" class="payment-success-modal" aria-labelledby="mstProfileTitle">
  <h2 id="mstProfileTitle">Thêm hồ sơ MST</h2>
@@ -370,6 +386,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   <input id="mstProfilePassword" type="password" maxlength="256" autocomplete="off" placeholder="Mật khẩu (chỉ lưu mã hóa trên thiết bị này)">
   <label for="mstProfilePasswordDate">Ngày nhập / sửa mật khẩu</label>
   <input id="mstProfilePasswordDate" type="text" readonly placeholder="Tự cập nhật khi lưu mật khẩu">
+  <label class="mst-auto-grant-row" for="mstProfileGrantOnCreate"><input id="mstProfileGrantOnCreate" type="checkbox"> Tick để thêm vào danh sách cho phép nếu dùng gói MST</label>
   <small>Nhắc đổi mật khẩu sau 80 ngày. Không thay đổi ngày khi chỉ sửa tên NNT. Nếu cổng Thuế không cung cấp ngày đổi gần nhất, hệ thống tính từ ngày bạn lưu mật khẩu.</small>
   <div class="actions">
    <button id="mstProfileSave" type="submit">Lưu hồ sơ</button>

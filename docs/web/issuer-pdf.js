@@ -26,7 +26,7 @@ function providerInstructions(name,link){
  if(/misa|meinvoice/i.test(name))
   return 'MISA meInvoice: dùng mã tra cứu trên hóa đơn, nhập mã xác nhận tại cổng MISA và tải PDF từ trang chính thức.';
  if(/viettel|sinvoice/i.test(name))
-  return 'Viettel SInvoice: chuẩn bị MST bên bán, số hóa đơn, ngày lập, mã bí mật; điền mã xác nhận tại cổng Viettel.';
+  return 'Viettel SInvoice: nhập MST bên bán và Mã số bí mật, kéo thanh trượt xác minh hình ảnh, bấm Tìm kiếm, sau đó chọn nút Tải PDF/ZIP trên chính cổng Viettel.';
  if(/vnpt/i.test(name))
   return 'VNPT Invoice: dùng đúng đường dẫn cổng được đơn vị bán cung cấp, nhập mã tra cứu và mã xác nhận để tải PDF.';
  return 'Nếu cổng yêu cầu mã xác nhận hoặc đăng nhập, xác thực trên chính trang nhà phát hành rồi tải PDF xuống máy.';

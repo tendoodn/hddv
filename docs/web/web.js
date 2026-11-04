@@ -634,8 +634,10 @@ async function exportFile(kind){
   if(kind==='all'){
    const warnings=[];
    await window.AutoTaxZipExport.batch(async()=>{
-    for(const type of ['excel','xml','html','pdf']){
-     try{await exportFileCore(type)}catch(e){warnings.push(type+': '+e.message)}
+    for(const type of ['excel','xml','html','pdfTax','pdf']){
+     const point=window.AutoTaxZipExport.mark();
+     try{await exportFileCore(type)}
+     catch(e){window.AutoTaxZipExport.rollback(point);warnings.push(type+': '+e.message)}
     }
    },'TatCa');
    if(warnings.length)show('ZIP đã tạo; thiếu dữ liệu ở định dạng: '+warnings.join('; '),true);
@@ -647,6 +649,7 @@ async function exportFile(kind){
 window.WebInvoiceApp={
  getRows:()=>rows,
  getMst:()=>govtMst||currentSearchMst(),
+ getPeriod:()=>({from:readVnDate('fromDate'),to:readVnDate('toDate')}),
  getAccount:()=>account,
  getClient:()=>client,
  refreshAccount,

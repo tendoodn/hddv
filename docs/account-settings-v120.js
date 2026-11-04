@@ -17,6 +17,7 @@ async function render(){
  $('accountAvatar').src=avatarData;
  $('accountAvatarPreview').src=avatarData;
  $('accountDisplayName').value=nameFrom(user);
+ $('accountProfileEmail').value=user.email||'';
 }
 function hideMenu(){menu.hidden=true;toggle.setAttribute('aria-expanded','false')}
 function showProfile(){

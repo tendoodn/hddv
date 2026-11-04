@@ -93,6 +93,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 
 .portal-mode-toolbar{margin:12px 0;border-top:1px solid var(--tendoo-line);padding-top:10px}
 #modeSection{display:grid;grid-template-columns:auto minmax(130px,250px);align-items:center;gap:6px 12px}
+#modeSection[hidden]{display:none!important}
 #modeSection label{margin:0;font-weight:750;color:#9f1239}
 #modeSection p{grid-column:1/-1;font-size:12px;margin:0 0 4px}
 .portal-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
@@ -207,7 +208,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  <label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
  <div class="actions"><button id="loginBtn" type="submit">Đăng nhập</button><button id="signupBtn" class="secondary" type="button">Tạo tài khoản</button><button id="resetBtn" class="secondary" type="button">Quên mật khẩu</button><a class="account-link-btn" href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer">Liên hệ Admin cấp lại mật khẩu · Zalo</a></div>
  <div id="authMessage" class="notice" hidden></div>
- <a id="signupEmailSent" class="autotax-signup-mail-link" href="https://mail.google.com/mail/u/0/#all" target="_blank" rel="noopener noreferrer" hidden>Đã gửi yêu cầu đăng ký. Hãy kiểm tra email để xác minh tài khoản trước khi đăng nhập. Thư có thể mang tiêu đề Supabase Auth; vui lòng kiểm tra cả mục Spam. Nhấn vào đây để mở Gmail.</a>
+
  </form>
 </section>
 <dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
@@ -217,7 +218,8 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   <label for="signupName">Tên người dùng</label>
   <input id="signupName" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Họ tên hoặc tên hiển thị">
   <label for="signupEmail">Email</label>
-  <input id="signupEmail" type="email" required autocomplete="email" placeholder="email@example.com">
+  <input id="signupEmail" type="email" required autocomplete="email" placeholder="ten@gmail.com hoặc ten@hotmail.com">
+  <small>Chỉ hỗ trợ đăng ký Gmail hoặc Hotmail.</small>
   <label for="signupPassword">Mật khẩu</label>
   <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
   <label for="signupPasswordConfirm">Nhập lại mật khẩu</label>
@@ -444,10 +446,10 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=124mst1"></script>
+<script src="./customer.js?v=125signup1"></script>
 <script src="./account-settings-v120.js?v=2"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
-<script src="./team-v118.js?v=124team1"></script>
+<script src="./team-v118.js?v=125mode1"></script>
 <script src="./extension-link-v118.js?v=1119header1"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>

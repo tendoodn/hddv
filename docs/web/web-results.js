@@ -147,13 +147,16 @@ function renderVisible(){
   actionGroup.className='invoice-row-actions';
   const button=document.createElement('button');button.type='button';
   button.className='table-detail-btn';button.dataset.detail=keyOf(r);
-  button.textContent='Xem chi tiết';actionGroup.append(button);
+  button.textContent='Chi tiết';actionGroup.append(button);
+  const preview=document.createElement('button');preview.type='button';
+  preview.className='table-detail-btn table-pdf-preview-btn';preview.dataset.previewPdf=keyOf(r);
+  preview.textContent='Xem PDF';actionGroup.append(preview);
   const audit=document.createElement('button');audit.type='button';
   audit.className='table-detail-btn table-audit-btn';audit.dataset.audit=keyOf(r);
-  audit.textContent='Kiểm tra hợp lệ';actionGroup.append(audit);
+  audit.textContent='Tính hợp lệ';actionGroup.append(audit);
   const issuer=document.createElement('button');issuer.type='button';
   issuer.className='table-detail-btn table-issuer-btn';
-  issuer.dataset.issuer=keyOf(r);issuer.textContent='PDF nguồn';actionGroup.append(issuer);
+  issuer.dataset.issuer=keyOf(r);issuer.textContent='PDF Gốc';actionGroup.append(issuer);
   action.append(actionGroup);tr.append(action);body.append(tr);
  }
  if(filterRows().length>1500)app()?.show('Đang hiển thị 1.500 dòng đầu; xuất tất cả sẽ bao gồm toàn bộ hóa đơn khớp bộ lọc.',true);
@@ -401,6 +404,11 @@ function init(){
   return;
  });
  $('resultRows').addEventListener('click',event=>{
+  const button=event.target.closest('[data-preview-pdf]');if(!button)return;
+  const row=dataset.find(r=>keyOf(r)===button.dataset.previewPdf);
+  if(row)void window.WebPdfPreview?.open(row);
+ });
+ $('resultRows').addEventListener('click',event=>{
   const button=event.target.closest('[data-audit]');if(!button)return;
   const row=dataset.find(r=>keyOf(r)===button.dataset.audit);
   if(row)void window.WebAudit?.open(row);
@@ -470,4 +478,87 @@ function init(){
 }
 window.WebResults={render,exportRows:pickedRows,filteredRows:filterRows,exportSuffix,init};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+/* 1.1.20a: construct the preview modal at startup; no template dependency. */
+(()=>{
+ const d=document.createElement('dialog');d.id='invoicePdfPreviewDialog';d.className='invoice-pdf-preview';
+ d.setAttribute('aria-labelledby','invoicePdfPreviewTitle');
+ const toolbar=document.createElement('div');toolbar.className='invoice-pdf-toolbar';
+ const title=document.createElement('div');
+ const heading=document.createElement('strong');heading.id='invoicePdfPreviewTitle';heading.textContent='Thông tin hóa đơn';
+ const meta=document.createElement('small');meta.id='invoicePdfPreviewMeta';meta.textContent='Bản dựng từ dữ liệu Thuế · Không phải PDF gốc';
+ title.append(heading,meta);toolbar.append(title);
+ const actions=document.createElement('div');actions.className='invoice-pdf-buttons';
+ const download=document.createElement('button');download.id='downloadInvoicePdfPreview';download.type='button';download.className='outline';download.disabled=true;download.textContent='↓ Tải PDF';
+ const close=document.createElement('button');close.id='closeInvoicePdfPreview';close.type='button';close.className='outline';close.textContent='✕';close.setAttribute('aria-label','Đóng');
+ actions.append(download,close);toolbar.append(actions);d.append(toolbar);
+ const status=document.createElement('p');status.id='invoicePdfPreviewStatus';status.setAttribute('role','status');status.textContent='Đang dựng PDF…';d.append(status);
+ const viewer=document.createElement('iframe');viewer.id='invoicePdfPreviewFrame';viewer.title='Thông tin hóa đơn PDF';viewer.referrerPolicy='no-referrer';viewer.hidden=true;d.append(viewer);
+ document.body.append(d);
+})();
+
+/* AutoTax V1.1.20a — local PDF viewer; never labels rebuilt PDFs as originals. */
+(()=>{
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ let generation=0,url='',bytes=null,filename='';
+ function clear(){
+  generation++;
+  const frame=$('invoicePdfPreviewFrame');
+  if(frame){frame.removeAttribute('src');frame.hidden=true}
+  if(url)URL.revokeObjectURL(url);
+  url='';bytes=null;filename='';
+  const download=$('downloadInvoicePdfPreview');if(download)download.disabled=true;
+ }
+ async function open(row){
+  const dialog=$('invoicePdfPreviewDialog'),frame=$('invoicePdfPreviewFrame');
+  const status=$('invoicePdfPreviewStatus'),download=$('downloadInvoicePdfPreview');
+  const meta=$('invoicePdfPreviewMeta');
+  if(!dialog||!frame||!status||!download||!meta||!row)return;
+  clear();
+  const request=++generation;
+  status.hidden=false;status.textContent='Đang dựng bản thể hiện PDF…';
+  meta.textContent='Bản dựng từ dữ liệu Thuế · Không phải PDF gốc';
+  if(!dialog.open)dialog.showModal();
+  try{
+   const app=window.WebInvoiceApp;
+   if(!app?.fetchDetail||!window.Pdf?.buildInvoicePdf)throw Error('Bộ dựng PDF chưa khởi tạo.');
+   const detail=await app.fetchDetail(row);
+   if(request!==generation||!dialog.open)return;
+   const lookup=window.HDDT?.originalLookup?.(row,detail?.head)||{};
+   const output=await window.Pdf.buildInvoicePdf(row,detail,lookup);
+   if(request!==generation||!dialog.open)return;
+   if(!(output instanceof Uint8Array)||output.length<5||
+    String.fromCharCode(...output.subarray(0,5))!=='%PDF-')
+    throw Error('Không dựng được bản PDF hợp lệ.');
+   bytes=output;
+   filename=[row.nbmst||'MST',row.khhdon||'',row.shdon||'']
+    .filter(Boolean).join('_').replace(/[^\w.-]/g,'_')+'_BAN_DUNG.pdf';
+   url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+   frame.src=url+'#view=FitH';frame.hidden=false;
+   status.hidden=true;download.disabled=false;
+   meta.textContent=[row.khhdon,row.shdon].filter(Boolean).join(' / ')+' · Bản dựng, không phải PDF gốc';
+  }catch(error){
+   if(request===generation&&dialog.open){
+    status.textContent='Không xem được PDF: '+(error.message||String(error));
+    status.hidden=false;
+   }
+  }
+ }
+ function init(){
+  const dialog=$('invoicePdfPreviewDialog'),close=$('closeInvoicePdfPreview');
+  const download=$('downloadInvoicePdfPreview');if(!dialog||!close||!download)return;
+  close.addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('close',clear);
+  download.addEventListener('click',()=>{
+   if(!bytes||!url)return;
+   const a=document.createElement('a');a.href=url;a.download=filename;
+   document.body.append(a);a.click();a.remove();
+  });
+  window.addEventListener('pagehide',clear);
+ }
+ window.WebPdfPreview={open};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+ else init();
 })();

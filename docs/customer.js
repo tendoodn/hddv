@@ -153,7 +153,7 @@ async function refresh(){
   void refreshAdminVisibility(session.user.id);
   void refreshExtensionDownloadLink();
   $("userEmail").textContent=session.user.email||"";
-  const license=await rpc("addon_my_entitlements");
+  const license=await rpc("autotax_my_entitlements_v118");
   state=license;
   const invoice=license.packages?.invoice||{};
   const mst=license.packages?.mst||{};
@@ -166,7 +166,8 @@ async function refresh(){
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
   $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
-  $("modeSection").hidden=!(invTotal>0&&mstCapacity>0);
+  const teamInvoice=Number(license.team_invoice_remaining||0),teamMst=Number(license.team_mst_count||0);
+  $("modeSection").hidden=!((invRemaining>0||teamInvoice>0||license.team_invoice_available||license.can_reread_charged_invoices)&&(mstCapacity>0||teamMst>0));
   $("usageMode").value=selected;
   $("mstAllowControls").hidden=selected!=="mst";
   setMstGrantUnlocked(false);
@@ -574,7 +575,7 @@ $("redeemBtn").addEventListener("click",()=>action("redeemBtn",async()=>{
 }));
 $("usageMode").addEventListener("change",async e=>{
  const selected=e.target.value;
- try{await rpc("addon_set_usage_mode",{p_mode:selected});await refresh()}
+ try{await rpc("autotax_set_usage_mode_v118",{p_mode:selected});await refresh()}
  catch(error){showMessage(prettyError(error),true);e.target.value=state?.mode||"mst"}
 });
 $("closePaymentBtn").addEventListener("click",closePayment);

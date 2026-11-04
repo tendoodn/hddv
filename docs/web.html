@@ -124,6 +124,9 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
       <div class="privacy">Mật khẩu Thuế chỉ được sử dụng để đăng nhập cổng Thuế qua kênh bảo mật. Trên thiết bị này, mật khẩu được mã hóa bằng AES-GCM với khóa không xuất được khỏi IndexedDB và tách biệt theo tài khoản. Mật khẩu không được đồng bộ lên Supabase; thiết bị khác cần nhập lại lần đầu. Kho cũ có mật khẩu riêng không bị xóa tự động. Nếu cổng Thuế báo sai mật khẩu, AutoTax sẽ hiện cảnh báo và yêu cầu nhập lại. CAPTCHA chỉ được xử lý khi cổng trả dữ liệu hợp lệ.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
+      <button id="xmlContributionBtn" type="button" class="outline" title="XML được gửi qua phiên AutoTax và lưu trong kho riêng tư; không đăng công khai">Đóng góp XML</button>
+      <input id="xmlContributionInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>
+      <small>Đóng góp XML tự nguyện để hệ thống nhận dạng nhà phát hành. Tệp lưu kín trên Supabase; chỉ đồng bộ Drive sau khi quyền riêng tư của thư mục XML được xác minh.</small>
       <small>Chọn thư mục lưu lần đầu khi bấm Tìm kiếm. Các lần sau dùng lại thư mục đã chọn khi trình duyệt còn cấp quyền.</small>
       <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" aria-hidden="true"></span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
     </form>

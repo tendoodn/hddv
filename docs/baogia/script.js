@@ -1,5 +1,4 @@
-const viNumberFormatter = new Intl.NumberFormat('vi-VN');
-const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
+const fmt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
     const THRESHOLD = 500000000; 
     document.addEventListener('input', function(e) {
         if(e.target.classList.contains('currency-input')) {
@@ -32,13 +31,13 @@ const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
     const menu = document.getElementById("moreMenu");
     menu.classList.toggle("show");
     }
-    document.addEventListener('click', function(event) {
+    window.onclick = function(event) {
     const menu = document.getElementById("moreMenu");
     if (menu && menu.classList.contains('show')) {
         if (!event.target.closest('.tabs-more')) {
             menu.classList.remove('show');
         }
-    }});
+    }}
     //banggia
     function switchInnerTab(tabId, btn) {
         document.querySelectorAll('.inner-tab-content').forEach(content => {content.style.display = 'none';});
@@ -58,9 +57,9 @@ const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
     function renderIndustryFields() {
         const count = parseInt(document.getElementById('industry_count').value);
         const container = document.getElementById('multi_industry_container');
-        const fields = [];
+        container.innerHTML = '';
         for(let i=1; i<=count; i++) {
-            fields.push(`
+            container.innerHTML += `
                 <div style="border: 1px solid #eee; border-radius:12px; padding:15px; margin-bottom:15px; background:#fff;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom:10px;">
                         <div>
@@ -90,9 +89,8 @@ const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
                         </div>
                     </div>
                 </div>
-            `);
+            `;
         }
-        container.innerHTML = fields.join('');
         calcTax();
     }
     function toggleIndustryCustom(i) {
@@ -534,12 +532,12 @@ document.addEventListener('click', function (e) {
 }, true);
 
 // Đóng khi bấm ra ngoài vùng trắng
-document.addEventListener('click', function(event) {
+window.onclick = function(event) {
     const modal = document.getElementById('productModal');
     if (event.target == modal) {
         closeModal();
     }
-});
+}
    
 
 //tinhgia
@@ -590,21 +588,3 @@ function calculate() {
 function toggleDropdown() {
     document.getElementById("moreMenu").classList.toggle("show");
 }
-
-// Keep the tax calculator available through the footer link without showing its top tab.
-function openTaxFromFooter() {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    const taxTab = document.getElementById('tab2');
-    if (taxTab) taxTab.classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-document.getElementById('tax-footer-link')?.addEventListener('click', function(event) {
-    event.preventDefault();
-    if (location.hash !== '#tinh-thue') history.pushState(null, '', '#tinh-thue');
-    openTaxFromFooter();
-});
-window.addEventListener('hashchange', function() {
-    if (location.hash === '#tinh-thue') openTaxFromFooter();
-});
-if (location.hash === '#tinh-thue') openTaxFromFooter();

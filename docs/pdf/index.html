@@ -194,7 +194,8 @@ function magicScanCanvas(inputCanvas){
    const normalized=lum*245/localBg;let adjusted=clamp((normalized-130)*1.42+130,0,255);
    if(adjusted>175)adjusted=clamp(adjusted+(adjusted-175)*.16,0,255);
    const saturation=Math.max(r,g,b)-Math.min(r,g,b);
-   const chroma=saturation>18&&lum<200?1.12:saturation>30?.48:.06;
+   // Nền giấy hơi vàng/xám phải trở về gần trắng; chỉ giữ độ bão hòa cho mực màu rõ rệt.
+   const chroma=saturation>35&&lum<205?1.10:saturation>50?.48:.045;
    pix[k]=clamp(adjusted+(r-lum)*chroma,0,255);
    pix[k+1]=clamp(adjusted+(g-lum)*chroma,0,255);
    pix[k+2]=clamp(adjusted+(b-lum)*chroma,0,255);

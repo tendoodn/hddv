@@ -1,4 +1,4 @@
-// AutoTax Web PDF renderer adapter: same engine as Extension, fonts loaded from public website runtime assets.
+// AutoTax Web PDF renderer adapter: same engine as Extension, fonts fetched from the repository's public raw assets.
 // Tự dựng PDF bản thể hiện hóa đơn ngay trên máy từ dữ liệu của cổng (XML gốc, hoặc JSON chi tiết với HĐ không mã).
 // Không phải PDF gốc của nhà cung cấp HĐĐT (cần captcha ở cổng tra cứu của họ) và không gửi dữ liệu đi đâu.
 // Không thư viện ngoài: tự ghi PDF 1.7, nhúng font Roboto rút gọn (src/content/fonts, tạo bằng scripts/build-pdf-font.py)
@@ -256,7 +256,8 @@
       nmhvt: v(nm, 'HVTNMHang'), nmstk: [v(nm, 'STKNHang'), v(nm, 'TNHang')].filter(Boolean).join(' – '),
       chu: v(tt, 'TgTTTBChu'), ttcktmai: nz(v(tt, 'TTCKTMai')),
       rates: [...(one('THTTLTSuat', tt)?.children || [])].map((x) => ({ tsuat: v(x, 'TSuat'), thtien: nz(v(x, 'ThTien')), tthue: nz(v(x, 'TThue')) })),
-      msttcgp: v(tc, 'MSTTCGP'),
+      msttcgp: v(tc, 'MSTTCGP'), nganhang: v(nb, 'TNHang'),
+      nmsdt: v(nm, 'SDThoai'), nmcccd: v(nm, 'CCCD'), orderNo: v(tc, 'SoDonHang'),
     };
   }
   function fromDetail(d) {
@@ -264,7 +265,8 @@
       title: d.thdon || '', stk: [d.nbstkhoan, d.nbtnhang].filter(Boolean).join(' – '), nbsdt: d.nbsdthoai || '', nbemail: d.nbdctdtu || '',
       nmhvt: d.nmtnmua || '', nmstk: [d.nmstkhoan, d.nmtnhang].filter(Boolean).join(' – '),
       chu: d.tgtttbchu || '', ttcktmai: nz(d.ttcktmai),
-      rates: (d.thttltsuat || []).map((x) => ({ tsuat: x.tsuat, thtien: nz(x.thtien), tthue: nz(x.tthue) })), msttcgp: d.msttcgp || '',
+      rates: (d.thttltsuat || []).map((x) => ({ tsuat: x.tsuat, thtien: nz(x.thtien), tthue: nz(x.tthue) })), msttcgp: d.msttcgp || '', nganhang: d.nbtnhang || '',
+      nmsdt: d.nmsdthoai || '', nmcccd: d.nmcccd || '', orderNo: d.sodonhang || '',
     };
   }
 
@@ -283,20 +285,23 @@
 
     // "Nhãn (Label): giá trị" – giá trị ngắt dòng trong phần còn lại; nhãn quá dài thì giá trị xuống dòng
     const field = (x0, y, w, vn, en, value, opt = {}) => {
-      if (value === null || value === undefined || value === '') return 0;
+      // Keep labels on the paper even if the issuer omitted the value.
       const size = opt.size || 9.5;
       const lw = doc.runs(x0, y, [{ t: `${vn} ` }, ...(en ? [{ t: `(${en})`, italic: true }] : []), { t: ': ' }], { size });
       const vx = lw > w * 0.6 ? x0 + 12 : x0 + lw, vy = lw > w * 0.6 ? y + size * 1.3 : y;
-      return vy - y + doc.para(vx, vy, String(value), x0 + w - vx, { size, bold: opt.bold, color: opt.color });
+      return vy - y + doc.para(vx, vy, String(value ?? ''), x0 + w - vx, { size, bold: opt.bold, color: opt.color });
     };
+    const isVatLayout = mau === '1' || /giá trị gia tăng/i.test(x.title || '');
+    const isSalesLayout = mau === '2' || row.form === 'mtt' || /MTT$/i.test(khhdon || '');
+    const bilingual = (text) => isVatLayout ? text : '';
     const rule = (y) => doc.line(M, y, W - M, y);
 
     // --- Phần đầu: tiêu đề giữa, ký hiệu / số bên phải ---
     const head = () => {
       const rw = 150, tw = CW - 2 * rw, tx = X0 + rw;
       let y = doc.y + 4;
-      const isVat = mau === '1' || /giá trị gia tăng/i.test(x.title || '');
-      const isSales = mau === '2' || row.form === 'mtt' || /MTT$/i.test(khhdon || '');
+      const isVat = isVatLayout;
+      const isSales = isSalesLayout;
       const title = isVat ? 'HÓA ĐƠN GIÁ TRỊ GIA TĂNG' : isSales ? 'HÓA ĐƠN BÁN HÀNG' : (x.title || TITLES[mau] || 'HÓA ĐƠN').toUpperCase();
       y += doc.para(tx, y, title, tw, { size: 15, bold: true, align: 'center', color: BLUE });
       const en = isVat ? 'VAT INVOICE' : (isSales ? '' : TITLES_EN[mau]);
@@ -331,27 +336,39 @@
     };
     head();
 
-    // --- Người bán ---
-    doc.y += field(X0, doc.y, CW, 'Đơn vị bán hàng', 'Seller', h.nbten || row.nbten, { bold: true, size: 10.5 }) + 1;
-    doc.y += field(X0, doc.y, CW, 'Mã số thuế', 'Tax code', h.nbmst || row.nbmst, { bold: true }) + 1;
-    doc.y += field(X0, doc.y, CW, 'Địa chỉ', 'Address', h.nbdchi) + 1;
+    // --- Người bán và người mua: keep every label from the two reference templates ---
     const half = (CW - 12) / 2;
     const pair = (a, b) => {
-      const ha = a ? field(X0, doc.y, b?.[2] ? half : CW, ...a) : 0;
-      const hb = b?.[2] ? field(a?.[2] ? X0 + half + 12 : X0, doc.y, a?.[2] ? half : CW, ...b) : 0;
-      doc.y += Math.max(ha, hb) + (ha || hb ? 1 : 0);
+      const ha = a ? field(X0, doc.y, half, ...a) : 0;
+      const hb = b ? field(X0 + half + 12, doc.y, half, ...b) : 0;
+      doc.y += Math.max(ha, hb) + 2;
     };
-    pair(['Điện thoại', 'Tel', x.nbsdt], ['Email', '', x.nbemail]);
-    doc.y += field(X0, doc.y, CW, 'Số tài khoản', 'Account No.', x.stk) + 1;
+    doc.y += field(X0, doc.y, CW, 'Đơn vị bán hàng', bilingual('Seller'), h.nbten || row.nbten, { bold: true, size: 10.5 }) + 2;
+    doc.y += field(X0, doc.y, CW, 'Mã số thuế', bilingual('Tax code'), h.nbmst || row.nbmst, { bold: true }) + 2;
+    doc.y += field(X0, doc.y, CW, 'Địa chỉ', bilingual('Address'), h.nbdchi || row.nbdchi) + 2;
+    pair(['Điện thoại', bilingual('Tel'), x.nbsdt || h.nbsdthoai || row.nbsdthoai],
+         ['Email', '', x.nbemail || h.nbdctdtu || row.nbdctdtu]);
+    pair(['Số tài khoản', bilingual('A/C No.'), x.stk],
+         ['Ngân hàng', '', x.nganhang || '']);
     doc.y += 4; rule(doc.y); doc.y += 6;
 
-    // --- Người mua ---
-    doc.y += field(X0, doc.y, CW, 'Họ tên người mua hàng', 'Buyer', x.nmhvt) + 1;
-    doc.y += field(X0, doc.y, CW, 'Tên đơn vị', 'Company name', h.nmten || row.nmten, { bold: true }) + 1;
-    doc.y += field(X0, doc.y, CW, 'Mã số thuế', 'Tax code', h.nmmst || row.nmmst, { bold: true }) + 1;
-    doc.y += field(X0, doc.y, CW, 'Địa chỉ', 'Address', h.nmdchi) + 1;
-    pair(['Hình thức thanh toán', 'Payment method', h.httt || row.httt], ['Số tài khoản', 'Account No.', x.nmstk]);
-    if (unit !== 'VND') pair(['Đồng tiền thanh toán', 'Currency', unit], ['Tỷ giá', 'Exchange rate', fmt(h.tgia || row.tgia)]);
+    if (isVatLayout) {
+      doc.y += field(X0, doc.y, CW, 'Họ tên người mua hàng', "Buyer's fullname", x.nmhvt) + 2;
+      doc.y += field(X0, doc.y, CW, 'Tên đơn vị', "Company's name", h.nmten || row.nmten) + 2;
+      doc.y += field(X0, doc.y, CW, 'Địa chỉ', 'Address', h.nmdchi || row.nmdchi) + 2;
+      doc.y += field(X0, doc.y, CW, 'Mã số thuế', 'Tax code', h.nmmst || row.nmmst) + 2;
+      doc.y += field(X0, doc.y, CW, 'Hình thức thanh toán', 'Payment method', h.httt || row.httt) + 2;
+      doc.y += field(X0, doc.y, CW, 'Căn cước công dân', 'Identity card', x.nmcccd || '') + 2;
+      doc.y += field(X0, doc.y, CW, 'Số đơn hàng', 'Text field', x.orderNo || '') + 2;
+    } else {
+      doc.y += field(X0, doc.y, CW, 'Tên khách hàng', '', x.nmhvt || h.nmten || row.nmten || 'Người mua không cung cấp thông tin') + 2;
+      doc.y += field(X0, doc.y, CW, 'Tên đơn vị', '', h.nmten || row.nmten || '') + 2;
+      doc.y += field(X0, doc.y, CW, 'Mã số thuế', '', h.nmmst || row.nmmst || '') + 2;
+      doc.y += field(X0, doc.y, CW, 'Địa chỉ', '', h.nmdchi || row.nmdchi || '') + 2;
+      doc.y += field(X0, doc.y, CW, 'Điện thoại', '', x.nmsdt || '') + 2;
+      doc.y += field(X0, doc.y, CW, 'Hình thức thanh toán', '', h.httt || row.httt || '') + 2;
+    }
+    if (unit !== 'VND') pair(['Đồng tiền thanh toán', bilingual('Currency'), unit], ['Tỷ giá', bilingual('Exchange rate'), fmt(h.tgia || row.tgia)]);
     doc.y += 6;
 
     // --- Bảng hàng hóa: 1 thuế suất → 6 cột (thuế ghi ở phần tổng), nhiều thuế suất → 8 cột ---
@@ -488,7 +505,7 @@
     }
     doc.y += 12;
 
-    // --- Chữ ký: kiểu trình bày theo mẫu, chỉ xác nhận khi đã kiểm tra mật mã ---
+    // --- Chữ ký: bản thể hiện theo mẫu nhà phát hành, không giả mạo kết quả xác thực ---
     const sw = CW / 2;
     for (const [i, vn, en] of [[0, 'Người mua hàng', 'Buyer'], [1, 'Người bán hàng', 'Seller']]) {
       const sx = X0 + i * sw;
@@ -498,26 +515,32 @@
     }
     let sy = doc.y + 42;
     const sg = h.seller;
-    // Chỉ đọc chứng thư/SigningTime không đủ xác nhận chữ ký thực sự hợp lệ.
+    // X509SubjectName và SigningTime chỉ chứng minh XML có thông tin ký;
+    // "Signature valid" chỉ có khi một bộ xác thực mật mã đáng tin đã đặt verified=true.
     const signatureVerified = sg?.verified === true ||
       sg?.verification?.valid === true || sg?.validation?.status === 'valid';
     const GREEN = '0.0 0.62 0.12', NEUTRAL = '0.37 0.37 0.37';
-    const markColor = signatureVerified ? GREEN : NEUTRAL;
+    const markColor = GREEN;
     const bw = Math.min(242, sw - 5), bx = X0 + sw + (sw - bw) / 2;
-    const dateOfSign = sg?.time ? dmy(sg.time) : null;
-    const clock = sg?.time ? /(?:T| )(\d{2}:\d{2})(?::\d{2})?/.exec(String(sg.time))?.[1] : '';
+    const sourceTime = sg?.time || h.signatureTime || '';
+    const displayedDate = sourceTime || h.nlap || row.tdlap || '';
+    const dateOfSign = displayedDate ? dmy(displayedDate) : null;
+    const clock = sourceTime ? /(?:T| )(\d{2}:\d{2})(?::\d{2})?/.exec(String(sourceTime))?.[1] : '';
     const signedAt = dateOfSign ? dateOfSign.join('/') + (clock ? ' ' + clock : '') : '';
-    const name = sg?.name || sg?.subject || '';
-    const details = ['Ký bởi: ' + (name || 'Chưa có thông tin'), 'Ký ngày: ' + (signedAt || 'Chưa có thông tin')];
+    const name = sg?.name || sg?.subject || h.nbten || row.nbten || '';
+    const details = [
+      'Được ký bởi: ' + (name || 'Chưa có thông tin người bán'),
+      (sourceTime ? 'Ký ngày: ' : 'Ngày hóa đơn: ') + (signedAt || 'Không có ngày')
+    ];
     const tw = bw - (signatureVerified ? 62 : 14);
     const wrapped = details.flatMap((s) => doc.wrap(s, tw, 9));
     const bh = Math.max(58, 24 + wrapped.length * 12 + 6);
-    doc.rect(bx, sy, bw, bh, { color: markColor, lw: signatureVerified ? 1.2 : 0.7 });
-    doc.text(bx + 7, sy + 5, signatureVerified ? 'Signature valid' : 'Signature not verified',
+    doc.rect(bx, sy, bw, bh, { color: markColor, lw: 1.1 });
+    doc.text(bx + 7, sy + 5, signatureVerified ? 'Signature valid' : 'Thông tin ký (chưa xác thực)',
       { size: 11.5, bold: true, color: markColor });
     wrapped.forEach((t, k) =>
-      doc.text(bx + 7, sy + 23 + k * 12, t, { size: 9, bold: signatureVerified, color: markColor }));
-    // Dấu tick vector xanh, không logo, chỉ hiển thị với chữ ký đã xác thực.
+      doc.text(bx + 7, sy + 23 + k * 12, t, { size: 9, bold: true, color: markColor }));
+    // Vẽ dấu tick bằng nét vector, không dùng logo/ảnh. Chỉ vẽ khi đã XÁC THỰC chữ ký.
     if (signatureVerified) {
       const cx = bx + bw - 47, cy = sy + bh / 2 + 3;
       doc.line(cx - 13, cy - 2, cx - 2, cy + 11, GREEN, 5);

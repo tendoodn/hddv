@@ -14,7 +14,7 @@ window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
  return {userId:session?.user?.id,token:session?.access_token};
 });
 let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
-let busy=false,stopped=false,selectedMode='mst',profileMsts=[],profileAllowedMsts=[],searchedBothKinds=false;
+let busy=false,stopped=false,selectedMode='mst',profileMsts=[],profileAllowedMsts=[],teamAllowedMsts=[],searchedBothKinds=false;
 const vn=(iso)=>iso.split('-').reverse().join('/');
 const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const idOf=r=>JSON.stringify([r.kind,r.form,r.khhdon,r.shdon,r.nbmst,r.nmmst]);
@@ -257,7 +257,7 @@ async function refreshAccount(){
   modeSelect.value=selectedMode;
   const inv=ent.data?.packages?.invoice||{},msts=ent.data?.packages?.mst||{};
   const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_remaining||0)>0||!!ent.data?.can_reread_charged_invoices||!!ent.data?.team_invoice_available;
-  const canMst=Number(msts.active_quantity||0)>0;
+  const canMst=Number(msts.active_quantity||0)>0||Number(ent.data?.team_mst_count||0)>0;
   modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
   modeSelect.querySelector('[value="mst"]').disabled=!canMst;
   modeSelect.disabled=!(canInvoice&&canMst);
@@ -265,8 +265,9 @@ async function refreshAccount(){
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
     'Chỉ chuyển được khi cả hai gói có quyền sử dụng còn hiệu lực.';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
-  profileAllowedMsts=(profiles.data||[]).filter(x=>x.mst_allowed===true)
-   .map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
+  teamAllowedMsts=(ent.data?.team_mst_allowed_msts||[]).map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean);
+  profileAllowedMsts=[...new Set([...(profiles.data||[]).filter(x=>x.mst_allowed===true)
+   .map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean),...teamAllowedMsts])];
   profileDisplayNames.clear();profileVerifiedNames.clear();
   for(const item of profiles.data||[]){
    profileDisplayNames.set(normalizedMst(item.mst),String(item.display_name||'').trim());
@@ -309,11 +310,15 @@ async function signIntoTax(mst){
     govtToken=token;govtMst=mst;$('captchaBox').hidden=true;
     // Every authenticated GDT account is kept in the shared customer profile.
     // An eligible MST-mode login gets an automatic whitelist slot from the server.
-    const {data:registered,error:registrationError}=await client.rpc(
-     'addon_register_gdt_signin_v115',{p_mst:mst});
-    if(registrationError)throw Error('Đã vào cổng Thuế nhưng không lưu được hồ sơ MST: '+
-     registrationError.message);
-    if(!profileMsts.includes(mst))profileMsts.push(mst);
+    // Team-shared MST is read-only. Never consume the member's personal MST slot.
+    let registered={allowed:true};
+    if(!teamAllowedMsts.includes(mst)){
+     const registration=await client.rpc('addon_register_gdt_signin_v115',{p_mst:mst});
+     if(registration.error)throw Error('Đã vào cổng Thuế nhưng không lưu được hồ sơ MST: '+
+      registration.error.message);
+     registered=registration.data;
+     if(!profileMsts.includes(mst))profileMsts.push(mst);
+    }
     if(registered?.allowed&&!profileAllowedMsts.includes(mst))profileAllowedMsts.push(mst);
     if(registered?.warning==='trial_mst_already_used')
      show('MST này đã liên kết dùng thử với hồ sơ khác. Bạn chỉ được dùng gói 100 hóa đơn; vui lòng liên hệ quản trị hoặc mua gói MST.');
@@ -354,7 +359,7 @@ async function signIntoTax(mst){
  }
 }
 async function ensurePermission(mst){
- const {data,error}=await client.rpc('addon_verify_session_mst_v33',{p_mst:mst});
+ const {data,error}=await client.rpc('autotax_verify_session_mst_v118',{p_mst:mst});
  if(error)throw Error(error.message);
  if(!data?.allowed){
   if(data?.reason==='mst_not_whitelisted'){

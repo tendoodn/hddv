@@ -208,3 +208,5 @@ td.audit-info{color:#c6c6db}
 .autotax-terminal-line::before{content:"> ";color:#54c9ff}
 .autotax-terminal-line:last-child{color:#f4fbc7}
 @media(max-width:550px){.autotax-terminal-bar strong{font-size:11px}.autotax-terminal-log{font-size:11px}}
+
+.autotax-terminal{position:fixed!important;right:16px;bottom:16px;z-index:1000;width:min(560px,calc(100vw - 32px))}

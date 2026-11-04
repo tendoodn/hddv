@@ -191,6 +191,18 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 @keyframes autotaxWebPulse{50%{box-shadow:0 0 0 5px rgba(34,197,94,.18),0 0 15px rgba(34,197,94,.3)}}
 @media(prefers-reduced-motion:reduce){.web-search-blink{animation:none}}
 @media(max-width:640px){.portal-head-tools{width:100%;justify-content:flex-end}.portal-head-tools .autotax-primary-nav button{font-size:10px;padding:7px 6px}.portal-header-actions{flex-wrap:wrap}.portal-header-actions a{white-space:normal;font-size:11px}}
+
+.mst-quick-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+.mst-quick-row form{margin:0;flex:0 0 auto}.mst-quick-row #mstAllowControls{margin:0;flex:1;min-width:260px}.mst-quick-row .actions{align-items:center;gap:5px;flex-wrap:wrap}
+.mst-quick-row button{min-height:34px;padding:7px 10px}
+#mstProfilesWeb summary{justify-content:space-between;flex-wrap:wrap}
+#mstSummaryModeSlot{margin-left:auto}#mstSummaryModeSlot #modeSection{display:inline-flex;gap:5px;align-items:center;margin:0;padding:0;min-width:0}
+#mstSummaryModeSlot #modeSection select{max-width:185px;min-width:0;font-size:12px;padding:5px 7px}
+#mstSummaryModeSlot #modeSection label{font-size:11px}
+#mstSummaryModeSlot #modeSection[hidden]{display:none!important}
+.portal-mode-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.portal-mode-toolbar #licenseTitle{font-size:12px;line-height:1.3;min-width:0;margin:0}
+@media(max-width:480px){#mstSummaryModeSlot{width:100%}#mstSummaryModeSlot #modeSection{width:100%}.mst-quick-row #mstAllowControls{min-width:0}}
 </style>
 </head>
 <body>
@@ -199,7 +211,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.18</span></div>
   <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a id="webSearchLink" class="portal-admin-link portal-header-download web-search-blink" href="./web.html">VÀO TRA CỨU PHIÊN BẢN WEB</a><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
 </header>
-<h1>Tài khoản AutoTax</h1>
+
 
 <section id="authSection" class="panel">
  <form id="loginForm">
@@ -274,30 +286,26 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
    <button id="passwordOpenBtn" type="button">Đổi mật khẩu</button>
   </div>
    <details id="mstProfilesWeb" class="panel mst-accordion">
-  <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp lại quyền tra cứu hoặc xóa hồ sơ</small></summary>
+  <summary><strong>Bấm để thiết lập MST được cấp phép</strong> <span id="mstWebCount">0</span><span id="mstSummaryModeSlot"><span id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select></span></span></summary>
   
    
-  <form id="webAddMstForm" class="actions">
+  <div class="mst-quick-row"><form id="webAddMstForm" class="actions">
    <input id="webAddMst" hidden>
    <button type="submit">+ Thêm MST</button>
   </form>
   <div id="mstAllowControls" hidden>
 
-   <p class="muted">Quyền đã lưu sẽ bị khóa không cho tick tùy ý. Bấm Cấp lại để mở tick, chọn các MST được tra cứu rồi bấm Khoá quyền để lưu và khóa chỉnh sửa. Số MST có quyền không được vượt hạn mức gói.</p>
+   <p class="muted mst-allow-help" hidden>Chọn MST được phép, không vượt số gói đã mua.</p>
    <div class="actions">
     <button id="mstGrantUnlock" type="button" class="secondary">Cấp lại</button>
     <button id="mstGrantAllow" type="button" disabled>Khoá quyền</button>
     <button id="mstGrantCancel" type="button" class="secondary" hidden>Hủy chỉnh sửa</button>
     <span id="mstAllowedSummary" class="muted" role="status"></span>
    </div>
-  </div>
+  </div></div>
   <div id="mstList"></div>
  </details>
-  <h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2>
-  <div class="portal-mode-toolbar">
-   <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select></div>
-   <div class="portal-quick-actions"><button id="renewWebBtn" type="button">Gia hạn</button></div>
-  </div>
+  <div class="portal-mode-toolbar"><h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2><div class="portal-quick-actions"><button id="renewWebBtn" type="button">Gia hạn</button></div></div>
   <div class="grid">
    <div class="plan stat"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
    <div class="plan stat"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
@@ -388,7 +396,6 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   <input id="mstProfilePassword" type="password" maxlength="256" autocomplete="off" placeholder="Mật khẩu (chỉ lưu mã hóa trên thiết bị này)">
   <label for="mstProfilePasswordDate">Ngày nhập / sửa mật khẩu</label>
   <input id="mstProfilePasswordDate" type="text" readonly placeholder="Tự cập nhật khi lưu mật khẩu">
-  <label class="mst-auto-grant-row" for="mstProfileGrantOnCreate"><input id="mstProfileGrantOnCreate" type="checkbox"> Tick để thêm vào danh sách cho phép nếu dùng gói MST</label>
   <small>Nhắc đổi mật khẩu sau 80 ngày. Không thay đổi ngày khi chỉ sửa tên NNT. Nếu cổng Thuế không cung cấp ngày đổi gần nhất, hệ thống tính từ ngày bạn lưu mật khẩu.</small>
   <div class="actions">
    <button id="mstProfileSave" type="submit">Lưu hồ sơ</button>
@@ -398,7 +405,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  </dialog>
  <dialog id="mstProfileLimitDialog" class="payment-success-modal">
   <h2>Đã đạt giới hạn MST</h2>
-  <p>hết hạn mức thêm mst vui lòng mua thêm gói mst</p>
+  <p>Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp</p>
   <div class="actions"><button id="mstProfileLimitClose" type="button">Đóng</button></div>
  </dialog>
  <dialog id="mstPassword80Dialog" class="payment-success-modal">

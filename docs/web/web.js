@@ -303,6 +303,8 @@ async function refreshAccount(){
   const dual=hasInvoice&&canMst;
   modeSelect.disabled=!dual;
   $('webModeControls').hidden=!dual;
+  if(dual&&$('webModeControls').parentElement!==$('webAccountModeSlot'))
+   $('webAccountModeSlot').append($('webModeControls'));
   if(hasInvoice!==canMst&&selectedMode!==(hasInvoice?'invoice':'mst')){
    const auto=hasInvoice?'invoice':'mst';
    const changed=await client.rpc('autotax_set_usage_mode_v118',{p_mode:auto});
@@ -324,7 +326,7 @@ async function refreshAccount(){
   maybeRemindTaxPassword(profiles.data||[]);
   document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
   if(selectedMode==='invoice')show('Chế độ số tờ: nhập MST bất kỳ, không cần thêm vào danh sách hồ sơ. Hệ thống sẽ trừ lượt hóa đơn mới.',true);
-  else if(!profileAllowedMsts.length)show('Chưa cấp quyền MST nào. Mở Quản lý tài khoản, tick MST rồi bấm Cấp quyền.');
+  else if(!profileAllowedMsts.length)show('Chưa có MST được cấp quyền. Khi tra cứu MST đầu tiên, AutoTax sẽ hỏi bạn có muốn cấp phép hay không.');
   else show('Gói MST: đã cấp quyền '+profileAllowedMsts.length+' MST. Chỉ các MST trong danh sách cấp quyền được tra cứu.',true);
  }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
 }
@@ -355,22 +357,13 @@ async function signIntoTax(mst){
     if(!token||!sub)throw Error('Cổng Thuế chưa trả phiên đăng nhập hợp lệ. Vui lòng kiểm tra tên đăng nhập và dịch vụ kết nối.');
     if(sub!==mst)throw Error('MST đăng nhập cổng Thuế khác MST hồ sơ AutoTax đang chọn.');
     govtToken=token;govtMst=mst;$('captchaBox').hidden=true;
-    // Every authenticated GDT account is kept in the shared customer profile.
-    // An eligible MST-mode login gets an automatic whitelist slot from the server.
-    // Team-shared MST is read-only. Never consume the member's personal MST slot.
-    let registered={allowed:true};
-    if(!teamAllowedMsts.includes(mst)){
-     const registration=await client.rpc('addon_register_gdt_signin_v115',{p_mst:mst});
-     if(registration.error)throw Error('Đã vào cổng Thuế nhưng không lưu được hồ sơ MST: '+
-      registration.error.message);
-     registered=registration.data;
-     if(!profileMsts.includes(mst))profileMsts.push(mst);
+    // Login only saves the MST profile; granting a paid whitelist slot
+    // is requested explicitly on the FIRST invoice search, not at GDT login.
+    if(!teamAllowedMsts.includes(mst)&&!profileMsts.includes(mst)){
+     const registration=await client.rpc('addon_add_mst_profile_v33',{p_mst:mst});
+     if(registration.error)throw Error('Đã vào cổng Thuế nhưng không lưu được hồ sơ MST: '+registration.error.message);
+     profileMsts.push(mst);
     }
-    if(registered?.allowed&&!profileAllowedMsts.includes(mst))profileAllowedMsts.push(mst);
-    if(registered?.warning==='trial_mst_already_used')
-     show('MST này đã liên kết dùng thử với hồ sơ khác. Bạn chỉ được dùng gói 100 hóa đơn; vui lòng liên hệ quản trị hoặc mua gói MST.');
-    else if(registered?.warning==='mst_capacity_reached')
-     show('Gói MST đã đủ hạn mức. MST vẫn được lưu; mở Quản lý tài khoản để Cấp lại quyền hoặc mua thêm gói MST.');
     const vaultSaved=await window.GdtVault?.saveAfterLogin(mst,password);
     if(vaultSaved?.changed&&profileMsts.includes(mst)){
      const {error:stampError}=await client.rpc('addon_mark_mst_password_updated',{p_mst:mst});
@@ -437,6 +430,23 @@ async function claimRows(all,mst){
  }
  return accepted;
 }
+function askMstGrantConsent(){
+ const dialog=$('mstGrantConsentDialog');
+ return new Promise(resolve=>{
+  let answered=false;
+  const finish=choice=>{
+   if(answered)return;answered=true;
+   dialog.removeEventListener('close',closed);
+   yes.removeEventListener('click',allow);
+   no.removeEventListener('click',deny);
+   if(dialog.open)dialog.close();resolve(choice);
+  };
+  const yes=$('mstGrantConsentYes'),no=$('mstGrantConsentNo');
+  const allow=()=>finish(true),deny=()=>finish(false),closed=()=>finish(false);
+  yes.addEventListener('click',allow,{once:true});no.addEventListener('click',deny,{once:true});
+  dialog.addEventListener('close',closed,{once:true});dialog.showModal();
+ });
+}
 function renderResults(list,warnings=[]){
  if(window.WebResults?.render)window.WebResults.render(list,warnings);
  else show('Đã có '+list.length+' hóa đơn. Giao diện kết quả chưa tải xong, vui lòng làm mới trang.');
@@ -462,11 +472,19 @@ async function search(e){
  $('results').hidden=true;$('searchTotals').hidden=true;
  try{
   if(govtMst!==mst||!govtToken)await signIntoTax(mst);
-  // GDT authentication can automatically grant a free MST slot. Enforce the
-  // final server whitelist only AFTER that authentication.
+  // Consent must precede the first MST-package lookup. No = no whitelist slot.
   if(selectedMode==='mst'&&!profileAllowedMsts.includes(mst)){
-   const dlg=$('mstLimitDialog');if(dlg&&!dlg.open)dlg.showModal();
-   throw Error('MST '+mst+' chưa được cấp quyền. Vào Quản lý tài khoản → Cấp lại quyền tra cứu → Lưu lại, hoặc mua thêm gói MST.');
+   const agreed=await askMstGrantConsent();
+   if(!agreed)throw Error('Bạn đã chọn Không. MST '+mst+' chưa được cấp phép dùng gói MST.');
+   const {data:grant,error:grantError}=await client.rpc('addon_register_gdt_signin_v115',{p_mst:mst});
+   if(grantError)throw grantError;
+   if(!grant?.allowed){
+    if(grant?.warning==='mst_capacity_reached')$('mstLimitDialog')?.showModal();
+    throw Error(grant?.warning==='trial_mst_already_used'?
+     'MST này đã dùng thử với tài khoản khác. Vui lòng mua gói MST hoặc liên hệ quản trị.':
+     'Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp');
+   }
+   profileAllowedMsts.push(mst);
   }
   await ensurePermission(mst);
   progress('Đang kiểm tra phiên cổng Thuế…');

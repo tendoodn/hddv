@@ -42,7 +42,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   </header>
   <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
     <div class="account-line">
-      <div><strong>Phiên AutoTax</strong><span id="authStatus">Đang xác minh đăng nhập…</span></div>
+      <div id="webAccountModeSlot"><span id="authStatus" hidden>Đang xác minh đăng nhập…</span></div>
       <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
     </div>
 
@@ -59,6 +59,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   <small id="webUsageModeHint">Đang đồng bộ chế độ với Add-on…</small>
  </div>
  <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
+ <dialog id="mstGrantConsentDialog" class="web-consent-dialog" aria-label="Cấp quyền MST"><h2>Cấp quyền MST</h2><p>Bạn có muốn cấp phép cho MST này sử dụng gói MST không ?</p><div class="web-consent-actions"><button type="button" id="mstGrantConsentYes">Có</button><button type="button" id="mstGrantConsentNo">Không</button></div></dialog>
     <div id="gdtConnectionHelp" class="gdt-connection-help" role="status" hidden>
       <strong>Máy chủ chưa lấy được CAPTCHA từ cổng Thuế</strong>
       <p>Không có ảnh thì cũng không thể nhập mã xác nhận thủ công. Bạn có thể thử kết nối lại hoặc kiểm tra trực tiếp cổng Thuế. AutoTax không trừ lượt hóa đơn khi chưa tra cứu thành công.</p>
@@ -230,7 +231,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   <dialog id="invoiceQuotaDialog" aria-label="Hết hạn mức hóa đơn"><h2>Hết hạn mức tra cứu</h2><p>hết hạn mức tra cứu vui lòng mua thêm số hoá đơn</p><div class="actions"><a href="./#planSection" target="_blank" rel="noopener noreferrer" class="outline">Mua thêm số hóa đơn</a><button type="button" id="invoiceQuotaClose">Đóng</button></div></dialog>
 <dialog id="mstLimitDialog" class="stock-map-dialog">
   <h2>Đã đạt giới hạn MST</h2>
-  <p>Gói MST đang sử dụng không đủ số hồ sơ. Hãy mua thêm hoặc xóa hồ sơ không còn dùng trong trang Quản lý tài khoản.</p>
+  <p>Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp</p>
   <p><a href="./" target="_blank" rel="noopener noreferrer">Mở Quản lý tài khoản</a></p>
   <button id="mstLimitClose" type="button">Đóng</button>
  </dialog>

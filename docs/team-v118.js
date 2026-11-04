@@ -5,7 +5,7 @@ const BASE='https://ucqqjdsoyvvaxswzbhaw.supabase.co';
 const KEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
 const db=window.AutoTaxSharedClient||window.supabase?.createClient(BASE,KEY);
 const $=id=>document.getElementById(id);
-let teams=[],memberships=[],myId='',activeTeam='',myMsts=[],editingPerson=null;
+let teams=[],memberships=[],myId='',activeTeam='',myMsts=[],editingPerson=null,leaderEntitlements=null;
 const make=(tag,text,className)=>{const node=document.createElement(tag);if(text!==undefined&&text!==null)node.textContent=String(text);if(className)node.className=className;return node};
 const notice=(msg,error=false)=>{const n=$('autotaxTeamMessage');n.hidden=!msg;n.textContent=msg||'';n.classList.toggle('error',!!error)};
 const rpc=async(name,args)=>{const {data,error}=await db.rpc(name,args);if(error)throw error;return data};
@@ -27,11 +27,13 @@ async function refresh(){
   const {data:{session}}=await db.auth.getSession();
   if(!session?.user){myId='';teams=[];memberships=[];activeTeam='';$('autotaxTeamDetail').hidden=true;return}
   myId=session.user.id;
-  const [tr,mr,pr]=await Promise.all([
+  const [tr,mr,pr,er]=await Promise.all([
    db.from('autotax_teams_v118').select('id,name,owner_id,created_at').order('created_at'),
    db.from('autotax_team_members_v118').select('team_id,user_id,status').eq('user_id',myId),
-   db.from('addon_mst_assignments').select('mst,display_name').eq('user_id',myId)
+   db.from('addon_mst_assignments').select('mst,display_name').eq('user_id',myId),
+   db.rpc('autotax_my_entitlements_v118')
   ]);
+  leaderEntitlements=er.error?null:er.data;
   if(tr.error)throw tr.error;if(mr.error)throw mr.error;
   teams=tr.data||[];memberships=mr.data||[];myMsts=pr.error?[]:(pr.data||[]);
   renderTeams();
@@ -95,11 +97,23 @@ async function showDetail(id){
   const openEditor=section=>{
    editingPerson=person;
    $('autotaxTeamPermissionTitle').textContent='Phân quyền · '+(person.display_name||person.email);
-   $('autotaxTeamPermissionHelp').textContent='Chọn hình thức sử dụng và MST cho phép. Trạng thái chỉ lưu khi bấm Lưu.';
+   const ownInvoice=Number(leaderEntitlements?.packages?.invoice?.remaining||0)>0||
+     !!leaderEntitlements?.can_reread_charged_invoices;
+   const ownMst=Number(leaderEntitlements?.packages?.mst?.active_quantity||0)>0;
+   const leaderModes=[...(ownMst?['mst']:[]),...(ownInvoice?['invoice']:[])];
+   const dualPlan=ownInvoice&&ownMst;
+   const preferredMode=leaderModes.includes(leaderEntitlements?.mode)?leaderEntitlements.mode:leaderModes[0];
+   $('autotaxTeamPermissionModes').closest('.autotax-permission-field').hidden=!dualPlan;
+   $('autotaxTeamPermissionHelp').textContent=dualPlan?
+     'Trưởng nhóm có cả gói MST và số tờ: chọn hình thức và MST cấp quyền.':
+     'Hình thức sử dụng mặc định theo gói đang hoạt động của trưởng nhóm; chỉ cần chọn MST cấp quyền.';
    const mc=$('autotaxTeamPermissionModes'),sc=$('autotaxTeamPermissionMsts');
    mc.replaceChildren();sc.replaceChildren();
-   for(const [value,label] of [['mst','MST'],['invoice','Số tờ']])
-    mc.append(modeCheck(value,label,modeValues.includes(value),false));
+   for(const [value,label] of [['mst','MST'],['invoice','Số tờ']]){
+    if(!leaderModes.includes(value))continue;
+    mc.append(modeCheck(value,label,dualPlan?
+      (modeValues.length?modeValues.includes(value):value===preferredMode):true,false));
+   }
    const allowedMsts=[...new Set([...myMsts.map(x=>x.mst),...mstValues])].filter(Boolean);
    for(const mst of allowedMsts){
     const label=myMsts.find(x=>x.mst===mst)?.display_name;

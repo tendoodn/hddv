@@ -1,20 +1,38 @@
-# AutoTax — Công cụ quản lý hóa đơn điện tử
+# AutoTax — Quản lý và tra cứu hóa đơn điện tử
 
 ![Logo AutoTax](docs/favicon.svg)
 
-**AutoTax V1.1.2 • Tendoo**
+**AutoTax V1.1.20 · Tendoo**
 
-Tra cứu hóa đơn mua vào/bán ra, quản lý MST 10/12/13 số, xuất báo cáo Excel/XML/HTML, đối chiếu rủi ro và nhập kho MISA/Tendoo.
+Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa đơn mua vào/bán ra, xuất Excel/XML/HTML/PDF, kiểm tra rủi ro và đối chiếu sản phẩm.
 
-## Các chức năng
+## Tính năng
 
-- Tra cứu hóa đơn điện tử và hóa đơn từ máy tính tiền.
-- Quản lý hồ sơ MST, tên hồ sơ, gói sử dụng và quyền truy cập.
-- Xuất Excel, XML, HTML, và PDF theo bộ lọc.
-- Web có nút **PDF Thuế** dựng lại tất cả và nút **PDF gốc** ưu tiên bản nhà phát hành, dùng bản dựng khi không lấy được.
-- Add-on Chrome ưu tiên PDF gốc, có bản PDF dựng dự phòng và báo nguồn tệp.
-- Kiểm tra rủi ro hóa đơn/MST, so sánh hóa đơn điều chỉnh, đồng bộ sản phẩm và SKU.
+- Quản lý nhiều MST 10 số, chi nhánh 13 số và CCCD 12 số, phân quyền theo gói.
+- Tra cứu hóa đơn điện tử và hóa đơn máy tính tiền theo khoảng ngày; tải chi tiết hàng hóa.
+- Xuất Excel, XML và HTML; hỗ trợ báo cáo, kiểm tra rủi ro, so sánh hóa đơn điều chỉnh/thay thế.
+- Hai chế độ PDF trên Web: **PDF Thuế** dựng từ dữ liệu Thuế; **PDF gốc ưu tiên** thử tải tệp nhà phát hành và dựng lại có nhãn riêng khi thất bại.
+- Add-on Chrome ưu tiên PDF gốc và hỗ trợ bản dựng lại khi chưa lấy được bản gốc.
+- Đồng bộ SKU, xuất dữ liệu nhập kho MISA/Tendoo và theo dõi lịch sử hóa đơn.
+- Quản lý gói sử dụng, gia hạn, tài khoản và hồ sơ MST.
+- Ghi nhận hóa đơn đã đọc dùng chung giữa chế độ MST và số tờ, tránh trừ lượt khi đọc lại.
+- Admin cấp lại mật khẩu qua email hoặc mật khẩu tạm có yêu cầu đổi lại khi đăng nhập.
 
-[Trang AutoTax](https://tendoodn.github.io/hddv/) • [Tra cứu Web](https://tendoodn.github.io/hddv/docs/web.html) • [Tra cứu MST](https://tendoodn.github.io/hddv/docs/mst.html) • [Tải Chrome](https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF)
+## Sử dụng
 
-*PDF dựng lại được ghi rõ không phải PDF gốc của nhà phát hành.*
+- [AutoTax – Tài khoản](https://tracuuhoadon.top/)
+- [Tra cứu hóa đơn Web](https://tracuuhoadon.top/web.html)
+- [Tra cứu MST](https://tracuuhoadon.top/mst.html)
+- [Trang tạo PDF đối chiếu](https://tracuuhoadon.top/pdf/)
+- [Báo giá thiết bị & HDĐT Viettel](https://tracuuhoadon.top/baogia/)
+- [Theo dõi hệ số K](https://tracuuhoadon.top/k/)
+- [Bộ cài Chrome](https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF)
+
+**Lưu ý:** PDF dựng lại không phải PDF gốc; một số cổng nhà phát hành cần phiên đăng nhập hoặc CAPTCHA hợp lệ.
+
+## Đồng bộ mật khẩu MST và liên hệ (1.1.20)
+
+- Mật khẩu MST tự mã hóa AES-GCM trên máy và đồng bộ ciphertext lên Supabase theo tài khoản AutoTax. Đăng nhập cùng email/mật khẩu AutoTax trên Web và Add-on để tự mở khóa, không cần bấm nút chuyển mật khẩu.
+- Admin chỉnh sửa danh sách liên kết chân trang tại trang quản trị: 1 ô nội dung hiển thị, 1 ô đường link, bật/tắt và sắp xếp.
+- Liên hệ: Zalo/điện thoại **0868838242**; email **lienhe@tracuuhoadon.top** / **ptflorist68@gmail.com**.
+- Copyright © 2026 AutoTax - Phương Thảo Florist. All rights reserved.

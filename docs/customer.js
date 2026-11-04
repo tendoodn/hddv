@@ -747,12 +747,13 @@ $('forcedPasswordForm').addEventListener('submit',async e=>{
   });
   const data=await res.json().catch(()=>({}));
   if(!res.ok||!data.ok)throw Error(data.error||'Không cập nhật được mật khẩu mới.');
+  // Successful reset: close popup immediately, before refresh or sign-out.
+  if(resetDialog.open)resetDialog.close();
   try{await window.AutoTaxSharedMstVault?.rekey(password)}
   catch(vaultError){console.warn('Đổi mật khẩu thành công, cần khôi phục khóa MST:',vaultError.message)}
   await client.auth.signOut();
   $('forcedPasswordNew').value='';
   $('forcedPasswordConfirm').value='';
-  resetDialog.close();
   await refresh();
   showMessage('Đã lưu mật khẩu mới. Hãy đăng nhập bằng mật khẩu vừa đặt.',false,'authMessage');
  }catch(err){fail('Không lưu được mật khẩu: '+(err.message||String(err)))}

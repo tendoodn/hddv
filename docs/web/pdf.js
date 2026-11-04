@@ -295,10 +295,15 @@
     const head = () => {
       const rw = 150, tw = CW - 2 * rw, tx = X0 + rw;
       let y = doc.y + 4;
-      const title = (x.title || TITLES[mau] || 'HÓA ĐƠN').toUpperCase();
+      const isVat = mau === '1' || /giá trị gia tăng/i.test(x.title || '');
+      const isSales = mau === '2' || row.form === 'mtt' || /MTT$/i.test(khhdon || '');
+      const title = isVat ? 'HÓA ĐƠN GIÁ TRỊ GIA TĂNG' : isSales ? 'HÓA ĐƠN BÁN HÀNG' : (x.title || TITLES[mau] || 'HÓA ĐƠN').toUpperCase();
       y += doc.para(tx, y, title, tw, { size: 15, bold: true, align: 'center', color: BLUE });
-      const en = TITLES_EN[mau];
+      const en = isVat ? 'VAT INVOICE' : (isSales ? '' : TITLES_EN[mau]);
       if (en) { doc.text(tx, y, `(${en})`, { size: 10, italic: true, w: tw, align: 'center' }); y += 14; }
+      doc.text(tx, y, isVat ? '(Bản thể hiện của hóa đơn điện tử)' : 'Bản thể hiện của hóa đơn điện tử',
+        { size: 9, w: tw, align: 'center' });
+      y += 14;
       const d = dmy(h.nlap || row.tdlap);
       if (d) {
         doc.runs(tx, y + 2, [{ t: 'Ngày ' }, { t: '(Date) ', italic: true }, { t: d[0], bold: true }, { t: ' tháng ' }, { t: '(month) ', italic: true },
@@ -422,7 +427,7 @@
     const chu = x.chu || (has(tong) ? moneyWords(tong, unit) : '');
     const wordsLines = chu ? doc.wrap(chu, CW - 200, 9.5, 1) : [];
     const sumH = sums.length * 16 + (chu ? wordsLines.length * 12.5 + 6 : 0);
-    const signH = 120;
+    const signH = 160;
 
     // Dòng trống cho kín khung như bản giấy (chỉ khi còn chỗ cho phần tổng + chữ ký trên cùng trang)
     for (let k = 0; k < 10 && doc.y + 15 + sumH + signH <= BOTTOM; k++) bodyRow([], 15);
@@ -447,7 +452,7 @@
     }
     doc.y += 12;
 
-    // --- Chữ ký ---
+    // --- Chữ ký: kiểu trình bày theo mẫu, chỉ xác nhận khi đã kiểm tra mật mã ---
     const sw = CW / 2;
     for (const [i, vn, en] of [[0, 'Người mua hàng', 'Buyer'], [1, 'Người bán hàng', 'Seller']]) {
       const sx = X0 + i * sw;
@@ -457,21 +462,32 @@
     }
     let sy = doc.y + 42;
     const sg = h.seller;
-    if (sg) {
-      // Không ghi "Signature Valid": chỉ đọc chữ ký trong XML, chưa xác thực mật mã
-      const bw = 200, bx = X0 + sw + (sw - bw) / 2, GREEN = '0.1 0.5 0.25';
-      const sd = sg.time ? dmy(sg.time) : null;
-      const txt = [`Ký bởi: ${sg.name || sg.subject}`, ...(sd ? [`Ký ngày: ${sd.join('/')}`] : [])];
-      const wrapped = txt.flatMap((t) => doc.wrap(t, bw - 12, 8.5));
-      const bh = 20 + wrapped.length * 11;
-      doc.rect(bx, sy, bw, bh, { color: GREEN, lw: 1 });
-      doc.text(bx + 6, sy + 5, 'Chữ ký số trong XML gốc', { size: 8.5, bold: true, color: GREEN });
-      wrapped.forEach((t, k) => doc.text(bx + 6, sy + 17 + k * 11, t, { size: 8.5, color: GREEN }));
-      sy += bh + 8;
-    } else {
-      if (inv.source !== 'xml') doc.text(X0 + sw, sy, 'Cổng không có XML gốc – không có thông tin chữ ký số', { size: 8, italic: true, w: sw, align: 'center', color: MUTED });
-      sy += 22;
+    // Chỉ đọc chứng thư/SigningTime không đủ xác nhận chữ ký thực sự hợp lệ.
+    const signatureVerified = sg?.verified === true ||
+      sg?.verification?.valid === true || sg?.validation?.status === 'valid';
+    const GREEN = '0.0 0.62 0.12', NEUTRAL = '0.37 0.37 0.37';
+    const markColor = signatureVerified ? GREEN : NEUTRAL;
+    const bw = Math.min(242, sw - 5), bx = X0 + sw + (sw - bw) / 2;
+    const dateOfSign = sg?.time ? dmy(sg.time) : null;
+    const clock = sg?.time ? /(?:T| )(\d{2}:\d{2})(?::\d{2})?/.exec(String(sg.time))?.[1] : '';
+    const signedAt = dateOfSign ? dateOfSign.join('/') + (clock ? ' ' + clock : '') : '';
+    const name = sg?.name || sg?.subject || '';
+    const details = ['Ký bởi: ' + (name || 'Chưa có thông tin'), 'Ký ngày: ' + (signedAt || 'Chưa có thông tin')];
+    const tw = bw - (signatureVerified ? 62 : 14);
+    const wrapped = details.flatMap((s) => doc.wrap(s, tw, 9));
+    const bh = Math.max(58, 24 + wrapped.length * 12 + 6);
+    doc.rect(bx, sy, bw, bh, { color: markColor, lw: signatureVerified ? 1.2 : 0.7 });
+    doc.text(bx + 7, sy + 5, signatureVerified ? 'Signature valid' : 'Signature not verified',
+      { size: 11.5, bold: true, color: markColor });
+    wrapped.forEach((t, k) =>
+      doc.text(bx + 7, sy + 23 + k * 12, t, { size: 9, bold: signatureVerified, color: markColor }));
+    // Dấu tick vector xanh, không logo, chỉ hiển thị với chữ ký đã xác thực.
+    if (signatureVerified) {
+      const cx = bx + bw - 47, cy = sy + bh / 2 + 3;
+      doc.line(cx - 13, cy - 2, cx - 2, cy + 11, GREEN, 5);
+      doc.line(cx - 2, cy + 11, cx + 20, cy - 17, GREEN, 5);
     }
+    sy += bh + 8;
     doc.text(X0, sy, '(Cần kiểm tra, đối chiếu khi lập, giao, nhận hóa đơn)', { size: 8.5, italic: true, w: CW, align: 'center' });
 
     // --- Khung viền, ghi chú, chân trang mọi trang ---

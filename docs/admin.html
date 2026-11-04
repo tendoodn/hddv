@@ -59,6 +59,18 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 .admin-pagination button{min-width:36px}
 .admin-filter-row>input{min-width:140px}
 @media(max-width:620px){.wrap{padding:9px 6px}.panel{padding:8px}.tablewrap{overflow:auto}button{font-size:11px;padding:6px 7px}}
+
+/* Compact Admin accordions: six data-management panels start CLOSED. */
+.admin-fold{width:100%;margin:0}
+.admin-fold>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;min-height:39px;font-weight:800;font-size:16px;padding:2px 4px}
+.admin-fold>summary::-webkit-details-marker{display:none}
+.admin-fold>summary:after{content:"▸";font-size:20px;color:#b80010;flex:0 0 auto}
+.admin-fold[open]>summary:after{content:"▾"}
+.admin-fold>summary:focus-visible{outline:2px solid #e60012;outline-offset:3px;border-radius:6px}
+.admin-fold-content{border-top:1px solid #f1c7cc;margin-top:7px;padding-top:8px}
+#app>.panel:has(>.admin-fold){padding:8px 12px}
+#app>.panel:has(>.admin-fold:not([open])){box-shadow:0 1px 6px #80001209}
+@media(max-width:600px){.admin-fold>summary{font-size:14px;min-height:36px}}
 </style></head><body><main class="wrap">
 <header><div class="brand">AUTOTAX <span>V1.1.18 · ADMIN</span></div><div class="actions"><a href="./" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
@@ -154,6 +166,37 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 </section>
 <div id="logsPanel" class="panel hidden"><h2>Nhật ký thao tác</h2><div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Khách hàng</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody id="logs"></tbody></table></div></div>
 </section></main>
+<script>
+/* Wrap existing controls in native <details> without replacing form/input nodes. */
+(()=>{
+ const sections=[
+  'Quản lý khách hàng','Quản lý MST liên kết',
+  'Giá và cấu hình gói AutoTax','Mã giảm giá thanh toán QR',
+  'Tạo mã unlock theo gói','Quản lý liên kết chân trang'
+ ];
+ for(const name of sections){
+  const panel=Array.from(document.querySelectorAll('#app > .panel')).find(parent=>{
+   const title=parent.querySelector(':scope > h2, :scope > .row > h2');
+   return title?.textContent.trim()===name;
+  });
+  if(!panel){console.warn('Không tìm thấy bảng Admin:',name);continue}
+  const title=panel.querySelector(':scope > h2, :scope > .row > h2');
+  const accordion=document.createElement('details'),summary=document.createElement('summary');
+  const content=document.createElement('div');
+  accordion.className='admin-fold';accordion.open=false;
+  summary.textContent=name;summary.setAttribute('aria-label','Mở hoặc thu gọn '+name);
+  content.className='admin-fold-content';
+  title.remove();
+  while(panel.firstChild)content.append(panel.firstChild);
+  accordion.append(summary,content);panel.append(accordion);
+ }
+ document.querySelectorAll('a[href$="admin-combo.html"]').forEach(link=>link.remove());
+ const discountLink=document.querySelector('header a[href="#adminDiscountCodes"]');
+ discountLink?.addEventListener('click',()=>{
+  document.querySelector('#adminDiscountCodes > .admin-fold')?.setAttribute('open','');
+ });
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js?v=121pager2"></script><script>
 const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
 const $=id=>document.getElementById(id);let allUsers=[],allPackages=[],customerPage=1,packagePage=1;

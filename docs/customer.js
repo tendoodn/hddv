@@ -161,10 +161,18 @@ async function refresh(){
   if(userError)throw userError;
   const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
-  $('forcedPasswordNotice').hidden=!forceChange;
-  if(forceChange)$('passwordPanel').hidden=false;
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
+  const forceDialog=$('forcedPasswordDialog');
+  if(signedIn&&forceChange){
+   $('passwordPanel').hidden=true;
+   if(!forceDialog.open){
+    $('forcedPasswordNew').value='';
+    $('forcedPasswordConfirm').value='';
+    $('forcedPasswordError').hidden=true;
+    forceDialog.showModal();
+   }
+  }else if(forceDialog.open)forceDialog.close();
   if(!signedIn){state=null;refreshAdminVisibility(null);closePayment();return}
   void refreshAdminVisibility(session.user.id);
   void refreshExtensionDownloadLink();
@@ -701,6 +709,42 @@ $("usageMode").addEventListener("change",async e=>{
 $("closePaymentBtn").addEventListener("click",closePayment);
 $("checkPaymentBtn").addEventListener("click",()=>{void checkPaymentStatus(true)});
 $("closePaymentSuccessBtn").addEventListener("click",()=>$("paymentSuccessDialog").close());
+// Force-password reset uses the signed-in token, validated again by Supabase.
+const resetDialog=$('forcedPasswordDialog');
+resetDialog.addEventListener('cancel',e=>{e.preventDefault()});
+resetDialog.addEventListener('click',e=>{if(e.target===resetDialog)e.preventDefault()});
+$('forcedPasswordForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const password=$('forcedPasswordNew').value,confirmPassword=$('forcedPasswordConfirm').value;
+ const error=$('forcedPasswordError'),button=$('forcedPasswordSave');
+ const fail=message=>{error.textContent=message;error.hidden=false};
+ error.hidden=true;
+ if(password.length<10||password.length>128)return fail('Mật khẩu mới phải từ 10 đến 128 ký tự.');
+ if(password==='000000')return fail('Không được dùng lại mật khẩu tạm 000000.');
+ if(password!==confirmPassword)return fail('Hai lần nhập mật khẩu chưa trùng khớp.');
+ button.disabled=true;
+ try{
+  const {data:{session}}=await client.auth.getSession();
+  if(!session?.access_token)throw Error('Phiên đăng nhập đã hết hạn.');
+  const res=await fetch('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-admin-password-reset',{
+   method:'POST',headers:{Authorization:'Bearer '+session.access_token,
+    apikey:'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ',
+    'Content-Type':'application/json'},
+   body:JSON.stringify({action:'complete',new_password:password})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok)throw Error(data.error||'Không cập nhật được mật khẩu mới.');
+  try{await window.AutoTaxSharedMstVault?.rekey(password)}
+  catch(vaultError){console.warn('Đổi mật khẩu thành công, cần khôi phục khóa MST:',vaultError.message)}
+  await client.auth.signOut();
+  $('forcedPasswordNew').value='';
+  $('forcedPasswordConfirm').value='';
+  resetDialog.close();
+  await refresh();
+  showMessage('Đã lưu mật khẩu mới. Hãy đăng nhập bằng mật khẩu vừa đặt.',false,'authMessage');
+ }catch(err){fail('Không lưu được mật khẩu: '+(err.message||String(err)))}
+ finally{button.disabled=false}
+});
 $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",async()=>{
  const password=$("newPassword").value;
  const forced=$('dashboard').classList.contains('autotax-force-password');

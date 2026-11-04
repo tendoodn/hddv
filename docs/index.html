@@ -123,6 +123,13 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 #feedbackBody{display:block;width:100%;font:inherit;line-height:1.5;padding:10px;resize:vertical;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px}
 #feedbackImages{margin:8px 0}
 .autotax-coupon-box{margin-top:14px;padding:12px;border:1px dashed #e9aab3;border-radius:12px;background:#fffafb}.autotax-coupon-box .actions{display:flex;align-items:center;gap:10px}.autotax-coupon-box input{width:auto;flex:1 1 200px}.autotax-coupon-box button{white-space:nowrap}.autotax-license-notice{margin-top:10px}
+
+/* Download Extension always sits to the right of the AutoTax brand, even on the login screen. */
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto;margin:0 0 0 auto}
+.portal-header-download{background:#a9071b;color:#fff;border-color:#a9071b;white-space:nowrap}
+.portal-header-download:hover{background:#830213;color:#fff}
+@media(max-width:520px){header{padding:9px 10px;gap:6px;flex-wrap:nowrap}header .brand{font-size:15px;white-space:nowrap}header .brand img{width:25px;height:25px;margin-right:3px!important}header .portal-header-actions{display:flex;grid-template-columns:none;width:auto;min-width:0;gap:5px}header .portal-header-download{font-size:10px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.2;max-width:130px}header #adminLink:not([hidden]){font-size:10px;padding:7px 5px}}
 </style>
 <style>
 
@@ -156,7 +163,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <main class="wrap">
 <header>
   <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.18</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
@@ -357,7 +364,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <script src="./customer.js?v=1119ui1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <script src="./team-v118.js?v=1119team1"></script>
-<script src="./extension-link-v118.js?v=1118release2"></script>
+<script src="./extension-link-v118.js?v=1119header1"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>
 <script src="./site-footer.js?v=1118"></script>

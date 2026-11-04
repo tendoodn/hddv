@@ -82,6 +82,25 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 #adminUsageModeDialog select{display:block;width:100%;min-width:0;margin-top:8px}
 #adminUsageModeDialog .actions{margin-top:16px;justify-content:flex-end}
 #adminUsageModeDialog [hidden]{display:none!important}
+
+/* V1.1.20 admin table layout: two resets, three actions, then mode editor. */
+#customerPanel #users>tr>td:last-child{min-width:174px;width:185px}
+#customerPanel .customer-action-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;align-items:stretch;width:100%;max-width:190px}
+.customer-action-grid>button{min-width:0!important;max-width:100%;padding:5px 3px;font-size:11px;white-space:nowrap}
+.customer-action-grid>button:nth-child(-n+2){grid-column:span 3}
+.customer-action-grid>button:nth-child(n+3):nth-child(-n+5){grid-column:span 2}
+.customer-action-grid>.mode-change-trigger{grid-column:1/-1;white-space:normal;text-align:center;border:1px solid #b8cce8;border-radius:6px;background:#f1f7ff}
+#adminMstTable{table-layout:fixed;width:100%;min-width:690px}
+#adminMstTable th:nth-child(1){width:23%}
+#adminMstTable th:nth-child(2){width:16%}
+#adminMstTable th:nth-child(3){width:22%}
+#adminMstTable th:nth-child(4){width:14%}
+#adminMstTable th:nth-child(5){width:13%}
+#adminMstTable th:nth-child(6){width:12%}
+#adminMstTable td{word-break:break-word;vertical-align:middle}
+#adminMstTable td:last-child{padding:4px 3px}
+.admin-mst-row-actions{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:3px;flex-wrap:nowrap;white-space:nowrap}
+.admin-mst-row-actions>button{padding:4px 5px!important;min-height:26px!important;font-size:10px!important;min-width:0!important;flex:0 0 auto}
 </style></head><body><main class="wrap">
 <header><div class="brand">AUTOTAX <span>V1.1.20 · ADMIN</span></div><div class="actions"><a href="./" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
@@ -93,7 +112,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 <option value="all">Mọi trạng thái gói</option><option value="invoice">Còn lượt hóa đơn</option>
 <option value="mst">Còn quyền MST</option><option value="trial">Đang dùng thử</option>
 <option value="expired">Không còn quyền hoạt động</option></select><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div><nav class="admin-pagination" aria-label="Phân trang tài khoản"><button id="customerPrev" class="secondary" type="button">‹</button><span id="customerPageInfo">Trang 1/1</span><button id="customerNext" class="secondary" type="button">›</button></nav></div>
-<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Quyền gói MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div><nav class="admin-pagination" aria-label="Phân trang MST"><button id="mstAssignmentPrev" class="secondary" type="button">‹</button><span id="mstAssignmentPageInfo">Trang 1/1</span><button id="mstAssignmentNext" class="secondary" type="button">›</button></nav></div><div class="panel" id="packageCatalog"><h2>Giá và cấu hình gói AutoTax</h2>
+<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table id="adminMstTable"><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Quyền gói MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div><nav class="admin-pagination" aria-label="Phân trang MST"><button id="mstAssignmentPrev" class="secondary" type="button">‹</button><span id="mstAssignmentPageInfo">Trang 1/1</span><button id="mstAssignmentNext" class="secondary" type="button">›</button></nav></div><div class="panel" id="packageCatalog"><h2>Giá và cấu hình gói AutoTax</h2>
 <div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option><option value="combo">Combo MST + số tờ</option><option value="storage">Gói lưu trữ data</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
 <h3 id="defaultPackageTitle">Gói mặc định</h3>
 <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói (ngày)</th><th>Tờ combo / hạn tờ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
@@ -214,7 +233,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
  });
 })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js?v=121pager2"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js?v=120nov2"></script><script>
 const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
 const $=id=>document.getElementById(id);let allUsers=[],allPackages=[],customerPage=1,packagePage=1;
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
@@ -613,7 +632,7 @@ function renderUsers(){
   const trial='<div>'+(u.trial_used?'<span class="pill off">Đã dùng thử</span>':'<span class="pill">Chưa dùng thử</span>')+'</div>'+
    (u.trial_expires_at?'<div class="sub">Hạn thử: '+fmt(u.trial_expires_at)+'</div>':'')+
    '<div class="sub">Liên kết: '+(linked||'Chưa có')+'</div>';
-  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: <button type="button" class="mode-change-trigger" data-mode-user="'+esc(u.user_id)+'" aria-label="Đổi chế độ sử dụng">'+esc(u.mode==='invoice'?'Số tờ':'MST')+' ✎</button></div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button data-grant="'+esc(u.user_id)+'">Cấp</button><button class="secondary" data-history="'+esc(u.user_id)+'">LS</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button></div></td></tr>';
+  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="customer-action-grid"><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button data-grant="'+esc(u.user_id)+'">Cấp</button><button class="secondary" data-history="'+esc(u.user_id)+'">LS</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button><button type="button" class="mode-change-trigger" data-mode-user="'+esc(u.user_id)+'" aria-label="Đổi chế độ sử dụng">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+' ✎</button></div></td></tr>';
  }).join('');
  $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
  $("count").textContent=filtered.length+" tài khoản";

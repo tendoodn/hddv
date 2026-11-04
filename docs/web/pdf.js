@@ -542,7 +542,7 @@
     const wrapped = details.flatMap((s) => doc.wrap(s, tw, 9));
     const bh = Math.max(58, 24 + wrapped.length * 12 + 6);
     doc.rect(bx, sy, bw, bh, { color: markColor, lw: 1.1 });
-    doc.text(bx + 7, sy + 5, signatureVerified ? 'Signature valid' : 'Thông tin ký (chưa xác thực)',
+    doc.text(bx + 7, sy + 5, signatureVerified ? 'Signature valid' : 'Thông tin ký số',
       { size: 11.5, bold: true, color: markColor });
     wrapped.forEach((t, k) =>
       doc.text(bx + 7, sy + 23 + k * 12, t, { size: 9, bold: true, color: markColor }));

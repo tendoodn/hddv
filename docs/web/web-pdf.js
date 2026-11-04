@@ -1,5 +1,5 @@
 /* AutoTax Web V1.1: two explicit export policies.
- * "tax": always rebuild a PDF representation from GDT invoice data.
+ * "tax": prefer a real PDF bundled in GDT's original archive; otherwise build a representation.
  * "original": try actual issuer PDF (or user-attached PDF); if unavailable,
  * rebuild a clearly labelled replacement, NEVER call that PDF the original.
  */
@@ -74,7 +74,7 @@ function fromSourceFiles(inv){
 async function pdfForInvoice(row,index,total,mode){
  const invoice=[row.khhdon,row.shdon].filter(Boolean).join('_');
  const app=window.WebInvoiceApp;
- app.progress((mode==='tax'?'Đang dựng PDF Thuế ':'Đang thử PDF gốc và chuẩn bị PDF dự phòng ')+
+ app.progress((mode==='tax'?'Đang kiểm tra PDF từ gói cổng Thuế ':'Đang thử PDF gốc và chuẩn bị PDF dự phòng ')+
   (index+1)+'/'+total);
  const detail=await app.fetchDetail(row);
  // Ngày ký là ngày phát hành ưu tiên; chỉ dùng ngày lập khi XML không có ngày ký.
@@ -84,9 +84,13 @@ async function pdfForInvoice(row,index,total,mode){
  const invoiceCode=safe(String(row.mhdon||row.mccqt||[row.khhdon,row.shdon].filter(Boolean).join('_')||'KhongRoMa'));
  const name=safe(sellerMst+'_'+invoiceCode+'_'+(dateForFilename||'KhongRoNgay'));
  const lookup=window.HDDT.originalLookup(row,detail.head);
- // PDF Thuế is always reconstructed, regardless of whether the issuer source
- // link is available. Its directory and manifest explicitly say NOT ORIGINAL.
+ // Use genuine PDF bytes only if included in a ZIP exported by GDT;
+ // a reconstructed representation is NEVER mislabelled as source-original.
  if(mode==='tax'){
+  const sourcePdf=fromSourceFiles(detail);
+  if(sourcePdf)return {name:'PDF_NGUON_TU_CONG_THUE/'+name+'.pdf',
+   data:sourcePdf,kind:'tax_attachment',sourceOriginal:true,
+   providerName:lookup.name||'',providerLink:lookup.link||'',lookupCode:lookup.code||''};
   const rendered=await window.Pdf.buildInvoicePdf(row,detail,lookup);
   if(!validPdf(rendered))throw Error('Không dựng được PDF Thuế từ dữ liệu hóa đơn.');
   return {name:'PDF_THUE_DUNG_TU_DU_LIEU_CQT_KHONG_PHAI_GOC/'+name+'.pdf',
@@ -147,17 +151,18 @@ async function create(rows,mode='original'){
  // Save every PDF independently; preserve a separate provenance report for rebuilt files.
  const guide=[
   'AutoTax Web V1.1 - BAO CAO NGUON PDF',
-  'Che do: '+(mode==='tax'?'PDF THUE (tat ca PDF dung lai)':'PDF GOC UU TIEN (neu that bai thi dung lai)'),
+  'Che do: '+(mode==='tax'?'PDF THUE (uu tien PDF tu goi CQT; neu khong co thi dung lai)':'PDF GOC NHA PHAT HANH UU TIEN'),
   'PDF_goc_nha_phat_hanh: Tap PDF nhan truc tiep tu duong dan nha cung cap, chua tu kiem tra chu ky so.',
+  'PDF_NGUON_TU_CONG_THUE: PDF that co san trong goi nguon do cong Thue tra ve, khac PDF goc nha phat hanh.',
   'PDF_THUE_DUNG_TU_DU_LIEU_CQT_KHONG_PHAI_GOC: Ban the hien duoc dung tu du lieu cong Thue; KHONG PHAI PDF GOC.',
   'PDF_DUNG_LAI_TU_DU_LIEU_CQT_KHONG_PHAI_GOC: Ban du phong khi PDF goc chua tai duoc; KHONG PHAI PDF GOC.',
   'PDF_nguoi_dung_cung_cap_CHUA_XAC_MINH: PDF do nguoi dung gan; chua xac minh nguon va chu ky.',
   'Neu hoa don co link tra cuu ma nha cung cap yeu cau CAPTCHA/dang nhap, su dung link + ma duoi day de tiep tuc tai ban goc.',
-  'Tong: '+results.length+' tep PDF; PDF goc nhan duoc '+originals+'; PDF dung lai '+rendered+'; nguoi dung gan '+userSupplied+'; loi '+errors.length+'.'
+  'Tong: '+results.length+' tep PDF; PDF NPH '+originals+'; PDF tu CQT '+attachments+'; PDF dung lai '+rendered+'; nguoi dung gan '+userSupplied+'; loi '+errors.length+'.'
  ];
  for(const x of results.filter(x=>x.kind!=='original')){
   guide.push('',x.name,
-   'Loai: '+(x.kind==='representation'?'PDF DUNG LAI, KHONG PHAI GOC':'PDF NGUOI DUNG, CHUA XAC MINH'),
+   'Loai: '+(x.kind==='representation'?'PDF DUNG LAI, KHONG PHAI GOC':x.kind==='tax_attachment'?'PDF TU CONG THUE':'PDF NGUOI DUNG, CHUA XAC MINH'),
    'Nha phat hanh: '+(x.providerName||'Chua xac dinh'),
    'Link tra cuu: '+(x.providerLink||'Khong co'),
    'Ma bao mat: '+(x.lookupCode||'Khong co'),

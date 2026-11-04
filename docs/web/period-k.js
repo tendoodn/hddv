@@ -1,5 +1,5 @@
 /* AutoTax period K: pure client-side estimate from the selected invoice window.
- * Blank opening stock is intentionally shown as K=9, and no purchases AND
+ * Blank opening stock is intentionally shown as K=9, and missing purchases OR
  * missing purchases OR missing sales is K=1, per product rule. These are defaults, not measured ratios.
  */
 (()=>{

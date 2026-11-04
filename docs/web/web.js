@@ -65,38 +65,6 @@ const progress=msg=>{const log=$('progressLog'),line=document.createElement('div
 const busyState=(value,keepLog=false)=>{busy=!!value;$('progress').hidden=!value&&!keepLog;if(value){$('progressLog').replaceChildren();progress('Khởi tạo phiên xử lý…');$('stopBtn').textContent='Dừng'}else if(keepLog){$('stopBtn').textContent='Đóng'}$('searchBtn').disabled=false;$('searchBtn').textContent=value?'Dừng tra cứu':'⌕ Tìm kiếm hóa đơn';
   for(const id of ['exportAllZip','exportExcel','exportXml','exportHtml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
-// User-triggered XML contribution; no tax-portal credentials or tokens go into XML storage.
-async function contributeXml(files){
- if(!files.length)return;
- if(files.length>20){show('Mỗi lượt đóng góp tối đa 20 XML.');return}
- const session=(await client.auth.getSession()).data?.session;
- if(!session?.access_token){show('Đăng nhập tài khoản AutoTax trước khi đóng góp XML.');return}
- const button=$('xmlContributionBtn');button.disabled=true;
- let accepted=0,duplicate=0;
- const errors=[];
- try{
-  for(const file of files){
-   if(!/\.xml$/i.test(file.name)||!file.size||file.size>3*1024*1024){
-    errors.push(file.name+': định dạng XML hoặc dung lượng không hợp lệ');continue;
-   }
-   try{
-    const data=new FormData();data.set('xml',file,file.name);
-    const response=await fetch(SUPABASE+'/functions/v1/autotax-xml-contribute',{
-     method:'POST',
-     headers:{Authorization:'Bearer '+session.access_token,apikey:PUBLIC_KEY},
-     body:data
-    });
-    const result=await response.json().catch(()=>({}));
-    if(!response.ok||!result.ok)throw Error(String(result.error||'HTTP '+response.status));
-    if(result.duplicate)duplicate++;else accepted++;
-   }catch(error){errors.push(file.name+': '+error.message)}
-  }
-  show('Đã nhận '+accepted+' XML vào kho riêng tư'+(duplicate?' · '+duplicate+' tệp đã có (bỏ trùng)':'')+
-   (errors.length?' · '+errors.length+' lỗi: '+errors.slice(0,3).join('; '):'')+
-   '. Việc phân tích nhà phát hành được xử lý riêng, không hiển thị.',!errors.length);
- }finally{button.disabled=false}
-}
-
 window.WebTaxState=govSession;
 const showGatewayHelp=visible=>{$('gdtConnectionHelp').hidden=!visible;};
 function resetCaptchaImage(){
@@ -332,6 +300,12 @@ async function refreshAccount(){
   modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
   modeSelect.querySelector('[value="mst"]').disabled=!canMst;
   modeSelect.disabled=!(canInvoice&&canMst);
+  $('webModeControls').hidden=!(canInvoice&&canMst);
+  if(canInvoice!==canMst&&selectedMode!==(canInvoice?'invoice':'mst')){
+   const auto=canInvoice?'invoice':'mst';
+   const changed=await client.rpc('autotax_set_usage_mode_v118',{p_mode:auto});
+   if(!changed.error){selectedMode=auto;modeSelect.value=auto;}
+  }
   $('webUsageModeHint').textContent=canInvoice&&canMst?
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
     'Chỉ chuyển được khi cả hai gói có quyền sử dụng còn hiệu lực.';
@@ -454,6 +428,10 @@ async function claimRows(all,mst){
   const allowed=new Set((data.allowed_items||[]).map(key));
   for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
   progress('Đã ghi nhận '+Number(data.recorded_without_charge||0)+' hóa đơn bằng gói MST, '+Number(data.deducted||0)+' lượt số tờ mới; '+Number(data.previously_deducted||0)+' hóa đơn đọc lại không trừ lượt.');
+  if(Number(data.denied||0)>0&&selectedMode==='invoice'){
+   const dlg=$('invoiceQuotaDialog');if(dlg&&!dlg.open)dlg.showModal();
+   progress('hết hạn mức tra cứu vui lòng mua thêm số hoá đơn');
+  }
  }
  return accepted;
 }
@@ -699,12 +677,6 @@ function init(){
   }catch(error){input.value=previous;show('Không đổi được chế độ: '+error.message)}
   finally{input.disabled=false}
  });
- $('xmlContributionBtn').addEventListener('click',()=>$('xmlContributionInput').click());
- $('xmlContributionInput').addEventListener('change',event=>{
-  const files=[...(event.currentTarget.files||[])];
-  event.currentTarget.value='';
-  void contributeXml(files).catch(error=>show('Không gửi được XML: '+error.message));
- });
  $('changeOutputFolderWeb').addEventListener('click',async()=>{
   try{show('Đã chọn thư mục '+await AutoTaxDownloadFolder.change(),true)}
   catch(error){if(error.name!=='AbortError')show(error.message)}
@@ -727,6 +699,7 @@ function init(){
   if(govtToken&&currentSearchMst()!==govtMst)clearGov();
  });
  $('mstLimitClose').addEventListener('click',()=>$('mstLimitDialog').close());
+ $('invoiceQuotaClose').addEventListener('click',()=>$('invoiceQuotaDialog').close());
  $('mstPasswordReminderClose').addEventListener('click',()=>$('mstPasswordReminder').close());
  $('mst').addEventListener('change',()=>{
   const x=currentSearchMst();

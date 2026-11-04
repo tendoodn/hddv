@@ -99,8 +99,15 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 .portal-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
 .portal-quick-actions button{min-width:0;white-space:nowrap;padding:9px 5px}
 #passwordPanel{border-color:var(--tendoo-line)}
-#dashboard.autotax-force-password > :not(#passwordPanel):not(#forcedPasswordNotice){opacity:.38;pointer-events:none}
-#forcedPasswordNotice{background:#fff3f3;color:#9f1239;border:2px solid #e11d48;font-weight:750}
+#dashboard.autotax-force-password > *{opacity:.32;pointer-events:none}
+#forcedPasswordDialog{width:min(440px,calc(100vw - 22px));max-width:96vw;border-radius:15px;border:1px solid #fda4af;padding:22px;background:#fff;color:#1f2937;box-shadow:0 25px 90px #17050c55}
+#forcedPasswordDialog::backdrop{background:#090a11b8}
+#forcedPasswordDialog h2{color:#ad152b;font-size:20px;margin:0 0 10px}
+#forcedPasswordDialog p{font-size:13px;line-height:1.5}
+#forcedPasswordDialog label{display:block;margin:11px 0 5px;font-size:13px;font-weight:750}
+#forcedPasswordDialog input{width:100%;box-sizing:border-box;min-width:0}
+#forcedPasswordDialog button{width:100%;margin-top:13px}
+#forcedPasswordDialog .notice[hidden]{display:none!important}
 @media(max-width:450px){.portal-quick-actions{gap:5px}.portal-quick-actions button{font-size:11px;padding:8px 3px}}
 
 /* V1.1.18: explicit MST grant checkboxes in the customer portal. */
@@ -255,10 +262,19 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   <div class="actions"><button id="accountProfileSave" type="submit">Lưu</button><button id="accountProfileClose" class="secondary" type="button">Đóng</button></div>
  </form>
 </dialog>
+<dialog id="forcedPasswordDialog" aria-labelledby="forcedPasswordTitle" aria-modal="true">
+ <form id="forcedPasswordForm" autocomplete="off">
+  <h2 id="forcedPasswordTitle">Đổi mật khẩu bắt buộc</h2>
+  <p>Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.</p>
+  <label for="forcedPasswordNew">Mật khẩu mới</label>
+  <input id="forcedPasswordNew" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập mật khẩu mới">
+  <label for="forcedPasswordConfirm">Nhập lại mật khẩu mới</label>
+  <input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập lại mật khẩu">
+  <p id="forcedPasswordError" class="notice error" role="alert" hidden></p>
+  <button id="forcedPasswordSave" type="submit">Lưu mật khẩu mới</button>
+ </form>
+</dialog>
 <section id="dashboard" hidden>
- <div id="forcedPasswordNotice" class="notice" hidden>
-  Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.
- </div>
  <div class="panel" id="autotaxAccountSummary">
   <div class="row portal-account-head">
    <div class="autotax-welcome">
@@ -456,7 +472,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=126permissions2"></script>
+<script src="./customer.js?v=127forced1"></script>
 <script src="./account-settings-v120.js?v=126email1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <script src="./team-v118.js?v=125mode1"></script>

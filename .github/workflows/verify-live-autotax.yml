@@ -36,7 +36,7 @@ jobs:
             "https://tracuuhoadon.top/extension-link-v118.js": ["extensionHeaderDownloadBtn", "extensionDownloadBtn"],
             "https://tracuuhoadon.top/admin-discounts-v119.js": ["autotax_admin_create_discount_v119", "autotax_admin_list_discounts_v119"],
             "https://tracuuhoadon.top/team-v118.js": ["autotax_team_create_v118", "autotax_team_usage_stats_v118", "autotaxTeamPermissionDialog"],
-            "https://tracuuhoadon.top/customer.js": ["hasInvoice!==hasMst", "applyPaymentCoupon", "isAuthSessionError"],
+            "https://tracuuhoadon.top/customer.js": ["if(canInvoice!==canMst)", "applyPaymentCoupon", "isAuthSessionError"],
             "https://tracuuhoadon.top/web/period-k.js": ["purchase+stock", "shouldWarn"],
             "https://tracuuhoadon.top/team-v118.js": ["autotax_team_create_v118", "autotax_team_usage_stats_v118"],
           }

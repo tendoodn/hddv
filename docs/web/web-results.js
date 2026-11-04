@@ -146,17 +146,18 @@ function renderVisible(){
    const td=document.createElement('td');td.textContent=value;
    if(i===4||i===5)td.className='money';tr.append(td);
   });
-  const action=document.createElement('td');
+  const action=document.createElement('td'),actionGroup=document.createElement('div');
+  actionGroup.className='invoice-row-actions';
   const button=document.createElement('button');button.type='button';
   button.className='table-detail-btn';button.dataset.detail=keyOf(r);
-  button.textContent='Xem chi tiết';action.append(button);
+  button.textContent='Xem chi tiết';actionGroup.append(button);
   const audit=document.createElement('button');audit.type='button';
   audit.className='table-detail-btn table-audit-btn';audit.dataset.audit=keyOf(r);
-  audit.textContent='Kiểm tra hợp lệ';action.append(audit);
+  audit.textContent='Kiểm tra hợp lệ';actionGroup.append(audit);
   const issuer=document.createElement('button');issuer.type='button';
   issuer.className='table-detail-btn table-issuer-btn';
-  issuer.dataset.issuer=keyOf(r);issuer.textContent='PDF nguồn';action.append(issuer);
-  tr.append(action);body.append(tr);
+  issuer.dataset.issuer=keyOf(r);issuer.textContent='PDF nguồn';actionGroup.append(issuer);
+  action.append(actionGroup);tr.append(action);body.append(tr);
  }
  if(filterRows().length>1500)app()?.show('Đang hiển thị 1.500 dòng đầu; xuất tất cả sẽ bao gồm toàn bộ hóa đơn khớp bộ lọc.',true);
  updateScope();

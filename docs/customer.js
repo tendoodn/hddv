@@ -76,10 +76,11 @@ function updateMstGrantPreview(){
 }
 function setMstGrantUnlocked(value){
  mstGrantUnlocked=!!value&&state?.mode==='mst';
- $('mstGrantAllow').hidden=false;
+ $('mstGrantAllow').hidden=!mstGrantUnlocked;
  $('mstGrantAllow').disabled=!mstGrantUnlocked;
  $('mstGrantCancel').hidden=true;
- $('mstGrantUnlock').disabled=mstGrantUnlocked||state?.mode!=='mst';
+ $('mstGrantUnlock').hidden=mstGrantUnlocked;
+ $('mstGrantUnlock').disabled=state?.mode!=='mst';
  for(const box of document.querySelectorAll('#mstList .mst-allow-checkbox'))
   box.disabled=!mstGrantUnlocked;
  updateMstGrantPreview();
@@ -602,13 +603,13 @@ $("webAddMstForm").addEventListener("submit",e=>{
 $("mstGrantUnlock").addEventListener("click",()=>{
  if(state?.mode!=='mst')return showMessage("Chuyển sang chế độ MST để cấp quyền.",true);
  setMstGrantUnlocked(true);
- showMessage("Đã mở khóa danh sách. Tick các MST cần tra cứu, sau đó bấm Khoá quyền để lưu.");
+ showMessage("Đã mở cấu hình. Chọn các MST được cấp phép, sau đó bấm Lưu cấu hình.");
 });
 $("mstGrantCancel").addEventListener("click",()=>{
  setMstGrantUnlocked(false);void loadMstAssignments();
 });
 $("mstGrantAllow").addEventListener("click",async()=>{
- if(!mstGrantUnlocked)return showMessage("Bấm Cấp lại để mở khóa danh sách.",true);
+ if(!mstGrantUnlocked)return showMessage("Bấm Thiết lập lại quyền sử dụng để chọn MST.",true);
  if(state?.mode!=="mst")return showMessage("Hãy chuyển sang chế độ MST trước khi cấp quyền.",true);
  const all=[...document.querySelectorAll("#mstList .mst-allow-checkbox:checked")].map(x=>x.value);
  const capacity=Number(state?.packages?.mst?.active_quantity||0);
@@ -620,7 +621,7 @@ $("mstGrantAllow").addEventListener("click",async()=>{
  try{
   const result=await rpc("addon_set_allowed_msts_v115",{p_msts:all});
   showMessage("Đã lưu và khóa danh sách "+result.count+" / "+result.capacity+
-   " MST. Nếu cần chỉnh sửa, hãy bấm Cấp lại quyền tra cứu.");
+   " MST. Nếu cần chỉnh sửa, hãy bấm Thiết lập lại quyền sử dụng.");
   setMstGrantUnlocked(false);
   await loadMstAssignments();
  }catch(error){
@@ -670,7 +671,6 @@ $("mstProfileEditorForm").addEventListener("submit",async e=>{
 });
 $("giftWebBtn").addEventListener("click",()=>{$("giftWebDialog").showModal();$("unlockCode").focus()});
 $("closeGiftWebBtn").addEventListener("click",()=>$("giftWebDialog").close());
-$("renewWebBtn").addEventListener("click",()=>$("planSection").scrollIntoView({behavior:"smooth",block:"center"}));
 $("passwordOpenBtn").addEventListener("click",()=>{
  $("passwordPanel").hidden=false;
  $("passwordPanel").scrollIntoView({behavior:"smooth",block:"center"});

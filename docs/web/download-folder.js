@@ -200,7 +200,7 @@ async function browserDownload(parts,data,mime){
  }
  // HTTPS cannot place downloads into arbitrary directories without user permission.
  // If permission expired, download the file anyway with its logical folder in its filename.
- const name=parts.slice(1).join('__'),blob=data instanceof Blob?data:new Blob([data],{type:mime});
+ const name=parts.length===1?parts[0]:parts.slice(1).join('__'),blob=data instanceof Blob?data:new Blob([data],{type:mime});
  const url=URL.createObjectURL(blob),link=document.createElement('a');
  link.href=url;link.download=name;document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),30000);
@@ -212,6 +212,18 @@ async function save(path,data,mime='application/octet-stream'){
  const relative=root?.name?.toLowerCase()===DEFAULT_DIR.toLowerCase()?parts.slice(1):parts;
  if(await tryHandle(relative,data,mime))return relative.join('/');
  return browserDownload(parts,data,mime);
+}
+async function saveRootFile(filename,data,mime='application/octet-stream'){
+ await restored();
+ const name=safe(filename);
+ if(await tryHandle([name],data,mime))return name;
+ if(window.location?.protocol==='chrome-extension:')
+  return browserDownload(['HoaDon',name],data,mime);
+ const blob=data instanceof Blob?data:new Blob([data],{type:mime});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+ return name;
 }
 async function saveRootArchive(filename,bytes){
  await restored();
@@ -227,7 +239,7 @@ async function saveMany(files){
 }
 async function change(){return pickChange()}
 window.AutoTaxDownloadFolder=Object.freeze({
- prepare,change,save,saveRootArchive,saveMany,outputPath,folderFor,
+ prepare,change,save,saveRootFile,saveRootArchive,saveMany,outputPath,folderFor,
  get label(){return shownName()}
 });
 })();

@@ -80,8 +80,9 @@ async function pdfForInvoice(row,index,total,mode){
  // Ngày ký là ngày phát hành ưu tiên; chỉ dùng ngày lập khi XML không có ngày ký.
  const signature=detail?.head?.seller?.time||detail?.head?.signatureTime||'';
  const dateForFilename=window.Report.dateVN(signature||detail?.head?.nlap||row.tdlap).split('/').join('');
- const name=safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
-   String(row.khhdon||'')+'_'+String(row.shdon||'')+'_'+(dateForFilename||'KhongRoNgay'));
+ const sellerMst=String(row.nbmst||detail?.head?.seller?.mst||'KhongRoMST').replace(/\D/g,'')||'KhongRoMST';
+ const invoiceCode=safe(String(row.mhdon||row.mccqt||[row.khhdon,row.shdon].filter(Boolean).join('_')||'KhongRoMa'));
+ const name=safe(sellerMst+'_'+invoiceCode+'_'+(dateForFilename||'KhongRoNgay'));
  const lookup=window.HDDT.originalLookup(row,detail.head);
  // PDF Thuế is always reconstructed, regardless of whether the issuer source
  // link is available. Its directory and manifest explicitly say NOT ORIGINAL.

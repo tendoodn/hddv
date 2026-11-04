@@ -598,3 +598,8 @@
             border-bottom: 1px solid #f0f0f0;}
         .dropdown-menu .sub-tab-btn:last-child {border-bottom: none;}
         
+
+/* Respect mobile accessibility settings without changing the default layout. */
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+}

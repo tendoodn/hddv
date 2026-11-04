@@ -13,6 +13,20 @@ const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
 const DUP_EMAIL="Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.";
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
 let adminRoleCheckedUser='',adminRoleCheckedAt=0,adminRoleRequest=0;
+async function refreshExtensionDownloadLink(){
+ const anchor=$('extensionDownloadBtn');
+ if(!anchor)return;
+ try{
+  const {data,error}=await client.from('addon_public_settings').select('value').eq('setting_key','extension_download_url').maybeSingle();
+  if(error)throw error;
+  const url=String(data?.value||'').trim();
+  const parsed=new URL(url);
+  if(parsed.protocol==='https:' && (parsed.hostname==='drive.google.com'||parsed.hostname==='docs.google.com')){
+   anchor.href=parsed.href;
+   anchor.title='Tải bản AutoTax Extension mới nhất từ Google Drive';
+  }
+ }catch(error){console.warn('Không cập nhật được link Extension:',error.message)}
+}
 function setAdminVisibility(show){
  for(const id of ['adminLink','adminFooterLink']){
   const el=$(id);if(el)el.hidden=!show;
@@ -137,6 +151,7 @@ async function refresh(){
   $("dashboard").hidden=!signedIn;
   if(!signedIn){state=null;refreshAdminVisibility(null);closePayment();return}
   void refreshAdminVisibility(session.user.id);
+  void refreshExtensionDownloadLink();
   $("userEmail").textContent=session.user.email||"";
   const license=await rpc("addon_my_entitlements");
   state=license;

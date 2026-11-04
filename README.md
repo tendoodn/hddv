@@ -2,7 +2,7 @@
 
 ![Logo AutoTax](docs/favicon.svg)
 
-**AutoTax V1.1.8 · Tendoo**
+**AutoTax V1.1.20 · Tendoo**
 
 Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa đơn mua vào/bán ra, xuất Excel/XML/HTML/PDF, kiểm tra rủi ro và đối chiếu sản phẩm.
 
@@ -30,7 +30,7 @@ Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa
 
 **Lưu ý:** PDF dựng lại không phải PDF gốc; một số cổng nhà phát hành cần phiên đăng nhập hoặc CAPTCHA hợp lệ.
 
-## Đồng bộ mật khẩu MST và liên hệ (1.1.8)
+## Đồng bộ mật khẩu MST và liên hệ (1.1.20)
 
 - Mật khẩu MST tự mã hóa AES-GCM trên máy và đồng bộ ciphertext lên Supabase theo tài khoản AutoTax. Đăng nhập cùng email/mật khẩu AutoTax trên Web và Add-on để tự mở khóa, không cần bấm nút chuyển mật khẩu.
 - Admin chỉnh sửa danh sách liên kết chân trang tại trang quản trị: 1 ô nội dung hiển thị, 1 ô đường link, bật/tắt và sắp xếp.

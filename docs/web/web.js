@@ -8,7 +8,7 @@ const GATEWAY=SUPABASE+'/functions/v1/autotax-web-gateway';
 let gatewayRegion='ap-southeast-1'; // Singapore, closer to Viet Nam than the previous Seoul route.
 const gatewayUrl=()=>GATEWAY+'?forceFunctionRegion='+gatewayRegion;
 const $=id=>document.getElementById(id);
-const client=window.supabase?.createClient(SUPABASE,PUBLIC_KEY);
+const client=window.AutoTaxSharedClient||(window.AutoTaxSharedClient=window.supabase?.createClient(SUPABASE,PUBLIC_KEY));
 window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
  const {data:{session}}=await client.auth.getSession();
  return {userId:session?.user?.id,token:session?.access_token};
@@ -25,6 +25,11 @@ const parseVnDate=text=>{
  if(dt.getUTCFullYear()!==Number(yyyy)||dt.getUTCMonth()!==Number(mm)-1||dt.getUTCDate()!==Number(dd))return '';
  return yyyy+'-'+mm+'-'+dd;
 };
+const formatVnDateInput=value=>{
+ const digits=String(value||'').replace(/\D/g,'').slice(0,8);
+ return digits.slice(0,2)+(digits.length>2?'/'+digits.slice(2,4):'')+
+  (digits.length>4?'/'+digits.slice(4):'');
+};
 const readVnDate=id=>parseVnDate($(id).value);
 const setVnDate=(id,iso)=>{$(id).value=vn(iso);const native=$(id+'Native');if(native)native.value=iso};
 function configureVnDates(){
@@ -32,9 +37,14 @@ function configureVnDates(){
   const text=$(id),native=$(id+'Native'),pick=$(id+'Pick');
   native.addEventListener('change',()=>setVnDate(id,native.value));
   text.addEventListener('input',()=>{
-   const v=text.value.replace(/[^0-9]/g,'').slice(0,8);
-   if(v.length>=3&&text.value.indexOf('/')<0)
-    text.value=v.slice(0,2)+'/'+v.slice(2,4)+(v.length>=5?'/'+v.slice(4):'');
+   const raw=text.value,caret=text.selectionStart??raw.length;
+   const before=raw.slice(0,caret).replace(/\D/g,'').length;
+   const formatted=formatVnDateInput(raw);
+   if(raw===formatted)return;
+   text.value=formatted;
+   let position=0,seen=0;
+   while(position<formatted.length&&seen<before){if(/\d/.test(formatted[position]))seen++;position++}
+   text.setSelectionRange(position,position);
   });
   text.addEventListener('blur',()=>{const iso=readVnDate(id);if(iso)setVnDate(id,iso)});
   pick.addEventListener('click',()=>{

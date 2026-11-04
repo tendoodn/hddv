@@ -20,7 +20,11 @@ jobs:
           checks = {
             "https://tracuuhoadon.top/admin-combo.html": ["Gói combo", "id=\"createForm\""],
             "https://tracuuhoadon.top/": ['id="autotaxTeamTab"', 'id="signupDialog"', 'id="signupName"', 'id="signupPasswordConfirm"'],
-            "https://tracuuhoadon.top/web.html": ['id="kIndustry"', 'web-results.js?v=1118k4'],
+            "https://tracuuhoadon.top/web.html": ['id="kIndustry"', 'web-results.js?v=1118k4', 'web.js?v=1118terminal3', 'id="progressLog"'],
+            "https://tracuuhoadon.top/web/web.js": ["keepLog=false", "log.children.length>5", "Đã hoàn tất tải"],
+            "https://tracuuhoadon.top/web/web.css": ["terminal-error", "terminal-success"],
+            "https://tracuuhoadon.top/customer.js": ["signupDialog", "signupPasswordConfirm", "Supabase Auth"],
+            "https://tracuuhoadon.top/admin.html": ["admin-combo.html"],
             "https://tracuuhoadon.top/web/period-k.js": ["purchase+stock", "shouldWarn"],
             "https://tracuuhoadon.top/team-v118.js": ["autotax_team_create_v118", "autotax_team_usage_stats_v118"],
           }

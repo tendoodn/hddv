@@ -153,7 +153,20 @@ async function refresh(){
   void refreshAdminVisibility(session.user.id);
   void refreshExtensionDownloadLink();
   $("userEmail").textContent=session.user.email||"";
-  const license=await rpc("autotax_my_entitlements_v118");
+  let license=await rpc("autotax_my_entitlements_v118");
+  const initialInvoice=license.packages?.invoice||{},initialMst=license.packages?.mst||{};
+  const hasInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_remaining||0)>0||
+    !!license.team_invoice_available||!!license.can_reread_charged_invoices;
+  const hasMst=Number(initialMst.active_quantity||0)>0||Number(license.team_mst_count||0)>0;
+  if(hasInvoice!==hasMst){
+   const automatic=hasInvoice?'invoice':'mst';
+   if(license.mode!==automatic){
+    try{
+     await rpc('autotax_set_usage_mode_v118',{p_mode:automatic});
+     license=await rpc("autotax_my_entitlements_v118");
+    }catch(modeError){showMessage('Không tự chuyển được chế độ: '+prettyError(modeError),true)}
+   }
+  }
   state=license;
   const invoice=license.packages?.invoice||{};
   const mst=license.packages?.mst||{};
@@ -161,13 +174,14 @@ async function refresh(){
   const invTotal=Number(invoice.purchased||0);
   const mstCapacity=Number(mst.active_quantity||0);
   const selected=license.mode||"mst";
-  $("licenseTitle").textContent=selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"Đã có quyền sử dụng":"Chưa có gói hiệu lực";
+  $("licenseTitle").textContent=selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"":"Chưa có gói hiệu lực";
+  $("licenseTitle").hidden=!!license.allowed&&!(selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices);
   $("invoiceBalance").textContent=invRemaining.toLocaleString("vi-VN")+" / "+invTotal.toLocaleString("vi-VN");
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
   $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
   const teamInvoice=Number(license.team_invoice_remaining||0),teamMst=Number(license.team_mst_count||0);
-  $("modeSection").hidden=!((invRemaining>0||teamInvoice>0||license.team_invoice_available||license.can_reread_charged_invoices)&&(mstCapacity>0||teamMst>0));
+  $("modeSection").hidden=!(hasInvoice&&hasMst);
   $("usageMode").value=selected;
   $("mstAllowControls").hidden=selected!=="mst";
   setMstGrantUnlocked(false);
@@ -391,14 +405,14 @@ async function checkPaymentStatus(manual=false){
  })();
  try{return await paymentStatusPromise}finally{paymentStatusPromise=null}
 }
-async function buy(packageCode,button){
+async function buy(packageCode,button,options={}){
  button.disabled=true;
  try{
   const {data:{session}}=await client.auth.getSession();
   if(!session)throw Error("Vui lòng đăng nhập lại trước khi thanh toán.");
   const response=await fetch(BASE+"/functions/v1/addon-create-order",{
    method:"POST",headers:{apikey:PUBLIC_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
-   body:JSON.stringify({package_code:packageCode})
+   body:JSON.stringify({package_code:packageCode,coupon_code:options.coupon||null,replace_order_id:options.replaceId||null})
   });
   const result=await response.json();
   if(!response.ok||!result.success||!result.payment?.qr_url)throw Error(result.error||"Không tạo được đơn hàng.");
@@ -412,6 +426,12 @@ async function buy(packageCode,button){
    completed:false,expired:false
   };
   paymentOrder=order;
+  $("paymentCouponCode").value=options.coupon||"";
+  $("paymentCouponStatus").textContent=options.coupon?
+   ("Đã áp dụng mã "+options.coupon+": giảm "+vnMoney(result.order?.discount_amount_vnd||0)+
+   " · giá gốc "+vnMoney(result.order?.original_amount_vnd||result.payment.amount_vnd)+
+   " · cần trả "+vnMoney(result.payment.amount_vnd)):
+   (options.replaceId?"Đã bỏ mã giảm giá và tạo QR thanh toán mới.":"Có mã giảm giá? Nhập rồi bấm Áp dụng.");
   $("paymentInfo").textContent=vnMoney(result.payment.amount_vnd)+" · "+
    result.payment.bank_name+" · "+result.payment.account_name+
    " · Nội dung: "+result.payment.transfer_content;
@@ -441,6 +461,11 @@ async function buy(packageCode,button){
  }catch(error){showMessage("Không tạo được đơn: "+prettyError(error),true)}
  finally{button.disabled=false}
 }
+$("applyPaymentCoupon").addEventListener("click",()=>{
+ if(!paymentOrder)return showMessage("Chưa có QR để áp dụng mã.",true);
+ const coupon=$("paymentCouponCode").value.trim().toUpperCase();
+ void buy(paymentOrder.packageCode,$("applyPaymentCoupon"),{coupon,replaceId:paymentOrder.id});
+});
 async function action(id,fn){
  const button=$(id);button.disabled=true;
  try{await fn()}catch(error){showMessage(prettyError(error),true,$("dashboard").hidden?"authMessage":"accountMessage")}

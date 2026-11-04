@@ -44,7 +44,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 .admin-feedback-item textarea{font:inherit}
 .admin-feedback-images img{cursor:zoom-in}
 </style></head><body><main class="wrap">
-<header><div class="brand">AUTOTAX <span>V1.1.18 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><a href="./admin-combo.html" style="align-self:center;font-weight:750">Gói Combo & thời hạn</a><a href="./admin-combo.html" style="align-self:center;display:inline-flex;padding:9px 11px;border:1px solid #fecdd3;border-radius:9px;background:#fff1f2;color:#991b1b;font-size:13px;text-decoration:none;font-weight:750">Gói combo · thời hạn</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
+<header><div class="brand">AUTOTAX <span>V1.1.18 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><a href="#packageCatalog" style="align-self:center;color:#a00717;font-weight:750">Quản lý gói Combo</a><a href="#adminDiscountCodes" style="align-self:center;color:#a00717;font-weight:750">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
 <section id="app" class="hidden">
 <div class="row"><div><h1>Quản lý khách hàng</h1><div class="muted">Tối đa 500 tài khoản gần nhất · gói hóa đơn, MST và trạng thái dùng thử AutoTax.</div></div><button id="reload">Làm mới dữ liệu</button></div>
@@ -55,25 +55,42 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 <option value="all">Mọi trạng thái gói</option><option value="invoice">Còn lượt hóa đơn</option>
 <option value="mst">Còn quyền MST</option><option value="trial">Đang dùng thử</option>
 <option value="expired">Không còn quyền hoạt động</option></select><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div></div>
-<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Quyền gói MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
-<div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option><option value="storage">Gói lưu trữ data</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
+<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><p class="sub">Admin có thể gỡ MST kể cả khi gói hết hạn. Lịch sử dùng thử vẫn được giữ.</p><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Quyền gói MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div></div><div class="panel" id="packageCatalog"><h2>Giá và cấu hình gói AutoTax</h2><p class="sub">10 gói mặc định luôn nằm riêng ở phần đầu và không được xóa. Giá mới chỉ áp dụng cho đơn hàng tạo sau khi lưu.</p>
+<div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option><option value="combo">Combo MST + số tờ</option><option value="storage">Gói lưu trữ data</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
 <h3>10 gói mặc định</h3>
-<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói (ngày)</th><th>Tờ combo / hạn tờ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
 <h3>Gói tự tạo · khu vực thứ hai</h3><p class="sub">Gói mới luôn xuất hiện ở đây, không chen vào 10 gói mặc định. Chỉ gói tự tạo có nút Xóa: nếu đã có khách mua/cấp hoặc mã unlock, gói sẽ được ẩn khỏi danh mục nhưng lịch sử và quyền đã cấp vẫn giữ nguyên.</p>
-<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn MST</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packageCustomPrices"></tbody></table></div>
-<p class="sub">Gói MST cố định 365 ngày. Admin được chỉnh giá và trạng thái của mọi gói đang hiển thị.</p><h3>Thêm gói mới</h3>
+<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói (ngày)</th><th>Tờ combo / hạn tờ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packageCustomPrices"></tbody></table></div>
+<p class="sub">Admin được tùy chỉnh hạn từng gói MST, số tờ và Combo; thay đổi mới không hồi tố đơn đã mua.</p><h3>Thêm gói mới</h3>
 <p class="sub">Mã gói gồm 2–24 ký tự A–Z, 0–9 hoặc dấu gạch dưới (_). Ví dụ <b>T300</b>, <b>MST_100</b>. Khoảng trắng và dấu gạch nối được tự đổi thành dấu _.</p>
 <form id="createPackageForm" class="new-package-form" autocomplete="off">
   <label>Mã gói *<input id="newCode" type="text" maxlength="64" placeholder="Ví dụ T300" required autocapitalize="characters" spellcheck="false"></label>
-  <label>Loại gói *<select id="newFamily"><option value="invoice">Số tờ hóa đơn</option><option value="mst">MST</option></select></label>
+  <label>Loại gói *<select id="newFamily"><option value="invoice">Số tờ hóa đơn</option><option value="mst">MST</option><option value="combo">Combo MST + số tờ</option></select></label>
   <label>Tên gói *<input id="newName" type="text" maxlength="120" placeholder="Ví dụ 300 tờ hóa đơn" required></label>
   <label>Số lượng *<input id="newQty" type="number" min="1" step="1" placeholder="Ví dụ 300" required></label>
   <label>Giá VND *<input id="newPrice" type="number" min="0" step="1" placeholder="Ví dụ 200000" required></label>
   <label>Mô tả (không bắt buộc)<input id="newDesc" maxlength="400" placeholder="Quyền lợi của gói"></label>
-  <input id="newValidity" type="number" value="365" title="MST có hạn cố định 365 ngày" disabled hidden>
-  <div class="package-form-footer"><span class="sub">Gói MST có thời hạn cố định 365 ngày. Gói số tờ cộng dồn lượt.</span><button id="createPackage" type="submit">Thêm gói</button></div>
+  <label id="newValidityWrap">Thời hạn gói (ngày; số tờ để trống = không giới hạn)<input id="newValidity" type="number" min="1" max="3650" step="1" placeholder="Ví dụ 365"></label>
+  <label id="newInvoiceQtyWrap" hidden>Số tờ hóa đơn trong Combo *<input id="newInvoiceQty" type="number" min="1" max="10000000" step="1" placeholder="Ví dụ 500"></label>
+  <label id="newInvoiceValidityWrap" hidden>Hạn số tờ trong Combo (ngày; trống = hạn MST)<input id="newInvoiceValidity" type="number" min="1" max="3650" step="1" placeholder="Ví dụ 180"></label>
+  <div class="package-form-footer"><span class="sub">Thời hạn linh hoạt; Combo có hạn MST và hạn số tờ độc lập.</span><button id="createPackage" type="submit">Thêm gói</button></div>
 </form>
 <div id="createPackageMessage" class="notice hidden" role="status" aria-live="polite"></div></div>
+<section id="adminDiscountCodes" class="panel">
+ <h2>Mã giảm giá thanh toán QR</h2>
+ <p class="sub">Mã giảm giá áp dụng khi khách thanh toán gói mới. Số tiền được Supabase tính lại trước khi tạo QR; giảm theo số tiền hoặc %. Mã không giảm xuống dưới 1.000đ.</p>
+ <form id="couponCreateForm" class="new-package-form" autocomplete="off">
+  <label>Mã giảm giá *<input id="couponCode" type="text" maxlength="32" required placeholder="Ví dụ AUTOTAX20" autocapitalize="characters"></label>
+  <label>Hình thức giảm *<select id="couponType"><option value="fixed">Giảm số tiền (VND)</option><option value="percent">Giảm theo %</option></select></label>
+  <label>Giá trị giảm *<input id="couponValue" type="number" min="1" step="1" required placeholder="Ví dụ 20000 hoặc 20"></label>
+  <label>Giới hạn lượt dùng (để trống = không hạn)<input id="couponLimit" type="number" min="1" step="1" placeholder="Ví dụ 100"></label>
+  <label>Hết hạn (để trống = không hạn)<input id="couponExpiry" type="datetime-local"></label>
+  <div class="package-form-footer"><span class="sub">Chỉ Admin có quyền tạo/tạm dừng mã. Giá trị giảm được chốt cùng đơn hàng.</span><button id="couponCreate" type="submit">Tạo mã giảm giá</button></div>
+ </form>
+ <div id="couponMessage" class="notice hidden" role="status" aria-live="polite"></div>
+ <div class="actions"><button id="couponReload" class="secondary" type="button">Làm mới danh sách mã</button></div>
+ <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Giá trị giảm</th><th>Sử dụng / Giới hạn</th><th>Hết hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="couponRows"><tr><td colspan="7">Đang tải mã…</td></tr></tbody></table></div>
+</section>
 <section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong các gói sản phẩm đang mở để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label>Khách hàng <select id="grantCustomer" aria-label="Khách hàng cần cấp gói"><option value="">Chọn khách hàng</option></select></label><label>Gói cần cấp <select id="grantPackage" aria-label="Gói cần cấp"><option value="">Chọn gói</option></select></label><button id="grantNow" type="button">Cấp gói cho khách hàng</button></div><div id="grantMessage" class="notice hidden" role="status"></div></section>
 <section class="panel" id="packageHistorySection"><div class="row"><div><h2>Lịch sử mua và cấp gói</h2><p class="sub">Mua gói và cấp gói bởi quản trị · mỗi trang tối đa 10 giao dịch.</p></div><button id="togglePackageHistory" class="secondary" type="button">Xem lịch sử gói</button></div></section>
 <dialog id="packageHistoryDialog" class="history-modal" aria-labelledby="packageHistoryTitle">
@@ -148,7 +165,7 @@ async function loadPlans(){
  const renderRow=(p,canDelete)=>'<tr><td><b>'+esc(p.code)+'</b></td>'+
   '<td>'+(p.combo?"Combo MST + số tờ":p.family==="invoice"?"Số tờ":p.family==="storage"?"Lưu trữ data":"MST")+'</td><td>'+Number(p.quantity).toLocaleString('vi-VN')+'</td>'+
   '<td><input type="number" min="0" value="'+Number(p.price_vnd)+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td>'+
-  '<td>'+(['mst','storage'].includes(p.family)?'<input type="number" min="1" max="3650" value="'+Number(p.validity_days||365)+'" data-validity="'+esc(p.code)+'" style="width:85px;min-width:0"> ngày':'—')+'</td>'+
+  '<td><input type="number" min="1" max="3650" value="'+(p.validity_days??'')+'" data-validity="'+esc(p.code)+'" style="width:85px;min-width:0" placeholder="Không hạn"> ngày</td>'+
   '<td>'+(p.combo?'<input type="number" min="1" max="10000000" value="'+Number(p.combo.invoice_quantity)+'" data-combo-qty="'+esc(p.code)+'" title="Số tờ combo" style="width:105px;min-width:0"><input type="number" min="1" max="3650" value="'+(p.combo.invoice_validity_days??'')+'" data-combo-days="'+esc(p.code)+'" title="Hạn số tờ combo (trống = theo MST)" placeholder="Hạn theo MST" style="width:110px;min-width:0">':'—')+'</td>'+
   '<td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td>'+
   '<td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button>'+
@@ -189,10 +206,10 @@ async function updateCatalogRow(e){
    const validity=target.querySelector('[data-validity="'+CSS.escape(code)+'"]');
    const comboQty=target.querySelector('[data-combo-qty="'+CSS.escape(code)+'"]');
    const comboDays=target.querySelector('[data-combo-days="'+CSS.escape(code)+'"]');
-   const days=validity?Number(validity.value):null;
+   const days=validity&&validity.value.trim()?Number(validity.value):null;
    const invoiceQty=comboQty?Number(comboQty.value):null;
    const invoiceDays=comboDays&&comboDays.value.trim()?Number(comboDays.value):null;
-   if(validity&&(!Number.isSafeInteger(days)||days<1||days>3650))throw Error('Hạn gói phải từ 1 đến 3.650 ngày.');
+   if(days!==null&&(!Number.isSafeInteger(days)||days<1||days>3650))throw Error('Hạn gói phải từ 1 đến 3.650 ngày.');
    if(comboQty&&(!Number.isSafeInteger(invoiceQty)||invoiceQty<1||invoiceQty>10000000))throw Error('Số tờ combo không hợp lệ.');
    if(invoiceDays!==null&&(!Number.isSafeInteger(invoiceDays)||invoiceDays<1||invoiceDays>3650))throw Error('Hạn số tờ combo không hợp lệ.');
    const {error}=await client.rpc('autotax_admin_update_package_v118',{
@@ -225,7 +242,7 @@ $("createPackageForm").addEventListener("submit",async event=>{
  const code=normalizePackageCode($("newCode").value),
    family=$("newFamily").value,name=$("newName").value.trim(),
    quantity=Number($("newQty").value),price=Number($("newPrice").value),
-   days=family==="invoice"?null:Number($("newValidity").value),
+   days=$("newValidity").value.trim()?Number($("newValidity").value):null,
    invoiceQty=family==="combo"?Number($("newInvoiceQty").value):0,
    invoiceDays=family==="combo"&&$("newInvoiceValidity").value.trim()?Number($("newInvoiceValidity").value):null;
  $("newCode").value=code;
@@ -277,8 +294,9 @@ $("createPackageForm").addEventListener("submit",async event=>{
 // Supabase enforces the page size (10) and admin-only access.
 function updateNewPackageFamily(){
  const family=$("newFamily").value,isCombo=family==="combo",hasDays=family!=="invoice";
- $("newValidityWrap").hidden=!hasDays;
+ $("newValidityWrap").hidden=false;
  $("newValidity").required=hasDays;
+ if(hasDays&&!$("newValidity").value.trim())$("newValidity").value="365";
  $("newInvoiceQtyWrap").hidden=!isCombo;
  $("newInvoiceQty").required=isCombo;
  $("newInvoiceValidityWrap").hidden=!isCombo;
@@ -559,6 +577,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{
 });
 client.auth.onAuthStateChange(()=>setTimeout(boot,0));boot();
 </script>
+<script src="./admin-discounts-v119.js?v=1"></script>
 <script src="./admin-feedback.js?v=116"></script>
 <script src="./admin-site-links.js?v=118combo1"></script>
 <script src="./password-toggle.js?v=116"></script>

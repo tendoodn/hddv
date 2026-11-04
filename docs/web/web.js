@@ -23,7 +23,7 @@ const safe=s=>String(s||'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,70);
 const selected=name=>[...document.querySelectorAll('input[name="'+name+'"]:checked')].map(el=>el.value);
 const show=(msg,ok=false)=>{const box=$('notice');box.hidden=!msg;box.textContent=msg||'';box.classList.toggle('success',!!ok)};
 const progress=msg=>{const log=$('progressLog'),line=document.createElement('div');line.className='autotax-terminal-line';const severity=/lỗi|thất bại|không thể|gián đoạn/i.test(String(msg))?'error':/cảnh báo|bỏ qua|chưa lấy|thiếu|lưu ý/i.test(String(msg))?'warn':/hoàn tất|thành công|đã tải|đã xuất/i.test(String(msg))?'success':'info';line.classList.add('terminal-'+severity);const clock=new Date().toLocaleTimeString('vi-VN',{hour12:false});line.textContent='['+clock+'] '+String(msg||'Đang xử lý…');log.append(line);while(log.children.length>5)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;};
-const busyState=value=>{busy=!!value;$('progress').hidden=!value;if(value){$('progressLog').replaceChildren();progress('Khởi tạo phiên xử lý…');}$('searchBtn').disabled=!!value;
+const busyState=(value,keepLog=false)=>{busy=!!value;$('progress').hidden=!value&&!keepLog;if(value){$('progressLog').replaceChildren();progress('Khởi tạo phiên xử lý…');$('stopBtn').textContent='Dừng'}else if(keepLog){$('stopBtn').textContent='Đóng'}$('searchBtn').disabled=!!value;
   for(const id of ['exportAllZip','exportExcel','exportXml','exportHtml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
 // User-triggered XML contribution; no tax-portal credentials or tokens go into XML storage.
@@ -527,6 +527,8 @@ async function exportFileCore(kind){
  const targetRows=window.WebResults?.exportRows?.()||rows;
  if(!targetRows.length)return show('Không có hóa đơn trong phạm vi xuất. Kiểm tra các ô đã tick hoặc tháng được chọn.');
  stopped=false;busyState(true);show('');
+ const label={excel:'Excel',xml:'XML',html:'HTML',pdf:'PDF nhà phát hành',pdfTax:'PDF Thuế'}[kind]||kind;
+ progress('Bắt đầu tải '+targetRows.length+' hóa đơn · '+label+'…');
  try{
   const stamp=($('fromDate').value||'').replace(/-/g,'')+'_'+($('toDate').value||'').replace(/-/g,'')+
    (window.WebResults?.exportSuffix?.()||'');
@@ -585,8 +587,9 @@ async function exportFileCore(kind){
     ' Chế độ '+(mode==='tax'?'PDF Thuế: tất cả là bản dựng.':'PDF gốc: ưu tiên bản gốc, nếu không tải được sẽ dùng bản dựng có ghi nhãn.')+' Mọi PDF dựng đều ghi rõ KHÔNG PHẢI GỐC.',
     result.errors.length===0);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}
- }catch(e){show('Không xuất được tệp: '+e.message);throw e}
- finally{busyState(false)}
+  progress('Đã hoàn tất tải '+label+' · '+targetRows.length+' hóa đơn.');
+ }catch(e){progress('Lỗi xuất '+label+': '+e.message);show('Không xuất được tệp: '+e.message);throw e}
+ finally{busyState(false,true)}
 }
 async function exportFile(kind){
  try{
@@ -667,7 +670,7 @@ function init(){
   try{show('Đã chọn thư mục '+await AutoTaxDownloadFolder.change(),true)}
   catch(error){if(error.name!=='AbortError')show(error.message)}
  });
- $('stopBtn').addEventListener('click',()=>{stopped=true;progress('Đang dừng sau yêu cầu hiện tại…')});
+ $('stopBtn').addEventListener('click',()=>{if(!busy){$('progress').hidden=true;return}stopped=true;progress('Đang dừng sau yêu cầu hiện tại…')});
  $('reloadCaptcha').addEventListener('click',getCaptcha);
  $('retryConnectionBtn').addEventListener('click',async()=>{
   // A user-requested retry tries a different supported Supabase Edge region once.

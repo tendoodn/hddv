@@ -104,6 +104,9 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
             <label id="openingStockEditor" hidden for="openingStockInput">Giá trị tồn kho đầu kỳ (đồng)
               <input id="openingStockInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Để trống: tồn đầu kỳ = 1">
             </label>
+            <label for="kIndustry">Nhóm ngành · ngưỡng K tham khảo
+              <select id="kIndustry"><option value="commerce">Thương mại · cảnh báo K ≥ 2</option><option value="production">Sản xuất · cảnh báo K ≥ 4</option></select>
+            </label>
             <small id="openingStockHint">Nhập giá trị tồn tại ngày đầu tiên của kỳ tra cứu.</small>
           </div>
         </fieldset>
@@ -127,7 +130,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   </section>
   <section id="results" class="result-card" hidden>
     <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
-    <p class="k-description">K = Tổng bán ra / (Tổng bán ra + Tồn đầu kỳ). Nếu thiếu số liệu tồn đầu, mua vào hoặc bán ra, giá trị thiếu được tính là 1. Đây là chỉ số tham khảo theo công thức đã chọn, không phải kết luận của cơ quan Thuế.</p>
+    <p class="k-description">K = Tổng bán ra / (Tổng mua vào + Tồn đầu kỳ). Nếu thiếu số liệu tồn đầu, mua vào hoặc bán ra, giá trị thiếu được tính là 1. Đây là chỉ số tham khảo theo công thức đã chọn, không phải kết luận của cơ quan Thuế.</p>
     <div class="invoice-stats">
       <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
       <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
@@ -249,7 +252,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/captcha-svg-templates.js?v=1"></script>
 <script src="./web/captcha-svg.js?v=1"></script>
 <script src="./web/issuer-portals.js?v=1118"></script>
-<script src="./web/period-k.js?v=1118k3"></script>
+<script src="./web/period-k.js?v=1118k4"></script>
 <script src="./web/hddt-api.js?v=1118"></script>
 <script src="./web/report.js?v=1118"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
@@ -262,7 +265,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/web-pdf.js?v=1118sign2"></script>
 <script src="./web/export-zip.js?v=116"></script>
 <script src="./web/web.js?v=1118team2"></script>
-<script src="./web/web-results.js?v=1118k3"></script>
+<script src="./web/web-results.js?v=1118k4"></script>
 <script src="./web/issuer-pdf.js?v=1118"></script>
 <script src="./web/audit.js?v=1"></script>
 <script src="./password-toggle.js?v=116"></script>

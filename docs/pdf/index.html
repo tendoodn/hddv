@@ -103,6 +103,36 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 .crop-edge-sliders .crop-edge-row{display:grid;grid-template-columns:48px minmax(0,1fr) 51px;gap:9px;align-items:center;min-width:0;font-size:13px;color:#334155}
 .crop-edge-sliders input[type=range]{display:block;width:100%;min-width:0;margin:0;min-height:36px;cursor:ew-resize;accent-color:#2563eb;touch-action:none!important}
 .crop-edge-sliders output{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:#15529e}
+/* Touch crop v26: four finger-sized draggable edges replace the corner dots. */
+.crop-selection .crop-handle{display:none!important}
+.crop-selection .crop-side-handle{position:absolute;z-index:15;display:block;touch-action:none!important;user-select:none;-webkit-user-select:none;pointer-events:auto;background:rgba(37,99,235,.07)}
+.crop-side-handle::after{content:'';position:absolute;border-radius:8px;background:#10b981;box-shadow:0 0 0 1px #065f46,0 0 5px #0f766e55;pointer-events:none}
+.crop-side-handle[data-edge="left"],.crop-side-handle[data-edge="right"]{top:5%;height:90%;width:26px;cursor:ew-resize}
+.crop-side-handle[data-edge="left"]{left:0;transform:translateX(-1px)}
+.crop-side-handle[data-edge="right"]{right:0;transform:translateX(1px)}
+.crop-side-handle[data-edge="left"]::after,.crop-side-handle[data-edge="right"]::after{top:9%;bottom:9%;width:5px;left:calc(50% - 2.5px)}
+.crop-side-handle[data-edge="top"],.crop-side-handle[data-edge="bottom"]{left:9%;width:82%;height:26px;cursor:ns-resize}
+.crop-side-handle[data-edge="top"]{top:0;transform:translateY(-1px)}
+.crop-side-handle[data-edge="bottom"]{bottom:0;transform:translateY(1px)}
+.crop-side-handle[data-edge="top"]::after,.crop-side-handle[data-edge="bottom"]::after{left:9%;right:9%;height:5px;top:calc(50% - 2.5px)}
+.crop-edge-sliders input[type=range]{touch-action:none!important;user-select:none;-webkit-user-select:none;cursor:grab;min-height:44px!important;pointer-events:auto!important}
+.crop-edge-sliders .crop-edge-row{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+@media(max-width:650px){
+ .crop-overlay{position:fixed!important;inset:0!important;padding:0!important;align-items:stretch!important;justify-content:stretch!important;overflow:hidden!important}
+ .crop-overlay .crop-dialog{width:100vw!important;max-width:100vw!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;padding:8px 10px!important;border-radius:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
+ .crop-overlay .crop-dialog h3{margin:2px 0 6px!important;font-size:16px}
+ .crop-overlay .crop-help{font-size:12px;margin:0 0 5px!important}
+ .crop-overlay .crop-workspace{display:flex!important;flex-direction:column!important;gap:7px!important;min-height:0!important;flex:1 1 auto;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch;margin-top:2px!important}
+ .crop-overlay .crop-image-pane{position:sticky!important;top:0!important;z-index:2;background:white;padding:5px 0;flex:0 0 auto;min-height:85px}
+ .crop-overlay .crop-side-controls{flex:0 0 auto;gap:6px!important;position:static}
+ .crop-overlay .crop-edge-sliders{gap:3px!important;margin:2px 0!important;padding:6px 8px!important}
+ .crop-overlay .crop-edge-sliders .crop-edge-row{grid-template-columns:42px minmax(0,1fr) 44px;gap:6px;min-height:39px}
+ .crop-overlay .crop-side-controls .crop-action-row{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important}
+ .crop-overlay .crop-side-controls .crop-action-row button{padding:7px 3px!important;min-width:0!important;font-size:11px!important}
+ .crop-overlay .crop-side-controls .crop-confirm{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ .crop-overlay .crop-side-controls .crop-confirm button:first-child{grid-column:auto!important}
+}
+
 html.crop-editor-open,body.crop-editor-open{overflow:hidden!important;overscroll-behavior:none!important}
 .crop-overlay{overscroll-behavior:contain!important}
 .crop-overlay .crop-dialog{overscroll-behavior:contain!important;touch-action:pan-y;-webkit-overflow-scrolling:touch;max-height:calc(100dvh - 18px)!important}
@@ -245,10 +275,27 @@ function openCropEditor(rec,side){
  const overlay=document.createElement('div');overlay.className='crop-overlay';
  const dialog=document.createElement('div');dialog.className='crop-dialog';
  const heading=document.createElement('h3');heading.textContent='Cắt '+(side==='front'?'ảnh thứ nhất':'ảnh thứ hai')+' giấy tờ';
- const help=document.createElement('p');help.className='crop-help';help.textContent='Kéo bốn thanh Trái, Trên, Phải, Dưới để cắt sát mép giấy; hoặc kéo trực tiếp khung trên ảnh. Giữ đủ chữ viết, chữ ký và con dấu.';
+ const help=document.createElement('p');help.className='crop-help';help.textContent='Kéo 4 vạch xanh trên cạnh ảnh hoặc 4 thanh Trái / Trên / Phải / Dưới. Trang nền sẽ đứng yên. Giữ đủ chữ viết, chữ ký và con dấu.';
  const stage=document.createElement('div');stage.className='crop-stage';const img=new Image();img.src=rec[side];stage.append(img);
  const sel=document.createElement('div');sel.className='crop-selection';stage.append(sel);
- const handles=['tl','tr','bl','br'];for(const h of handles){const el=document.createElement('span');el.className='crop-handle '+h;el.dataset.handle=h;sel.append(el)}
+ // Four long sides can now be dragged directly on a phone or desktop.
+ for(const edge of ['left','top','right','bottom']){
+  const bar=document.createElement('span');
+  bar.className='crop-side-handle';
+  bar.dataset.edge=edge;
+  bar.setAttribute('role','slider');
+  bar.setAttribute('aria-label','Kéo mép '+({left:'trái',top:'trên',right:'phải',bottom:'dưới'}[edge]));
+  bar.tabIndex=0;
+  bar.addEventListener('keydown',event=>{
+   const step=event.shiftKey?.05:.01;
+   const direction=event.key==='ArrowRight'||event.key==='ArrowDown'?1:event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:0;
+   if(!direction)return;
+   event.preventDefault();
+   const current=edge==='left'?box.x:edge==='right'?box.x+box.w:edge==='top'?box.y:box.y+box.h;
+   updateCropEdgeCoordinate(edge,current+direction*step);
+  });
+  sel.append(bar);
+ }
  const rotations=document.createElement('div');rotations.className='bar crop-action-row';rotations.style.margin='12px 0';
  let magicOn=false,magicRequest=0;
  const scanButton=document.createElement('button');scanButton.type='button';scanButton.className='secondary scan-filter-button';
@@ -283,7 +330,45 @@ function openCropEditor(rec,side){
   slider.min='0';slider.max='100';slider.step='0.5';slider.value='0';
   slider.setAttribute('aria-label','Cắt mép '+caption);
   const number=document.createElement('output');number.textContent='0%';
+  // Explicit touch/pointer handling fixes mobile range controls within a locked modal.
   slider.addEventListener('input',()=>adjustCropEdge(edge,Number(slider.value)));
+  let touchPointer=null;
+  const updateFromPointer=clientX=>{
+   const rect=slider.getBoundingClientRect();
+   if(rect.width<=0)return;
+   const thumb=Math.min(14,rect.width*.1);
+   const fraction=Math.max(0,Math.min(1,(clientX-rect.left-thumb)/Math.max(1,rect.width-2*thumb)));
+   adjustCropEdge(edge,Math.round(fraction*200)/2);
+  };
+  slider.addEventListener('pointerdown',event=>{
+   if(event.pointerType==='mouse'&&event.button!==0)return;
+   event.preventDefault();event.stopPropagation();
+   touchPointer=event.pointerId;
+   try{slider.setPointerCapture(event.pointerId)}catch(_){}
+   updateFromPointer(event.clientX);
+  });
+  slider.addEventListener('pointermove',event=>{
+   if(touchPointer!==event.pointerId)return;
+   event.preventDefault();event.stopPropagation();
+   updateFromPointer(event.clientX);
+  });
+  const finishSlider=event=>{
+   if(touchPointer!==event.pointerId)return;
+   if(event.type==='pointerup')updateFromPointer(event.clientX);
+   touchPointer=null;
+   try{slider.releasePointerCapture(event.pointerId)}catch(_){}
+  };
+  slider.addEventListener('pointerup',finishSlider);
+  slider.addEventListener('pointercancel',finishSlider);
+  if(!window.PointerEvent){
+   const touchMove=event=>{
+    if(!event.touches.length)return;
+    event.preventDefault();event.stopPropagation();
+    updateFromPointer(event.touches[0].clientX);
+   };
+   slider.addEventListener('touchstart',touchMove,{passive:false});
+   slider.addEventListener('touchmove',touchMove,{passive:false});
+  }
   label.append(name,slider,number);sliderPanel.append(label);
   edgeSliders[edge]={slider,number};
  }
@@ -315,16 +400,24 @@ function openCropEditor(rec,side){
   for(const [prop,value] of Object.entries(bodyBefore))body.style[prop]=value;
   html.style.overflow=htmlOverflowBefore;
   window.removeEventListener('keydown',onCropEscape);
+  document.removeEventListener('touchmove',stopBackgroundSwipe,true);
   window.scrollTo(0,lockedScrollY);
  }
  function onCropEscape(event){if(event.key==='Escape'){event.preventDefault();closeCropEditor()}}
  window.addEventListener('keydown',onCropEscape);
- overlay.addEventListener('touchmove',event=>{if(event.target===overlay)event.preventDefault()},{passive:false});
+ // The background cannot receive a swipe; the panel may scroll on very small screens.
+ const stopBackgroundSwipe=event=>{
+  if(!dialog.contains(event.target)&&event.cancelable)event.preventDefault();
+ };
+ document.addEventListener('touchmove',stopBackgroundSwipe,{capture:true,passive:false});
+ overlay.addEventListener('touchmove',event=>{if(event.target===overlay&&event.cancelable)event.preventDefault()},{passive:false});
  // Fit the *whole* source image inside the available viewport, then align selection to it.
  function fitCropStage(){
   if(!img.naturalWidth||!img.naturalHeight)return;
   const availableWidth=Math.max(80,pane.getBoundingClientRect().width-8);
-  const availableHeight=Math.max(100,window.innerHeight-210);
+  const viewportHeight=window.visualViewport?.height||window.innerHeight;
+  const onPhone=window.matchMedia('(max-width:650px)').matches;
+  const availableHeight=onPhone?Math.max(115,Math.min(300,viewportHeight*.32)):Math.max(100,viewportHeight-210);
   const scale=Math.min(1,availableWidth/img.naturalWidth,availableHeight/img.naturalHeight);
   const w=Math.max(1,Math.floor(img.naturalWidth*scale)),h=Math.max(1,Math.floor(img.naturalHeight*scale));
   stage.style.width=w+'px';stage.style.height=h+'px';img.style.width='100%';img.style.height='100%';img.style.objectFit='fill';
@@ -344,30 +437,58 @@ function openCropEditor(rec,side){
    ui.number.textContent=value.toFixed(1)+'%';
   }
  }
- function adjustCropEdge(edge,percent){
-  const minSize=.05,v=clamp(percent/100,0,1);
-  const right=1-box.x-box.w,bottom=1-box.y-box.h;
-  if(edge==='left'){
-   const next=clamp(v,0,1-right-minSize);
-   box.w=1-right-next;box.x=next;
-  }else if(edge==='right'){
-   box.w=1-box.x-clamp(v,0,1-box.x-minSize);
-  }else if(edge==='top'){
-   const next=clamp(v,0,1-bottom-minSize);
-   box.h=1-bottom-next;box.y=next;
-  }else if(edge==='bottom'){
-   box.h=1-box.y-clamp(v,0,1-box.y-minSize);
-  }
+ function updateCropEdgeCoordinate(edge,value){
+  const minimum=.05;
+  let l=box.x,t=box.y,r=box.x+box.w,b=box.y+box.h;
+  if(edge==='left')l=clamp(value,0,r-minimum);
+  else if(edge==='right')r=clamp(value,l+minimum,1);
+  else if(edge==='top')t=clamp(value,0,b-minimum);
+  else if(edge==='bottom')b=clamp(value,t+minimum,1);
+  box={x:l,y:t,w:r-l,h:b-t};
   draw();
  }
+ function adjustCropEdge(edge,percent){
+  const margin=clamp(percent/100,0,1);
+  updateCropEdgeCoordinate(edge,(edge==='right'||edge==='bottom')?1-margin:margin);
+ }
  draw();let drag=null;
- stage.addEventListener('pointerdown',e=>{e.preventDefault();const rect=stage.getBoundingClientRect();const mode=e.target.dataset.handle|| (sel.contains(e.target)?'move':'new');drag={mode,startX:(e.clientX-rect.left)/rect.width,startY:(e.clientY-rect.top)/rect.height,box:{...box}};try{stage.setPointerCapture(e.pointerId)}catch(_){};if(mode==='new'){box={x:clamp(drag.startX,0,1),y:clamp(drag.startY,0,1),w:.001,h:.001};draw()}});
- stage.addEventListener('pointermove',e=>{if(!drag)return;const rect=stage.getBoundingClientRect(),x=clamp((e.clientX-rect.left)/rect.width,0,1),y=clamp((e.clientY-rect.top)/rect.height,0,1),b=drag.box,dx=x-drag.startX,dy=y-drag.startY;let l=b.x,t=b.y,r=b.x+b.w,bt=b.y+b.h;
- if(drag.mode==='move'){l=clamp(b.x+dx,0,1-b.w);t=clamp(b.y+dy,0,1-b.h);r=l+b.w;bt=t+b.h}
- else if(drag.mode==='new'){l=Math.min(drag.startX,x);r=Math.max(drag.startX,x);t=Math.min(drag.startY,y);bt=Math.max(drag.startY,y)}
- else{if(drag.mode.includes('l'))l=clamp(b.x+dx,0,r-.03);if(drag.mode.includes('r'))r=clamp(b.x+b.w+dx,l+.03,1);if(drag.mode.includes('t'))t=clamp(b.y+dy,0,bt-.03);if(drag.mode.includes('b'))bt=clamp(b.y+b.h+dy,t+.03,1)}
- box={x:l,y:t,w:r-l,h:bt-t};draw()});
- stage.addEventListener('pointerup',()=>drag=null);stage.addEventListener('pointercancel',()=>drag=null);
+ stage.addEventListener('pointerdown',event=>{
+  if(event.pointerType==='mouse'&&event.button!==0)return;
+  event.preventDefault();event.stopPropagation();
+  const rect=stage.getBoundingClientRect();
+  if(!rect.width||!rect.height)return;
+  const mode=event.target.dataset.edge?('edge-'+event.target.dataset.edge):(sel.contains(event.target)?'move':'new');
+  drag={id:event.pointerId,mode,startX:clamp((event.clientX-rect.left)/rect.width,0,1),startY:clamp((event.clientY-rect.top)/rect.height,0,1),box:{...box}};
+  try{stage.setPointerCapture(event.pointerId)}catch(_){}
+  if(mode==='new'){box={x:drag.startX,y:drag.startY,w:.001,h:.001};draw()}
+ });
+ stage.addEventListener('pointermove',event=>{
+  if(!drag||drag.id!==event.pointerId)return;
+  event.preventDefault();event.stopPropagation();
+  const rect=stage.getBoundingClientRect();
+  if(!rect.width||!rect.height)return;
+  const x=clamp((event.clientX-rect.left)/rect.width,0,1);
+  const y=clamp((event.clientY-rect.top)/rect.height,0,1);
+  const initial=drag.box,dx=x-drag.startX,dy=y-drag.startY;
+  let l=initial.x,t=initial.y,r=initial.x+initial.w,b=initial.y+initial.h;
+  if(drag.mode==='move'){
+   l=clamp(initial.x+dx,0,1-initial.w);t=clamp(initial.y+dy,0,1-initial.h);
+   r=l+initial.w;b=t+initial.h;
+  }else if(drag.mode==='new'){
+   l=Math.min(drag.startX,x);r=Math.max(drag.startX,x);
+   t=Math.min(drag.startY,y);b=Math.max(drag.startY,y);
+  }else if(drag.mode==='edge-left')l=clamp(initial.x+dx,0,r-.05);
+  else if(drag.mode==='edge-right')r=clamp(initial.x+initial.w+dx,l+.05,1);
+  else if(drag.mode==='edge-top')t=clamp(initial.y+dy,0,b-.05);
+  else if(drag.mode==='edge-bottom')b=clamp(initial.y+initial.h+dy,t+.05,1);
+  box={x:l,y:t,w:r-l,h:b-t};draw();
+ });
+ const stopCropDrag=event=>{
+  if(!drag||drag.id!==event.pointerId)return;
+  drag=null;try{stage.releasePointerCapture(event.pointerId)}catch(_){}
+ };
+ stage.addEventListener('pointerup',stopCropDrag);
+ stage.addEventListener('pointercancel',stopCropDrag);
  reset.onclick=()=>{box={x:0,y:0,w:1,h:1};draw()};cancel.onclick=closeCropEditor;overlay.addEventListener('click',e=>{if(e.target===overlay)closeCropEditor()});
  save.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();
   if(box.w<.05||box.h<.05){alert('Khung cắt quá nhỏ.');return}

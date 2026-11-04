@@ -101,8 +101,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 .crop-edge-sliders{display:grid;gap:11px;width:100%;min-width:0;margin:10px 0 14px;padding:13px 12px;background:#f1f6fe;border:1px solid #d3e2f3;border-radius:12px}
 .crop-edge-sliders-title{font-size:13px;font-weight:700;color:#1f4777}
 .crop-edge-sliders .crop-edge-row{display:grid;grid-template-columns:48px minmax(0,1fr) 51px;gap:9px;align-items:center;min-width:0;font-size:13px;color:#334155}
-.crop-edge-sliders input[type=range]{display:block;width:100%;min-width:0;margin:0;min-height:30px;cursor:ew-resize;accent-color:#2563eb;touch-action:pan-x}
+.crop-edge-sliders input[type=range]{display:block;width:100%;min-width:0;margin:0;min-height:36px;cursor:ew-resize;accent-color:#2563eb;touch-action:none!important}
 .crop-edge-sliders output{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:#15529e}
+html.crop-editor-open,body.crop-editor-open{overflow:hidden!important;overscroll-behavior:none!important}
+.crop-overlay{overscroll-behavior:contain!important}
+.crop-overlay .crop-dialog{overscroll-behavior:contain!important;touch-action:pan-y;-webkit-overflow-scrolling:touch;max-height:calc(100dvh - 18px)!important}
+.crop-overlay .crop-stage,.crop-overlay .crop-selection,.crop-overlay .crop-handle,.crop-overlay .crop-edge-sliders input[type=range]{touch-action:none!important}
 @media(max-width:550px){.crop-edge-sliders{padding:10px}.crop-edge-sliders .crop-edge-row{grid-template-columns:39px minmax(0,1fr) 43px;gap:6px}}
 .page-order-actions{display:flex;gap:4px;margin:6px 0}.page-order-actions button{flex:1;min-width:0;padding:6px;font-size:12px}
 </style></head><body><main class="wrap"><div class="panel"><div class="modes"><button id="ccMode" class="mode" onclick="switchMode('cccd')">🪪 Đối chiếu CCCD</button><button id="docMode" class="mode" onclick="switchMode('docs')">📄 Đối chiếu giấy tờ</button><button id="makePdfMode" class="mode" onclick="switchMode('makepdf')">🖨️ Tạo PDF</button></div></div><section id="workspace" class="hidden"><div class="panel"><h2 id="modeTitle"></h2><p id="modeHelp" class="muted"></p><div class="bar"><label class="pick secondary" id="batchLabel">Chọn nhiều ảnh<input type="file" accept="image/*" multiple id="batch"></label><label class="pick secondary hidden" id="pdfBatchLabel">📄 Chọn nhiều PDF vào 1 hồ sơ<input type="file" id="pdfBatch" accept="application/pdf,.pdf" multiple></label><label class="pick secondary hidden" id="createPdfLabel">🖼️ Thêm ảnh hoặc PDF<input type="file" id="createPdfInput" accept="image/*,application/pdf,.pdf" multiple></label><span id="pdfBatchStatus" class="muted hidden" role="status" aria-live="polite"></span><button class="secondary" onclick="if(confirm('Xóa toàn bộ hồ sơ?')){records=[];if(mode==='makepdf')addRecord();else render()}">Xóa tất cả</button></div><div id="createPdfDrop" class="create-pdf-drop hidden" role="button" tabindex="0">Kéo thả ảnh hoặc PDF vào đây để thêm trang · PDF nhiều trang sẽ tự tách tờ</div><div id="profiles"></div><div class="bar" id="addRecordRow" style="margin-top:16px"><button onclick="addRecord()">+ Thêm hồ sơ</button></div></div><div class="panel"><div class="bar"><button id="export" onclick="exportAll()">↓ Tải tất cả PDF (.ZIP)</button><span id="count" class="muted"></span></div><p class="muted"> </p></div><div class="panel"><h2>Xem trước bố cục</h2><div id="preview" class="preview"></div></div></section></main><script>
@@ -200,24 +204,37 @@ function magicScanCanvas(inputCanvas){
    const normalized=lum*245/localBg;let adjusted=clamp((normalized-130)*1.42+130,0,255);
    if(adjusted>175)adjusted=clamp(adjusted+(adjusted-175)*.16,0,255);
    const hi=Math.max(r,g,b),lo=Math.min(r,g,b),saturation=hi-lo;
-   // Giữ sắc mực bút xanh kể cả khi ảnh chụp bị nhạt.
    let hue=0;
    if(saturation>0){
     if(hi===r)hue=(60*(g-b)/saturation+360)%360;
     else if(hi===g)hue=(60*(b-r)/saturation+120)%360;
     else hue=(60*(r-g)/saturation+240)%360;
    }
-   const blueInk=hue>=175&&hue<=270&&saturation>=17&&b>=r+8&&lum<222&&(normalized<231||saturation>=40);
+   // Chỉ cần một ánh xanh nhỏ vẫn giữ mực, kể cả xanh đen gần như đen.
+   // Không dùng ngưỡng saturation/hue để phân biệt xanh với đen.
+   const blueHint=(b>r&&b>=g-10)||(b>g&&b>=r-3);
+   const darkerThanPaper=localBg-lum>=4||normalized<242||lum<120;
+   const blueInk=blueHint&&darkerThanPaper;
    const redInk=(hue<=22||hue>=338)&&saturation>=24&&r>=g+12&&lum<220;
    const purpleInk=hue>270&&hue<=323&&saturation>=24&&lum<218;
    const coloredInk=blueInk||redInk||purpleInk;
    let base=adjusted;
-   if(coloredInk)base=Math.min(base,Math.max(42,lum*.90+6));
-   else if(base>165)base=clamp(base+(255-base)*.37,0,255);
-   const chroma=coloredInk?1.24:(saturation>48&&lum<165?.76:.045);
-   pix[k]=clamp(base+(r-lum)*chroma,0,255);
-   pix[k+1]=clamp(base+(g-lum)*chroma,0,255);
-   pix[k+2]=clamp(base+(b-lum)*chroma,0,255);
+   if(blueInk){
+    // Không ép màu xanh thành đen/xám hoặc xóa nét mực mỏng.
+    base=clamp(lum-Math.min(13,Math.max(2,(localBg-lum)*.09)),0,250);
+   }else if(coloredInk){
+    base=Math.min(base,Math.max(25,lum*.89+5));
+   }else if(base>165){
+    base=clamp(base+(255-base)*.37,0,255);
+   }
+   const chroma=blueInk?1.32:(coloredInk?1.22:(saturation>48&&lum<165?.76:.045));
+   const outR=clamp(base+(r-lum)*chroma,0,255);
+   const outG=clamp(base+(g-lum)*chroma,0,255);
+   let outB=clamp(base+(b-lum)*chroma,0,255);
+   if(blueInk)outB=Math.min(255,Math.max(outB,outR+Math.max(2,(b-r)*1.2)));
+   pix[k]=outR;
+   pix[k+1]=outG;
+   pix[k+2]=outB;
   }
  }
  ctx.putImageData(frame,0,0);return canvas;
@@ -276,7 +293,33 @@ function openCropEditor(rec,side){
  const pane=document.createElement('div');pane.className='crop-image-pane';pane.append(stage);
  const sidebar=document.createElement('div');sidebar.className='crop-side-controls';
  controls.classList.add('crop-confirm');sidebar.append(rotations);if(mode==='makepdf')sidebar.append(scanButton);sidebar.append(sliderPanel,controls);workspace.append(pane,sidebar);
- dialog.append(heading,help,workspace);overlay.append(dialog);document.body.append(overlay);
+ dialog.append(heading,help,workspace);overlay.append(dialog);
+ // Body fixed + restore scroll handles mobile Safari and Android browsers.
+ const lockedScrollY=window.scrollY||document.documentElement.scrollTop||0;
+ const body=document.body,html=document.documentElement;
+ const bodyBefore={
+  position:body.style.position,top:body.style.top,left:body.style.left,
+  right:body.style.right,width:body.style.width,overflow:body.style.overflow
+ };
+ const htmlOverflowBefore=html.style.overflow;
+ html.classList.add('crop-editor-open');body.classList.add('crop-editor-open');
+ body.style.position='fixed';body.style.top='-'+lockedScrollY+'px';
+ body.style.left='0';body.style.right='0';body.style.width='100%';
+ body.style.overflow='hidden';html.style.overflow='hidden';
+ body.append(overlay);
+ let cropClosed=false;
+ function closeCropEditor(){
+  if(cropClosed)return;
+  cropClosed=true;overlay.remove();
+  html.classList.remove('crop-editor-open');body.classList.remove('crop-editor-open');
+  for(const [prop,value] of Object.entries(bodyBefore))body.style[prop]=value;
+  html.style.overflow=htmlOverflowBefore;
+  window.removeEventListener('keydown',onCropEscape);
+  window.scrollTo(0,lockedScrollY);
+ }
+ function onCropEscape(event){if(event.key==='Escape'){event.preventDefault();closeCropEditor()}}
+ window.addEventListener('keydown',onCropEscape);
+ overlay.addEventListener('touchmove',event=>{if(event.target===overlay)event.preventDefault()},{passive:false});
  // Fit the *whole* source image inside the available viewport, then align selection to it.
  function fitCropStage(){
   if(!img.naturalWidth||!img.naturalHeight)return;
@@ -325,7 +368,7 @@ function openCropEditor(rec,side){
  else{if(drag.mode.includes('l'))l=clamp(b.x+dx,0,r-.03);if(drag.mode.includes('r'))r=clamp(b.x+b.w+dx,l+.03,1);if(drag.mode.includes('t'))t=clamp(b.y+dy,0,bt-.03);if(drag.mode.includes('b'))bt=clamp(b.y+b.h+dy,t+.03,1)}
  box={x:l,y:t,w:r-l,h:bt-t};draw()});
  stage.addEventListener('pointerup',()=>drag=null);stage.addEventListener('pointercancel',()=>drag=null);
- reset.onclick=()=>{box={x:0,y:0,w:1,h:1};draw()};cancel.onclick=()=>overlay.remove();overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+ reset.onclick=()=>{box={x:0,y:0,w:1,h:1};draw()};cancel.onclick=closeCropEditor;overlay.addEventListener('click',e=>{if(e.target===overlay)closeCropEditor()});
  save.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();
   if(box.w<.05||box.h<.05){alert('Khung cắt quá nhỏ.');return}
   save.disabled=true;save.textContent='Đang lưu vùng cắt...';
@@ -348,7 +391,7 @@ function openCropEditor(rec,side){
    rec[side]=cropped;
    rec.cropRects={[side]:[0,0,0,0]};rec.cropMode='manual';
    if(typeof rec.onCropSaved==='function')rec.onCropSaved();
-   overlay.remove();render();
+   closeCropEditor();render();
   }catch(err){console.error(err);alert('Không lưu được vùng cắt: '+err.message);save.disabled=false;save.textContent='Áp dụng cắt ảnh'}
  });
 }

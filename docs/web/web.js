@@ -248,7 +248,7 @@ async function refreshAccount(){
   }
   $('authStatus').textContent=account.email+' · Đã kết nối';
   const [ent,profiles]=await Promise.all([
-   client.rpc('addon_my_entitlements'),
+   client.rpc('autotax_my_entitlements_v118'),
    client.rpc('addon_list_my_mst_assignments')
   ]);
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
@@ -256,7 +256,7 @@ async function refreshAccount(){
   const modeSelect=$('webUsageMode');
   modeSelect.value=selectedMode;
   const inv=ent.data?.packages?.invoice||{},msts=ent.data?.packages?.mst||{};
-  const canInvoice=Number(inv.remaining||0)>0||!!ent.data?.can_reread_charged_invoices;
+  const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_remaining||0)>0||!!ent.data?.can_reread_charged_invoices||!!ent.data?.team_invoice_available;
   const canMst=Number(msts.active_quantity||0)>0;
   modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
   modeSelect.querySelector('[value="mst"]').disabled=!canMst;
@@ -373,7 +373,7 @@ async function claimRows(all,mst){
   const items=batch.map(r=>({mst,direction:r.kind||'',
    form_code:(r.form||'')+':'+(r.khmshdon||''),
    series:r.khhdon||'',invoice_number:String(r.shdon??'')}));
-  const {data,error}=await client.rpc('addon_claim_invoice_quota',{p_items:items});
+  const {data,error}=await client.rpc('autotax_claim_invoice_quota_v118',{p_items:items});
   if(error)throw Error('Không kiểm tra được lượt hóa đơn: '+error.message);
   const allowed=new Set((data.allowed_items||[]).map(key));
   for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
@@ -610,7 +610,7 @@ function init(){
   if(input.value===previous)return;
   input.disabled=true;
   try{
-   const {error}=await client.rpc('addon_set_usage_mode',{p_mode:input.value});
+   const {error}=await client.rpc('autotax_set_usage_mode_v118',{p_mode:input.value});
    if(error)throw error;
    selectedMode=input.value;
    clearGov();

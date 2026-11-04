@@ -123,6 +123,33 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 #feedbackBody{display:block;width:100%;font:inherit;line-height:1.5;padding:10px;resize:vertical;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px}
 #feedbackImages{margin:8px 0}
 </style>
+<style>
+
+/* Same-row account heading and team switch, without displacing quick actions. */
+.portal-account-head{display:grid;grid-template-columns:minmax(180px,1fr) auto;align-items:center;gap:10px 14px}
+.portal-account-head>.autotax-account-tabs{justify-content:flex-end;align-items:center}
+.portal-account-head>.account-quick-actions{grid-column:1/-1}
+@media(max-width:680px){
+ .portal-account-head{grid-template-columns:minmax(0,1fr)}
+ .portal-account-head>.autotax-account-tabs{justify-content:flex-start}
+ .portal-account-head>.account-quick-actions{grid-column:1}
+}
+.autotax-account-tabs,.autotax-team-subtabs{display:flex;gap:6px;flex-wrap:wrap}.autotax-tab{border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}.autotax-tab.is-active{background:#164e63;color:#fff;border-color:#164e63}.autotax-team-panel[hidden],#autotaxTeamDetail[hidden]{display:none!important}#dashboard.autotax-team-active>:not(#autotaxAccountSummary):not(#autotaxTeamPanel):not(#forcedPasswordNotice){display:none!important}#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head){display:none!important}.autotax-team-list{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.autotax-team-list button{max-width:100%;overflow-wrap:anywhere}.autotax-team-panel td{vertical-align:top}.autotax-team-panel td label{display:block;white-space:nowrap;margin:4px 0}.autotax-team-panel td button{margin:3px}.autotax-team-panel td input[type=checkbox]{margin-right:5px}.autotax-team-panel .table-wrap{overflow-x:auto}.autotax-team-subtabs{margin:12px 0}
+
+/* AutoTax self-service account registration — accessible modal, responsive inputs. */
+.autotax-signup-dialog{width:min(510px,calc(100vw - 28px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #f0c3c9;border-radius:16px;padding:22px;background:#fff;color:#281b21;box-shadow:0 25px 75px #3c0a1540}
+.autotax-signup-dialog::backdrop{background:rgba(24,20,26,.70)}
+.autotax-signup-dialog form{display:flex;flex-direction:column;gap:9px}
+.autotax-signup-dialog label{font-weight:700;font-size:13px}
+.autotax-signup-dialog input{display:block;width:100%;min-width:0;padding:11px 12px;border-radius:9px;border:1px solid #cfd4db;background:#fff;color:#20242a;font:inherit}
+.autotax-signup-dialog input:focus{outline:2px solid #e60012;outline-offset:1px}
+.autotax-signup-dialog .autotax-signup-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.autotax-signup-dialog h2{font-size:21px;margin:0}
+.autotax-signup-dialog .actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:8px}
+.autotax-signup-dialog .actions button{flex:1;white-space:nowrap}
+.autotax-signup-dialog #signupStatus{margin:4px 0}
+@media(max-width:480px){.autotax-signup-dialog{padding:17px}.autotax-signup-dialog h2{font-size:18px}}
+</style>
 </head>
 <body>
 <main class="wrap">
@@ -141,12 +168,29 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
  <div id="authMessage" class="notice" hidden></div>
  </form>
 </section>
+<dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
+ <form id="signupForm" autocomplete="on">
+  <div class="autotax-signup-head"><h2 id="signupDialogTitle">Tạo tài khoản AutoTax</h2><button id="signupCloseBtn" type="button" class="secondary" aria-label="Đóng đăng ký">✕</button></div>
+  <p class="muted">Điền đầy đủ thông tin để đăng ký tài khoản mới. Tài khoản dùng chung trên Web và Extension.</p>
+  <label for="signupName">Tên người dùng</label>
+  <input id="signupName" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Họ tên hoặc tên hiển thị">
+  <label for="signupEmail">Email</label>
+  <input id="signupEmail" type="email" required autocomplete="email" placeholder="email@example.com">
+  <label for="signupPassword">Mật khẩu</label>
+  <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
+  <label for="signupPasswordConfirm">Nhập lại mật khẩu</label>
+  <input id="signupPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo">
+  <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây. Email xác minh hiện có thể mang tiêu đề <strong>Supabase Auth</strong>; hãy kiểm tra cả thư mục Spam.</p>
+  <div id="signupStatus" class="notice" role="status" aria-live="polite" hidden></div>
+  <div class="actions"><button id="signupSubmitBtn" type="submit">Tạo tài khoản</button><button id="signupCancelBtn" class="secondary" type="button">Đóng</button></div>
+ </form>
+</dialog>
 <section id="dashboard" hidden>
  <div id="forcedPasswordNotice" class="notice" hidden>
   Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.
  </div>
- <div class="panel">
-  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tracuuhoadon.top/k/" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tracuuhoadon.top/baogia/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/drive/folders/1q8l5pDqb0UzxFF2ma7Nm6KQyGX9UB0WF" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="feedbackOpen" type="button" class="secondary">Phản hồi</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
+ <div class="panel" id="autotaxAccountSummary">
+  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="autotax-account-tabs" aria-label="Trang tài khoản"><button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Thông tin cơ bản</button><button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button></nav><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tracuuhoadon.top/k/" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tracuuhoadon.top/baogia/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="feedbackOpen" type="button" class="secondary">Phản hồi</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
   <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
   <div class="portal-mode-toolbar">
    <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><p class="muted">Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</p></div>
@@ -158,6 +202,25 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   </div>
   <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
  </div>
+ <section class="panel autotax-team-panel" id="autotaxTeamPanel" hidden>
+  <div class="row"><h2>Chế độ làm việc nhóm</h2><button type="button" id="autotaxTeamRefresh" class="secondary">Làm mới</button></div>
+  <p class="muted">Mỗi tài khoản có thể tạo tối đa 50 nhóm. Trưởng nhóm quản lý thành viên và quyền sử dụng; thành viên có thể xem thông tin nhóm và rời nhóm.</p>
+  <div id="autotaxTeamMessage" class="notice" role="status" hidden></div>
+  <div class="actions"><button id="autotaxTeamNew" type="button">+ Tạo thêm nhóm</button><span id="autotaxTeamCount" class="muted"></span></div>
+  <form id="autotaxTeamCreateForm" class="actions" hidden><label>Tên nhóm <input id="autotaxTeamName" maxlength="100" required placeholder="Ví dụ: Kế toán chi nhánh A"></label><button type="submit">Lưu nhóm</button><button type="button" class="secondary" id="autotaxTeamCancel">Hủy</button></form>
+  <div id="autotaxTeamInvitations"></div>
+  <div id="autotaxTeamList" class="autotax-team-list"></div>
+  <section id="autotaxTeamDetail" hidden>
+   <h3 id="autotaxTeamDetailTitle"></h3>
+   <nav class="autotax-team-subtabs" aria-label="Quản lý nhóm"><button type="button" id="autotaxTeamMembersTab" class="secondary">Quản lý thành viên nhóm</button><button type="button" id="autotaxTeamUsageTab" class="secondary">Lịch sử tiêu dùng thành viên</button></nav>
+   <div id="autotaxTeamMembersPanel">
+    <form id="autotaxTeamInviteForm" class="actions" hidden><label>Email thành viên <input type="email" id="autotaxTeamInviteEmail" required placeholder="email@gmail.com"></label><button type="submit">+ Thêm thành viên</button></form>
+    <div class="table-wrap"><table><thead><tr><th>Tên người dùng</th><th>Gmail</th><th>Hình thức sử dụng</th><th>MST được phép dùng</th><th>Thao tác</th></tr></thead><tbody id="autotaxTeamMembersBody"></tbody></table></div>
+   </div>
+   <div id="autotaxTeamUsagePanel" hidden><p class="muted">Lịch sử hiển thị số hóa đơn và MST thành viên đã tra cứu bằng quyền của nhóm. Lượt nhóm được ưu tiên trước gói cá nhân; các lượt đã cấp riêng vẫn được giữ nguyên.</p><div class="table-wrap"><table><thead><tr><th>Tên</th><th>Email</th><th>Đã sử dụng bao nhiêu tờ hóa đơn</th><th>Đã sử dụng bao nhiêu MST</th></tr></thead><tbody id="autotaxTeamUsageBody"></tbody></table></div></div>
+   <div class="actions"><button id="autotaxTeamLeave" type="button" class="secondary" hidden>Rời nhóm</button></div>
+  </section>
+ </section>
  <div class="activation-grid">
  <div id="trialArea" class="panel" hidden>
   <h2>Dùng thử 7 ngày · 1 MST + 100 hóa đơn</h2>
@@ -282,7 +345,10 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=1118"></script>
+<script src="./customer.js?v=1118signup2"></script>
+<script src="./combo-portal-v118.js?v=1118combo3"></script>
+<script src="./team-v118.js?v=1118team3"></script>
+<script src="./extension-link-v118.js?v=1118release2"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>
 <script src="./site-footer.js?v=1118"></script>

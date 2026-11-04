@@ -13,6 +13,20 @@ const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
 const DUP_EMAIL="Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.";
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
 let adminRoleCheckedUser='',adminRoleCheckedAt=0,adminRoleRequest=0;
+async function refreshExtensionDownloadLink(){
+ const anchor=$('extensionDownloadBtn');
+ if(!anchor)return;
+ try{
+  const {data,error}=await client.from('addon_public_settings').select('value').eq('setting_key','extension_download_url').maybeSingle();
+  if(error)throw error;
+  const url=String(data?.value||'').trim();
+  const parsed=new URL(url);
+  if(parsed.protocol==='https:' && (parsed.hostname==='drive.google.com'||parsed.hostname==='docs.google.com')){
+   anchor.href=parsed.href;
+   anchor.title='Tải bản AutoTax Extension mới nhất từ Google Drive';
+  }
+ }catch(error){console.warn('Không cập nhật được link Extension:',error.message)}
+}
 function setAdminVisibility(show){
  for(const id of ['adminLink','adminFooterLink']){
   const el=$(id);if(el)el.hidden=!show;
@@ -137,8 +151,9 @@ async function refresh(){
   $("dashboard").hidden=!signedIn;
   if(!signedIn){state=null;refreshAdminVisibility(null);closePayment();return}
   void refreshAdminVisibility(session.user.id);
+  void refreshExtensionDownloadLink();
   $("userEmail").textContent=session.user.email||"";
-  const license=await rpc("addon_my_entitlements");
+  const license=await rpc("autotax_my_entitlements_v118");
   state=license;
   const invoice=license.packages?.invoice||{};
   const mst=license.packages?.mst||{};
@@ -151,7 +166,8 @@ async function refresh(){
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
   $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
-  $("modeSection").hidden=!(invTotal>0&&mstCapacity>0);
+  const teamInvoice=Number(license.team_invoice_remaining||0),teamMst=Number(license.team_mst_count||0);
+  $("modeSection").hidden=!((invRemaining>0||teamInvoice>0||license.team_invoice_available||license.can_reread_charged_invoices)&&(mstCapacity>0||teamMst>0));
   $("usageMode").value=selected;
   $("mstAllowControls").hidden=selected!=="mst";
   setMstGrantUnlocked(false);
@@ -191,7 +207,7 @@ async function loadPackages(){
   addText(card,"p",item.family==="storage"
    ? (item.description||"Đồng bộ danh mục MISA/Tendoo khi đổi máy")+" · "+(item.validity_days||365)+" ngày. Không ảnh hưởng số lượt và MST."
    : item.family==="invoice"
-   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm). Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
+   ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm)"+(item.validity_days?" · hiệu lực "+item.validity_days+" ngày.": " · không hết hạn.")+" Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
    : item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn")+". Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.","muted");
   addText(card,"strong",vnMoney(item.price_vnd),"price");
   const b=addText(card,"button","Chọn mua");
@@ -445,17 +461,66 @@ $("loginForm").addEventListener("submit",event=>{
  await refresh();
  });
 });
-$("signupBtn").addEventListener("click",()=>action("signupBtn",async()=>{
- const {data,error}=await client.auth.signUp({email:$("email").value.trim().toLowerCase(),password:$("password").value});
- if(error){
-  const value=String(error.code||"")+" "+error.message;
-  if(/user_already_exists|email_exists|identity_already_exists|already registered|already in use/i.test(value))return showMessage(DUP_EMAIL,true,"authMessage");
-  throw error;
- }
- if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0)return showMessage(DUP_EMAIL,true,"authMessage");
- showMessage(data?.session?"Đã tạo tài khoản và đăng nhập.":"Nếu email hợp lệ, hãy kiểm tra hộp thư xác minh rồi đăng nhập.",false,"authMessage");
- if(data?.session)await refresh();
-}));
+// Registration opens a separate form; login credentials are never reused implicitly.
+const signupMessage=(message,error=false)=>{
+ const box=$("signupStatus");box.hidden=!message;box.textContent=message||"";
+ box.classList.toggle("error",!!error);
+};
+const closeSignup=()=>{
+ if($("signupDialog").open)$("signupDialog").close();
+ $("signupPassword").value="";$("signupPasswordConfirm").value="";
+};
+$("signupBtn").addEventListener("click",()=>{
+ $("signupName").value="";
+ $("signupEmail").value=$("email").value.trim();
+ $("signupPassword").value="";$("signupPasswordConfirm").value="";
+ signupMessage("");
+ $("signupDialog").showModal();
+ $("signupName").focus();
+});
+$("signupCancelBtn").addEventListener("click",closeSignup);
+$("signupCloseBtn").addEventListener("click",closeSignup);
+$("signupDialog").addEventListener("close",()=>{
+ $("signupPassword").value="";$("signupPasswordConfirm").value="";
+});
+$("signupForm").addEventListener("submit",event=>{
+ event.preventDefault();
+ const button=$("signupSubmitBtn");
+ if(button.disabled)return;
+ void (async()=>{
+  const name=$("signupName").value.trim().replace(/\\s+/g," ");
+  const email=$("signupEmail").value.trim().toLowerCase();
+  const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
+  if(name.length<2||name.length>100)return signupMessage("Tên người dùng phải từ 2 đến 100 ký tự.",true);
+  if(!email||!$("signupEmail").checkValidity())return signupMessage("Nhập email hợp lệ.",true);
+  if(password.length<10)return signupMessage("Mật khẩu phải có tối thiểu 10 ký tự.",true);
+  if(password!==confirmPassword)return signupMessage("Mật khẩu nhập lại không khớp.",true);
+  button.disabled=true;
+  try{
+   const {data,error}=await client.auth.signUp({
+    email,password,options:{data:{full_name:name,display_name:name}}
+   });
+   if(error){
+    const value=String(error.code||"")+" "+String(error.message||"");
+    if(/user_already_exists|email_exists|identity_already_exists|already registered|already in use/i.test(value)){
+     signupMessage(DUP_EMAIL,true);return;
+    }
+    throw error;
+   }
+   if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
+    signupMessage(DUP_EMAIL,true);return;
+   }
+   $("email").value=email;
+   signupMessage(data?.session?
+    "Đã tạo tài khoản và đăng nhập thành công.":
+    "Đã gửi yêu cầu đăng ký. Hãy kiểm tra email để xác minh tài khoản trước khi đăng nhập. Thư có thể mang tiêu đề Supabase Auth; vui lòng kiểm tra cả mục Spam.");
+   $("signupPassword").value="";$("signupPasswordConfirm").value="";
+   if(data?.session){closeSignup();await refresh()}
+  }catch(error){
+   signupMessage(prettyError(error),true);
+  }finally{button.disabled=false}
+ })();
+});
 $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
  const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.href.split("#")[0]});
  if(error)throw error;
@@ -559,7 +624,7 @@ $("redeemBtn").addEventListener("click",()=>action("redeemBtn",async()=>{
 }));
 $("usageMode").addEventListener("change",async e=>{
  const selected=e.target.value;
- try{await rpc("addon_set_usage_mode",{p_mode:selected});await refresh()}
+ try{await rpc("autotax_set_usage_mode_v118",{p_mode:selected});await refresh()}
  catch(error){showMessage(prettyError(error),true);e.target.value=state?.mode||"mst"}
 });
 $("closePaymentBtn").addEventListener("click",closePayment);

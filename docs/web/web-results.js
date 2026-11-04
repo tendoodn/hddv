@@ -79,27 +79,26 @@ function totals(list){
 }
 function kAlert(stats,allowPopup=true){
  lastStats=stats;
+ const ready=bothKindsChecked()&&!!app()?.searchedBothKinds?.();
  const k=window.AutoTaxPeriodK?.calculate(stats.buy,stats.sold,$('openingStockInput').value);
- const ready=app()?.searchedBothKinds?.();
- const ratio=ready?k?.value:null;
- $('kRatio').textContent=ratio!==null&&Number.isFinite(ratio)?ratio.toFixed(2):'—';
- const reason={
-  'no-invoices':'Không có mua vào và bán ra: K = 1 (quy ước)',
-  'stock-blank':'Chưa nhập tồn đầu kỳ: K = 9 (quy ước)',
-  'zero-denominator':'Mẫu số bằng 0: K = 9 (quy ước)',
-  'invalid':'Tồn đầu kỳ không hợp lệ, vui lòng nhập số không âm.',
-  'calculated':'Đã tính với tồn đầu kỳ được nhập.'
- };
- $('kRatioSource').textContent=ready?(reason[k?.mode]||''):'Chỉ hiện khi tra cả Mua vào và Bán ra.';
- const warn=ready&&Number.isFinite(ratio)&&ratio>2&&k.mode!=='no-invoices';
+ const industry=$('kIndustry').value;
+ const threshold=window.AutoTaxPeriodK?.threshold(industry)||2;
+ const warn=ready&&window.AutoTaxPeriodK?.shouldWarn(k,industry);
+ $('kRatio').textContent=ready&&k?.value!==null&&Number.isFinite(k?.value)?k.value.toFixed(2):'—';
  $('kRatio').classList.toggle('warning',!!warn);
- if(!warn||!allowPopup||getPopupDisabled())return;
- $('disableKPopup').checked=false;
- $('kWarningText').textContent='Tổng bán ra '+money(stats.sold)+
-  ' / (Tổng mua vào '+money(stats.buy)+' + tồn đầu kỳ '+
-  (k.stock===null?'chưa nhập':money(k.stock))+') = '+ratio.toFixed(2)+
-  '. '+reason[k.mode]+' Hệ số K chỉ mang tính tham khảo và cần đối chiếu số liệu thực tế.';
- if(!$('kWarningDialog').open)$('kWarningDialog').showModal();
+ $('kRatioSource').textContent=!ready?'Chỉ hiện khi tra cả Mua vào và Bán ra.':
+  k?.mode==='invalid'?'Giá trị tồn đầu kỳ không hợp lệ.':
+  'K = Bán ra / (Mua vào + Tồn đầu kỳ) · ngưỡng '+threshold+
+  (k?.mode==='defaulted'?' · giá trị thiếu tính là 1':'');
+ if(warn&&allowPopup&&!getPopupDisabled()){
+  const txt='Bán ra: '+money(k.sales)+'; Mua vào: '+money(k.purchase)+
+   '; Tồn đầu: '+money(k.stock)+'; K = '+k.value.toFixed(2)+
+   '. Ngưỡng tham khảo '+(industry==='production'?'sản xuất':'thương mại')+
+   ': K ≥ '+threshold+'. Chỉ số tham khảo, không phải kết luận vi phạm thuế.';
+  $('kWarningText').textContent=txt;
+  const dialog=$('kWarningDialog');
+  if(!dialog.open)dialog.showModal();
+ }
 }
 function render(list,warnings=[]){
  syncOpeningStock();
@@ -455,7 +454,7 @@ function init(){
  $('stockDownloadBtn').addEventListener('click',()=>void exportStock(false));
  $('stockSingleBtn').addEventListener('click',()=>void exportStock(true));
  syncOpeningStock();
- document.querySelectorAll('input[name="kind"]').forEach(el=>el.addEventListener('change',syncOpeningStock));
+ document.querySelectorAll('input[name="kind"]').forEach(el=>el.addEventListener('change',()=>{syncOpeningStock();if(lastStats)kAlert(lastStats,false)}));
  $('fromDate').addEventListener('change',()=>{$('openingStockInput').value='';syncOpeningStock();if(lastStats)kAlert(lastStats,false)});
  $('openingStockToggle').addEventListener('click',()=>{
   const input=$('openingStockEditor'),now=input.hidden;
@@ -463,6 +462,7 @@ function init(){
   if(now)$('openingStockInput').focus();
  });
  $('openingStockInput').addEventListener('input',()=>{if(lastStats)kAlert(lastStats,false)});
+ $('kIndustry').addEventListener('change',()=>{if(lastStats)kAlert(lastStats,true)});
   $('disableKPopup').checked=getPopupDisabled();
  $('closeKWarning').addEventListener('click',()=>{
   setPopupDisabled($('disableKPopup').checked);

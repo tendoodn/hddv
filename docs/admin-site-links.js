@@ -60,6 +60,17 @@
   $('siteLinksCount').textContent=(data||[]).length+' liên kết';
  }
  function init(){
+  // Link to the dedicated combo/duration manager; visible only inside the admin app.
+  const adminHead=$('app')?.querySelector('.row');
+  if(adminHead&&!$('adminComboPackagesLink')){
+   const link=document.createElement('a');
+   link.id='adminComboPackagesLink';
+   link.href='./admin-combo.html';
+   link.textContent='Quản lý combo & thời hạn gói';
+   link.className='secondary';
+   link.style.cssText='display:inline-flex;align-items:center;border:1px solid #b91c1c;border-radius:8px;padding:9px 12px;text-decoration:none;color:#b91c1c;background:#fff;font-weight:700';
+   adminHead.append(link);
+  }
   const f=$('siteLinkAdd');
   if(!f)return;
   f.addEventListener('submit',async e=>{

@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
 <title>AutoTax V1.1.18 Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=1118">
+<link rel="stylesheet" href="./web/web.css?v=1118console2">
 </head>
 <body>
 <style>
@@ -102,7 +102,10 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
           <div id="openingStockControl" class="opening-stock-control" hidden>
             <button id="openingStockToggle" type="button" class="outline" aria-expanded="false">Nhập giá trị tồn kho đầu kỳ</button>
             <label id="openingStockEditor" hidden for="openingStockInput">Giá trị tồn kho đầu kỳ (đồng)
-              <input id="openingStockInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Để trống: K = 9">
+              <input id="openingStockInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Để trống: tồn đầu kỳ = 1">
+            </label>
+            <label for="kIndustry">Nhóm ngành · ngưỡng K tham khảo
+              <select id="kIndustry"><option value="commerce">Thương mại · cảnh báo K ≥ 2</option><option value="production">Sản xuất · cảnh báo K ≥ 4</option></select>
             </label>
             <small id="openingStockHint">Nhập giá trị tồn tại ngày đầu tiên của kỳ tra cứu.</small>
           </div>
@@ -121,13 +124,16 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
       <div class="privacy">Mật khẩu Thuế chỉ được sử dụng để đăng nhập cổng Thuế qua kênh bảo mật. Trên thiết bị này, mật khẩu được mã hóa bằng AES-GCM với khóa không xuất được khỏi IndexedDB và tách biệt theo tài khoản. Mật khẩu không được đồng bộ lên Supabase; thiết bị khác cần nhập lại lần đầu. Kho cũ có mật khẩu riêng không bị xóa tự động. Nếu cổng Thuế báo sai mật khẩu, AutoTax sẽ hiện cảnh báo và yêu cầu nhập lại. CAPTCHA chỉ được xử lý khi cổng trả dữ liệu hợp lệ.</div>
       <button id="searchBtn" type="submit" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
+      <button id="xmlContributionBtn" type="button" class="outline" title="XML được gửi qua phiên AutoTax và lưu trong kho riêng tư; không đăng công khai">Đóng góp XML</button>
+      <input id="xmlContributionInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>
+      <small>Đóng góp XML tự nguyện để hệ thống nhận dạng nhà phát hành. Tệp lưu kín trên Supabase; chỉ đồng bộ Drive sau khi quyền riêng tư của thư mục XML được xác minh.</small>
       <small>Chọn thư mục lưu lần đầu khi bấm Tìm kiếm. Các lần sau dùng lại thư mục đã chọn khi trình duyệt còn cấp quyền.</small>
-      <div class="progress" id="progress" aria-live="polite" hidden><span class="spinner"></span><span id="progressText">Đang xử lý…</span><button type="button" id="stopBtn">Dừng</button></div>
+      <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" aria-hidden="true"></span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
     </form>
   </section>
   <section id="results" class="result-card" hidden>
     <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
-    <p class="k-description">K = Tổng bán ra / (Tồn đầu kỳ + Tổng mua vào). Nếu chưa nhập tồn kho, K mặc định 9 để tham khảo; khi cả mua vào và bán ra đều bằng 0, K = 1. Đây không phải kết luận của cơ quan Thuế.</p>
+    <p class="k-description">K = Tổng bán ra / (Tổng mua vào + Tồn đầu kỳ). Nếu thiếu số liệu tồn đầu, mua vào hoặc bán ra, giá trị thiếu được tính là 1. Đây là chỉ số tham khảo theo công thức đã chọn, không phải kết luận của cơ quan Thuế.</p>
     <div class="invoice-stats">
       <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
       <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
@@ -249,7 +255,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/captcha-svg-templates.js?v=1"></script>
 <script src="./web/captcha-svg.js?v=1"></script>
 <script src="./web/issuer-portals.js?v=1118"></script>
-<script src="./web/period-k.js?v=1118"></script>
+<script src="./web/period-k.js?v=1118k4"></script>
 <script src="./web/hddt-api.js?v=1118"></script>
 <script src="./web/report.js?v=1118"></script>
 <script src="./web/tendoo-import.js?v=2"></script>
@@ -259,10 +265,10 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/vault.js?v=118"></script>
 <script src="./web/pdf.js?v=1"></script>
 <script src="./web/issuer-archive.js?v=1118"></script>
-<script src="./web/web-pdf.js?v=1118"></script>
+<script src="./web/web-pdf.js?v=1118sign2"></script>
 <script src="./web/export-zip.js?v=116"></script>
-<script src="./web/web.js?v=1118"></script>
-<script src="./web/web-results.js?v=1118"></script>
+<script src="./web/web.js?v=1118xml2"></script>
+<script src="./web/web-results.js?v=1118k4"></script>
 <script src="./web/issuer-pdf.js?v=1118"></script>
 <script src="./web/audit.js?v=1"></script>
 <script src="./password-toggle.js?v=116"></script>

@@ -109,11 +109,15 @@ function prettyError(error){
  };
  return known[code]||known[msg]||msg;
 }
+const isAuthSessionError=error=>/Auth session missing|JWT expired|Invalid Refresh Token|refresh token not found/i.test(String(error?.message||error||''));
 async function rpc(name,args={}){
  let {data,error}=await client.rpc(name,args);
- if(error&&/Auth session missing|JWT expired|Invalid Refresh Token/i.test(error.message||'')){
+ if(error&&isAuthSessionError(error)){
+  // Check the browser session first; retry a protected RPC only once.
+  const current=await client.auth.getSession();
+  if(current.error||!current.data?.session)throw Error('Phiên đăng nhập AutoTax đã hết hạn. Vui lòng đăng nhập lại.');
   const refreshed=await client.auth.refreshSession();
-  if(refreshed.error||!refreshed.data?.session)throw Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+  if(refreshed.error||!refreshed.data?.session)throw Error('Phiên đăng nhập AutoTax đã hết hạn. Vui lòng đăng nhập lại.');
   ({data,error}=await client.rpc(name,args));
  }
  if(error)throw error;
@@ -145,9 +149,15 @@ async function refresh(){
   const {data:{session}}=await client.auth.getSession();
   const signedIn=!!session;
   if(signedIn&&session.user?.email){try{localStorage.setItem('autotax_recent_email',session.user.email)}catch{}}
-  const {data:userResult,error:userError}=signedIn?
+  let {data:userResult,error:userError}=signedIn?
    await client.auth.getUser():{data:{user:null},error:null};
-  if(userError&&!/Auth session missing/i.test(userError.message||''))throw userError;
+  if(userError&&isAuthSessionError(userError)){
+   // Recover once if the token changed while the account page was opening.
+   const renewed=await client.auth.refreshSession();
+   if(!renewed.error&&renewed.data?.session)
+    ({data:userResult,error:userError}=await client.auth.getUser());
+  }
+  if(userError)throw userError;
   const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
   $('forcedPasswordNotice').hidden=!forceChange;
@@ -203,6 +213,14 @@ async function refresh(){
   if(isPendingV32Backend(error)){
    $("licenseTitle").textContent="Đang chuyển đổi sang AutoTax V3.2";
    showMessage("Hệ thống cấp phép V3.2 chưa được triển khai trên Supabase. Đăng nhập vẫn hoạt động, nhưng mua gói, dùng thử và kích hoạt mã sẽ chỉ mở sau khi quản trị cập nhật SQL.",true);
+  }else if(isAuthSessionError(error)||/Phiên đăng nhập AutoTax đã hết hạn/i.test(String(error?.message||''))){
+   const current=await client.auth.getSession().catch(()=>({data:{session:null}}));
+   if(!current.data?.session){
+    $('dashboard').hidden=true;$('authSection').hidden=false;closePayment();
+    showMessage('Phiên AutoTax đã hết hạn. Vui lòng đăng nhập lại.',true,'authMessage');
+   }else{
+    showMessage('Không xác thực được phiên AutoTax. Hãy tải lại trang và thử lại.',true);
+   }
   }else{
    showMessage("Chưa đồng bộ được dữ liệu Supabase V3.2: "+prettyError(error),true);
   }

@@ -4,7 +4,7 @@
 'use strict';
 const buttons=['extensionDownloadBtn','extensionHeaderDownloadBtn'].map(id=>document.getElementById(id)).filter(Boolean);
 if(!buttons.length||!window.supabase)return;
-const client=window.supabase.createClient('https://ucqqjdsoyvvaxswzbhaw.supabase.co','sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ');
+const client=window.AutoTaxSharedClient||window.supabase.createClient('https://ucqqjdsoyvvaxswzbhaw.supabase.co','sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ');
 let lastCheck=0;
 async function updateLink(){
  if(Date.now()-lastCheck<30000)return;

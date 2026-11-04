@@ -2,7 +2,7 @@
 "use strict";
 const BASE="https://ucqqjdsoyvvaxswzbhaw.supabase.co";
 const PUBLIC_KEY="sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ";
-const client=window.supabase.createClient(BASE,PUBLIC_KEY);
+const client=window.AutoTaxSharedClient||(window.AutoTaxSharedClient=window.supabase.createClient(BASE,PUBLIC_KEY));
 window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
  const {data:{session}}=await client.auth.getSession();
  return {userId:session?.user?.id,token:session?.access_token};
@@ -110,7 +110,12 @@ function prettyError(error){
  return known[code]||known[msg]||msg;
 }
 async function rpc(name,args={}){
- const {data,error}=await client.rpc(name,args);
+ let {data,error}=await client.rpc(name,args);
+ if(error&&/Auth session missing|JWT expired|Invalid Refresh Token/i.test(error.message||'')){
+  const refreshed=await client.auth.refreshSession();
+  if(refreshed.error||!refreshed.data?.session)throw Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+  ({data,error}=await client.rpc(name,args));
+ }
  if(error)throw error;
  return data;
 }
@@ -142,8 +147,8 @@ async function refresh(){
   if(signedIn&&session.user?.email){try{localStorage.setItem('autotax_recent_email',session.user.email)}catch{}}
   const {data:userResult,error:userError}=signedIn?
    await client.auth.getUser():{data:{user:null},error:null};
-  if(userError)throw userError;
-  const forceChange=!!userResult?.user?.app_metadata?.autotax_force_password_change;
+  if(userError&&!/Auth session missing/i.test(userError.message||''))throw userError;
+  const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
   $('forcedPasswordNotice').hidden=!forceChange;
   if(forceChange)$('passwordPanel').hidden=false;
@@ -186,8 +191,9 @@ async function refresh(){
   $("mstAllowControls").hidden=selected!=="mst";
   setMstGrantUnlocked(false);
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
-  $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":(license.ever_had_package?"Tài khoản đã có lịch sử gói.":"");
+  $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":"";
   await Promise.all([loadMstAssignments(),loadPackages()]);
+  if($("accountMessage").textContent.includes("Chưa đồng bộ được dữ liệu Supabase V3.2"))showMessage("");
  }catch(error){
   state=null;
   $("trialArea").hidden=true;

@@ -15,7 +15,36 @@ window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
 });
 let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
 let busy=false,stopped=false,selectedMode='mst',profileMsts=[],profileAllowedMsts=[],teamAllowedMsts=[],searchedBothKinds=false;
-const vn=(iso)=>iso.split('-').reverse().join('/');
+const vn=iso=>iso?iso.split('-').reverse().join('/'):'';
+const parseVnDate=text=>{
+ const raw=String(text||'').trim();
+ const matched=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+ if(!matched)return '';
+ const [,dd,mm,yyyy]=matched;
+ const dt=new Date(Date.UTC(Number(yyyy),Number(mm)-1,Number(dd)));
+ if(dt.getUTCFullYear()!==Number(yyyy)||dt.getUTCMonth()!==Number(mm)-1||dt.getUTCDate()!==Number(dd))return '';
+ return yyyy+'-'+mm+'-'+dd;
+};
+const readVnDate=id=>parseVnDate($(id).value);
+const setVnDate=(id,iso)=>{$(id).value=vn(iso);const native=$(id+'Native');if(native)native.value=iso};
+function configureVnDates(){
+ for(const id of ['fromDate','toDate']){
+  const text=$(id),native=$(id+'Native'),pick=$(id+'Pick');
+  native.addEventListener('change',()=>setVnDate(id,native.value));
+  text.addEventListener('input',()=>{
+   const v=text.value.replace(/[^0-9]/g,'').slice(0,8);
+   if(v.length>=3&&text.value.indexOf('/')<0)
+    text.value=v.slice(0,2)+'/'+v.slice(2,4)+(v.length>=5?'/'+v.slice(4):'');
+  });
+  text.addEventListener('blur',()=>{const iso=readVnDate(id);if(iso)setVnDate(id,iso)});
+  pick.addEventListener('click',()=>{
+   if(readVnDate(id))native.value=readVnDate(id);
+   if(typeof native.showPicker==='function')native.showPicker();
+   else native.focus();
+  });
+ }
+}
+
 const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const idOf=r=>JSON.stringify([r.kind,r.form,r.khhdon,r.shdon,r.nbmst,r.nmmst]);
 const money=n=>Number(n||0).toLocaleString('vi-VN')+' ₫';
@@ -23,7 +52,7 @@ const safe=s=>String(s||'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,70);
 const selected=name=>[...document.querySelectorAll('input[name="'+name+'"]:checked')].map(el=>el.value);
 const show=(msg,ok=false)=>{const box=$('notice');box.hidden=!msg;box.textContent=msg||'';box.classList.toggle('success',!!ok)};
 const progress=msg=>{const log=$('progressLog'),line=document.createElement('div');line.className='autotax-terminal-line';const severity=/lỗi|thất bại|không thể|gián đoạn/i.test(String(msg))?'error':/cảnh báo|bỏ qua|chưa lấy|thiếu|lưu ý/i.test(String(msg))?'warn':/hoàn tất|thành công|đã tải|đã xuất/i.test(String(msg))?'success':'info';line.classList.add('terminal-'+severity);const clock=new Date().toLocaleTimeString('vi-VN',{hour12:false});line.textContent='['+clock+'] '+String(msg||'Đang xử lý…');log.append(line);while(log.children.length>5)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;};
-const busyState=(value,keepLog=false)=>{busy=!!value;$('progress').hidden=!value&&!keepLog;if(value){$('progressLog').replaceChildren();progress('Khởi tạo phiên xử lý…');$('stopBtn').textContent='Dừng'}else if(keepLog){$('stopBtn').textContent='Đóng'}$('searchBtn').disabled=!!value;
+const busyState=(value,keepLog=false)=>{busy=!!value;$('progress').hidden=!value&&!keepLog;if(value){$('progressLog').replaceChildren();progress('Khởi tạo phiên xử lý…');$('stopBtn').textContent='Dừng'}else if(keepLog){$('stopBtn').textContent='Đóng'}$('searchBtn').disabled=false;$('searchBtn').textContent=value?'Dừng tra cứu':'⌕ Tìm kiếm hóa đơn';
   for(const id of ['exportAllZip','exportExcel','exportXml','exportHtml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
 // User-triggered XML contribution; no tax-portal credentials or tokens go into XML storage.
@@ -425,11 +454,11 @@ function renderResults(list,warnings=[]){
 async function search(e){
  e.preventDefault();if(busy)return;
  const mst=currentSearchMst();
- const start=$('fromDate').value,end=$('toDate').value;
+ const start=readVnDate('fromDate'),end=readVnDate('toDate');
  if(!account)return show('Đăng nhập tài khoản AutoTax trước khi tra cứu.');
  if(!/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))
   return show('MST phải có 10, 12 hoặc 13 chữ số hợp lệ.');
- if(!start||!end||start>end)return show('Khoảng ngày chưa hợp lệ.');
+ if(!start||!end||start>end)return show('Khoảng ngày chưa hợp lệ. Nhập ngày/tháng/năm (dd/mm/yyyy).');
  if(!selected('kind').length||!selected('form').length)return show('Chọn ít nhất một loại và một hình thức hóa đơn.');
  // Select the output folder from this Search click before network requests.
  try{
@@ -469,7 +498,7 @@ async function search(e){
   show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
    (result.skipped?.length?' Nguồn chưa hoàn tất: '+result.skipped.join(', '):''),true);
  }catch(error){show(error.message||'Tra cứu không thành công.');}
- finally{busyState(false)}
+ finally{busyState(false,true)}
 }
 const pendingDetails=new Map();
 async function loadDetails(scopeRows=rows){
@@ -530,7 +559,7 @@ async function exportFileCore(kind){
  const label={excel:'Excel',xml:'XML',html:'HTML',pdf:'PDF nhà phát hành',pdfTax:'PDF Thuế'}[kind]||kind;
  progress('Bắt đầu tải '+targetRows.length+' hóa đơn · '+label+'…');
  try{
-  const stamp=($('fromDate').value||'').replace(/-/g,'')+'_'+($('toDate').value||'').replace(/-/g,'')+
+  const stamp=(readVnDate('fromDate')||'').replace(/-/g,'')+'_'+(readVnDate('toDate')||'').replace(/-/g,'')+
    (window.WebResults?.exportSuffix?.()||'');
   const fileBase='AutoTax_'+safe(govtMst)+'_'+stamp;
   let detailMap=new Map();
@@ -630,8 +659,8 @@ window.WebInvoiceApp={
 function init(){
  // Both invoice forms start selected whenever Web is opened; users may untick later.
  document.querySelectorAll('input[name="form"]').forEach(input=>{input.checked=true});
- const today=new Date();$('toDate').value=dateOnly(today);
- $('fromDate').value=dateOnly(new Date(today.getFullYear(),today.getMonth(),1));
+ const today=new Date();configureVnDates();setVnDate('toDate',dateOnly(today));
+ setVnDate('fromDate',dateOnly(new Date(today.getFullYear(),today.getMonth(),1)));
  $('searchForm').addEventListener('submit',search);
  // Bring MST profiles and mode from Supabase whenever this tab becomes active.
  // Both Web and Add-on use the same account records; never sync tax passwords.
@@ -669,6 +698,10 @@ function init(){
  $('changeOutputFolderWeb').addEventListener('click',async()=>{
   try{show('Đã chọn thư mục '+await AutoTaxDownloadFolder.change(),true)}
   catch(error){if(error.name!=='AbortError')show(error.message)}
+ });
+ $('searchBtn').addEventListener('click',()=>{
+  if(busy){stopped=true;progress('Đã yêu cầu dừng tra cứu…');return}
+  $('searchBtn').closest('form').requestSubmit();
  });
  $('stopBtn').addEventListener('click',()=>{if(!busy){$('progress').hidden=true;return}stopped=true;progress('Đang dừng sau yêu cầu hiện tại…')});
  $('reloadCaptcha').addEventListener('click',getCaptcha);

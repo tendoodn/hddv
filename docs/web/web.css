@@ -217,3 +217,14 @@ td.audit-info{color:#c6c6db}
 .autotax-terminal-line.terminal-warn,.autotax-terminal-line.terminal-warn:last-child{color:#ffd17d}
 .autotax-terminal-line.terminal-success,.autotax-terminal-line.terminal-success:last-child{color:#73f5bc}
 .autotax-terminal-line.terminal-info{color:#9de3ff}
+
+/* v120: console is part of the form and never floats above another control. */
+#progress.autotax-terminal{position:static!important;inset:auto!important;right:auto!important;bottom:auto!important;z-index:auto!important;width:100%!important;max-width:100%!important;margin:10px 0 12px;box-shadow:none!important}
+#progress .autotax-terminal-log{height:auto;min-height:90px;max-height:115px}
+#progress #stopBtn{display:none!important}
+.autotax-vn-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.vn-date-field{display:flex;position:relative;align-items:center;gap:3px;min-width:0}
+.vn-date-field>input[id$="Date"]:not([type=date]){flex:1;min-width:0;max-width:none;text-align:center;letter-spacing:.015em}
+.vn-date-field>button{flex:0 0 40px;min-width:0;padding:6px 4px!important}
+.vn-date-field>input[type=date]{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none}
+@media(max-width:520px){.autotax-vn-dates{gap:5px}.vn-date-field>button{flex-basis:35px}.vn-date-field>input:not([type=date]){font-size:12px;padding:8px 3px}}

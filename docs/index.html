@@ -125,6 +125,20 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 </style>
 <style>
 .autotax-account-tabs,.autotax-team-subtabs{display:flex;gap:6px;flex-wrap:wrap}.autotax-tab{border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}.autotax-tab.is-active{background:#164e63;color:#fff;border-color:#164e63}.autotax-team-panel[hidden],#autotaxTeamDetail[hidden]{display:none!important}#dashboard.autotax-team-active>:not(#autotaxAccountSummary):not(#autotaxTeamPanel):not(#forcedPasswordNotice){display:none!important}#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head){display:none!important}.autotax-team-list{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.autotax-team-list button{max-width:100%;overflow-wrap:anywhere}.autotax-team-panel td{vertical-align:top}.autotax-team-panel td label{display:block;white-space:nowrap;margin:4px 0}.autotax-team-panel td button{margin:3px}.autotax-team-panel td input[type=checkbox]{margin-right:5px}.autotax-team-panel .table-wrap{overflow-x:auto}.autotax-team-subtabs{margin:12px 0}
+
+/* AutoTax self-service account registration — accessible modal, responsive inputs. */
+.autotax-signup-dialog{width:min(510px,calc(100vw - 28px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #f0c3c9;border-radius:16px;padding:22px;background:#fff;color:#281b21;box-shadow:0 25px 75px #3c0a1540}
+.autotax-signup-dialog::backdrop{background:rgba(24,20,26,.70)}
+.autotax-signup-dialog form{display:flex;flex-direction:column;gap:9px}
+.autotax-signup-dialog label{font-weight:700;font-size:13px}
+.autotax-signup-dialog input{display:block;width:100%;min-width:0;padding:11px 12px;border-radius:9px;border:1px solid #cfd4db;background:#fff;color:#20242a;font:inherit}
+.autotax-signup-dialog input:focus{outline:2px solid #e60012;outline-offset:1px}
+.autotax-signup-dialog .autotax-signup-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.autotax-signup-dialog h2{font-size:21px;margin:0}
+.autotax-signup-dialog .actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:8px}
+.autotax-signup-dialog .actions button{flex:1;white-space:nowrap}
+.autotax-signup-dialog #signupStatus{margin:4px 0}
+@media(max-width:480px){.autotax-signup-dialog{padding:17px}.autotax-signup-dialog h2{font-size:18px}}
 </style>
 </head>
 <body>
@@ -144,6 +158,23 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
  <div id="authMessage" class="notice" hidden></div>
  </form>
 </section>
+<dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
+ <form id="signupForm" autocomplete="on">
+  <div class="autotax-signup-head"><h2 id="signupDialogTitle">Tạo tài khoản AutoTax</h2><button id="signupCloseBtn" type="button" class="secondary" aria-label="Đóng đăng ký">✕</button></div>
+  <p class="muted">Điền đầy đủ thông tin để đăng ký tài khoản mới. Tài khoản dùng chung trên Web và Extension.</p>
+  <label for="signupName">Tên người dùng</label>
+  <input id="signupName" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Họ tên hoặc tên hiển thị">
+  <label for="signupEmail">Email</label>
+  <input id="signupEmail" type="email" required autocomplete="email" placeholder="email@example.com">
+  <label for="signupPassword">Mật khẩu</label>
+  <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
+  <label for="signupPasswordConfirm">Nhập lại mật khẩu</label>
+  <input id="signupPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo">
+  <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây.</p>
+  <div id="signupStatus" class="notice" role="status" aria-live="polite" hidden></div>
+  <div class="actions"><button id="signupSubmitBtn" type="submit">Đăng ký tài khoản</button><button id="signupCancelBtn" class="secondary" type="button">Huỷ</button></div>
+ </form>
+</dialog>
 <section id="dashboard" hidden>
  <div id="forcedPasswordNotice" class="notice" hidden>
   Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.
@@ -304,7 +335,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=1118team1"></script>
+<script src="./customer.js?v=1118signup2"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <script src="./team-v118.js?v=1118team2"></script>
 <script src="./extension-link-v118.js?v=1118release2"></script>

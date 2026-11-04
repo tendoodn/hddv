@@ -60,7 +60,7 @@ $('accountAvatarUpload').addEventListener('change',async e=>{
 $('accountProfileForm').addEventListener('submit',async event=>{
  event.preventDefault();
  const btn=$('accountProfileSave'),name=$('accountDisplayName').value.trim().replace(/\s+/g,' ');
- const oldPass=$('accountOldPassword').value,newPass=$('accountNewPassword').value;
+ const oldPass=$('accountOldPassword').value,newPass=$('accountNewPassword').value,avatarToSave=avatarData;
  if(name.length<2||name.length>100)return status('Tên người dùng phải dài từ 2 đến 100 ký tự.',true);
  if(Boolean(oldPass)!==Boolean(newPass))return status('Muốn đổi mật khẩu phải nhập cả mật khẩu cũ và mới.',true);
  if(newPass&&newPass.length<10)return status('Mật khẩu mới phải có ít nhất 10 ký tự.',true);
@@ -72,7 +72,7 @@ $('accountProfileForm').addEventListener('submit',async event=>{
    const {error:passwordError}=await client.auth.signInWithPassword({email:session.user.email,password:oldPass});
    if(passwordError)throw Error('Mật khẩu cũ không đúng. '+passwordError.message);
   }
-  const data={full_name:name,display_name:name,avatar_data_url:avatarData===logo?null:avatarData};
+  const data={full_name:name,display_name:name,avatar_data_url:avatarToSave===logo?null:avatarToSave};
   const change={data,...(newPass?{password:newPass}:{})};
   const {error}=await client.auth.updateUser(change);
   if(error)throw error;

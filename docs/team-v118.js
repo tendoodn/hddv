@@ -1,4 +1,4 @@
-/* AutoTax V1.1.18 team management. Quota charging is intentionally not enabled here. */
+/* AutoTax V1.1.18 team management. Quota and MST usage are enforced by authenticated Supabase RPCs. */
 (()=>{
 'use strict';
 const BASE='https://ucqqjdsoyvvaxswzbhaw.supabase.co';

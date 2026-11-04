@@ -287,3 +287,33 @@ td.audit-info{color:#c6c6db}
 
 /* V1.1.20a: remove the redundant shared-account banner from the visible Web interface. */
 .hero .sync{display:none!important}
+
+
+/* Small green completion mark replaces the spinner only for successful runs. */
+#downloadConsoleSpinner[hidden],#downloadConsoleDone[hidden]{display:none!important}
+.autotax-console-done{display:inline-flex;align-items:center;color:#71f3a6;font-weight:800;font-size:11px;gap:3px;white-space:nowrap}
+.invoice-row-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;min-width:192px!important;max-width:240px;gap:5px}
+.invoice-row-actions .table-detail-btn{margin:0!important;grid-column:auto!important;white-space:normal!important;min-height:31px;line-height:1.25}
+@media(max-width:780px){.invoice-row-actions{min-width:174px!important}}
+
+
+/* Render at most 150 rows; filter/export still sees all authorized invoices. */
+.result-page-nav{display:flex;gap:8px;align-items:center;justify-content:flex-end;
+ flex-wrap:wrap;padding:9px 0 12px;font-size:12px;color:#d6eaf4}
+.result-page-nav button{min-height:32px;padding:6px 9px;font-size:11px}
+.result-page-nav button:disabled{opacity:.4;cursor:default}
+#invoiceDetailDialog{width:min(1240px,96vw);max-width:96vw;padding:clamp(10px,2vw,20px)}
+#invoiceDetailDialog .table-wrap{max-height:min(66dvh,700px);overflow:auto;border-radius:9px;border:1px solid #454550}
+#invoiceDetailDialog table{table-layout:fixed;min-width:900px;width:100%;border-collapse:separate;border-spacing:0}
+#invoiceDetailDialog th{position:sticky;top:0;z-index:2;background:#24262e;text-align:left;line-height:1.35}
+#invoiceDetailDialog td{vertical-align:top;overflow-wrap:anywhere;line-height:1.4}
+#invoiceDetailDialog th:nth-child(1){width:5%}
+#invoiceDetailDialog th:nth-child(2){width:12%}
+#invoiceDetailDialog th:nth-child(3){width:16%}
+#invoiceDetailDialog th:nth-child(4){width:9%}
+#invoiceDetailDialog th:nth-child(5){width:21%}
+#invoiceDetailDialog th:nth-child(6){width:7%}
+#invoiceDetailDialog th:nth-child(7){width:8%}
+#invoiceDetailDialog th:nth-child(8){width:11%}
+#invoiceDetailDialog th:nth-child(9){width:11%}
+@media(max-width:650px){.result-page-nav{justify-content:center}#invoiceDetailDialog{max-width:100vw;width:100vw;max-height:96dvh}#invoiceDetailDialog th,#invoiceDetailDialog td{padding:6px;font-size:11px}}

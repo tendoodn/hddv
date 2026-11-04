@@ -18,7 +18,8 @@ function renderMstAssignments(){
    a.mst_allowed===true?'Đã cấp quyền':'Chưa cấp quyền',fmt(a.assigned_at)]){
    const td=document.createElement("td");td.textContent=value||"—";tr.append(td);
   }
-  const td=document.createElement("td");
+  const td=document.createElement("td"),actionRow=document.createElement("div");
+  actionRow.className="admin-mst-row-actions";
   const rename=document.createElement("button");rename.type="button";rename.className="secondary";
   rename.textContent="Rename";
   rename.addEventListener("click",async()=>{
@@ -41,7 +42,7 @@ function renderMstAssignments(){
    msg("msg","Đã gỡ liên kết MST; lịch sử dùng thử được giữ nguyên.");
    await loadMstAssignments();
   });
-  td.append(rename,btn);tr.append(td);body.append(tr);
+  actionRow.append(rename,btn);td.append(actionRow);tr.append(td);body.append(tr);
  }
  if(!body.children.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=6;td.textContent="Chưa có MST liên kết.";tr.append(td);body.append(tr);}
 }

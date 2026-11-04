@@ -16,6 +16,8 @@ const invoiceMonth=r=>{
  return m?m[3]+'-'+m[2].padStart(2,'0'):'';
 };
 let dataset=[],checked=new Set(),visible=[],catalog=[],skuLinks={},pendingSku={},catalogKey='';
+const RESULT_PAGE_SIZE=150;
+let currentResultPage=1;
 let stockPlatform='tendoo',mappingReady=false,catalogRestoreSeq=0,catalogFilename='';
 const cache=()=>window.AutoTaxWebStockCache;
 const stockStatus=(text,error=false)=>{
@@ -103,7 +105,7 @@ function kAlert(stats,allowPopup=true){
 function render(list,warnings=[],options={}){
  syncOpeningStock();
  dataset=Array.isArray(list)?list.slice():[];
- if(!options.preserve)checked.clear();
+ if(!options.preserve){checked.clear();currentResultPage=1}
  visible=[];
  if(!options.preserve){$('visibleKind').value='all';$('visibleMonth').value='';}
  $('results').hidden=false;
@@ -135,12 +137,18 @@ function finish(list,warnings=[]){
  render(list,warnings,{preserve:true});
 }
 function resetForSearch(){
- dataset=[];visible=[];checked.clear();lastStats=null;
+ dataset=[];visible=[];checked.clear();currentResultPage=1;lastStats=null;
  $('visibleKind').value='all';$('visibleMonth').value='';
  $('results').hidden=true;
 }
 function renderVisible(){
- visible=filterRows().slice(0,1500);
+ const filtered=filterRows(),totalPages=Math.max(1,Math.ceil(filtered.length/RESULT_PAGE_SIZE));
+ currentResultPage=Math.max(1,Math.min(totalPages,currentResultPage));
+ visible=filtered.slice((currentResultPage-1)*RESULT_PAGE_SIZE,currentResultPage*RESULT_PAGE_SIZE);
+ const prev=$('resultPagePrev'),next=$('resultPageNext'),label=$('resultPageInfo');
+ if(prev)prev.disabled=currentResultPage<=1;
+ if(next)next.disabled=currentResultPage>=totalPages;
+ if(label)label.textContent='Trang '+currentResultPage+'/'+totalPages+' · '+filtered.length+' hóa đơn';
  const body=$('resultRows');body.replaceChildren();
  if(!visible.length){
   const tr=document.createElement('tr'),td=document.createElement('td');
@@ -179,7 +187,7 @@ function renderVisible(){
   issuer.dataset.issuer=keyOf(r);issuer.textContent='PDF Gốc';actionGroup.append(issuer);
   action.append(actionGroup);tr.append(action);body.append(tr);
  }
- if(filterRows().length>1500)app()?.show('Đang hiển thị 1.500 dòng đầu; xuất tất cả sẽ bao gồm toàn bộ hóa đơn khớp bộ lọc.',true);
+ // All filtered rows remain available for ZIP/Excel export; only visible DOM is paged.
  updateScope();
 }
 function appendCells(row,values){
@@ -446,9 +454,11 @@ function init(){
   updateScope();
  });
  // No redundant export-scope selector: changes to filters/checkboxes update the export set.
- $('visibleKind').addEventListener('change',renderVisible);
- $('visibleMonth').addEventListener('change',renderVisible);
- $('clearVisibleMonth').addEventListener('click',()=>{$('visibleMonth').value='';renderVisible()});
+ $('visibleKind').addEventListener('change',()=>{currentResultPage=1;renderVisible()});
+ $('visibleMonth').addEventListener('change',()=>{currentResultPage=1;renderVisible()});
+ $('clearVisibleMonth').addEventListener('click',()=>{$('visibleMonth').value='';currentResultPage=1;renderVisible()});
+ $('resultPagePrev')?.addEventListener('click',()=>{currentResultPage--;renderVisible()});
+ $('resultPageNext')?.addEventListener('click',()=>{currentResultPage++;renderVisible()});
  $('closeInvoiceDetail').addEventListener('click',()=>$('invoiceDetailDialog').close());
  $('closeSkuMap').addEventListener('click',()=>$('skuMapDialog').close());
  $('saveSkuMap').addEventListener('click',async()=>{

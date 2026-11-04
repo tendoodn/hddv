@@ -108,6 +108,9 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 #forcedPasswordDialog input{width:100%;box-sizing:border-box;min-width:0}
 #forcedPasswordDialog button{width:100%;margin-top:13px}
 #forcedPasswordDialog .notice[hidden]{display:none!important}
+#forcedPasswordDialog .autotax-password-eye{display:block!important;position:relative!important;width:100%!important;max-width:100%!important}
+#forcedPasswordDialog .autotax-password-eye>input{display:block!important;width:100%!important;max-width:100%!important;padding-right:48px!important}
+#forcedPasswordDialog .autotax-password-eye>button.autotax-eye-button{position:absolute!important;right:6px!important;top:50%!important;transform:translateY(-50%)!important;display:flex!important;align-items:center;justify-content:center;width:36px!important;min-width:36px!important;height:34px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;z-index:2}
 @media(max-width:450px){.portal-quick-actions{gap:5px}.portal-quick-actions button{font-size:11px;padding:8px 3px}}
 
 /* V1.1.18: explicit MST grant checkboxes in the customer portal. */
@@ -212,13 +215,21 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 @media(max-width:480px){#mstSummaryModeSlot{width:100%}#mstSummaryModeSlot #modeSection{width:100%}.mst-quick-row #mstAllowControls{min-width:0}}
 #accountProfileEmail{background:#e5e7eb!important;color:#64748b!important;opacity:.75;cursor:not-allowed}
 #mstGrantAllow[hidden],#mstGrantUnlock[hidden]{display:none!important}
+#headerLogoutBtn[hidden]{display:none!important}
+.portal-header-logout{cursor:pointer;white-space:nowrap;min-width:0}
+#invoicePlanCard,#mstPlanCard{transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
+.plan.stat.is-selected-mode{background:#e7f8ed!important;border:2px solid #27ae63!important;color:#11512f!important;box-shadow:0 1px 10px #2ea86919}
+.plan.stat.is-selected-mode strong,.plan.stat.is-selected-mode small{color:#11512f!important}
+.plan.stat.is-other-mode{background:#f1f2f4!important;border:1px solid #cbd0d6!important;color:#606670!important;opacity:.86;box-shadow:none}
+.plan.stat.is-other-mode strong,.plan.stat.is-other-mode small{color:#606670!important}
+@media(max-width:520px){#headerLogoutBtn{font-size:10px!important;padding:6px 7px!important}}
 </style>
 </head>
 <body>
 <main class="wrap">
 <header>
   <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.18</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a id="webSearchLink" class="portal-admin-link portal-header-download web-search-blink" href="./web.html">VÀO TRA CỨU PHIÊN BẢN WEB</a><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a id="webSearchLink" class="portal-admin-link portal-header-download web-search-blink" href="./web.html">VÀO TRA CỨU PHIÊN BẢN WEB</a><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a><button id="headerLogoutBtn" type="button" class="portal-admin-link portal-header-logout" hidden>Đăng xuất</button></nav>
 </header>
 
 
@@ -326,8 +337,8 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  </details>
   <div class="portal-mode-toolbar"><h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2></div>
   <div class="grid">
-   <div class="plan stat"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
-   <div class="plan stat"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
+   <div class="plan stat" id="invoicePlanCard" data-plan-family="invoice"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
+   <div class="plan stat" id="mstPlanCard" data-plan-family="mst"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
   </div>
   <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
  </div>
@@ -472,7 +483,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=127forced1"></script>
+<script src="./customer.js?v=128active1"></script>
 <script src="./account-settings-v120.js?v=126email1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <script src="./team-v118.js?v=125mode1"></script>

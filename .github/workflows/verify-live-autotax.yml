@@ -19,10 +19,11 @@ jobs:
           import urllib.request, urllib.error, time, sys
           checks = {
             "https://tracuuhoadon.top/admin-combo.html": ["admin.html#packageCatalog"],
-            "https://tracuuhoadon.top/": ['id="autotaxTeamTab"', 'id="signupDialog"', 'id="signupName"', 'id="signupPasswordConfirm"', 'VÀO TRA CỨU PHIÊN BẢN WEB', 'id="extensionHeaderDownloadBtn"', 'id="paymentCouponCode"', 'id="mstProfilesWeb"', 'id="accountSettingsToggle"', 'id="accountProfileDialog"', 'id="accountGreeting"', 'id="autotaxTeamPermissionDialog"'],
-            "https://tracuuhoadon.top/web.html": ['id="kIndustry"', 'web-results.js?v=1118k4', 'web.js?v=1120console2', 'web/pdf.js?v=1121sig4', 'id="progressLog"'],
+            "https://tracuuhoadon.top/": ['id="autotaxTeamTab"', 'id="signupDialog"', 'id="signupName"', 'id="signupPasswordConfirm"', 'VÀO TRA CỨU PHIÊN BẢN WEB', 'id="extensionHeaderDownloadBtn"', 'id="paymentCouponCode"', 'id="mstProfilesWeb"', 'id="accountSettingsToggle"', 'id="accountProfileDialog"', 'id="accountGreeting"', 'id="signupEmailSent"', 'id="mstProfileGrantOnCreate"', 'id="webSearchLink"', 'id="autotaxTeamPermissionDialog"'],
+            "https://tracuuhoadon.top/web.html": ['id="kIndustry"', 'web-results.js?v=1118k4', 'web.js?v=123quota1', 'web/pdf.js?v=122form1', 'id="progressLog"', 'id="invoiceQuotaDialog"', 'web/vault.js?v=122mst1'],
             "https://tracuuhoadon.top/web/pdf.js": ["Signature valid", "Signature not verified", "Bản thể hiện của hóa đơn điện tử", "9=6+8", "if (signatureVerified)"],
-            "https://tracuuhoadon.top/web/web.js": ["keepLog=false", "log.children.length>5", "Đã hoàn tất tải", "readVnDate", "formatVnDateInput", "Dừng tra cứu"],
+            "https://tracuuhoadon.top/web/vault.js": ["mstPickerSearch", "Chọn MST ▾"],
+            "https://tracuuhoadon.top/web/web.js": ["keepLog=false", "log.children.length>5", "Đã hoàn tất tải", "readVnDate", "formatVnDateInput", "Dừng tra cứu", "invoiceQuotaDialog"],
             "https://tracuuhoadon.top/web/web.css": ["terminal-error", "terminal-success", "position:static!important"],
             "https://tracuuhoadon.top/customer.js": ["signupDialog", "signupPasswordConfirm", "Supabase Auth"],
             "https://tracuuhoadon.top/admin.html": ['id="couponCreateForm"', 'id="newInvoiceQtyWrap"', 'admin-discounts-v119.js', 'autotax_admin_user_names_v120'],

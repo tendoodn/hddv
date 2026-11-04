@@ -22,4 +22,6 @@ async function updateLink(){
 void updateLink();
 window.addEventListener('focus',()=>void updateLink());
 button.addEventListener('pointerenter',()=>void updateLink());
+// Keep an already-open account page in sync after an automated Drive release.
+setInterval(()=>{if(!document.hidden)void updateLink()},60000);
 })();

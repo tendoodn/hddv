@@ -32,13 +32,13 @@ const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
     const menu = document.getElementById("moreMenu");
     menu.classList.toggle("show");
     }
-    window.onclick = function(event) {
+    document.addEventListener('click', function(event) {
     const menu = document.getElementById("moreMenu");
     if (menu && menu.classList.contains('show')) {
         if (!event.target.closest('.tabs-more')) {
             menu.classList.remove('show');
         }
-    }}
+    }});
     //banggia
     function switchInnerTab(tabId, btn) {
         document.querySelectorAll('.inner-tab-content').forEach(content => {content.style.display = 'none';});
@@ -58,9 +58,9 @@ const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
     function renderIndustryFields() {
         const count = parseInt(document.getElementById('industry_count').value);
         const container = document.getElementById('multi_industry_container');
-        container.innerHTML = '';
+        const fields = [];
         for(let i=1; i<=count; i++) {
-            container.innerHTML += `
+            fields.push(`
                 <div style="border: 1px solid #eee; border-radius:12px; padding:15px; margin-bottom:15px; background:#fff;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom:10px;">
                         <div>
@@ -90,8 +90,9 @@ const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
                         </div>
                     </div>
                 </div>
-            `;
+            `);
         }
+        container.innerHTML = fields.join('');
         calcTax();
     }
     function toggleIndustryCustom(i) {
@@ -533,12 +534,12 @@ document.addEventListener('click', function (e) {
 }, true);
 
 // Đóng khi bấm ra ngoài vùng trắng
-window.onclick = function(event) {
+document.addEventListener('click', function(event) {
     const modal = document.getElementById('productModal');
     if (event.target == modal) {
         closeModal();
     }
-}
+});
    
 
 //tinhgia

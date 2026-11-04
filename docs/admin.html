@@ -415,7 +415,7 @@ $("packageAdjustmentConfirm").onclick=async()=>{
  if(!confirm(confirmText))return;
  const submit=$("packageAdjustmentConfirm");submit.disabled=true;
  try{
-  const fn=a.action==="compensate"?"addon_admin_compensate_failed_order_v32":
+  const fn=a.action==="compensate"?"autotax_admin_compensate_failed_order_v118":
    a.action==="hide"?"addon_admin_hide_package_history_v32":
    "addon_admin_adjust_package_lot_v32";
   const args=a.action==="compensate"?

@@ -473,6 +473,7 @@ async function search(e){
  }
  stopped=false;busyState(true);
  $('results').hidden=true;// Redundant top-of-search totals were removed; results use #results only.
+ window.WebResults?.resetForSearch?.();
  try{
   if(govtMst!==mst||!govtToken)await signIntoTax(mst);
   // Consent must precede the first MST-package lookup. No = no whitelist slot.
@@ -495,17 +496,48 @@ async function search(e){
   if(!info?.ready||String(info.mst||'').replace(/\D/g,'')!==mst)
     throw Error('Phiên cổng Thuế hết hạn hoặc MST không khớp.');
   if(info.company)await assignAutoMstName(mst,info.company,'cổng Thuế đã đăng nhập');
-  const result=await HDDT.search({tuNgay:vn(start),denNgay:vn(end),
+  // Read the next GDT page while Supabase validates the previous one.
+  // Nothing reaches the result table until server quota returns allowed_items.
+  const authorized=new Map();
+  let claimTail=Promise.resolve(),claimFailure=null;
+  const onBatch=batch=>{
+   claimTail=claimTail.then(async()=>{
+    if(stopped||claimFailure)return;
+    const unseen=batch.filter(row=>!authorized.has(idOf(row)));
+    if(!unseen.length)return;
+    const accepted=await claimRows(unseen,mst);
+    if(stopped)return;
+    for(const row of accepted)authorized.set(idOf(row),row);
+    if(accepted.length){
+     rows=[...authorized.values()];
+     window.WebResults?.append?.(accepted);
+    }
+   }).catch(error=>{claimFailure=error;stopped=true});
+  };
+  let result;
+  try{
+   result=await HDDT.search({tuNgay:vn(start),denNgay:vn(end),
     kinds:selected('kind'),forms:selected('form'),shouldStop:()=>stopped,
-    onProgress:p=>progress(p.label+' · '+p.count+' hóa đơn'),
+    onBatch,onProgress:p=>progress(p.label+' · '+p.count+' hóa đơn'),
     onWarn:msg=>show(msg),onWait:w=>progress(w.label+' · đang đợi cổng Thuế '+(w.secs||0)+' giây')});
+  }finally{await claimTail}
+  if(claimFailure)throw claimFailure;
   if(stopped)throw Error('Đã dừng theo yêu cầu.');
-  rows=await claimRows(result.rows,mst);details.clear();
+  // Reconcile with the FULL live result: never retain a partial/removed invoice
+  // if a source failed or changed its page contents during the scan.
+  const outstanding=result.rows.filter(row=>!authorized.has(idOf(row)));
+  if(outstanding.length){
+   const accepted=await claimRows(outstanding,mst);
+   for(const row of accepted)authorized.set(idOf(row),row);
+  }
+  rows=result.rows.filter(row=>authorized.has(idOf(row)));
+  details.clear();
   if(!profileVerifiedNames.has(mst)&&!profileDisplayNames.get(mst))
    await assignAutoMstName(mst,nameFromMatchedInvoices(rows,mst),
     'tên người mua/người bán khớp MST trên hóa đơn');
   searchedBothKinds=selected('kind').includes('purchase')&&selected('kind').includes('sold');
-  renderResults(rows,result.skipped||[]);
+  if(window.WebResults?.finish)window.WebResults.finish(rows,result.skipped||[]);
+  else renderResults(rows,result.skipped||[]);
   show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
    (result.skipped?.length?' Nguồn chưa hoàn tất: '+result.skipped.join(', '):''),true);
  }catch(error){show(error.message||'Tra cứu không thành công.');}
@@ -524,7 +556,15 @@ async function loadDetails(scopeRows=rows){
    const row=queue[index],id=idOf(row);
    try{
     if(!pendingDetails.has(id)){
-     const request=HDDT.fetchInvoice(row,()=>stopped).then(
+     const cache=window.AutoTaxInvoiceCache;
+     const scope={userId:String(account?.id||''),mst:String(govtMst||currentSearchMst())};
+     const request=(async()=>{
+      const cached=await cache?.get(scope,row);
+      if(cached)return cached;
+      const fresh=await HDDT.fetchInvoice(row,()=>stopped);
+      if(!stopped)void cache?.put(scope,row,fresh).catch(()=>{});
+      return fresh;
+     })().then(
       result=>{details.set(id,result);return result},
       error=>{details.set(id,{error:error.message});return null}
      ).finally(()=>pendingDetails.delete(id));
@@ -580,7 +620,7 @@ async function exportFileCore(kind){
     withLines:true,withPdf:true,
     sheets:{reduction:true,hdkd:true,risk:true,seller:false,adjust:true,gtgt:false}
    });
-   await saveFile('BangKe_'+fileBase+'.xlsx',Xlsx.buildXlsx(book),
+   await saveFile('BangKe_'+fileBase+'.xlsx',await window.AutoTaxFastWorkbook.build(book),
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
    show('Đã tạo Excel '+book.length+' sheet.'+(book.notes?.length?' Ghi chú: '+book.notes.join('; '):''),true);
   }else if(kind==='xml'){

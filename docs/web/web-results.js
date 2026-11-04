@@ -100,11 +100,12 @@ function kAlert(stats,allowPopup=true){
   if(!dialog.open)dialog.showModal();
  }
 }
-function render(list,warnings=[]){
+function render(list,warnings=[],options={}){
  syncOpeningStock();
  dataset=Array.isArray(list)?list.slice():[];
- checked.clear();visible=[];
- $('visibleKind').value='all';$('visibleMonth').value='';
+ if(!options.preserve)checked.clear();
+ visible=[];
+ if(!options.preserve){$('visibleKind').value='all';$('visibleMonth').value='';}
  $('results').hidden=false;
  // Selection mode is automatic: checked visible rows, otherwise all filtered rows.
  const st=totals(dataset);
@@ -116,8 +117,27 @@ function render(list,warnings=[]){
   dataset.filter(r=>r.kind==='sold').length+
   (st.excluded?' · '+st.excluded+' HĐ hủy/thay thế không cộng tiền':'')+
   (warnings.length?' · có cảnh báo nguồn dữ liệu':'');
+ if(options.partial)$('resultSummary').textContent='Đang nhận kết quả: '+dataset.length+
+   ' hóa đơn đã xác nhận quyền; danh sách chưa đầy đủ…';
  renderVisible();
- kAlert(st);
+ kAlert(st,!options.partial);
+}
+function append(batch){
+ if(!Array.isArray(batch)||!batch.length)return;
+ const merged=new Map(dataset.map(row=>[keyOf(row),row]));
+ for(const row of batch)merged.set(keyOf(row),row);
+ render([...merged.values()],[],{preserve:true,partial:true});
+}
+function finish(list,warnings=[]){
+ // Do not lose the checked rows while the next pages were arriving.
+ const allowed=new Set((list||[]).map(keyOf));
+ for(const key of checked)if(!allowed.has(key))checked.delete(key);
+ render(list,warnings,{preserve:true});
+}
+function resetForSearch(){
+ dataset=[];visible=[];checked.clear();lastStats=null;
+ $('visibleKind').value='all';$('visibleMonth').value='';
+ $('results').hidden=true;
 }
 function renderVisible(){
  visible=filterRows().slice(0,1500);
@@ -476,7 +496,7 @@ function init(){
  });
  updateStock();
 }
-window.WebResults={render,exportRows:pickedRows,filteredRows:filterRows,exportSuffix,init};
+window.WebResults={render,append,finish,resetForSearch,exportRows:pickedRows,filteredRows:filterRows,exportSuffix,init};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 

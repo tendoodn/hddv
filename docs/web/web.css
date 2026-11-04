@@ -235,3 +235,18 @@ td.audit-info{color:#c6c6db}
 
 /* A CSS display rule must never override the HTML hidden state on single-plan accounts. */
 #webModeControls[hidden],.web-mode-controls[hidden]{display:none!important}
+
+/* New MST consent and inline plan selector in the former session strip. */
+.web-consent-dialog{width:min(390px,calc(100vw - 24px));border:1px solid #a7d0b9;border-radius:12px;padding:17px;color:#14212a;background:#fff;box-shadow:0 18px 48px #0003}
+.web-consent-dialog::backdrop{background:#0815219e}
+.web-consent-dialog h2{font-size:17px;margin:0 0 8px}
+.web-consent-dialog p{font-size:14px;line-height:1.5}
+.web-consent-actions{display:flex;gap:9px;justify-content:flex-end}
+.web-consent-actions button{min-width:77px}
+#webAccountModeSlot{flex:1;min-width:0;max-width:100%}
+#webAccountModeSlot #webModeControls:not([hidden]){display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin:0;padding:0}
+#webAccountModeSlot #webModeControls label{white-space:nowrap;font-size:12px}
+#webAccountModeSlot #webModeControls select{min-width:100px;max-width:235px;font-size:12px}
+#webAccountModeSlot #webModeControls small{display:none}
+#webAccountModeSlot #webModeControls[hidden]{display:none!important}
+@media(max-width:450px){#webAccountModeSlot #webModeControls label{font-size:10px}#webAccountModeSlot #webModeControls select{max-width:165px;min-width:95px;font-size:10px}}

@@ -99,7 +99,7 @@ function prettyError(error){
   trial_email_already_used:"Email này đã sử dụng quyền dùng thử. Vui lòng mua gói để tiếp tục.",
   trial_mst_already_used:"MST này đã từng dùng thử ở tài khoản khác. Bạn có thể mua gói để sử dụng.",
   existing_package_account_not_eligible_for_trial:"Tài khoản này đã từng nhận gói, không thể đăng ký dùng thử.",
-  mst_capacity_reached:"hết hạn mức thêm mst vui lòng mua thêm gói mst",
+  mst_capacity_reached:"Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp",
   mst_not_whitelisted:"MST này chưa được cấp quyền tra cứu bằng gói MST. Hãy tick chọn rồi bấm Cấp quyền ở danh sách hồ sơ.",
   mst_profile_not_saved:"Có MST chưa được lưu trong hồ sơ. Vui lòng thêm hồ sơ trước khi cấp quyền.",
   mst_unlink_requires_active_package:"Gói MST đã hết hạn, chỉ admin mới có quyền gỡ MST.",
@@ -293,10 +293,6 @@ function openMstEditor(profile=null){
  $('mstProfilePassword').placeholder=mstEditing?'Để trống nếu không đổi mật khẩu':'Mật khẩu cổng Thuế (không bắt buộc lúc tạo)';
  $('mstProfilePasswordDate').value=profile?.password_updated_at?
   vnDate(profile.password_updated_at):'Chưa nhập mật khẩu';
- const grant=$('mstProfileGrantOnCreate');
- grant.checked=!!profile?.mst_allowed;
- grant.disabled=!!mstEditing||state?.mode!=='mst'||Number(state?.packages?.mst?.active_quantity||0)<1;
- grant.title=grant.disabled?'Chuyển sang gói MST để cấp quyền hoặc dùng chức năng Cấp lại cho hồ sơ đã lưu.':'Tick để lưu MST và cấp quyền ngay khi tạo.';
  $('mstProfileDialog').showModal();
  (mstEditing?$('mstProfileName'):$('mstProfileNumber')).focus();
 }
@@ -640,29 +636,16 @@ $("mstProfileEditorForm").addEventListener("submit",async e=>{
  e.preventDefault();
  const mst=$("mstProfileNumber").value.replace(/\D/g,''),name=$("mstProfileName").value.trim(),
   password=$("mstProfilePassword").value;
- const grantOnCreate=!mstEditing&&!$('mstProfileGrantOnCreate').disabled&&$('mstProfileGrantOnCreate').checked;
  if(!/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))return showMessage("MST phải có 10, 12 hoặc 13 chữ số.",true);
  if(name.length>120)return showMessage("Tên NNT tối đa 120 ký tự.",true);
  const submit=$("mstProfileSave");submit.disabled=true;
  try{
-  let trialWarning='',nextAllowed=null;
-  if(grantOnCreate){
-   const saved=await rpc('addon_list_my_mst_assignments');
-   nextAllowed=[...new Set((saved||[]).filter(p=>p.mst_allowed===true).map(p=>p.mst).concat([mst]))];
-   const capacity=Number(state?.packages?.mst?.active_quantity||0);
-   if(nextAllowed.length>capacity){
-    if(!$('mstProfileLimitDialog').open)$('mstProfileLimitDialog').showModal();
-    throw Error('mst_capacity_reached');
-   }
-  }
+  let trialWarning='';
   if(!mstEditing){
    const status=await rpc('addon_trial_mst_status_v115',{p_mst:mst});
    if(status?.trial_conflict)
     trialWarning='MST này đã liên kết dùng thử với hồ sơ khác. Tài khoản chỉ được dùng thử 100 hóa đơn; muốn sử dụng gói MST hãy liên hệ quản trị hoặc mua gói.';
    await rpc("addon_add_mst_profile_v33",{p_mst:mst});
-   if(grantOnCreate&&nextAllowed){
-    await rpc('addon_set_allowed_msts_v115',{p_msts:nextAllowed});
-   }
   }
   if(name!==mstEditOriginalName)
    await rpc("addon_set_mst_profile_name",{p_mst:mst,p_display_name:name});
@@ -674,11 +657,8 @@ $("mstProfileEditorForm").addEventListener("submit",async e=>{
    if(!result.synced)showMessage('Mật khẩu lưu cục bộ nhưng chưa đồng bộ MST: '+(result.error||'Đăng nhập lại AutoTax.'),true);
   }
   $("mstProfileDialog").close();await loadMstAssignments();
-  if(grantOnCreate&&nextAllowed?.length>=Number(state?.packages?.mst?.active_quantity||0)){
-   const dialog=$('mstProfileLimitDialog');if(!dialog.open)dialog.showModal();
-  }
   showMessage(trialWarning||((mstEditing?'Đã sửa':'Đã thêm')+' hồ sơ MST '+mst+
-    (grantOnCreate?' · Đã cấp quyền và khóa xanh trong danh sách.':'.')+
+    '. Chờ chọn cấp quyền ở lần đăng nhập/tra cứu đầu tiên.'+
     ' Chỉ mật khẩu được thay đổi mới cập nhật bộ đếm 80 ngày.'),!!trialWarning);
  }catch(error){
   const text=prettyError(error);
@@ -710,6 +690,9 @@ $("redeemBtn").addEventListener("click",()=>action("redeemBtn",async()=>{
  $("unlockCode").value="";
  await refresh();$("giftWebDialog").close();showMessage("Đã kích hoạt gói "+granted.package_code+".");
 }));
+// A select nested in <summary> must not accidentally toggle MST panel.
+$('modeSection').addEventListener('click',event=>event.stopPropagation());
+$('modeSection').addEventListener('keydown',event=>event.stopPropagation());
 $("usageMode").addEventListener("change",async e=>{
  const selected=e.target.value;
  try{await rpc("autotax_set_usage_mode_v118",{p_mode:selected});await refresh()}

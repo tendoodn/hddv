@@ -50,7 +50,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
       <div><span>Tổng thanh toán kỳ tra cứu</span><strong id="searchTotalPay">0 ₫</strong></div>
       <div><span>Tổng tiền thuế kỳ tra cứu</span><strong id="searchTotalVat">0 ₫</strong></div>
     </div>
-    <div class="web-mode-controls" id="webModeControls">
+    <div class="web-mode-controls" id="webModeControls" hidden>
   <label for="webUsageMode">Chế độ sử dụng</label>
   <select id="webUsageMode" aria-label="Chuyển chế độ gói MST và số tờ" disabled>
    <option value="mst">Chỉ sử dụng MST</option>
@@ -76,7 +76,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
           </select>
           <input id="mstFree" name="mstFree" type="text" inputmode="numeric" maxlength="14" autocomplete="off"
             placeholder="Hoặc nhập MST cần tra cứu (10/12/13 số)" aria-label="Nhập MST mới hoặc MST tự do theo số tờ">
-          <button id="mstPickerToggle" class="mst-picker-toggle" type="button" aria-controls="mstPickerMenu" aria-expanded="false">Chọn hồ sơ MST ▾</button>
+          <button id="mstPickerToggle" class="mst-picker-toggle" type="button" aria-controls="mstPickerMenu" aria-expanded="false">Chọn MST ▾</button>
           <div id="mstPickerMenu" class="mst-picker-menu" hidden aria-label="Danh sách hồ sơ MST"></div>
           <div class="vault-inline"><a href="./" target="_blank" rel="noopener noreferrer">Quản lý / đổi tên hồ sơ MST</a><span id="mstProfileCount"></span></div>
           <p id="mstPickerNotice" class="mst-picker-notice" role="status" aria-live="polite"></p>
@@ -128,9 +128,6 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
       <button id="searchBtn" type="button" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" aria-hidden="true"></span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
       <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
-      <button id="xmlContributionBtn" type="button" class="outline" title="XML được gửi qua phiên AutoTax và lưu trong kho riêng tư; không đăng công khai">Đóng góp XML</button>
-      <input id="xmlContributionInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>
-      <small>Đóng góp XML tự nguyện để hệ thống nhận dạng nhà phát hành. Tệp lưu kín trên Supabase; chỉ đồng bộ Drive sau khi quyền riêng tư của thư mục XML được xác minh.</small>
       <small>Chọn thư mục lưu lần đầu khi bấm Tìm kiếm. Các lần sau dùng lại thư mục đã chọn khi trình duyệt còn cấp quyền.</small>
 
     </form>
@@ -230,7 +227,8 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
     <div id="skuMapList"></div>
     <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất ZIP</button><button id="downloadSingleMappedStock" type="button" class="outline">Tải từng tờ nhập hàng</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
   </dialog>
-  <dialog id="mstLimitDialog" class="stock-map-dialog">
+  <dialog id="invoiceQuotaDialog" aria-label="Hết hạn mức hóa đơn"><h2>Hết hạn mức tra cứu</h2><p>hết hạn mức tra cứu vui lòng mua thêm số hoá đơn</p><div class="actions"><a href="./#planSection" target="_blank" rel="noopener noreferrer" class="outline">Mua thêm số hóa đơn</a><button type="button" id="invoiceQuotaClose">Đóng</button></div></dialog>
+<dialog id="mstLimitDialog" class="stock-map-dialog">
   <h2>Đã đạt giới hạn MST</h2>
   <p>Gói MST đang sử dụng không đủ số hồ sơ. Hãy mua thêm hoặc xóa hồ sơ không còn dùng trong trang Quản lý tài khoản.</p>
   <p><a href="./" target="_blank" rel="noopener noreferrer">Mở Quản lý tài khoản</a></p>
@@ -266,12 +264,12 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/stock-cache.js?v=113"></script>
 <script src="./web/download-folder.js?v=116"></script>
 <script src="./mst-sync.js?v=118"></script>
-<script src="./web/vault.js?v=118"></script>
-<script src="./web/pdf.js?v=1121sig4"></script>
+<script src="./web/vault.js?v=122mst1"></script>
+<script src="./web/pdf.js?v=122form1"></script>
 <script src="./web/issuer-archive.js?v=1118"></script>
 <script src="./web/web-pdf.js?v=1118sign2"></script>
 <script src="./web/export-zip.js?v=116"></script>
-<script src="./web/web.js?v=1120console2"></script>
+<script src="./web/web.js?v=123quota1"></script>
 <script src="./web/web-results.js?v=1118k4"></script>
 <script src="./web/issuer-pdf.js?v=1118"></script>
 <script src="./web/audit.js?v=1"></script>

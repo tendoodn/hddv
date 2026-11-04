@@ -658,6 +658,9 @@ $("mstProfileEditorForm").addEventListener("submit",async e=>{
    if(!result.synced)showMessage('Mật khẩu lưu cục bộ nhưng chưa đồng bộ MST: '+(result.error||'Đăng nhập lại AutoTax.'),true);
   }
   $("mstProfileDialog").close();await loadMstAssignments();
+  if(grantOnCreate&&nextAllowed?.length>=Number(state?.packages?.mst?.active_quantity||0)){
+   const dialog=$('mstProfileLimitDialog');if(!dialog.open)dialog.showModal();
+  }
   showMessage(trialWarning||((mstEditing?'Đã sửa':'Đã thêm')+' hồ sơ MST '+mst+
     (grantOnCreate?' · Đã cấp quyền và khóa xanh trong danh sách.':'.')+
     ' Chỉ mật khẩu được thay đổi mới cập nhật bộ đếm 80 ngày.'),!!trialWarning);

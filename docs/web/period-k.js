@@ -1,6 +1,6 @@
 /* AutoTax period K: pure client-side estimate from the selected invoice window.
  * Blank opening stock is intentionally shown as K=9, and no purchases AND
- * no sales is K=1, per product rule. These are defaults, not measured ratios.
+ * missing purchases OR missing sales is K=1, per product rule. These are defaults, not measured ratios.
  */
 (()=>{
  'use strict';
@@ -16,10 +16,10 @@
   const sales=Number.isFinite(Number(sold))?Math.max(0,Number(sold)):0;
   const stock=parseStock(raw);
   if(Number.isNaN(stock))return {value:null,mode:'invalid',purchase,sales,stock:null};
-  if(purchase===0&&sales===0)return {value:1,mode:'no-invoices',purchase,sales,stock};
+  if(purchase===0||sales===0)return {value:1,mode:'missing-side',purchase,sales,stock};
   if(stock===null)return {value:9,mode:'stock-blank',purchase,sales,stock:null};
   const denominator=purchase+stock;
-  if(denominator<=0)return {value:9,mode:'zero-denominator',purchase,sales,stock};
+  if(denominator<=0)return {value:null,mode:'zero-denominator',purchase,sales,stock,denominator};
   return {value:sales/denominator,mode:'calculated',purchase,sales,stock,denominator};
  }
  window.AutoTaxPeriodK=Object.freeze({parseStock,calculate});

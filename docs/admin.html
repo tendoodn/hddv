@@ -134,32 +134,37 @@ $("app").classList.remove("hidden");void window.AdminSiteLinks?.load?.();await l
 
 const DEFAULT_CODES=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50','DATA365'];
 async function loadPlans(){
- const {data,error}=await client.rpc("addon_admin_list_packages");
- if(error)return msg("msg","Không tải được danh mục gói: "+error.message,true);
- allPackages=Array.isArray(data)?data:[];
+ const [{data,error},{data:comboRows,error:comboError}]=await Promise.all([
+  client.rpc("addon_admin_list_packages"),
+  client.from("autotax_combo_catalog_v118").select("package_code,invoice_quantity,invoice_validity_days")
+ ]);
+ if(error||comboError)return msg("msg","Không tải được danh mục gói: "+(error||comboError).message,true);
+ const combos=new Map((comboRows||[]).map(row=>[row.package_code,row]));
+ allPackages=(Array.isArray(data)?data:[]).map(p=>({...p,combo:combos.get(p.code)||null}));
  const filter=$("packageStatusFilter").value;
- const match=p=>filter==="all"||(filter==="active"&&p.active)||(filter==="inactive"&&!p.active)||p.family===filter;
+ const match=p=>filter==="all"||(filter==="active"&&p.active)||(filter==="inactive"&&!p.active)||p.family===filter||(filter==="combo"&&!!p.combo);
  const defaults=DEFAULT_CODES.map(code=>allPackages.find(p=>p.code===code)).filter(p=>p&&match(p));
  const custom=allPackages.filter(p=>!DEFAULT_CODES.includes(p.code)&&match(p));
  const renderRow=(p,canDelete)=>'<tr><td><b>'+esc(p.code)+'</b></td>'+
-  '<td>'+(p.family==="invoice"?"Số tờ":p.family==="storage"?"Lưu trữ data":"MST")+'</td><td>'+Number(p.quantity).toLocaleString('vi-VN')+'</td>'+
+  '<td>'+(p.combo?"Combo MST + số tờ":p.family==="invoice"?"Số tờ":p.family==="storage"?"Lưu trữ data":"MST")+'</td><td>'+Number(p.quantity).toLocaleString('vi-VN')+'</td>'+
   '<td><input type="number" min="0" value="'+Number(p.price_vnd)+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td>'+
-  '<td>'+(['mst','storage'].includes(p.family)?Number(p.validity_days||365)+' ngày':'—')+'</td>'+
+  '<td>'+(['mst','storage'].includes(p.family)?'<input type="number" min="1" max="3650" value="'+Number(p.validity_days||365)+'" data-validity="'+esc(p.code)+'" style="width:85px;min-width:0"> ngày':'—')+'</td>'+
+  '<td>'+(p.combo?'<input type="number" min="1" max="10000000" value="'+Number(p.combo.invoice_quantity)+'" data-combo-qty="'+esc(p.code)+'" title="Số tờ combo" style="width:105px;min-width:0"><input type="number" min="1" max="3650" value="'+(p.combo.invoice_validity_days??'')+'" data-combo-days="'+esc(p.code)+'" title="Hạn số tờ combo (trống = theo MST)" placeholder="Hạn theo MST" style="width:110px;min-width:0">':'—')+'</td>'+
   '<td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td>'+
   '<td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button>'+
   '<button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button>'+
   (canDelete?'<button class="danger" data-delete-package="'+esc(p.code)+'" title="Xóa/ẩn gói tự tạo, giữ nguyên dữ liệu lịch sử">Xóa</button>':'')+
   '</div></td></tr>';
  $("packagePrices").innerHTML=defaults.map(p=>renderRow(p,false)).join("")||
-   '<tr><td colspan="7">Không tải được danh sách gói mặc định.</td></tr>';
+   '<tr><td colspan="8">Không tải được danh sách gói mặc định.</td></tr>';
  $("packageCustomPrices").innerHTML=custom.map(p=>renderRow(p,true)).join("")||
-   '<tr><td colspan="7">Chưa có gói tự tạo.</td></tr>';
+   '<tr><td colspan="8">Chưa có gói tự tạo.</td></tr>';
  $("unlockPackage").innerHTML=allPackages.filter(p=>p.active).map(p=>
   '<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' ('+p.quantity+')</option>').join('');
  const grant=$("grantPackage"),selected=grant.value;
  grant.innerHTML='<option value="">Chọn gói cấp</option>'+allPackages.filter(p=>p.active).map(p=>
   '<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' · '+
-   (p.family==="storage"?'Lưu trữ · 365 ngày':p.family==="mst"?"365 ngày":p.quantity+" lượt")+'</option>').join('');
+   (p.family==="storage"?'Lưu trữ · '+(p.validity_days||365)+' ngày':p.combo?p.quantity+' MST + '+p.combo.invoice_quantity+' tờ · '+p.validity_days+' ngày':p.family==="mst"?p.validity_days+" ngày":p.quantity+" lượt")+'</option>').join('');
  if(allPackages.some(p=>p.code===selected&&p.active))grant.value=selected;
 }
 async function updateCatalogRow(e){
@@ -181,9 +186,21 @@ async function updateCatalogRow(e){
    const el=target.querySelector('[data-price="'+CSS.escape(code)+'"]');
    const price=Number(el?.value);
    if(!Number.isSafeInteger(price)||price<0)throw Error('Giá bán phải là số nguyên không âm.');
-   const {error}=await client.rpc('addon_admin_set_package_price',{p_code:code,p_price_vnd:price});
+   const validity=target.querySelector('[data-validity="'+CSS.escape(code)+'"]');
+   const comboQty=target.querySelector('[data-combo-qty="'+CSS.escape(code)+'"]');
+   const comboDays=target.querySelector('[data-combo-days="'+CSS.escape(code)+'"]');
+   const days=validity?Number(validity.value):null;
+   const invoiceQty=comboQty?Number(comboQty.value):null;
+   const invoiceDays=comboDays&&comboDays.value.trim()?Number(comboDays.value):null;
+   if(validity&&(!Number.isSafeInteger(days)||days<1||days>3650))throw Error('Hạn gói phải từ 1 đến 3.650 ngày.');
+   if(comboQty&&(!Number.isSafeInteger(invoiceQty)||invoiceQty<1||invoiceQty>10000000))throw Error('Số tờ combo không hợp lệ.');
+   if(invoiceDays!==null&&(!Number.isSafeInteger(invoiceDays)||invoiceDays<1||invoiceDays>3650))throw Error('Hạn số tờ combo không hợp lệ.');
+   const {error}=await client.rpc('autotax_admin_update_package_v118',{
+    p_code:code,p_price_vnd:price,p_validity_days:days,
+    p_invoice_quantity:invoiceQty,p_invoice_validity_days:invoiceDays
+   });
    if(error)throw error;
-   msg('msg','Đã lưu giá gói '+code+'.');
+   msg('msg','Đã lưu giá và thời hạn gói '+code+' (áp dụng cho giao dịch mới).');
   }else{
    const {error}=await client.rpc('addon_admin_set_package_active',{p_code:code,p_active:b.dataset.value==='true'});
    if(error)throw error;
@@ -208,7 +225,9 @@ $("createPackageForm").addEventListener("submit",async event=>{
  const code=normalizePackageCode($("newCode").value),
    family=$("newFamily").value,name=$("newName").value.trim(),
    quantity=Number($("newQty").value),price=Number($("newPrice").value),
-   days=family==="mst"?365:null;
+   days=family==="invoice"?null:Number($("newValidity").value),
+   invoiceQty=family==="combo"?Number($("newInvoiceQty").value):0,
+   invoiceDays=family==="combo"&&$("newInvoiceValidity").value.trim()?Number($("newInvoiceValidity").value):null;
  $("newCode").value=code;
  if(!/^[A-Z0-9_]{2,24}$/.test(code))
    return packageNotice("Mã gói phải dài 2–24 ký tự và chỉ gồm A–Z, 0–9, dấu gạch dưới (_).",true);
@@ -217,14 +236,21 @@ $("createPackageForm").addEventListener("submit",async event=>{
    return packageNotice("Số lượng phải là số nguyên lớn hơn 0.",true);
  if(!Number.isSafeInteger(price)||price<0)
    return packageNotice("Giá bán phải là số nguyên không âm.",true);
+ if(family!=="invoice"&&(!Number.isSafeInteger(days)||days<1||days>3650))
+   return packageNotice("Thời hạn phải từ 1 đến 3.650 ngày.",true);
+ if(family==="combo"&&(!Number.isSafeInteger(invoiceQty)||invoiceQty<1||invoiceQty>10000000))
+   return packageNotice("Số tờ combo không hợp lệ.",true);
+ if(invoiceDays!==null&&(!Number.isSafeInteger(invoiceDays)||invoiceDays<1||invoiceDays>3650))
+   return packageNotice("Hạn số tờ combo không hợp lệ.",true);
  if(allPackages.some(p=>p.code===code))
    return packageNotice("Mã "+code+" đã tồn tại. Hãy sử dụng một mã gói khác.",true);
  button.disabled=true;button.textContent="Đang tạo gói…";
  packageNotice("Đang lưu gói "+code+" lên hệ thống…");
  try{
-  const {error}=await client.rpc("addon_admin_create_package",{
+  const {error}=await client.rpc("autotax_admin_create_package_v118",{
    p_code:code,p_family:family,p_name:name,p_quantity:quantity,
-   p_price_vnd:price,p_description:$("newDesc").value.trim(),p_validity_days:days
+   p_price_vnd:price,p_description:$("newDesc").value.trim(),p_validity_days:days,
+   p_invoice_quantity:invoiceQty,p_invoice_validity_days:invoiceDays
   });
   if(error){
    const reason=String(error.message||"");
@@ -241,7 +267,7 @@ $("createPackageForm").addEventListener("submit",async event=>{
   if(!allPackages.some(p=>p.code===code))
    return packageNotice("Máy chủ đã nhận yêu cầu nhưng chưa xác minh được gói trong danh sách. Hãy bấm Làm mới dữ liệu.",true);
   packageNotice("Đã tạo thành công gói "+code+" ("+name+"). Gói đã xuất hiện trong danh mục.",false);
-  for(const id of ["newCode","newName","newQty","newPrice","newDesc"])$(id).value="";
+  for(const id of ["newCode","newName","newQty","newPrice","newDesc","newInvoiceQty","newInvoiceValidity"])$(id).value="";
   $("newCode").focus();
  }catch(err){
   packageNotice("Không kết nối được để tạo gói: "+(err.message||String(err)),true);
@@ -250,9 +276,12 @@ $("createPackageForm").addEventListener("submit",async event=>{
 // Sensitive purchase and direct-admin-grant history is fetched only inside a modal.
 // Supabase enforces the page size (10) and admin-only access.
 function updateNewPackageFamily(){
- const isMst=$("newFamily").value==="mst";
- $("newValidity").hidden=!isMst;
- $("newValidity").value=isMst?"365":"";
+ const family=$("newFamily").value,isCombo=family==="combo",hasDays=family!=="invoice";
+ $("newValidityWrap").hidden=!hasDays;
+ $("newValidity").required=hasDays;
+ $("newInvoiceQtyWrap").hidden=!isCombo;
+ $("newInvoiceQty").required=isCombo;
+ $("newInvoiceValidityWrap").hidden=!isCombo;
 }
 $("newFamily").addEventListener("change",updateNewPackageFamily);
 updateNewPackageFamily();
@@ -413,7 +442,7 @@ $("grantNow").onclick=async()=>{
  const user=allUsers.find(u=>u.user_id===id),pkg=allPackages.find(p=>p.code===code);
  if(!user||!pkg||!pkg.active)return msg("grantMessage","Hãy chọn một khách hàng và gói đang mở.",true);
  if(!confirm("Xác nhận cấp "+pkg.name+" ("+pkg.code+") cho "+user.email+"?\n"+
-    (pkg.family==="mst"?"Hạn 365 ngày kể từ lúc cấp.":"Số lượt sẽ cộng vào tài khoản.")+
+    (pkg.combo?"Cấp "+pkg.quantity+" MST và "+pkg.combo.invoice_quantity+" tờ. Hạn MST "+pkg.validity_days+" ngày.":pkg.family==="mst"?"Hạn "+pkg.validity_days+" ngày kể từ lúc cấp.":"Số lượt sẽ cộng vào tài khoản.")+
     "\nThao tác này được lưu nhật ký quản trị."))return;
  const btn=$("grantNow");btn.disabled=true;
  try{

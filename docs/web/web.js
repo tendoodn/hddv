@@ -511,7 +511,7 @@ async function exportFileCore(kind){
     if(!det?.files)continue;
     for(const [name,data] of Object.entries(det.files)){
       if(!/\.xml$/i.test(name))continue;
-      const issue=Report.dateVN(row.tdlap).split('/').join('');
+      const issue=Report.dateVN(det?.head?.seller?.time||det?.head?.signatureTime||det?.head?.nlap||row.tdlap).split('/').join('');
       z.push({name:(safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
         row.khhdon+'_'+row.shdon+'_'+(issue||'KhongRoNgay'))+'_'+safe(name)).replace(/\.xml$/i,'')+'.xml',data});
     }
@@ -525,7 +525,7 @@ async function exportFileCore(kind){
    for(const row of targetRows){
     const inv=detail.get(row.key);
     if(!inv?.files)continue;
-    const issue=Report.dateVN(row.tdlap).split('/').join('');
+    const issue=Report.dateVN(inv?.head?.seller?.time||inv?.head?.signatureTime||inv?.head?.nlap||row.tdlap).split('/').join('');
     const prefix=safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
       row.khhdon+'_'+row.shdon+'_'+(issue||'KhongRoNgay'));
     for(const [name,data] of Object.entries(inv.files)){

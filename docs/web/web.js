@@ -80,7 +80,7 @@ function clearGov(){
  $('captchaBox').hidden=true;showGatewayHelp(false);
  $('captchaStatus').textContent='Mã xác nhận sẽ được xử lý tự động khi tra cứu.';
  $('results').hidden=true;
- $('searchTotals').hidden=true;
+ // Redundant top-of-search totals were removed; results use #results only.
 }
 async function authedRequest(op,data={},signal){
  const {data:sessionData}=await client.auth.getSession();
@@ -472,7 +472,7 @@ async function search(e){
   return;
  }
  stopped=false;busyState(true);
- $('results').hidden=true;$('searchTotals').hidden=true;
+ $('results').hidden=true;// Redundant top-of-search totals were removed; results use #results only.
  try{
   if(govtMst!==mst||!govtToken)await signIntoTax(mst);
   // Consent must precede the first MST-package lookup. No = no whitelist slot.

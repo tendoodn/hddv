@@ -590,3 +590,21 @@ function calculate() {
 function toggleDropdown() {
     document.getElementById("moreMenu").classList.toggle("show");
 }
+
+// Keep the tax calculator available through the footer link without showing its top tab.
+function openTaxFromFooter() {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const taxTab = document.getElementById('tab2');
+    if (taxTab) taxTab.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.getElementById('tax-footer-link')?.addEventListener('click', function(event) {
+    event.preventDefault();
+    if (location.hash !== '#tinh-thue') history.pushState(null, '', '#tinh-thue');
+    openTaxFromFooter();
+});
+window.addEventListener('hashchange', function() {
+    if (location.hash === '#tinh-thue') openTaxFromFooter();
+});
+if (location.hash === '#tinh-thue') openTaxFromFooter();

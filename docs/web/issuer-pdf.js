@@ -49,7 +49,12 @@ async function open(row){
   const detail=await app.fetchDetail(row);
   if(!d.open||stamp!==sequence)return;
   const source=window.HDDT.originalLookup(row,detail.head||{});
-  const link=verifiedHttps(source?.link);
+  const originalLink=verifiedHttps(source?.link);
+  // A known issuer's official search page is a manual fallback, never a PDF URL.
+  // Viettel requires the user to complete the slider CAPTCHA on its own portal.
+  const viettelPortal=/(viettel|s[ -]?invoice)/i.test(source?.name||'')
+    ?window.IssuerPortals?.sources?.find(x=>x.id==='viettel')?.portal:'';
+  const link=originalLink||verifiedHttps(viettelPortal);
   const code=title(source?.code);
   const catalog=window.IssuerPortals?.describe(link);
   $('issuerPdfName').value=source?.name||catalog?.name||'Chưa xác định nhà phát hành';

@@ -358,26 +358,46 @@
     const lines = [...(inv.lines || []), ...(inv.fees || []).map((p) => ({ ten: FEE_NAMES[p.ten] || p.ten || 'Phí, lệ phí', thtien: p.tien, phi: true }))];
     const rateSet = new Set(lines.filter((l) => !l.phi && l.tsuat).map((l) => rateKey(l.tsuat)));
     const multi = rateSet.size > 1;
-    const cols = multi
-      ? [['STT', 'No.', 26, 'center', '1'], ['Tên hàng hóa, dịch vụ', 'Name of goods and services', 0, 'left', '2'], ['Đơn vị tính', 'Unit', 44, 'center', '3'],
-        ['Số lượng', 'Quantity', 46, 'right', '4'], ['Đơn giá', 'Unit price', 62, 'right', '5'], ['Thành tiền chưa thuế', 'Amount', 72, 'right', '6=4x5'],
-        ['Thuế suất', 'VAT rate', 40, 'center', '7'], ['Tiền thuế', 'VAT amount', 62, 'right', '8=6x7']]
-      : [['STT', 'No.', 30, 'center', '1'], ['Tên hàng hóa, dịch vụ', 'Name of goods and services', 0, 'left', '2'], ['Đơn vị tính', 'Unit', 54, 'center', '3'],
-        ['Số lượng', 'Quantity', 56, 'right', '4'], ['Đơn giá', 'Unit price', 76, 'right', '5'], ['Thành tiền', 'Amount', 90, 'right', '6=4x5']];
+    // Bám mẫu: GTGT có 9 cột (kể cả thuế và tổng sau thuế); hóa đơn bán hàng/MTT có 6 cột.
+    const vatColumns = mau === '1' || /giá trị gia tăng/i.test(x.title || '');
+    const cols = vatColumns
+      ? [['STT', 'No.', 25, 'center', '1'],
+        ['Tên hàng hóa, dịch vụ', 'Description', 0, 'left', '2'],
+        ['ĐVT', 'Unit', 37, 'center', '3'],
+        ['Số lượng', 'Quantity', 43, 'right', '4'],
+        ['Đơn giá', 'Unit price', 52, 'right', '5'],
+        ['Thành tiền chưa thuế', 'Amount before VAT', 67, 'right', '6=4x5'],
+        ['Thuế suất', 'VAT rate', 39, 'center', '7'],
+        ['Tiền thuế', 'VAT amount', 60, 'right', '8'],
+        ['Thành tiền sau thuế', 'Amount after VAT', 65, 'right', '9=6+8']]
+      : [['STT', 'No.', 30, 'center', '1'],
+        ['Tên hàng hóa, dịch vụ', 'Name of goods and services', 0, 'left', '2'],
+        ['Đơn vị tính', 'Unit', 54, 'center', '3'],
+        ['Số lượng', 'Quantity', 56, 'right', '4'],
+        ['Đơn giá', 'Unit price', 76, 'right', '5'],
+        ['Thành tiền', 'Amount', 90, 'right', '6=4x5']];
     cols[1][2] = CW - cols.reduce((s, c) => s + c[2], 0);
     const colX = []; cols.reduce((cx, c) => { colX.push(cx); return cx + c[2]; }, X0);
     const lastX = colX[cols.length - 1], lastW = cols[cols.length - 1][2];
-    const amtCol = multi ? 5 : 5;
 
     const tableHead = () => {
+      const headerHeight = vatColumns ? 56 : 28;
       cols.forEach(([vn, en, w], i) => {
-        doc.rect(colX[i], doc.y, w, 28, { fill: HEAD_FILL });
-        const l1 = doc.wrap(vn, w - 4, 8.5, 1), l2 = doc.wrap(`(${en})`, w - 4, 7.5, 2), lines2 = [...l1.map((t) => [t, 1]), ...l2.map((t) => [t, 2])];
-        const top = doc.y + (28 - lines2.length * 9) / 2;
-        lines2.forEach(([t, st], k) => doc.text(colX[i] + 2, top + k * 9, t, { size: st === 1 ? 8.5 : 7.5, bold: st === 1, italic: st === 2, w: w - 4, align: 'center' }));
+        doc.rect(colX[i], doc.y, w, headerHeight, { fill: HEAD_FILL });
+        const mainSize = vatColumns ? 7.3 : 8.5, subSize = vatColumns ? 6.5 : 7.5;
+        const lineHeight = vatColumns ? 8.2 : 9;
+        const l1 = doc.wrap(vn, w - 4, mainSize, 1);
+        const l2 = doc.wrap('(' + en + ')', w - 4, subSize, 2);
+        const parts = [...l1.map((t) => [t, true]), ...l2.map((t) => [t, false])];
+        const top = doc.y + (headerHeight - parts.length * lineHeight) / 2;
+        parts.forEach(([t, strong], k) => doc.text(colX[i] + 2, top + k * lineHeight, t,
+          { size: strong ? mainSize : subSize, bold: strong, italic: !strong, w: w - 4, align: 'center' }));
       });
-      doc.y += 28;
-      cols.forEach(([, , w, , n], i) => { doc.rect(colX[i], doc.y, w, 12); doc.text(colX[i], doc.y + 2, n, { size: 7.5, italic: true, w, align: 'center' }); });
+      doc.y += headerHeight;
+      cols.forEach(([, , w, , n], i) => {
+        doc.rect(colX[i], doc.y, w, 12);
+        doc.text(colX[i], doc.y + 2, n, { size: 7.5, italic: true, w, align: 'center' });
+      });
       doc.y += 12;
     };
     const newPage = () => {
@@ -401,7 +421,11 @@
       const note = l.tchat === 'Ghi chú, diễn giải';
       const ten = l.ten + (l.tchat === 'Khuyến mại' && !/khuyến mại/i.test(l.ten) ? ' (khuyến mại)' : l.tchat === 'Chiết khấu thương mại' && !/chiết khấu/i.test(l.ten) ? ' (chiết khấu)' : '');
       const base = [note || l.phi ? '' : String(++stt), ten, l.dvt || '', fmt(l.sl), fmt(l.dgia), fmt(l.thtien, 2)];
-      const cells = (multi ? [...base, l.tsuat || '', fmt(l.tthue, 2)] : base).map((t, i) => (i === 1 ? doc.wrap(t, cols[1][2] - 6, 9) : [t]));
+      const preTax = Number(l.thtien), taxAmt = Number(l.tthue || 0);
+      const gross = l.thtien !== null && l.thtien !== undefined && l.thtien !== '' &&
+        Number.isFinite(preTax) && Number.isFinite(taxAmt) ? fmt(preTax + taxAmt, 2) : '';
+      const cells = (vatColumns ? [...base, l.tsuat || '', fmt(l.tthue, 2), gross] : base)
+        .map((t, i) => (i === 1 ? doc.wrap(t, cols[1][2] - 6, 9) : [t]));
       const rh = Math.max(...cells.map((c) => c.length)) * 11 + 5;
       if (doc.y + rh > BOTTOM) { doc.line(X0, doc.y, X0 + CW, doc.y); newPage(); tableHead(); }
       bodyRow(cells, rh, { italic: note, color: note ? MUTED : undefined });
@@ -409,21 +433,28 @@
 
     // --- Phần tổng ---
     const rates = (x.rates.length ? x.rates : row.rates || []).filter((r) => r.thtien || r.tthue);
-    const cthue = h.tgtcthue ?? row.tgtcthue, thue = h.tgtthue ?? row.tgtthue, tong = h.tgtttbso ?? row.tgtttbso;
+    const cthue = h.tgtcthue ?? row.tgtcthue, thue = h.tgtthue ?? row.tgtthue;
+    const tong = h.tgtttbso ?? row.tgtttbso;
     const has = (v) => v !== null && v !== undefined && v !== '';
-    const sums = []; // [nhãn (runs), giá trị cột thành tiền, giá trị cột tiền thuế (nhiều thuế suất)]
-    const L = (vn, en, bold) => [{ t: `${vn} `, bold }, { t: `(${en})`, italic: true }, { t: ':', bold }];
-    if (multi) {
-      for (const r of rates) sums.push([L(`Tổng tiền chịu thuế suất ${r.tsuat}`, `Amount at VAT rate ${r.tsuat}`), fmt(r.thtien, 2), fmt(r.tthue, 2)]);
-      if (has(cthue) || has(thue)) sums.push([L('Cộng tiền hàng, tiền thuế', 'Total amount, VAT amount', true), fmt(cthue, 2), fmt(thue, 2), true]);
+    // Mỗi dòng: [nhãn, tiền trước thuế, tiền thuế, tiền sau thuế, in đậm].
+    const sums = [];
+    const L = (vn, en, bold) => [{ t: vn + ' ', bold }, { t: '(' + en + ')', italic: true }, { t: ':', bold }];
+    if (vatColumns) {
+      for (const r of rates) {
+        const before = Number(r.thtien), vat = Number(r.tthue || 0);
+        sums.push([L('Tổng tiền chịu thuế suất ' + r.tsuat, 'Amount at VAT rate ' + r.tsuat),
+          fmt(r.thtien, 2), fmt(r.tthue, 2),
+          Number.isFinite(before) && Number.isFinite(vat) ? fmt(before + vat, 2) : '']);
+      }
+      if (has(cthue) || has(thue) || has(tong))
+        sums.push([L('Tổng cộng tiền thanh toán', 'Total payment', true),
+          fmt(cthue, 2), fmt(thue, 2), fmt(tong, 2), true]);
     } else {
-      if (has(cthue)) sums.push([L('Cộng tiền hàng', 'Total amount'), fmt(cthue, 2)]);
-      const ts = rates[0]?.tsuat || [...rateSet][0];
-      if (has(thue) || ts) sums.push([[...L('Thuế suất GTGT', 'VAT rate'), { t: ` ${ts || ''}`, bold: true }, { t: '          Tiền thuế GTGT ' }, { t: '(VAT amount)', italic: true }, { t: ':' }], fmt(thue, 2)]);
+      // Mẫu hóa đơn bán hàng/MTT không tự chèn hàng thuế GTGT.
+      if (has(tong))
+        sums.push([L('Cộng tiền hàng hóa, dịch vụ', 'Goods and services total', true),
+          fmt(tong, 2), '', '', true]);
     }
-    if (row.tgtphi) sums.push([L('Tiền phí, lệ phí', 'Fees'), fmt(row.tgtphi, 2)]);
-    if (x.ttcktmai) sums.push([L('Chiết khấu thương mại', 'Trade discount'), fmt(x.ttcktmai, 2)]);
-    if (has(tong)) sums.push([L('Tổng cộng tiền thanh toán', 'Total payment', true), fmt(tong, 2), null, true]);
     const chu = x.chu || (has(tong) ? moneyWords(tong, unit) : '');
     const wordsLines = chu ? doc.wrap(chu, CW - 200, 9.5, 1) : [];
     const sumH = sums.length * 16 + (chu ? wordsLines.length * 12.5 + 6 : 0);
@@ -433,14 +464,19 @@
     for (let k = 0; k < 10 && doc.y + 15 + sumH + signH <= BOTTOM; k++) bodyRow([], 15);
     if (doc.y + sumH + signH > BOTTOM) { doc.line(X0, doc.y, X0 + CW, doc.y); newPage(); }
     doc.line(X0, doc.y, X0 + CW, doc.y);
-    const taxX = multi ? colX[7] : null, amtX = colX[amtCol], amtW = cols[amtCol][2];
-    for (const [label, a, t, bold] of sums) {
+    const amtX = colX[5], amtW = cols[5][2];
+    for (const [label, a, t, payment, bold] of sums) {
       doc.rect(X0, doc.y, CW, 16);
-      doc.runs(X0 + 4, doc.y + 4, label, { size: 9.5 });
-      const right = multi ? amtX : lastX;
-      doc.line(right, doc.y, right, doc.y + 16);
-      doc.text(right + 3, doc.y + 4, a, { size: 9.5, bold, w: (multi ? amtW : lastW) - 6, align: 'right' });
-      if (multi) { doc.line(colX[6], doc.y, colX[6], doc.y + 16); doc.line(taxX, doc.y, taxX, doc.y + 16); doc.text(taxX + 3, doc.y + 4, t || '', { size: 9.5, bold, w: cols[7][2] - 6, align: 'right' }); }
+      doc.runs(X0 + 4, doc.y + 4, label, { size: vatColumns ? 8.6 : 9.5 });
+      doc.line(amtX, doc.y, amtX, doc.y + 16);
+      doc.text(amtX + 3, doc.y + 4, a, { size: 9, bold, w: amtW - 6, align: 'right' });
+      if (vatColumns) {
+        const vatX = colX[7], grossX = colX[8];
+        doc.line(vatX, doc.y, vatX, doc.y + 16);
+        doc.line(grossX, doc.y, grossX, doc.y + 16);
+        doc.text(vatX + 2, doc.y + 4, t || '', { size: 8.6, bold, w: cols[7][2] - 4, align: 'right' });
+        doc.text(grossX + 2, doc.y + 4, payment || '', { size: 8.6, bold, w: cols[8][2] - 4, align: 'right' });
+      }
       doc.y += 16;
     }
     if (chu) {

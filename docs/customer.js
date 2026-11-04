@@ -461,17 +461,66 @@ $("loginForm").addEventListener("submit",event=>{
  await refresh();
  });
 });
-$("signupBtn").addEventListener("click",()=>action("signupBtn",async()=>{
- const {data,error}=await client.auth.signUp({email:$("email").value.trim().toLowerCase(),password:$("password").value});
- if(error){
-  const value=String(error.code||"")+" "+error.message;
-  if(/user_already_exists|email_exists|identity_already_exists|already registered|already in use/i.test(value))return showMessage(DUP_EMAIL,true,"authMessage");
-  throw error;
- }
- if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0)return showMessage(DUP_EMAIL,true,"authMessage");
- showMessage(data?.session?"Đã tạo tài khoản và đăng nhập.":"Nếu email hợp lệ, hãy kiểm tra hộp thư xác minh rồi đăng nhập.",false,"authMessage");
- if(data?.session)await refresh();
-}));
+// Registration opens a separate form; login credentials are never reused implicitly.
+const signupMessage=(message,error=false)=>{
+ const box=$("signupStatus");box.hidden=!message;box.textContent=message||"";
+ box.classList.toggle("error",!!error);
+};
+const closeSignup=()=>{
+ if($("signupDialog").open)$("signupDialog").close();
+ $("signupPassword").value="";$("signupPasswordConfirm").value="";
+};
+$("signupBtn").addEventListener("click",()=>{
+ $("signupName").value="";
+ $("signupEmail").value=$("email").value.trim();
+ $("signupPassword").value="";$("signupPasswordConfirm").value="";
+ signupMessage("");
+ $("signupDialog").showModal();
+ $("signupName").focus();
+});
+$("signupCancelBtn").addEventListener("click",closeSignup);
+$("signupCloseBtn").addEventListener("click",closeSignup);
+$("signupDialog").addEventListener("close",()=>{
+ $("signupPassword").value="";$("signupPasswordConfirm").value="";
+});
+$("signupForm").addEventListener("submit",event=>{
+ event.preventDefault();
+ const button=$("signupSubmitBtn");
+ if(button.disabled)return;
+ void (async()=>{
+  const name=$("signupName").value.trim().replace(/\\s+/g," ");
+  const email=$("signupEmail").value.trim().toLowerCase();
+  const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
+  if(name.length<2||name.length>100)return signupMessage("Tên người dùng phải từ 2 đến 100 ký tự.",true);
+  if(!email||!$("signupEmail").checkValidity())return signupMessage("Nhập email hợp lệ.",true);
+  if(password.length<10)return signupMessage("Mật khẩu phải có tối thiểu 10 ký tự.",true);
+  if(password!==confirmPassword)return signupMessage("Mật khẩu nhập lại không khớp.",true);
+  button.disabled=true;
+  try{
+   const {data,error}=await client.auth.signUp({
+    email,password,options:{data:{full_name:name,display_name:name}}
+   });
+   if(error){
+    const value=String(error.code||"")+" "+String(error.message||"");
+    if(/user_already_exists|email_exists|identity_already_exists|already registered|already in use/i.test(value)){
+     signupMessage(DUP_EMAIL,true);return;
+    }
+    throw error;
+   }
+   if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
+    signupMessage(DUP_EMAIL,true);return;
+   }
+   $("email").value=email;
+   signupMessage(data?.session?
+    "Đã tạo tài khoản và đăng nhập thành công.":
+    "Đã gửi yêu cầu đăng ký. Hãy kiểm tra email để xác minh tài khoản trước khi đăng nhập.");
+   $("signupPassword").value="";$("signupPasswordConfirm").value="";
+   if(data?.session){closeSignup();await refresh()}
+  }catch(error){
+   signupMessage(prettyError(error),true);
+  }finally{button.disabled=false}
+ })();
+});
 $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
  const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.href.split("#")[0]});
  if(error)throw error;

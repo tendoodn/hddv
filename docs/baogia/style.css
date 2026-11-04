@@ -598,18 +598,3 @@
             border-bottom: 1px solid #f0f0f0;}
         .dropdown-menu .sub-tab-btn:last-child {border-bottom: none;}
         
-
-/* Respect mobile accessibility settings without changing the default layout. */
-@media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-}
-
-/* Tax calculator access in footer; preserve the existing calculator markup. */
-.baogia-tax-footer { text-align: center; padding: 18px 15px 95px; font-size: .85rem; }
-.baogia-tax-footer a { color: var(--gray); text-decoration: underline; text-underline-offset: 3px; }
-/* Keep the phone contact fixed as the page scrolls. */
-.floating-contact { position: fixed; }
-@media (max-width: 600px) {
-    .floating-contact { right: 15px; bottom: max(20px, env(safe-area-inset-bottom)); }
-    .tabs .tab-btn { min-width: 0; }
-}

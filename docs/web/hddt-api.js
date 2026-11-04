@@ -194,7 +194,8 @@
         err = new Error(timedOut ? 'Cổng thuế phản hồi quá chậm (hết thời gian chờ)' : 'Không kết nối được tới cổng thuế – hãy kiểm tra mạng');
       } finally {
         clearInterval(tick);
-        lastAt = Date.now();
+        // Enforce start-to-start pacing with the shared request queue.
+        // Slow network responses already count toward the minimum gap.
       }
       if (err.status === 429) {
         slowDown();

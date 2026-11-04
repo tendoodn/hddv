@@ -74,9 +74,9 @@
 
   function invoiceSheet(name, rows, details, withPdf, mstCheck, illegal) {
     const list = sorted(rows).map((r) => ({ r, m: money(r) }));
-    const currencies = list.length ? [...new Set(list.map(({ r }) => r.dvtte || 'VND'))].sort() : ['VND'];
+    const currencies = list.length ? [...new Set(list.map(({ r }) => String(r.dvtte || 'VND').trim().toUpperCase() || 'VND'))].sort() : ['VND'];
     const totals = currencies.map((currency) => {
-      const group = list.filter(({ r }) => (r.dvtte || 'VND') === currency);
+      const group = list.filter(({ r }) => (String(r.dvtte || 'VND').trim().toUpperCase() || 'VND') === currency);
       const sum = (k) => total(group, (x) => x.m[k]);
       const row = ['', currencies.length > 1 ? `Tổng (${currency})` : 'Tổng', '', '', '', '', '', '', '', '', '', '', '',
         sum('cthue'), sum('thue'), sum('phi'), sum('tong'), currency];
@@ -87,7 +87,7 @@
       boldRows: new Set(totals.map((_, i) => list.length + i)),
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
-          String(r.shdon), productCodes(details, r), dateVN(headOf(details,r)?.nlap||r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte || 'VND',
+          String(r.shdon), productCodes(details, r), dateVN(headOf(details,r)?.nlap||r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, String(r.dvtte || 'VND').trim().toUpperCase() || 'VND',
           r.dvtte && r.dvtte !== 'VND' ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
           ...((o) => [o.name, o.code, ...(withPdf ? [linkCell(o)] : [])])(HDDT.originalLookup(r, headOf(details, r))),

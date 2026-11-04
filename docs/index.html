@@ -124,6 +124,16 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 #feedbackImages{margin:8px 0}
 </style>
 <style>
+
+/* Same-row account heading and team switch, without displacing quick actions. */
+.portal-account-head{display:grid;grid-template-columns:minmax(180px,1fr) auto;align-items:center;gap:10px 14px}
+.portal-account-head>.autotax-account-tabs{justify-content:flex-end;align-items:center}
+.portal-account-head>.account-quick-actions{grid-column:1/-1}
+@media(max-width:680px){
+ .portal-account-head{grid-template-columns:minmax(0,1fr)}
+ .portal-account-head>.autotax-account-tabs{justify-content:flex-start}
+ .portal-account-head>.account-quick-actions{grid-column:1}
+}
 .autotax-account-tabs,.autotax-team-subtabs{display:flex;gap:6px;flex-wrap:wrap}.autotax-tab{border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}.autotax-tab.is-active{background:#164e63;color:#fff;border-color:#164e63}.autotax-team-panel[hidden],#autotaxTeamDetail[hidden]{display:none!important}#dashboard.autotax-team-active>:not(#autotaxAccountSummary):not(#autotaxTeamPanel):not(#forcedPasswordNotice){display:none!important}#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head){display:none!important}.autotax-team-list{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.autotax-team-list button{max-width:100%;overflow-wrap:anywhere}.autotax-team-panel td{vertical-align:top}.autotax-team-panel td label{display:block;white-space:nowrap;margin:4px 0}.autotax-team-panel td button{margin:3px}.autotax-team-panel td input[type=checkbox]{margin-right:5px}.autotax-team-panel .table-wrap{overflow-x:auto}.autotax-team-subtabs{margin:12px 0}
 
 /* AutoTax self-service account registration — accessible modal, responsive inputs. */
@@ -170,9 +180,9 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
   <label for="signupPasswordConfirm">Nhập lại mật khẩu</label>
   <input id="signupPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo">
-  <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây.</p>
+  <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây. Email xác minh hiện có thể mang tiêu đề <strong>Supabase Auth</strong>; hãy kiểm tra cả thư mục Spam.</p>
   <div id="signupStatus" class="notice" role="status" aria-live="polite" hidden></div>
-  <div class="actions"><button id="signupSubmitBtn" type="submit">Đăng ký tài khoản</button><button id="signupCancelBtn" class="secondary" type="button">Huỷ</button></div>
+  <div class="actions"><button id="signupSubmitBtn" type="submit">Tạo tài khoản</button><button id="signupCancelBtn" class="secondary" type="button">Đóng</button></div>
  </form>
 </dialog>
 <section id="dashboard" hidden>
@@ -337,7 +347,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <script src="./profile-credential.js?v=118"></script>
 <script src="./customer.js?v=1118signup2"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
-<script src="./team-v118.js?v=1118team2"></script>
+<script src="./team-v118.js?v=1118team3"></script>
 <script src="./extension-link-v118.js?v=1118release2"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>

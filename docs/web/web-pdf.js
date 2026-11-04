@@ -73,13 +73,15 @@ function fromSourceFiles(inv){
 }
 async function pdfForInvoice(row,index,total,mode){
  const invoice=[row.khhdon,row.shdon].filter(Boolean).join('_');
- const issue=window.Report.dateVN(row.tdlap).split('/').join('');
- const name=safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
-   String(row.khhdon||'')+'_'+String(row.shdon||'')+'_'+(issue||'KhongRoNgay'));
  const app=window.WebInvoiceApp;
  app.progress((mode==='tax'?'Đang dựng PDF Thuế ':'Đang thử PDF gốc và chuẩn bị PDF dự phòng ')+
   (index+1)+'/'+total);
  const detail=await app.fetchDetail(row);
+ // Ngày ký là ngày phát hành ưu tiên; chỉ dùng ngày lập khi XML không có ngày ký.
+ const signature=detail?.head?.seller?.time||detail?.head?.signatureTime||'';
+ const dateForFilename=window.Report.dateVN(signature||detail?.head?.nlap||row.tdlap).split('/').join('');
+ const name=safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
+   String(row.khhdon||'')+'_'+String(row.shdon||'')+'_'+(dateForFilename||'KhongRoNgay'));
  const lookup=window.HDDT.originalLookup(row,detail.head);
  // PDF Thuế is always reconstructed, regardless of whether the issuer source
  // link is available. Its directory and manifest explicitly say NOT ORIGINAL.

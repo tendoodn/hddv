@@ -287,7 +287,7 @@
     const field = (x0, y, w, vn, en, value, opt = {}) => {
       // Keep labels on the paper even if the issuer omitted the value.
       const size = opt.size || 9.5;
-      const lw = doc.runs(x0, y, [{ t: `${vn} ` }, ...(en ? [{ t: `(${en})`, italic: true }] : []), { t: ': ' }], { size });
+      const lw = doc.runs(x0, y, [{ t: en ? `${vn} ` : vn }, ...(en ? [{ t: `(${en})`, italic: true }] : []), { t: ': ' }], { size });
       const vx = lw > w * 0.6 ? x0 + 12 : x0 + lw, vy = lw > w * 0.6 ? y + size * 1.3 : y;
       return vy - y + doc.para(vx, vy, String(value ?? ''), x0 + w - vx, { size, bold: opt.bold, color: opt.color });
     };
@@ -308,21 +308,26 @@
       if (en) { doc.text(tx, y, `(${en})`, { size: 10, italic: true, w: tw, align: 'center' }); y += 14; }
       doc.text(tx, y, isVat ? '(Bản thể hiện của hóa đơn điện tử)' : 'Bản thể hiện của hóa đơn điện tử',
         { size: 9, w: tw, align: 'center' });
-      y += 14;
+      y += 12;
+      if(isVat){doc.text(tx,y,'(Electronic invoice display)',{size:8.5,italic:true,w:tw,align:'center'});y+=13;}
       const d = dmy(h.nlap || row.tdlap);
       if (d) {
-        doc.runs(tx, y + 2, [{ t: 'Ngày ' }, { t: '(Date) ', italic: true }, { t: d[0], bold: true }, { t: ' tháng ' }, { t: '(month) ', italic: true },
-          { t: d[1], bold: true }, { t: ' năm ' }, { t: '(year) ', italic: true }, { t: String(d[2]), bold: true }], { size: 9.5, w: tw, align: 'center' });
-        y += 15;
+        const dateParts=isVat ? [{ t: 'Ngày ' },{ t: '(Date) ',italic:true },{ t: d[0],bold:true },{ t: ' tháng ' },{ t: '(month) ',italic:true },{ t: d[1],bold:true },{ t: ' năm ' },{ t: '(year) ',italic:true },{ t: String(d[2]),bold:true }]:
+          [{t:'Ngày '},{t:d[0],bold:true},{t:' tháng '},{t:d[1],bold:true},{t:' năm '},{t:String(d[2]),bold:true}];
+        doc.runs(tx,y+2,dateParts,{size:9.5,w:tw,align:'center'});
+        y+=15;
       }
-      if (h.mccqt) {
+      if (h.mccqt&&isVat) {
         doc.runs(X0, y, [{ t: 'Mã của CQT ' }, { t: '(Code): ', italic: true }, { t: h.mccqt, bold: true }], { size: 9, w: CW, align: 'center' });
         y += 13;
       }
       // Bên phải: mẫu số, ký hiệu, số
       let ry = doc.y + 6;
       const rx = X0 + CW - rw + 20;
-      for (const [vn, en, v, opt] of [['Mẫu số', 'Form', mau], ['Ký hiệu', 'Serial', khhdon, { bold: true }], ['Số', 'No.', shdon, { bold: true, color: RED, size: 11 }]]) {
+      const identifierFields=isVat||isSales ?
+        [['Ký hiệu',isVat?'Serial No':'',khhdon,{bold:true}],['Số',isVat?'No.':'',shdon,{bold:true,color:RED,size:11}]]:
+        [['Mẫu số','Form',mau],['Ký hiệu','Serial',khhdon,{bold:true}],['Số','No.',shdon,{bold:true,color:RED,size:11}]];
+      for (const [vn, en, v, opt] of identifierFields) {
         ry += field(rx, ry, rw - 20, vn, en, v, opt) + 1;
       }
       doc.y = Math.max(y, ry) + 2;
@@ -499,7 +504,8 @@
     if (chu) {
       const rh = wordsLines.length * 12.5 + 6;
       doc.rect(X0, doc.y, CW, rh);
-      const lw = doc.runs(X0 + 4, doc.y + 4, [{ t: 'Số tiền viết bằng chữ ' }, { t: '(Amount in words)', italic: true }, { t: ': ' }], { size: 9.5 });
+      const moneyLabel=vatColumns?[{t:'Tổng số tiền viết bằng chữ'}]:[{t:'Số tiền viết bằng chữ'}];
+      const lw=doc.runs(X0+4,doc.y+4,[...moneyLabel,{t:': '}],{size:9.5});
       wordsLines.forEach((t, k) => doc.text(X0 + 4 + lw, doc.y + 4 + k * 12.5, t, { size: 9.5, bold: true, italic: false }));
       doc.y += rh;
     }
@@ -550,7 +556,7 @@
     doc.text(X0, sy, '(Cần kiểm tra, đối chiếu khi lập, giao, nhận hóa đơn)', { size: 8.5, italic: true, w: CW, align: 'center' });
 
     // --- Khung viền, ghi chú, chân trang mọi trang ---
-    const look = [lookup.code && `Mã tra cứu (Lookup code): ${lookup.code}`, lookup.link && `Tra cứu bản gốc tại: ${lookup.link}`, lookup.name && `Nhà cung cấp HĐĐT: ${lookup.name}`].filter(Boolean).join('   ·   ');
+    const look = [lookup.code && `Mã tra cứu: ${lookup.code}`, lookup.link && `Tra cứu tại: ${lookup.link}`, lookup.name && `Nhà cung cấp HĐĐT: ${lookup.name}`,!vatColumns&&h.mccqt&&`Mã của CQT: ${h.mccqt}`].filter(Boolean).join('   ·   ');
     doc.pages.forEach((ops, i) => {
       doc.ops = ops;
       doc.text(M, 10, 'Bản thể hiện dựng từ dữ liệu trên hoadondientu.gdt.gov.vn – không phải bản PDF gốc của nhà cung cấp hóa đơn điện tử', { size: 7, italic: true, color: MUTED, w: W - 2 * M, align: 'center' });

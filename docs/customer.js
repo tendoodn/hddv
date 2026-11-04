@@ -8,7 +8,7 @@ window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
  return {userId:session?.user?.id,token:session?.access_token};
 });
 const $=id=>document.getElementById(id);
-const vnDate=value=>value?new Date(value).toLocaleString("vi-VN"):"—";
+const vnDate=value=>value?new Date(value).toLocaleDateString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
 const DUP_EMAIL="Email đã được đăng ký. Vui lòng thử email khác hoặc trở lại đăng nhập.";
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
@@ -75,12 +75,12 @@ function updateMstGrantPreview(){
  $('mstAllowedSummary').classList.toggle('error',granted>cap);
 }
 function setMstGrantUnlocked(value){
- mstGrantUnlocked=!!value&&state?.mode==='mst';
+ mstGrantUnlocked=!!value&&Number(state?.packages?.mst?.active_quantity||0)>0;
  $('mstGrantAllow').hidden=!mstGrantUnlocked;
  $('mstGrantAllow').disabled=!mstGrantUnlocked;
  $('mstGrantCancel').hidden=true;
  $('mstGrantUnlock').hidden=mstGrantUnlocked;
- $('mstGrantUnlock').disabled=state?.mode!=='mst';
+ $('mstGrantUnlock').disabled=Number(state?.packages?.mst?.active_quantity||0)<1;
  for(const box of document.querySelectorAll('#mstList .mst-allow-checkbox'))
   box.disabled=!mstGrantUnlocked;
  updateMstGrantPreview();
@@ -163,6 +163,7 @@ async function refresh(){
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
   $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
+  $("headerLogoutBtn").hidden=!signedIn;
   const forceDialog=$('forcedPasswordDialog');
   if(signedIn&&forceChange){
    $('passwordPanel').hidden=true;
@@ -183,11 +184,12 @@ async function refresh(){
   // The group leader's invoice quota also counts as an available family for members.
   const hasInvoice=Number(initialInvoice.purchased||0)>0||Number(license.team_invoice_remaining||0)>0||
     !!license.team_invoice_available||!!license.can_reread_charged_invoices;
-  const canInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_remaining||0)>0||
-    !!license.team_invoice_available||!!license.can_reread_charged_invoices;
-  const hasMst=Number(initialMst.active_quantity||0)>0||Number(license.team_mst_count||0)>0;
-  if(hasInvoice!==hasMst){
-   const automatic=hasInvoice?'invoice':'mst';
+  // Only spendable invoice sheets count as an available mode; reread rights are retained separately.
+  const canInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_remaining||0)>0;
+  const canMst=Number(initialMst.active_quantity||0)>0||Number(license.team_mst_count||0)>0;
+  const hasMst=canMst;
+  if(canInvoice!==canMst){
+   const automatic=canInvoice?'invoice':'mst';
    if(license.mode!==automatic){
     try{
      await rpc('autotax_set_usage_mode_v118',{p_mode:automatic});
@@ -209,14 +211,22 @@ async function refresh(){
   $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
   const teamInvoice=Number(license.team_invoice_remaining||0),teamMst=Number(license.team_mst_count||0);
+  const modeCounts={invoice:Number(invoice.remaining||0)+teamInvoice,mst:Number(mst.active_quantity||0)+teamMst};
+  const spendableInvoice=modeCounts.invoice>0,spendableMst=modeCounts.mst>0;
   $("modeSection").hidden=!(hasInvoice&&hasMst);
+  const selectedCard=$(selected==='invoice'?'invoicePlanCard':'mstPlanCard');
+  const otherCard=$(selected==='invoice'?'mstPlanCard':'invoicePlanCard');
+  for(const card of [selectedCard,otherCard])card.classList.remove('is-selected-mode','is-other-mode');
+  selectedCard.classList.add('is-selected-mode');otherCard.classList.add('is-other-mode');
+  selectedCard.setAttribute('aria-current','true');otherCard.removeAttribute('aria-current');
   $("usageMode").value=selected;
   $("usageMode").querySelector('option[value="invoice"]').disabled=!canInvoice;
   $("usageMode").querySelector('option[value="mst"]').disabled=!hasMst;
   $("usageMode").title=hasInvoice&&hasMst?
     'Có gói MST và số tờ (gồm quyền trưởng nhóm). Hai chế độ không chạy đồng thời.':
     'Chế độ được chọn tự động theo gói hiện có.';
-  $("mstAllowControls").hidden=selected!=="mst";
+  // Personal MST whitelist configuration is available even when the invoice mode is active.
+  $("mstAllowControls").hidden=false;
   setMstGrantUnlocked(false);
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
   $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":"";
@@ -320,7 +330,7 @@ async function loadMstAssignments(){
   allow.title="Chọn MST này để được tra cứu trong chế độ gói MST";
   const check=document.createElement("input");check.type="checkbox";check.className="mst-allow-checkbox";
   check.value=item.mst;check.checked=item.mst_allowed===true;
-  check.disabled=state?.mode!=="mst"||!mstGrantUnlocked;
+  check.disabled=!mstGrantUnlocked;
   const caption=document.createElement("span");
   caption.className='mst-permission-status';
   const syncCaption=()=>{
@@ -603,13 +613,15 @@ $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
  showMessage("Đã gửi hướng dẫn khôi phục nếu email hợp lệ.",false,"authMessage");
 }));
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
+$("headerLogoutBtn").addEventListener("click",()=>action("headerLogoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
 
 $("webAddMstForm").addEventListener("submit",e=>{
  e.preventDefault();
  openMstEditor();
 });
 $("mstGrantUnlock").addEventListener("click",()=>{
- if(state?.mode!=='mst')return showMessage("Chuyển sang chế độ MST để cấp quyền.",true);
+ if(Number(state?.packages?.mst?.active_quantity||0)<1)
+  return showMessage("Bạn chưa có gói MST đang hiệu lực để thiết lập quyền.",true);
  setMstGrantUnlocked(true);
  showMessage("Đã mở cấu hình. Chọn các MST được cấp phép, sau đó bấm Lưu cấu hình.");
 });
@@ -618,7 +630,8 @@ $("mstGrantCancel").addEventListener("click",()=>{
 });
 $("mstGrantAllow").addEventListener("click",async()=>{
  if(!mstGrantUnlocked)return showMessage("Bấm Thiết lập lại quyền sử dụng để chọn MST.",true);
- if(state?.mode!=="mst")return showMessage("Hãy chuyển sang chế độ MST trước khi cấp quyền.",true);
+ if(Number(state?.packages?.mst?.active_quantity||0)<1)
+  return showMessage("Bạn chưa có gói MST đang hiệu lực để cấp quyền.",true);
  const all=[...document.querySelectorAll("#mstList .mst-allow-checkbox:checked")].map(x=>x.value);
  const capacity=Number(state?.packages?.mst?.active_quantity||0);
  if(all.length>capacity){

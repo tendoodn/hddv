@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
 <title>AutoTax V1.1.18 Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=126layout1">
+<link rel="stylesheet" href="./web/web.css?v=128mail1">
 </head>
 <body>
 <style>
@@ -43,7 +43,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
     <div class="account-line">
       <div id="webAccountModeSlot"><span id="authStatus" hidden>Đang xác minh đăng nhập…</span></div>
-      <a id="loginLink" href="./" class="account-link">Đăng nhập / quản lý MST ↗</a>
+      <span id="accountEmailLabel" class="account-email-label" role="status">Chưa đăng nhập</span>
     </div>
 
     <div class="web-mode-controls" id="webModeControls" hidden>
@@ -121,7 +121,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
         <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Mã trên ảnh (dự phòng)" autocomplete="off">
         <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
       </div>
-      <div class="privacy">Mật khẩu Thuế chỉ được sử dụng để đăng nhập cổng Thuế qua kênh bảo mật. Trên thiết bị này, mật khẩu được mã hóa bằng AES-GCM với khóa không xuất được khỏi IndexedDB và tách biệt theo tài khoản. Mật khẩu không được đồng bộ lên Supabase; thiết bị khác cần nhập lại lần đầu. Kho cũ có mật khẩu riêng không bị xóa tự động. Nếu cổng Thuế báo sai mật khẩu, AutoTax sẽ hiện cảnh báo và yêu cầu nhập lại. CAPTCHA chỉ được xử lý khi cổng trả dữ liệu hợp lệ.</div>
+      
       <button id="searchBtn" type="button" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
       <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" aria-hidden="true"></span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
       <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
@@ -265,7 +265,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/issuer-archive.js?v=1118"></script>
 <script src="./web/web-pdf.js?v=126filename1"></script>
 <script src="./web/export-zip.js?v=126flat1"></script>
-<script src="./web/web.js?v=126flat1"></script>
+<script src="./web/web.js?v=128mode1"></script>
 <script src="./web/web-results.js?v=127totals1"></script>
 <script src="./web/issuer-pdf.js?v=1118"></script>
 <script src="./web/audit.js?v=1"></script>

@@ -279,6 +279,7 @@ async function refreshAccount(){
   const {data:{session}}=await client.auth.getSession();
   account=session?.user||null;
   if(!account){
+   $('accountEmailLabel').textContent='Chưa đăng nhập';
    profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
    window.GdtVault?.setUser(null,[]);
    $('authStatus').textContent='Chưa đăng nhập — đăng nhập ở trang tài khoản trước.';
@@ -286,6 +287,7 @@ async function refreshAccount(){
    return;
   }
   $('authStatus').textContent=account.email+' · Đã kết nối';
+  $('accountEmailLabel').textContent=account.email||'Tài khoản AutoTax';
   const [ent,profiles]=await Promise.all([
    client.rpc('autotax_my_entitlements_v118'),
    client.rpc('addon_list_my_mst_assignments')
@@ -295,8 +297,8 @@ async function refreshAccount(){
   const modeSelect=$('webUsageMode');
   modeSelect.value=selectedMode;
   const inv=ent.data?.packages?.invoice||{},msts=ent.data?.packages?.mst||{};
-  const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_remaining||0)>0||!!ent.data?.can_reread_charged_invoices||!!ent.data?.team_invoice_available;
-  const hasInvoice=Number(inv.purchased||0)>0||canInvoice;
+  const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_remaining||0)>0;
+  const hasInvoice=Number(inv.purchased||0)>0||canInvoice||!!ent.data?.can_reread_charged_invoices;
   const canMst=Number(msts.active_quantity||0)>0||Number(ent.data?.team_mst_count||0)>0;
   modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
   modeSelect.querySelector('[value="mst"]').disabled=!canMst;
@@ -305,8 +307,9 @@ async function refreshAccount(){
   $('webModeControls').hidden=!dual;
   if(dual&&$('webModeControls').parentElement!==$('webAccountModeSlot'))
    $('webAccountModeSlot').append($('webModeControls'));
-  if(hasInvoice!==canMst&&selectedMode!==(hasInvoice?'invoice':'mst')){
-   const auto=hasInvoice?'invoice':'mst';
+  // Force the only spendable family. When both are exhausted, retain the last selected mode.
+  if(canInvoice!==canMst&&selectedMode!==(canInvoice?'invoice':'mst')){
+   const auto=canInvoice?'invoice':'mst';
    const changed=await client.rpc('autotax_set_usage_mode_v118',{p_mode:auto});
    if(!changed.error){selectedMode=auto;modeSelect.value=auto;}
   }

@@ -254,3 +254,12 @@ td.audit-info{color:#c6c6db}
 .invoice-row-actions .table-detail-btn{min-width:0;font-size:11px;line-height:1.3;padding:6px 4px;white-space:normal;text-align:center}
 @media(max-width:780px){.invoice-row-actions{grid-template-columns:repeat(2,minmax(0,1fr));min-width:185px}.invoice-row-actions .table-issuer-btn{grid-column:1/-1}}
 @media(max-width:450px){#webAccountModeSlot #webModeControls label{font-size:10px}#webAccountModeSlot #webModeControls select{max-width:165px;min-width:95px;font-size:10px}}
+
+/* Current AutoTax account, rather than a duplicate login shortcut. */
+.account-email-label{font-size:12px;font-weight:650;color:#e4e4e7;max-width:100%;overflow-wrap:anywhere;word-break:break-word;text-align:right}
+@media(max-width:620px){
+ .account-line{flex-direction:column;align-items:stretch;gap:8px}
+ #webAccountModeSlot{width:100%;max-width:100%;min-width:0}
+ #webAccountModeSlot #webModeControls:not([hidden]){justify-content:flex-start;width:100%}
+ .account-email-label{display:block;width:100%;text-align:left;line-height:1.35;margin:0;order:2}
+}

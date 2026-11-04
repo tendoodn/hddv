@@ -43,11 +43,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
 .admin-feedback-item p{overflow-wrap:anywhere}
 .admin-feedback-item textarea{font:inherit}
 .admin-feedback-images img{cursor:zoom-in}
+
+/* v120: all Admin navigation actions use the existing rounded button system. */
+header .admin-nav-pill{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 12px;border:1px solid #d7dce7;border-radius:9px;background:#fff;color:#1e293b;font-size:13px;text-decoration:none;font-weight:700}
+header .admin-nav-pill:hover{background:#f1f5f9}
+#reload[hidden],#newInvoiceQtyWrap[hidden],#newInvoiceValidityWrap[hidden]{display:none!important}
 </style></head><body><main class="wrap">
-<header><div class="brand">AUTOTAX <span>V1.1.18 · ADMIN</span></div><div class="actions"><a href="./" style="align-self:center">← Cổng khách hàng</a><a href="#packageCatalog" style="align-self:center;color:#a00717;font-weight:750">Quản lý gói Combo</a><a href="#adminDiscountCodes" style="align-self:center;color:#a00717;font-weight:750">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
+<header><div class="brand">AUTOTAX <span>V1.1.18 · ADMIN</span></div><div class="actions"><a href="./" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#packageCatalog" class="secondary admin-nav-pill">Quản lý gói Combo</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
 <section id="app" class="hidden">
-<div class="row"><div><h1>Quản lý khách hàng</h1><div class="muted">Tối đa 500 tài khoản gần nhất · gói hóa đơn, MST và trạng thái dùng thử AutoTax.</div></div><button id="reload">Làm mới dữ liệu</button></div>
+<div class="row"><div><h1>Quản lý khách hàng</h1><div class="muted">Tối đa 500 tài khoản gần nhất · gói hóa đơn, MST và trạng thái dùng thử AutoTax.</div></div><button id="reload" hidden aria-hidden="true">Làm mới dữ liệu</button></div>
 <div class="panel"><div class="row admin-filter-row">
 <input id="search" placeholder="Tìm theo email..." type="search" aria-label="Tìm email khách hàng">
 <input id="customerMstSearch" placeholder="Tìm MST khách hàng..." type="search" aria-label="Tìm MST khách hàng" inputmode="numeric">
@@ -488,7 +493,15 @@ async function loadUsers(){
   error=fallback.error;
  }
  if(error)return msg("msg","Không tải được danh sách: "+error.message,true);
- allUsers=data||[];renderUsers();
+ allUsers=data||[];
+ try{
+  const {data:names,error:nameError}=await client.rpc('autotax_admin_user_names_v120');
+  if(!nameError){
+   const byId=new Map((names||[]).map(item=>[item.user_id,item.display_name||'']));
+   allUsers=allUsers.map(item=>({...item,display_name:byId.get(item.user_id)||''}));
+  }
+ }catch(e){console.warn('Chưa tải được tên hồ sơ:',e.message)}
+ renderUsers();
 }
 function renderUsers(){
  const customer=$("grantCustomer"),prev=customer.value;
@@ -508,7 +521,7 @@ function renderUsers(){
    (filter==="expired"&&!invoiceActive&&!mstActive&&!trialActive);
  });
  const rows=filtered.map(u=>{
-  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">Gửi link về email</button><button class="danger" data-temp="'+esc(u.user_id)+'">Reset tạm: 000000</button></td></tr>';
+  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">Gửi link về email</button><button class="danger" data-temp="'+esc(u.user_id)+'">Reset tạm: 000000</button></td></tr>';
   const invoices='<b>'+Number(u.invoice_remaining||0).toLocaleString('vi-VN')+' / '+Number(u.invoice_purchased||0).toLocaleString('vi-VN')+'</b><div class="sub">Lượt còn lại / đã mua</div>'+(u.can_reread_charged_invoices?'<div class="sub">Được đọc lại hóa đơn đã trừ</div>':'');
   const mstQty=Number(u.mst_capacity||0);
   const mst='<b>'+mstQty+' MST</b><div class="sub">Hạn gần nhất: '+fmt(u.mst_nearest_expiry)+'</div><div class="sub">Hạn xa nhất: '+fmt(u.mst_farthest_expiry)+'</div>';
@@ -516,7 +529,7 @@ function renderUsers(){
   const trial='<div>'+(u.trial_used?'<span class="pill off">Đã dùng thử</span>':'<span class="pill">Chưa dùng thử</span>')+'</div>'+
    (u.trial_expires_at?'<div class="sub">Hạn thử: '+fmt(u.trial_expires_at)+'</div>':'')+
    '<div class="sub">Liên kết: '+(linked||'Chưa có')+'</div>';
-  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Gửi link về email</button><button class="danger" data-temp="'+esc(u.user_id)+'">Reset tạm: 000000</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button></div></td></tr>';
+  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div><div class="sub">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="actions"><button class="secondary" data-reset="'+esc(u.email)+'">Gửi link về email</button><button class="danger" data-temp="'+esc(u.user_id)+'">Reset tạm: 000000</button><button data-grant="'+esc(u.user_id)+'">Cấp gói</button><button class="secondary" data-history="'+esc(u.user_id)+'">Lịch sử gói</button></div></td></tr>';
  }).join('');
  $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
  $("count").textContent=filtered.length+"/"+allUsers.length+" tài khoản đang hiển thị (tối đa 500 tài khoản gần nhất)";

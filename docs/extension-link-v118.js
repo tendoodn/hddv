@@ -2,8 +2,8 @@
    Upload automation must update addon_public_settings.extension_download_url when a new ZIP is published. */
 (()=>{
 'use strict';
-const button=document.getElementById('extensionDownloadBtn');
-if(!button||!window.supabase)return;
+const buttons=['extensionDownloadBtn','extensionHeaderDownloadBtn'].map(id=>document.getElementById(id)).filter(Boolean);
+if(!buttons.length||!window.supabase)return;
 const client=window.supabase.createClient('https://ucqqjdsoyvvaxswzbhaw.supabase.co','sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ');
 let lastCheck=0;
 async function updateLink(){
@@ -15,13 +15,15 @@ async function updateLink(){
   const url=String(data?.value||'').trim();
   const parsed=new URL(url);
   if(parsed.protocol!=='https:'||!['drive.google.com','github.com'].includes(parsed.hostname))return;
-  button.href=parsed.href;
-  button.title='Tải gói Extension AutoTax mới nhất từ '+parsed.hostname;
+  for(const button of buttons){
+   button.href=parsed.href;
+   button.title='Tải gói Extension AutoTax mới nhất từ '+parsed.hostname;
+  }
  }catch(e){console.warn('AutoTax: không đồng bộ được link tải Extension',e)}
 }
 void updateLink();
 window.addEventListener('focus',()=>void updateLink());
-button.addEventListener('pointerenter',()=>void updateLink());
+for(const button of buttons)button.addEventListener('pointerenter',()=>void updateLink());
 // Keep an already-open account page in sync after an automated Drive release.
 setInterval(()=>{if(!document.hidden)void updateLink()},60000);
 })();

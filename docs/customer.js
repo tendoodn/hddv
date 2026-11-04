@@ -513,7 +513,7 @@ $("signupForm").addEventListener("submit",event=>{
    $("email").value=email;
    signupMessage(data?.session?
     "Đã tạo tài khoản và đăng nhập thành công.":
-    "Đã gửi yêu cầu đăng ký. Hãy kiểm tra email để xác minh tài khoản trước khi đăng nhập.");
+    "Đã gửi yêu cầu đăng ký. Hãy kiểm tra email để xác minh tài khoản trước khi đăng nhập. Thư có thể mang tiêu đề Supabase Auth; vui lòng kiểm tra cả mục Spam.");
    $("signupPassword").value="";$("signupPasswordConfirm").value="";
    if(data?.session){closeSignup();await refresh()}
   }catch(error){

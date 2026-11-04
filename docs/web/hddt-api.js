@@ -173,7 +173,14 @@
     for (let i = 0, rated = 0; ; i++) {
       if (auth !== false && !token()) throw new HttpError('Chưa đăng nhập hoadondientu – hãy đăng nhập rồi bấm ↻', 401);
       const wait = lastAt + gap - Date.now();
-      if (wait > 0) await sleep(wait);
+      // Responsive stop without weakening request spacing or 429 backoff.
+      if(wait>0){
+        const deadline=Date.now()+wait;
+        while(Date.now()<deadline){
+          if(shouldStop())throw new Error(STOPPED);
+          await sleep(Math.min(250,deadline-Date.now()));
+        }
+      }
       if (shouldStop()) throw new Error(STOPPED);
       lastAt = Date.now();
       let err, timedOut = false, secs = 0;
@@ -315,7 +322,7 @@
 
   // Đọc hết các trang của 1 (loại, hình thức, đoạn ngày), phân trang bằng "state" của máy chủ.
   // Cổng đôi khi trả total/trang lệch nhau → đọc lại cả đoạn (gộp theo id) tới khi đủ total.
-  async function readMonth(kind, form, chunk, filters, { onPage, shouldStop, onWait, onRetry }) {
+  async function readMonth(kind, form, chunk, filters, { onPage, onBatch, shouldStop, onWait, onRetry }) {
     const s = searchString(kind, form, chunk, filters), ep = FORMS[form].ep, map = new Map();
     const act = `Tìm kiếm (${FORMS[form].act} ${KINDS[kind].act})`;
     // Đoạn ngày (máy tính tiền) có thể vắt qua tháng → tháng (gom zip) theo ngày lập của từng hóa đơn; tdlap là giờ UTC → đổi sang giờ máy
@@ -327,9 +334,16 @@
         if (shouldStop()) return { rows: [...map.values()], total, stopped: true };
         const j = await json(await searchGet(form, URL_SEARCH(ep, KINDS[kind].path, s, state), act, { shouldStop, timeout: FORMS[form].timeout, retries: FORMS[form].retries, onWait, onRetry }));
         total = j.total || 0;
-        for (const d of j.datas || []) map.set(d.id, pick(d, kind, form, monthOf(d)));
+        const incoming=[];
+        for (const d of j.datas || []) {
+          const fresh=pick(d,kind,form,monthOf(d)),prior=map.get(d.id);
+          map.set(d.id,fresh);
+          // Page data is NOT shown until the caller has verified package/quota.
+          if(!prior)incoming.push(fresh);
+        }
         state = j.state;
         onPage(map.size);
+        if(incoming.length)onBatch(incoming);
         // get() already enforces the GDT cooldown before the next page.
       } while (state && map.size < total);
       if (map.size >= total) break;
@@ -338,7 +352,7 @@
   }
 
   // Tra cứu tuần tự từng loại × hình thức × đoạn ngày (hóa đơn điện tử: tháng; máy tính tiền: đoạn tối đa 10 ngày).
-  async function search({ tuNgay, denNgay, kinds, forms, filters = {}, onProgress = () => {}, onWarn = () => {}, onWait = () => {}, shouldStop = () => false }) {
+  async function search({ tuNgay, denNgay, kinds, forms, filters = {}, onProgress = () => {}, onBatch = () => {}, onWarn = () => {}, onWait = () => {}, shouldStop = () => false }) {
     kinds = kinds.filter((k) => KINDS[k]); forms = forms.filter((f) => FORMS[f]);
     if (!kinds.length) throw new Error('Hãy chọn loại hóa đơn (mua vào / bán ra)');
     if (!forms.length) throw new Error('Hãy chọn hình thức hóa đơn');
@@ -355,6 +369,7 @@
       try {
         r = await readMonth(kind, form, chunk, filters, { shouldStop,
           onPage: (n) => onProgress({ label, count: base + n }),
+          onBatch: (batch) => onBatch(batch, {label,kind,form,chunk}),
           onWait: (w) => onWait({ label, slow: !!FORMS[form].timeout, ...w }),
           onRetry: ({ err, attempt, max }) => onWarn(`${label}: ${err.message.replace(/\.+$/, '')} – đang thử lại (lần ${attempt}/${max})…`) });
       } catch (e) {

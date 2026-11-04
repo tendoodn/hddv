@@ -1,0 +1,47 @@
+/* AutoTax V1.1.18: display both entitlements for combo products on the existing portal. */
+(()=>{
+'use strict';
+const list=document.getElementById('packageList');
+if(!list||!window.supabase)return;
+const db=window.supabase.createClient('https://ucqqjdsoyvvaxswzbhaw.supabase.co','sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ');
+const defaults=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50'];
+let pending=false,lastAt=0,cache=null;
+async function getCatalog(){
+ if(cache&&Date.now()-lastAt<60000)return cache;
+ const [r,c]=await Promise.all([
+  db.rpc('addon_list_packages'),
+  db.from('autotax_combo_catalog_v118').select('package_code,invoice_quantity,invoice_validity_days')
+ ]);
+ if(r.error)throw r.error;if(c.error)throw c.error;
+ const rows=Array.isArray(r.data)?r.data:[];
+ const combos=new Map((c.data||[]).map(x=>[x.package_code,x]));
+ const sorted=[...defaults.map(code=>rows.find(p=>p.code===code)).filter(Boolean),
+  ...rows.filter(p=>!defaults.includes(p.code)).sort((a,b)=>(a.code==='DATA365'?-1:b.code==='DATA365'?1:0))];
+ cache={sorted,combos};lastAt=Date.now();return cache;
+}
+async function decorate(){
+ if(pending||!list.querySelector(':scope > .plan'))return;
+ pending=true;
+ try{
+  const {sorted,combos}=await getCatalog();
+  const cards=[...list.querySelectorAll(':scope > .plan')];
+  for(let i=0;i<sorted.length;i++){
+   const item=sorted[i],combo=combos.get(item.code);
+   if(!combo)continue;
+   const card=cards[i];if(!card||card.querySelector('h3')?.textContent!==item.name)continue;
+   const p=card.querySelector('p');if(!p)continue;
+   const msg=item.quantity+' MST · '+item.validity_days+' ngày, kèm '+
+    Number(combo.invoice_quantity).toLocaleString('vi-VN')+' lượt hóa đơn'+
+    (combo.invoice_validity_days?' · hạn số tờ '+combo.invoice_validity_days+' ngày':' · cùng hạn MST')+
+    '. Hai quyền được cấp cùng lúc; có thể chuyển chế độ sử dụng khi cần.';
+   if(p.textContent!==msg)p.textContent=msg;
+   card.dataset.autotaxCombo=item.code;
+  }
+ }catch(e){console.warn('AutoTax: chưa hiển thị được quyền lợi combo',e)}
+ finally{pending=false}
+}
+const observer=new MutationObserver(()=>{void decorate()});
+observer.observe(list,{childList:true});
+void decorate();
+window.addEventListener('focus',()=>{cache=null;void decorate()});
+})();

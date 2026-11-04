@@ -84,22 +84,14 @@ function kAlert(stats,allowPopup=true){
  const ratio=ready?k?.value:null;
  $('kRatio').textContent=ratio!==null&&Number.isFinite(ratio)?ratio.toFixed(2):'—';
  const reason={
-  'no-invoices':'Không có mua vào và bán ra: K = 1 (quy ước)',
-  'stock-blank':'Chưa nhập tồn đầu kỳ: K = 9 (quy ước)',
-  'zero-denominator':'Mẫu số bằng 0: K = 9 (quy ước)',
+  'defaulted':'Thiếu giá trị tồn đầu, mua vào hoặc bán ra: giá trị thiếu được tính là 1.',
   'invalid':'Tồn đầu kỳ không hợp lệ, vui lòng nhập số không âm.',
-  'calculated':'Đã tính với tồn đầu kỳ được nhập.'
+  'calculated':'K = Bán ra / (Bán ra + Tồn đầu kỳ).'
  };
  $('kRatioSource').textContent=ready?(reason[k?.mode]||''):'Chỉ hiện khi tra cả Mua vào và Bán ra.';
- const warn=ready&&Number.isFinite(ratio)&&ratio>2&&k.mode!=='no-invoices';
- $('kRatio').classList.toggle('warning',!!warn);
- if(!warn||!allowPopup||getPopupDisabled())return;
- $('disableKPopup').checked=false;
- $('kWarningText').textContent='Tổng bán ra '+money(stats.sold)+
-  ' / (Tổng mua vào '+money(stats.buy)+' + tồn đầu kỳ '+
-  (k.stock===null?'chưa nhập':money(k.stock))+') = '+ratio.toFixed(2)+
-  '. '+reason[k.mode]+' Hệ số K chỉ mang tính tham khảo và cần đối chiếu số liệu thực tế.';
- if(!$('kWarningDialog').open)$('kWarningDialog').showModal();
+ // The user-defined denominator includes sales, so K is always <= 1.
+ // The previous K > 2 risk alert is mathematically impossible and must not be shown.
+ $('kRatio').classList.remove('warning');
 }
 function render(list,warnings=[]){
  syncOpeningStock();

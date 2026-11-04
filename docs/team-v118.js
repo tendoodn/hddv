@@ -97,8 +97,7 @@ async function showDetail(id){
   const openEditor=section=>{
    editingPerson=person;
    $('autotaxTeamPermissionTitle').textContent='Phân quyền · '+(person.display_name||person.email);
-   const ownInvoice=Number(leaderEntitlements?.packages?.invoice?.remaining||0)>0||
-     !!leaderEntitlements?.can_reread_charged_invoices;
+   const ownInvoice=Number(leaderEntitlements?.packages?.invoice?.purchased||0)>0;
    const ownMst=Number(leaderEntitlements?.packages?.mst?.active_quantity||0)>0;
    const leaderModes=[...(ownMst?['mst']:[]),...(ownInvoice?['invoice']:[])];
    const dualPlan=ownInvoice&&ownMst;

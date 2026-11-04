@@ -232,3 +232,6 @@ td.audit-info{color:#c6c6db}
 /* Searchable MST selector: private client-side filtering, no network calls. */
 .mst-picker-menu .mst-picker-search{position:sticky;top:0;z-index:2;box-sizing:border-box;width:100%;padding:10px 12px;color:#f9fafb;background:#161a23;border:1px solid #42bff4;border-radius:9px;outline-offset:2px}
 .mst-picker-card[hidden]{display:none!important}
+
+/* A CSS display rule must never override the HTML hidden state on single-plan accounts. */
+#webModeControls[hidden],.web-mode-controls[hidden]{display:none!important}

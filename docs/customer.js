@@ -170,7 +170,11 @@ async function refresh(){
   $("userEmail").textContent=session.user.email||"";
   let license=await rpc("autotax_my_entitlements_v118");
   const initialInvoice=license.packages?.invoice||{},initialMst=license.packages?.mst||{};
-  const hasInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_remaining||0)>0||
+  // A purchased family is distinct from currently spendable balance.
+  // The group leader's invoice quota also counts as an available family for members.
+  const hasInvoice=Number(initialInvoice.purchased||0)>0||Number(license.team_invoice_remaining||0)>0||
+    !!license.team_invoice_available||!!license.can_reread_charged_invoices;
+  const canInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_remaining||0)>0||
     !!license.team_invoice_available||!!license.can_reread_charged_invoices;
   const hasMst=Number(initialMst.active_quantity||0)>0||Number(license.team_mst_count||0)>0;
   if(hasInvoice!==hasMst){
@@ -198,6 +202,11 @@ async function refresh(){
   const teamInvoice=Number(license.team_invoice_remaining||0),teamMst=Number(license.team_mst_count||0);
   $("modeSection").hidden=!(hasInvoice&&hasMst);
   $("usageMode").value=selected;
+  $("usageMode").querySelector('option[value="invoice"]').disabled=!canInvoice;
+  $("usageMode").querySelector('option[value="mst"]').disabled=!hasMst;
+  $("usageMode").title=hasInvoice&&hasMst?
+    'Có gói MST và số tờ (gồm quyền trưởng nhóm). Hai chế độ không chạy đồng thời.':
+    'Chế độ được chọn tự động theo gói hiện có.';
   $("mstAllowControls").hidden=selected!=="mst";
   setMstGrantUnlocked(false);
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
@@ -514,7 +523,7 @@ $("loginForm").addEventListener("submit",event=>{
  await refresh();
  });
 });
-// Registration opens a separate form; login credentials are never reused implicitly.
+// Registration returns to the login form with credentials held in memory only.
 const signupMessage=(message,error=false)=>{
  const box=$("signupStatus");box.hidden=!message;box.textContent=message||"";
  box.classList.toggle("error",!!error);
@@ -525,7 +534,6 @@ const closeSignup=()=>{
 };
 $("signupBtn").addEventListener("click",()=>{
  $("signupName").value="";
- $('signupEmailSent').hidden=true;
  $("signupEmail").value=$("email").value.trim();
  $("signupPassword").value="";$("signupPasswordConfirm").value="";
  signupMessage("");
@@ -547,6 +555,8 @@ $("signupForm").addEventListener("submit",event=>{
   const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
   if(name.length<2||name.length>100)return signupMessage("Tên người dùng phải từ 2 đến 100 ký tự.",true);
   if(!email||!$("signupEmail").checkValidity())return signupMessage("Nhập email hợp lệ.",true);
+  if(!/^[^@\s]+@(gmail\.com|hotmail\.com)$/i.test(email))
+   return signupMessage("Chỉ cho phép đăng ký bằng email @gmail.com hoặc @hotmail.com.",true);
   if(password.length<10)return signupMessage("Mật khẩu phải có tối thiểu 10 ký tự.",true);
   if(password!==confirmPassword)return signupMessage("Mật khẩu nhập lại không khớp.",true);
   button.disabled=true;
@@ -564,13 +574,19 @@ $("signupForm").addEventListener("submit",event=>{
    if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
     signupMessage(DUP_EMAIL,true);return;
    }
+   // SignUp may establish a session when Supabase Confirm Email is disabled.
+   // Customer wants the login form, not an automatic login after registration.
+   if(data?.session){
+    const signedOut=await client.auth.signOut();
+    if(signedOut.error)throw signedOut.error;
+   }
    $("email").value=email;
    closeSignup();
-   if(data?.session){$('signupEmailSent').hidden=true;await refresh();}
-   else {
-    $('signupEmailSent').hidden=false;
-    showMessage('Đã gửi yêu cầu đăng ký. Nhấn thông báo bên dưới để mở Gmail.',false,'authMessage');
-   }
+   $("password").value=password;
+     showMessage(data?.session?
+    'Tạo tài khoản thành công. Email và mật khẩu đã điền sẵn, bấm Đăng nhập để tiếp tục.':
+    'Đã gửi đăng ký và điền sẵn thông tin đăng nhập. Máy chủ vẫn yêu cầu xác minh email; quản trị cần tắt Confirm Email trên Supabase để đăng nhập ngay.',false,'authMessage');
+   $("loginBtn").focus();
   }catch(error){
    signupMessage(prettyError(error),true);
   }finally{button.disabled=false}

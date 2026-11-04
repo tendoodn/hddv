@@ -296,17 +296,19 @@ async function refreshAccount(){
   modeSelect.value=selectedMode;
   const inv=ent.data?.packages?.invoice||{},msts=ent.data?.packages?.mst||{};
   const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_remaining||0)>0||!!ent.data?.can_reread_charged_invoices||!!ent.data?.team_invoice_available;
+  const hasInvoice=Number(inv.purchased||0)>0||canInvoice;
   const canMst=Number(msts.active_quantity||0)>0||Number(ent.data?.team_mst_count||0)>0;
   modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
   modeSelect.querySelector('[value="mst"]').disabled=!canMst;
-  modeSelect.disabled=!(canInvoice&&canMst);
-  $('webModeControls').hidden=!(canInvoice&&canMst);
-  if(canInvoice!==canMst&&selectedMode!==(canInvoice?'invoice':'mst')){
-   const auto=canInvoice?'invoice':'mst';
+  const dual=hasInvoice&&canMst;
+  modeSelect.disabled=!dual;
+  $('webModeControls').hidden=!dual;
+  if(hasInvoice!==canMst&&selectedMode!==(hasInvoice?'invoice':'mst')){
+   const auto=hasInvoice?'invoice':'mst';
    const changed=await client.rpc('autotax_set_usage_mode_v118',{p_mode:auto});
    if(!changed.error){selectedMode=auto;modeSelect.value=auto;}
   }
-  $('webUsageModeHint').textContent=canInvoice&&canMst?
+  $('webUsageModeHint').textContent=dual?
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
     'Chỉ chuyển được khi cả hai gói có quyền sử dụng còn hiệu lực.';
   profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);

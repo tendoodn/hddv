@@ -1,4 +1,5 @@
-const fmt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
+const viNumberFormatter = new Intl.NumberFormat('vi-VN');
+const fmt = (n) => viNumberFormatter.format(Math.round(n)) + ' đ';
     const THRESHOLD = 500000000; 
     document.addEventListener('input', function(e) {
         if(e.target.classList.contains('currency-input')) {

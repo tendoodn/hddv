@@ -74,16 +74,19 @@ async function showDetail(id){
  $('autotaxTeamDetailTitle').textContent=team.name+(owner?' · Trưởng nhóm':' · Thành viên');
  $('autotaxTeamInviteForm').hidden=!owner;
  $('autotaxTeamLeave').hidden=owner;
- const [people,usageStats]=await Promise.all([
-  rpc('autotax_team_people_v118',{p_team:id}),
-  rpc('autotax_team_usage_stats_v118',{p_team:id})
- ]);
+ $('autotaxTeamUsageTab').hidden=!owner;
+ $('autotaxTeamUsagePanel').hidden=true;
+ $('autotaxTeamMembersPanel').hidden=false;
+ $('autotaxTeamMembersBody').closest('table').querySelectorAll('thead th').forEach((th,i)=>{th.hidden=!owner&&i!==0});
+ const people=await rpc('autotax_team_people_v118',{p_team:id});
+ const usageStats=owner?await rpc('autotax_team_usage_stats_v118',{p_team:id}):[];
  const usageByMember=new Map((usageStats||[]).map(x=>[x.user_id,x]));
  const tbody=$('autotaxTeamMembersBody'),usage=$('autotaxTeamUsageBody');
  tbody.replaceChildren();usage.replaceChildren();
  const allPeople=[...people];
  for(const person of allPeople){
   const tr=make('tr');const name=make('td',person.display_name||'—');
+  if(!owner){tr.append(name);tbody.append(tr);continue}
   const email=make('td',person.email||'—');
   const modes=make('td'),msts=make('td'),actions=make('td');
   const editing=()=>actions.dataset.editing==='true';
@@ -134,8 +137,10 @@ $('autotaxTeamCreateForm').addEventListener('submit',e=>{e.preventDefault();void
  notice('Đã tạo nhóm.');await refresh();await showDetail(id);
 })});
 $('autotaxTeamInviteForm').addEventListener('submit',e=>{e.preventDefault();void run(async()=>{
- await rpc('autotax_team_invite_v118',{p_team:activeTeam,p_email:$('autotaxTeamInviteEmail').value.trim()});
- $('autotaxTeamInviteEmail').value='';notice('Đã gửi lời mời.');await showDetail(activeTeam);
+ const outcome=await rpc('autotax_team_invite_v118',{p_team:activeTeam,p_email:$('autotaxTeamInviteEmail').value.trim()});
+ $('autotaxTeamInviteEmail').value='';
+ notice(outcome==='already_member'?'Thành viên đã vào nhóm.':outcome==='already_invited'?'Đã mời trước đó, đang chờ xác nhận.':'Đã gửi lời mời, vui lòng chờ thành viên chấp nhận.');
+ await showDetail(activeTeam);
 })});
 $('autotaxTeamLeave').addEventListener('click',()=>{if(!confirm('Rời nhóm này?'))return;void run(async()=>{await rpc('autotax_team_leave_v118',{p_team:activeTeam});activeTeam='';notice('Đã rời nhóm.');await refresh()})});
 $('autotaxTeamMembersTab').addEventListener('click',()=>{$('autotaxTeamMembersPanel').hidden=false;$('autotaxTeamUsagePanel').hidden=true});

@@ -4,7 +4,17 @@
 (() => {
   const pad = (n) => String(n).padStart(2, '0');
   // tdlap của cổng là giờ UTC (vd 2026-09-29T17:00:00Z = 30/09 giờ VN) → đổi sang ngày theo giờ máy
-  const dateVN = (iso) => { if (!iso) return ''; const d = new Date(iso); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; };
+  const dateVN = (iso) => {
+    if(!iso)return '';
+    const raw=String(iso).trim();
+    if(/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}/.test(raw))return raw.slice(0,10);
+    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(raw))
+      return raw.slice(8,10)+'/'+raw.slice(5,7)+'/'+raw.slice(0,4);
+    const dt=new Date(raw);
+    if(!Number.isFinite(dt.getTime()))return '';
+    return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',
+      day:'2-digit',month:'2-digit',year:'numeric'}).format(dt);
+  };
   const sortKey = (r) => `${r.tdlap || ''}|${r.khhdon}|${String(r.shdon).padStart(10, '0')}`;
   const sorted = (rows) => rows.slice().sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
   const partner = (r) => (r.kind === 'purchase' ? [r.nbmst, r.nbten] : [r.nmmst, r.nmten]);
@@ -52,7 +62,7 @@
     const codes = [...new Set(lines.map((line) => String(line.ma || '').trim()).filter(Boolean))];
     return codes.join('; ').slice(0, 32767);
   };
-  const signDate = (h) => (h?.seller?.time ? dateVN(h.seller.time) : '');
+  const signDate = (h) => dateVN(h?.seller?.time||h?.signatureTime||'');
   const xmlState = (details, r) => {
     const d = details.get(r.key);
     if (r.ttxly === 6) return 'Không (HĐ không mã)';
@@ -77,7 +87,7 @@
       boldRows: new Set(totals.map((_, i) => list.length + i)),
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
-          String(r.shdon), productCodes(details, r), dateVN(r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte || 'VND',
+          String(r.shdon), productCodes(details, r), dateVN(headOf(details,r)?.nlap||r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, r.dvtte || 'VND',
           r.dvtte && r.dvtte !== 'VND' ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
           ...((o) => [o.name, o.code, ...(withPdf ? [linkCell(o)] : [])])(HDDT.originalLookup(r, headOf(details, r))),
@@ -148,9 +158,9 @@
       for (const l of invoiceLines(r, d)) {
         // Không cộng gộp giá trị của các loại tiền tệ khác nhau.
         const p = pctOf(l.tsuat), thue = l.tthue === null ? null : roundVND(l.tthue);
-        out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), dateVN(r.tdlap), mst, ten,
+        out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), dateVN(headOf(details,r)?.nlap||r.tdlap), mst, ten,
           l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue, currency,
-          String(l.ma??'').trim()]);
+          String(l.ma??'').trim(), signDate(headOf(details,r))]);
         sum.amount += l.thtien || 0; sum.tax += thue || 0;
       }
     }
@@ -158,7 +168,7 @@
     for (const currency of currencies) {
       const sum = sums.get(currency) || { amount: 0, tax: 0 };
       boldRows.add(out.length);
-      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '']);
+      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '', '']);
     }
     return {
       name, boldRows,
@@ -170,6 +180,7 @@
         { header: 'Chiết khấu', width: 12, type: N }, { header: 'Thành tiền', width: 16, type: N }, { header: 'Thuế suất', width: 10, type: P },
         { header: 'Tiền thuế', width: 14, type: N }, { header: 'Tiền tệ', width: 9 },
         { header: 'Mã hàng hóa gốc (XML/JSON)', width: 29, type: T },
+        { header: 'Ngày ký', width: 12 },
       ],
       rows: out,
     };
@@ -376,7 +387,7 @@
       rows: list.map(({ r, x }, i) => {
         const h = headOf(details, r);
         return [i + 1, LEVEL[x.level], x.notes.join('; ') || 'Không phát hiện vấn đề', HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label,
-          r.khmshdon, r.khhdon, String(r.shdon), dateVN(r.tdlap), signDate(h), r.nbmst, r.nbten, r.nmmst, r.nmten, money(r).tong,
+          r.khmshdon, r.khhdon, String(r.shdon), dateVN(h?.nlap||r.tdlap), signDate(h), r.nbmst, r.nbten, r.nmmst, r.nmten, money(r).tong,
           r.dvtte || 'VND', h?.httt || r.httt || '', HDDT.TTHAI[r.tthai] || '', HDDT.TTXLY[r.ttxly] || '', x.math, x.sig, x.signer];
       }),
     };

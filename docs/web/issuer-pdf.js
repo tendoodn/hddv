@@ -93,8 +93,10 @@ async function downloadDirect(){
   if(bytes.length>12*1024*1024||bytes[0]!==37||bytes[1]!==80||
     bytes[2]!==68||bytes[3]!==70||bytes[4]!==45)
    throw Error('Không nhận được PDF gốc từ nhà phát hành (có thể là CAPTCHA hoặc HTML đăng nhập).');
+  const issue=window.Report.dateVN(current.detail?.head?.nlap||current.row.tdlap).split('/').join('');
   await window.WebInvoiceApp.saveFile(
-   'pdf_goc/PDF_Goc_'+safe(current.row.khhdon)+'_'+safe(current.row.shdon)+'.pdf',
+   'pdf_goc/'+safe((current.row.kind==='purchase'?'MuaVao_':'BanRa_')+
+     current.row.khhdon+'_'+current.row.shdon+'_'+(issue||'KhongRoNgay'))+'.pdf',
    bytes,'application/pdf');
   status('Đã tải tệp PDF trực tiếp. Hãy đối chiếu thông tin nhà phát hành, chữ ký số và mã tra cứu.');
  }catch(err){status('Chưa thể tải PDF trực tiếp: '+(err.message||String(err))+

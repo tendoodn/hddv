@@ -511,7 +511,9 @@ async function exportFileCore(kind){
     if(!det?.files)continue;
     for(const [name,data] of Object.entries(det.files)){
       if(!/\.xml$/i.test(name))continue;
-      z.push({name:(safe(row.kind+'_'+row.khhdon+'_'+row.shdon)+'_'+safe(name)).replace(/\.xml$/i,'')+'.xml',data});
+      const issue=Report.dateVN(row.tdlap).split('/').join('');
+      z.push({name:(safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
+        row.khhdon+'_'+row.shdon+'_'+(issue||'KhongRoNgay'))+'_'+safe(name)).replace(/\.xml$/i,'')+'.xml',data});
     }
    }
    if(!z.length)throw Error('Không tìm thấy XML gốc từ cổng Thuế trong danh sách hóa đơn. Không xuất dữ liệu giả.');
@@ -523,7 +525,9 @@ async function exportFileCore(kind){
    for(const row of targetRows){
     const inv=detail.get(row.key);
     if(!inv?.files)continue;
-    const prefix=safe(row.kind+'_'+row.khhdon+'_'+row.shdon);
+    const issue=Report.dateVN(row.tdlap).split('/').join('');
+    const prefix=safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
+      row.khhdon+'_'+row.shdon+'_'+(issue||'KhongRoNgay'));
     for(const [name,data] of Object.entries(inv.files)){
      if(/\.(?:xml|pdf)$/i.test(name))continue;
      await saveFile('html/'+prefix+'/'+name,data,'text/html');n++;

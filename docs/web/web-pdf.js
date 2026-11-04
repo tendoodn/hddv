@@ -73,7 +73,9 @@ function fromSourceFiles(inv){
 }
 async function pdfForInvoice(row,index,total,mode){
  const invoice=[row.khhdon,row.shdon].filter(Boolean).join('_');
- const name=safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+invoice);
+ const issue=window.Report.dateVN(row.tdlap).split('/').join('');
+ const name=safe((row.kind==='purchase'?'MuaVao_':'BanRa_')+
+   String(row.khhdon||'')+'_'+String(row.shdon||'')+'_'+(issue||'KhongRoNgay'));
  const app=window.WebInvoiceApp;
  app.progress((mode==='tax'?'Đang dựng PDF Thuế ':'Đang thử PDF gốc và chuẩn bị PDF dự phòng ')+
   (index+1)+'/'+total);

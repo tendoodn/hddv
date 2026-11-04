@@ -127,7 +127,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   </section>
   <section id="results" class="result-card" hidden>
     <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
-    <p class="k-description">K = Tổng bán ra / (Tồn đầu kỳ + Tổng mua vào). Nếu chưa nhập tồn kho, K mặc định 9 để tham khảo; khi cả mua vào và bán ra đều bằng 0, K = 1. Đây không phải kết luận của cơ quan Thuế.</p>
+    <p class="k-description">K = Tổng bán ra / (Tồn đầu kỳ + Tổng mua vào). Nếu chưa nhập tồn kho, K mặc định 9 để tham khảo; khi thiếu tổng mua vào hoặc bán ra, K = 1. Đây không phải kết luận của cơ quan Thuế.</p>
     <div class="invoice-stats">
       <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
       <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>

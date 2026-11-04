@@ -74,7 +74,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
 /* Five account actions always stay on one line. Narrow screens scroll this row horizontally. */
 .portal-account-head{display:flex;flex-direction:column;align-items:stretch;gap:10px}
-.account-quick-actions{display:grid;grid-template-columns:repeat(5,minmax(117px,1fr));gap:7px;width:100%;overflow-x:auto;padding-bottom:4px}
+.account-quick-actions{display:grid;grid-template-columns:repeat(5,minmax(145px,1fr));gap:7px;width:100%;overflow-x:auto;padding-bottom:4px}
 .account-quick-actions .account-link-btn,.account-quick-actions button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:39px;height:auto;min-width:0;margin:0;padding:7px 8px;text-align:center;white-space:nowrap;font-size:12px;line-height:1.15;border-radius:9px;text-decoration:none;font-weight:750}
 .account-quick-actions .account-link-btn{border:1px solid var(--tendoo-line);background:#fff1f2;color:var(--tendoo-dark)}
 .account-quick-actions .account-link-btn:hover{background:#ffe4e6}
@@ -122,6 +122,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 #feedbackDialog{width:min(680px,94vw);max-height:88vh;overflow-y:auto}
 #feedbackBody{display:block;width:100%;font:inherit;line-height:1.5;padding:10px;resize:vertical;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px}
 #feedbackImages{margin:8px 0}
+.autotax-coupon-box{margin-top:14px;padding:12px;border:1px dashed #e9aab3;border-radius:12px;background:#fffafb}.autotax-coupon-box .actions{display:flex;align-items:center;gap:10px}.autotax-coupon-box input{width:auto;flex:1 1 200px}.autotax-coupon-box button{white-space:nowrap}.autotax-license-notice{margin-top:10px}
 </style>
 <style>
 
@@ -155,7 +156,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <main class="wrap">
 <header>
   <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.18</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./web.html" id="webSearchLink" class="portal-admin-link web-search-blink">Tra cứu phiên bản web</a><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a href="./admin.html?v=1.1.18" id="adminLink" class="portal-admin-link" hidden>Quản trị</a></nav>
 </header>
 <h1>Quản lý tài khoản và gói AutoTax</h1>
 <p class="muted">Cùng dữ liệu Supabase với Chrome Extension. Số lượt hóa đơn và hạn MST được cập nhật trên máy chủ.</p>
@@ -190,8 +191,28 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
   Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.
  </div>
  <div class="panel" id="autotaxAccountSummary">
-  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="autotax-account-tabs" aria-label="Trang tài khoản"><button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Thông tin cơ bản</button><button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button></nav><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="kTrackingBtn" class="account-link-btn" href="https://tracuuhoadon.top/k/" target="_blank" rel="noopener noreferrer">Hệ số K</a><a id="priceToolsBtn" class="account-link-btn" href="https://tracuuhoadon.top/baogia/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="feedbackOpen" type="button" class="secondary">Phản hồi</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
-  <h2 id="licenseTitle">Đang tải quyền sử dụng…</h2>
+  <div class="row portal-account-head"><div><small>Tài khoản AutoTax</small><div><strong id="userEmail"></strong></div></div><nav class="autotax-account-tabs" aria-label="Trang tài khoản"><button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Thông tin cơ bản</button><button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button></nav><nav class="account-quick-actions" aria-label="Tiện ích và thao tác tài khoản"><a id="webSearchLink" class="account-link-btn web-search-blink" href="./web.html">VÀO TRA CỨU PHIÊN BẢN WEB</a><a id="priceToolsBtn" class="account-link-btn" href="https://tracuuhoadon.top/baogia/" target="_blank" rel="noopener noreferrer">Báo giá &amp; tiện ích</a><a id="extensionDownloadBtn" class="account-link-btn extension-download-link" href="https://drive.google.com/file/d/18ZxEHuFBWC0WfkCgdvq_1A00mf9nIk4h/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><button id="feedbackOpen" type="button" class="secondary">Phản hồi</button><button id="logoutBtn" class="secondary">Đăng xuất</button></nav></div>
+   <details id="mstProfilesWeb" class="panel mst-accordion">
+  <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp lại quyền tra cứu hoặc xóa hồ sơ</small></summary>
+  
+   
+  <form id="webAddMstForm" class="actions">
+   <input id="webAddMst" hidden>
+   <button type="submit">+ Thêm MST</button>
+  </form>
+  <div id="mstAllowControls" hidden>
+   <p><strong>Thiết lập danh sách MST được phép tra cứu theo gói MST</strong></p>
+   <p class="muted">Quyền đã lưu sẽ bị khóa không cho tick tùy ý. Bấm Cấp lại để mở tick, chọn các MST được tra cứu rồi bấm Khoá quyền để lưu và khóa chỉnh sửa. Số MST có quyền không được vượt hạn mức gói.</p>
+   <div class="actions">
+    <button id="mstGrantUnlock" type="button" class="secondary">Cấp lại</button>
+    <button id="mstGrantAllow" type="button" disabled>Khoá quyền</button>
+    <button id="mstGrantCancel" type="button" class="secondary" hidden>Hủy chỉnh sửa</button>
+    <span id="mstAllowedSummary" class="muted" role="status"></span>
+   </div>
+  </div>
+  <div id="mstList"></div>
+ </details>
+  <h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2>
   <div class="portal-mode-toolbar">
    <div id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select><p class="muted">Hai chế độ không chạy đồng thời. Gói không được chọn sẽ được bảo lưu.</p></div>
    <div class="portal-quick-actions"><button id="renewWebBtn" type="button">Gia hạn</button><button id="giftWebBtn" type="button" class="secondary">🎁 Quà tặng</button><button id="passwordOpenBtn" type="button" class="secondary">Đổi mật khẩu</button></div>
@@ -231,26 +252,7 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 
  </div>
 
- <details id="mstProfilesWeb" class="panel mst-accordion">
-  <summary><strong>Xem hồ sơ MST đã lưu</strong> <span id="mstWebCount">0</span><small>Mở danh sách để thêm, sửa, cấp lại quyền tra cứu hoặc xóa hồ sơ</small></summary>
-  
-   
-  <form id="webAddMstForm" class="actions">
-   <input id="webAddMst" hidden>
-   <button type="submit">+ Thêm MST</button>
-  </form>
-  <div id="mstAllowControls" hidden>
-   <p><strong>Thiết lập danh sách MST được phép tra cứu theo gói MST</strong></p>
-   <p class="muted">Quyền đã lưu sẽ bị khóa không cho tick tùy ý. Bấm Cấp lại để mở tick, chọn các MST được tra cứu rồi bấm Khoá quyền để lưu và khóa chỉnh sửa. Số MST có quyền không được vượt hạn mức gói.</p>
-   <div class="actions">
-    <button id="mstGrantUnlock" type="button" class="secondary">Cấp lại</button>
-    <button id="mstGrantAllow" type="button" disabled>Khoá quyền</button>
-    <button id="mstGrantCancel" type="button" class="secondary" hidden>Hủy chỉnh sửa</button>
-    <span id="mstAllowedSummary" class="muted" role="status"></span>
-   </div>
-  </div>
-  <div id="mstList"></div>
- </details>
+
 
  <section id="customerInbox" class="panel">
   <div class="row"><h2>Tin nhắn từ quản trị</h2>
@@ -261,6 +263,13 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
  <div class="panel" id="paymentArea" hidden>
   <h2>Thanh toán chuyển khoản</h2>
   <p id="paymentInfo" class="notice"></p>
+  <div class="autotax-coupon-box">
+   <label for="paymentCouponCode">Mã giảm giá (nếu có)</label>
+   <div class="actions"><input id="paymentCouponCode" type="text" maxlength="32" autocomplete="off" placeholder="Nhập mã giảm tiền hoặc %" autocapitalize="characters">
+   <button id="applyPaymentCoupon" type="button" class="secondary">Áp dụng / bỏ mã</button></div>
+   <small>Áp dụng mã sẽ tạo QR mới theo số tiền được máy chủ xác nhận. QR cũ sẽ hết hiệu lực.</small>
+   <p id="paymentCouponStatus" class="muted" role="status" aria-live="polite"></p>
+  </div>
   <p class="muted" role="timer" aria-live="off">Thời gian hiển thị QR còn lại: <strong id="paymentCountdown">05:00</strong></p>
   <img id="paymentQr" alt="QR thanh toán gói AutoTax">
   <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
@@ -345,9 +354,9 @@ input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=1118signup2"></script>
+<script src="./customer.js?v=1119ui1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
-<script src="./team-v118.js?v=1118team3"></script>
+<script src="./team-v118.js?v=1119team1"></script>
 <script src="./extension-link-v118.js?v=1118release2"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>

@@ -76,6 +76,21 @@ input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color
   <div class="package-form-footer"><span class="sub">Thời hạn linh hoạt; Combo có hạn MST và hạn số tờ độc lập.</span><button id="createPackage" type="submit">Thêm gói</button></div>
 </form>
 <div id="createPackageMessage" class="notice hidden" role="status" aria-live="polite"></div></div>
+<section id="adminDiscountCodes" class="panel">
+ <h2>Mã giảm giá thanh toán QR</h2>
+ <p class="sub">Mã giảm giá áp dụng khi khách thanh toán gói mới. Số tiền được Supabase tính lại trước khi tạo QR; giảm theo số tiền hoặc %. Mã không giảm xuống dưới 1.000đ.</p>
+ <form id="couponCreateForm" class="new-package-form" autocomplete="off">
+  <label>Mã giảm giá *<input id="couponCode" type="text" maxlength="32" required placeholder="Ví dụ AUTOTAX20" autocapitalize="characters"></label>
+  <label>Hình thức giảm *<select id="couponType"><option value="fixed">Giảm số tiền (VND)</option><option value="percent">Giảm theo %</option></select></label>
+  <label>Giá trị giảm *<input id="couponValue" type="number" min="1" step="1" required placeholder="Ví dụ 20000 hoặc 20"></label>
+  <label>Giới hạn lượt dùng (để trống = không hạn)<input id="couponLimit" type="number" min="1" step="1" placeholder="Ví dụ 100"></label>
+  <label>Hết hạn (để trống = không hạn)<input id="couponExpiry" type="datetime-local"></label>
+  <div class="package-form-footer"><span class="sub">Chỉ Admin có quyền tạo/tạm dừng mã. Giá trị giảm được chốt cùng đơn hàng.</span><button id="couponCreate" type="submit">Tạo mã giảm giá</button></div>
+ </form>
+ <div id="couponMessage" class="notice hidden" role="status" aria-live="polite"></div>
+ <div class="actions"><button id="couponReload" class="secondary" type="button">Làm mới danh sách mã</button></div>
+ <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Giá trị giảm</th><th>Sử dụng / Giới hạn</th><th>Hết hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="couponRows"><tr><td colspan="7">Đang tải mã…</td></tr></tbody></table></div>
+</section>
 <section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong các gói sản phẩm đang mở để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label>Khách hàng <select id="grantCustomer" aria-label="Khách hàng cần cấp gói"><option value="">Chọn khách hàng</option></select></label><label>Gói cần cấp <select id="grantPackage" aria-label="Gói cần cấp"><option value="">Chọn gói</option></select></label><button id="grantNow" type="button">Cấp gói cho khách hàng</button></div><div id="grantMessage" class="notice hidden" role="status"></div></section>
 <section class="panel" id="packageHistorySection"><div class="row"><div><h2>Lịch sử mua và cấp gói</h2><p class="sub">Mua gói và cấp gói bởi quản trị · mỗi trang tối đa 10 giao dịch.</p></div><button id="togglePackageHistory" class="secondary" type="button">Xem lịch sử gói</button></div></section>
 <dialog id="packageHistoryDialog" class="history-modal" aria-labelledby="packageHistoryTitle">
@@ -562,6 +577,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{
 });
 client.auth.onAuthStateChange(()=>setTimeout(boot,0));boot();
 </script>
+<script src="./admin-discounts-v119.js?v=1"></script>
 <script src="./admin-feedback.js?v=116"></script>
 <script src="./admin-site-links.js?v=118combo1"></script>
 <script src="./password-toggle.js?v=116"></script>

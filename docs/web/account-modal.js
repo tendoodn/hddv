@@ -7,24 +7,6 @@ const accountFlow=window.AutoTaxAccountFlow;
 if(!client||!$('webLoginDialog'))return;
 const dialogs=['webLoginDialog','webSignupDialog','webForgotDialog','webResetSentDialog','webNewPasswordDialog','webProfileDialog'];
 const logo='/favicon.svg?v=20261102b';
-const authErrorVi=error=>{
- const value=(String(error?.code||'')+' '+String(error?.message||error||'')).toLowerCase();
- if(/user_already_exists|email_exists|identity_already_exists|already registered|already in use/.test(value))return 'Email đã tồn tại.';
- if(/invalid_credentials|invalid login credentials|invalid password|wrong password|incorrect password/.test(value))return 'Sai mật khẩu.';
- if(/email_not_confirmed|email not confirmed/.test(value))return 'Email chưa được xác minh. Vui lòng kiểm tra hộp thư.';
- if(/user_not_found|user not found/.test(value))return 'Không tìm thấy tài khoản.';
- if(/weak_password|password should|password is too short|password must/.test(value))return 'Mật khẩu chưa đáp ứng yêu cầu bảo mật.';
- if(/over_email_send_rate_limit|email rate limit/.test(value))return 'Bạn đã yêu cầu gửi email quá nhiều lần. Vui lòng thử lại sau.';
- if(/over_request_rate_limit|too many requests|rate limit/.test(value))return 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau.';
- if(/signup_disabled|signups not allowed/.test(value))return 'Hệ thống đang tạm ngừng đăng ký tài khoản.';
- if(/email_address_invalid|invalid email/.test(value))return 'Địa chỉ email không hợp lệ.';
- if(/same_password|new password should be different/.test(value))return 'Mật khẩu mới phải khác mật khẩu cũ.';
- if(/session_not_found|session expired|jwt expired|auth session missing|refresh token/.test(value))return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
- if(/network|failed to fetch|fetch failed|timeout/.test(value))return 'Không kết nối được máy chủ. Vui lòng thử lại.';
- const original=String(error?.message||error||'');
- if(/[À-ỹ]/.test(original))return original;
- return 'Không thực hiện được thao tác. Vui lòng thử lại.';
-};
 const allowedEmail=v=>/^[^@\s]+@(gmail\.com|hotmail\.com|yahoo\.com|yahoo\.com\.vn)$/i.test(v);
 let account=null,recovery=false,resetCloseTimer=null,avatar=logo;
 const recentEmail=()=>{try{return localStorage.getItem('autotax_recent_email')||''}catch{return ''}};
@@ -209,7 +191,7 @@ $('webProfileForm').addEventListener('submit',async e=>{
 $('webLogout').addEventListener('click',async()=>{
  $('webSettingsMenu').hidden=true;closeAll();
  const {error}=await client.auth.signOut();
- if(error)return message('webAccountNotice',authErrorVi(error),true);
+ if(error)return message('webAccountNotice',accountFlow.message(error),true);
  account=null;update();await window.AutoTaxRefreshWebAccount?.();
 });
 $('webNewPasswordForm').addEventListener('submit',async e=>{

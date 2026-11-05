@@ -103,7 +103,8 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 .admin-mst-row-actions>button{padding:4px 5px!important;min-height:26px!important;font-size:10px!important;min-width:0!important;flex:0 0 auto}
 </style></head><body><main class="wrap">
 <header><div class="brand">AUTOTAX <span>V1.1.22 · ADMIN</span></div><div class="actions"><a href="/user" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
-<section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
+<div id="adminSessionPending" class="panel" role="status" aria-live="polite">Đang xác minh phiên AutoTax và quyền Admin…</div>
+<section id="auth" class="panel hidden"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
 <section id="app" class="hidden">
 <div class="panel" id="customerPanel"><div class="row"><h2>Quản lý khách hàng</h2><button id="reload" hidden aria-hidden="true">Làm mới</button></div><div class="row admin-filter-row">
 <input id="search" placeholder="Tìm theo email..." type="search" aria-label="Tìm email khách hàng">
@@ -243,17 +244,22 @@ async function boot(){
  const {data,error:sessionError}=await client.auth.getSession();
  const session=data?.session||null;
  $("app").classList.add("hidden");
+ $("auth").classList.add("hidden");
+ $("adminSessionPending").hidden=false;
+ $("adminSessionPending").textContent="Đang xác minh phiên AutoTax và quyền Admin…";
  if(sessionError){
-  $("auth").classList.remove("hidden");
-  msg("authMsg","Không đọc được phiên đăng nhập: "+sessionError.message+" · Vui lòng kiểm tra kết nối và tải lại.",true);
+  $("adminSessionPending").textContent="Không đọc được phiên đăng nhập: "+sessionError.message+" · Kiểm tra kết nối và tải lại.";
   return;
  }
- if(!session){$("auth").classList.remove("hidden");return}
+ if(!session){
+  $("adminSessionPending").hidden=true;
+  $("auth").classList.remove("hidden");
+  return;
+ }
  // Xác thực quyền thật trên máy chủ. Không tự đăng xuất và KHÔNG đoán quyền theo email.
  const {data:ok,error}=await client.rpc("addon_is_admin");
  if(error){
-  $("auth").classList.remove("hidden");
-  msg("authMsg","Không kiểm tra được quyền Admin: "+error.message+" · Tài khoản vẫn đăng nhập; hãy thử lại.",true);
+  $("adminSessionPending").textContent="Đã có phiên AutoTax nhưng chưa xác minh được quyền Admin: "+error.message+" · Vui lòng thử tải lại.";
   return;
  }
  if(ok!==true){
@@ -262,6 +268,7 @@ async function boot(){
   return;
  }
  $("auth").classList.add("hidden");
+ $("adminSessionPending").hidden=true;
  $("app").classList.remove("hidden");
  void window.AdminSiteLinks?.load?.();
  // Lỗi tải một bảng không được đá Admin ra khỏi giao diện hoặc kích hoạt lại boot.
@@ -756,7 +763,7 @@ async function bootOnce(){
  if(adminBootBusy){adminBootQueued=true;return}
  adminBootBusy=true;
  try{do{adminBootQueued=false;await boot()}while(adminBootQueued)}
- catch(error){msg("authMsg","Không tải được trang quản trị: "+(error.message||error),true);$("auth").classList.remove("hidden")}
+ catch(error){$("adminSessionPending").hidden=false;$("adminSessionPending").textContent="Không tải được trang quản trị: "+(error.message||error)}
  finally{adminBootBusy=false}
 }
 client.auth.onAuthStateChange((event)=>{

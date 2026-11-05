@@ -20,10 +20,13 @@ jobs:
           import time, urllib.request, urllib.error, sys
           origin = "https://tracuuhoadon.top"
           checks = {
-              "/": ["WEB V1.1.22b", "Tải PDF dựng lại", "web/date-slide-picker.js?v=1122b", 'id="webRenewNow" href="/user/"', "web/vault.js?v=1122d"],
+              "/": ["WEB V1.1.22b", "web/account-modal.js?v=1122e1", "web/web.js?v=1122e1", "web/web.css?v=1122e1", 'class="autotax-quota-renew"', "Hạn mức tài khoản đạt giới hạn. Vui lòng gia hạn thêm"],
               "/user/": ["AutoTax V1.1.22", "authSection", 'href="/admin/" id="adminLink"', 'href="/admin/" hidden>Trang quản trị'],
               "/admin/": ["Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")'],
               "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
+              "/web/account-modal.js": ["if(id==='webLoginDialog')continue;", "data-web-close"],
+              "/web/web.js": ["function showQuotaWarning", "QUOTA_MESSAGE", "showQuotaWarning('invoice')"],
+              "/web/web.css": [".autotax-quota-dialog", ".autotax-quota-renew", "#22c55e"],
               "/web/vault.js": ["mst-permission-tick", "Đã cấp quyền sử dụng", "mst-picker-head", "head.append(permission)"],
               "/web/web.css": [".mst-picker-permission", ".mst-picker-head", "#webRenewNow", "#22c55e"],
               "/web/pdf.js": ["Signature valid", "drawSignatureWatermark", "Bản thể hiện dựng từ dữ liệu"],

@@ -22,8 +22,10 @@ jobs:
           checks = {
               "/": ["WEB V1.1.22b", "Tải PDF dựng lại", "web/date-slide-picker.js?v=1122b"],
               "/user/": ["AutoTax V1.1.22", "authSection", "1ZRXaOkM2__NmLopxfqiCguoCl-sWSbN1"],
-              "/admin/": ["Đăng nhập quản trị", "bootOnce"],
+              "/admin/": ["Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")'],
               "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
+              "/web/vault.js": ["mst-permission-tick", "Đã cấp quyền sử dụng"],
+              "/web/web.css": [".mst-picker-permission", ".mst-permission-tick", "#22c55e"],
               "/web/pdf.js": ["Signature valid", "drawSignatureWatermark", "Bản thể hiện dựng từ dữ liệu"],
               "/web/export-zip.js": ["PDF_Dung_Tu_Thue_", "Bang_Thong_Ke_"],
           }

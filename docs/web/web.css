@@ -525,7 +525,7 @@ td.audit-info{color:#c6c6db}
 }
 /* The mapping dialog's close control remains accessible while the list scrolls. */
 #skuMapDialog .sku-map-sticky-head{
- position:sticky;top:-20px;z-index:25;
+ position:sticky;top:0;z-index:25;
  background:#151518;border-bottom:1px solid #44444d;
  margin:-20px -20px 12px;padding:16px 20px 12px;
  min-height:57px;
@@ -540,6 +540,6 @@ td.audit-info{color:#c6c6db}
  #stockExport .stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 @media(max-width:480px){
- #skuMapDialog .sku-map-sticky-head{top:-12px;margin:-12px -12px 10px;padding:12px}
+ #skuMapDialog .sku-map-sticky-head{top:0;margin:-12px -12px 10px;padding:12px}
  #stockExport .stock-grid #stockSkuOpen{font-size:11px;padding:7px 6px}
 }

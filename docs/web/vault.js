@@ -319,6 +319,8 @@ async function saveAfterLogin(mst,password){
    if(old)previous=await decryptPassword(old);
   }catch{}
   await writeStore('credentials',entryKey(mst),await encryptPassword(password));
+  try{await window.AutoTaxTeamShared?.syncOwnedPassword?.(mst,password)}
+  catch(e){console.warn('Chưa đồng bộ mật khẩu cho nhóm:',e.message)}
   try{
    await window.AutoTaxSharedMstVault?.save(mst,password);
    notify('Đã đồng bộ mật khẩu Thuế AES-GCM của MST '+mst+' với Web và Add-on.');

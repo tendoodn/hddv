@@ -16,7 +16,8 @@ const invoiceMonth=r=>{
  return m?m[3]+'-'+m[2].padStart(2,'0'):'';
 };
 let dataset=[],checked=new Set(),visible=[],catalog=[],skuLinks={},pendingSku={},catalogKey='';
-const RESULT_PAGE_SIZE=150;
+const RESULT_PAGE_SIZES=new Set([10,20,30]);
+let resultPageSize=10;
 let currentResultPage=1;
 let stockPlatform='tendoo',mappingReady=false,catalogRestoreSeq=0,catalogFilename='';
 const cache=()=>window.AutoTaxWebStockCache;
@@ -142,9 +143,9 @@ function resetForSearch(){
  $('results').hidden=true;
 }
 function renderVisible(){
- const filtered=filterRows(),totalPages=Math.max(1,Math.ceil(filtered.length/RESULT_PAGE_SIZE));
+ const filtered=filterRows(),totalPages=Math.max(1,Math.ceil(filtered.length/resultPageSize));
  currentResultPage=Math.max(1,Math.min(totalPages,currentResultPage));
- visible=filtered.slice((currentResultPage-1)*RESULT_PAGE_SIZE,currentResultPage*RESULT_PAGE_SIZE);
+ visible=filtered.slice((currentResultPage-1)*resultPageSize,currentResultPage*resultPageSize);
  const prev=$('resultPagePrev'),next=$('resultPageNext'),label=$('resultPageInfo');
  if(prev)prev.disabled=currentResultPage<=1;
  if(next)next.disabled=currentResultPage>=totalPages;
@@ -457,6 +458,13 @@ function init(){
  $('visibleKind').addEventListener('change',()=>{currentResultPage=1;renderVisible()});
  $('visibleMonth').addEventListener('change',()=>{currentResultPage=1;renderVisible()});
  $('clearVisibleMonth').addEventListener('click',()=>{$('visibleMonth').value='';currentResultPage=1;renderVisible()});
+ $('resultPageSize')?.addEventListener('change',event=>{
+  const next=Number(event.target.value);
+  resultPageSize=RESULT_PAGE_SIZES.has(next)?next:10;
+  event.target.value=String(resultPageSize);
+  currentResultPage=1;
+  renderVisible();
+ });
  $('resultPagePrev')?.addEventListener('click',()=>{currentResultPage--;renderVisible()});
  $('resultPageNext')?.addEventListener('click',()=>{currentResultPage++;renderVisible()});
  $('closeInvoiceDetail').addEventListener('click',()=>$('invoiceDetailDialog').close());

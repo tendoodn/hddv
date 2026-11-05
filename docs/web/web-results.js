@@ -33,7 +33,6 @@ function updateSkuDialog(){
  const has=!!catalogFilename&&catalogMst===mst;
  const label=has?'Tài khoản này đã tải lên SKU':'Tài khoản này chưa tải lên SKU';
  $('stockSkuState').textContent=label+' · '+platform+' · MST '+(validMst(mst)?mst:'chưa chọn');
- $('stockSkuMiniStatus').textContent=has?'Đã lưu '+catalog.length+' SKU · '+catalogFilename:'Chưa có file SKU cho hồ sơ MST này';
  const pending=stagedCatalog;
  $('stockSkuSelected').hidden=!pending;
  if(pending)$('stockSkuSelected').textContent='File mới: '+pending.file.name+' · '+pending.items.length+' mã hàng (bấm Lưu cấu hình để ghi đè)';

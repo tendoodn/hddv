@@ -86,8 +86,23 @@ function renderTeams(){
    box.append(accept);invites.append(box);
    continue;
   }
-  const b=make('button',team.name+(mine?' · Trưởng nhóm':' · Thành viên'),'secondary');
-  b.type='button';b.addEventListener('click',()=>run(()=>showDetail(team.id)));
+  const b=make('button',team.name+(mine?' · Trưởng nhóm':' · Thành viên'),'secondary autotax-team-button');
+  b.type='button';
+  b.setAttribute('aria-controls','autotaxTeamDetail');
+  const expanded=activeTeam===team.id&&!$('autotaxTeamDetail').hidden;
+  b.setAttribute('aria-expanded',String(expanded));
+  b.classList.toggle('is-active',expanded);
+  b.addEventListener('click',()=>run(async()=>{
+   const detail=$('autotaxTeamDetail');
+   if(activeTeam===team.id&&!detail.hidden){
+    detail.hidden=true;activeTeam='';editingPerson=null;
+    $('autotaxTeamPermissionDialog')?.close();
+    renderTeams();
+    return;
+   }
+   await showDetail(team.id);
+   renderTeams();
+  }));
   list.append(b);
  }
  if(!teams.length)list.append(make('p','Chưa có nhóm. Bấm + Tạo thêm nhóm để bắt đầu.','muted'));
@@ -101,7 +116,9 @@ async function showDetail(id){
  const team=teams.find(t=>t.id===id);if(!team)return;
  activeTeam=id;const owner=team.owner_id===myId;
  $('autotaxTeamDetail').hidden=false;
- $('autotaxTeamDetailTitle').textContent=team.name+(owner?' · Trưởng nhóm':' · Thành viên');
+ // Chỉ nút nhóm hiển thị tên và vai trò; không lặp lại dòng tiêu đề đen.
+ $('autotaxTeamDetailTitle').textContent='';
+ $('autotaxTeamDetailTitle').hidden=true;
  $('autotaxTeamInviteForm').hidden=!owner;
  $('autotaxTeamLeave').hidden=owner;
  $('autotaxTeamUsageTab').hidden=!owner;

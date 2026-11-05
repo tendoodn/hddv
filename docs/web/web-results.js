@@ -423,21 +423,35 @@ async function saveSkuConfig(){
  finally{updateSkuDialog()}
 }
 async function useData365(){
- const user=app()?.getAccount?.()?.id,client=app()?.getClient?.(),mst=currentMst();
- if(!user)return skuFeedback('Vui lòng đăng nhập AutoTax trước khi sử dụng DATA365.',true);
+ const user=app()?.getAccount?.()?.id,client=app()?.getClient?.();
+ if(!user)return skuFeedback('Vui lòng đăng nhập AutoTax trước khi thanh toán DATA365.',true);
+ if(!window.AutoTaxData365Payment)return skuFeedback('Bộ thanh toán đang tải. Vui lòng làm mới trang.',true);
  try{
-  const active=await cache().entitled(client);
-  if(!active){
-   skuFeedback('Chưa có DATA365 còn hạn. Mở trang tài khoản để mua theo giá Admin cấu hình.');
-   window.location.assign('/user/#planSection');
-   return;
-  }
-  if(!validMst(mst)||!catalog.length||catalogMst!==mst)
-   return skuFeedback('Hãy lưu cấu hình SKU cho hồ sơ MST hiện tại trước khi đồng bộ.',true);
-  const payload=cache().makePayload(catalogFilename,catalog,mst);
-  await cache().saveCloud(user,stockPlatform,payload,client);
-  skuFeedback('Đã đồng bộ '+catalog.length+' SKU lên DATA365. Trên máy khác đăng nhập cùng tài khoản và chọn MST này.');
- }catch(error){skuFeedback('Không đồng bộ được DATA365: '+error.message,true)}
+  await window.AutoTaxData365Payment.open({
+   client,
+   onPaid:async()=>{
+    // Renew entitlement directly from Supabase after a verified bank payment.
+    await app()?.refreshAccount?.();
+    const mst=currentMst(),owner=app()?.getAccount?.()?.id;
+    if(!owner||owner!==user||!catalog.length||catalogMst!==mst||!validMst(mst))return;
+    // The webhook may activate DATA365 a few seconds after marking the order paid.
+    for(let n=0;n<4;n++){
+     if(await cache().entitled(client)){
+      const payload=cache().makePayload(catalogFilename,catalog,mst);
+      await cache().saveCloud(user,stockPlatform,payload,client);
+      skuFeedback('DATA365 đã được kích hoạt và đồng bộ '+catalog.length+' SKU online.');
+      return;
+     }
+     await new Promise(resolve=>setTimeout(resolve,2000));
+    }
+   },
+   onClose:()=>{
+    const modal=$('stockSkuDialog');
+    if(modal?.open)modal.close();
+    updateSkuDialog();
+   }
+  });
+ }catch(error){skuFeedback('Không mở được thanh toán DATA365: '+(error.message||error),true)}
 }
 
 async function withPurchaseDetails(task){

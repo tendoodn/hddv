@@ -2,7 +2,7 @@
 
 ![Logo AutoTax](docs/favicon.svg)
 
-**AutoTax V1.1.20 · Tendoo**
+**AutoTax V1.1.22 · Tendoo**
 
 Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa đơn mua vào/bán ra, xuất Excel/XML/HTML/PDF, kiểm tra rủi ro và đối chiếu sản phẩm.
 

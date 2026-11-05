@@ -202,6 +202,11 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 .portal-head-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}
 .portal-head-tools .autotax-primary-nav{margin:0;gap:4px;flex-wrap:nowrap}
 .portal-head-tools .autotax-primary-nav button{font-size:11px;padding:8px 9px;white-space:nowrap}
+.portal-head-tools .autotax-primary-nav .autotax-web-tab{
+  display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;
+  font-size:11px;padding:8px 9px;text-decoration:none;border-radius:9px;
+  color:#9f1239;border:1px solid #f6abbc;background:#ffe4eb;font-weight:750
+}
 .portal-account-head{flex-wrap:wrap!important}
 .autotax-signup-mail-link{display:block;background:#e5fff1;color:#065f46;padding:10px;border-radius:9px;border:1px solid #59c7a1;font-size:12px;margin-top:8px;text-decoration:underline}
 .autotax-signup-mail-link[hidden]{display:none!important}
@@ -248,7 +253,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <main class="wrap">
 <header>
   <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.27</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/1-wJIwlvvdU3Pht7maeJAL3velhD2u-_n/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a id="webSearchLink" class="portal-admin-link portal-header-download web-search-blink" href="/">VÀO TRA CỨU PHIÊN BẢN WEB</a><a href="/admin/" id="adminLink" class="portal-admin-link" hidden>Quản trị</a><button id="headerLogoutBtn" type="button" class="portal-admin-link portal-header-logout" hidden>Đăng xuất</button></nav>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/1-wJIwlvvdU3Pht7maeJAL3velhD2u-_n/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="/admin/" id="adminLink" class="portal-admin-link" hidden>Quản trị</a><button id="headerLogoutBtn" type="button" class="portal-admin-link portal-header-logout" hidden>Đăng xuất</button></nav>
 </header>
 
 
@@ -314,7 +319,8 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
    </div>
    <div class="portal-head-tools">
     <nav class="autotax-account-tabs autotax-primary-nav" aria-label="Trang tài khoản">
-      <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Trang chủ</button>
+      <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">TT Tài Khoản</button>
+      <a id="webSearchLink" class="autotax-tab autotax-web-tab web-search-blink" href="/" title="Vào tra cứu phiên bản web">Vào phiên bản web</a>
       <button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button>
     </nav>
     <div class="autotax-settings-wrap">

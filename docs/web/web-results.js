@@ -243,6 +243,21 @@ async function showDetail(row){
   const detail=await app().fetchDetail(row);
   if(!dlg.open)return;
   const source=detail.head||{};
+  const lookup=source.lookup||{},meta=$('invoiceDetailMeta');
+  if(lookup.code)meta.append(' · Mã tra cứu: '+String(lookup.code));
+  if(lookup.secretCode&&lookup.secretCode!==lookup.code)
+   meta.append(' · Mã bảo mật: '+String(lookup.secretCode));
+  if(lookup.link){
+   try{
+    const url=new URL(lookup.link);
+    if(url.protocol==='https:'){
+     const a=document.createElement('a');
+     a.textContent='Mở link tra cứu nhà phát hành';
+     a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';
+     meta.append(' · ',a);
+    }
+   }catch{}
+  }
   const sellerMst=String(source.nbmst||row.nbmst||'');
   const sellerName=source.nbten||row.nbten||'';
   const lines=(detail.lines||[]);

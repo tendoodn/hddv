@@ -345,7 +345,9 @@ async function loadMstAssignments(){
   allow.title="Chọn MST này để được tra cứu trong chế độ gói MST";
   const check=document.createElement("input");check.type="checkbox";check.className="mst-allow-checkbox";
   check.value=item.mst;check.checked=item.mst_allowed===true;
-  check.disabled=!mstGrantUnlocked;
+  const borrowedMeta=sharedByMst.get(item.mst);
+  check.disabled=!!borrowedMeta||!mstGrantUnlocked;
+  if(borrowedMeta)allow.title='MST thuộc kho được trưởng nhóm chia sẻ, không thể sửa hồ sơ hoặc mật khẩu.';
   const caption=document.createElement("span");
   caption.className='mst-permission-status';
   const syncCaption=()=>{
@@ -357,6 +359,13 @@ async function loadMstAssignments(){
   };
   check.addEventListener('change',()=>{syncCaption();updateMstGrantPreview()});
   syncCaption();
+  if(borrowedMeta?.can_use_mst_package){
+   caption.textContent="✓ Hạn mức MST trưởng nhóm";
+   caption.classList.add('is-granted');caption.classList.remove('is-denied');
+  }else if(borrowedMeta?.personally_authorized){
+   caption.textContent="✓ Hạn mức MST cá nhân";
+   caption.classList.add('is-granted');caption.classList.remove('is-denied');
+  }
   allow.append(check,caption);line.append(allow);
   const name=document.createElement("div");name.className="mst-name";
   addText(name,"strong",item.mst);
@@ -376,6 +385,17 @@ async function loadMstAssignments(){
    if(userId)enqueueLegacyMstMigration(userId,item.mst);
   }else{
    addText(actions,"span","MST trưởng nhóm chia sẻ · chỉ xem","muted");
+   if(!borrowedMeta.can_use_mst_package&&!item.mst_allowed&&!borrowedMeta.personally_authorized){
+    const grant=addText(actions,"button","Cấp quyền MST cá nhân");grant.className="secondary";grant.type="button";
+    grant.addEventListener("click",async()=>{
+     grant.disabled=true;
+     try{
+      await rpc("autotax_member_authorize_shared_mst_v120",{p_mst:item.mst});
+      showMessage("Đã cấp quyền MST "+item.mst+" bằng hạn mức cá nhân.");
+      await loadMstAssignments();
+     }catch(error){showMessage(prettyError(error),true);grant.disabled=false}
+    });
+   }
   }
   const button=addText(actions,"button","Xóa MST");button.className="secondary";
   button.type='button';button.hidden=isBorrowed;button.disabled=isBorrowed||!canDeleteMstProfiles;

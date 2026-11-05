@@ -92,10 +92,16 @@ async function open(opts={}){
   if(!dialog.open||seq!==generation)return;
   const server=Date.parse(reply.server_time),offset=Number.isFinite(server)?server-Date.now():0;
   const ref={id:reply.order.order_id,expires,offset,done:false};order=ref;
-  $('data365PayQr').src=url.href;$('data365PayQrBox').hidden=false;$('data365PayCheck').hidden=false;
+  const img=$('data365PayQr');
+  img.hidden=true;
+  img.onload=()=>{if(order===ref&&seq===generation){img.hidden=false;setState('QR đã sẵn sàng. Chuyển khoản đúng số tiền và nội dung.')}};
+  img.onerror=()=>{if(order===ref&&seq===generation)setState('Ảnh QR tải lỗi. Hãy thử tạo QR mới hoặc dùng thông tin chuyển khoản được máy chủ xác nhận.','error')};
+  img.loading='eager';img.decoding='async';img.fetchPriority='high';
+  img.src=url.href;
+  $('data365PayQrBox').hidden=false;$('data365PayCheck').hidden=false;
   $('data365PayInfo').textContent=Number(reply.payment.amount_vnd||0).toLocaleString('vi-VN')+' ₫\n'+
    String(reply.payment.bank_name||'Ngân hàng')+' · '+String(reply.payment.account_name||'')+'\nNội dung: '+String(reply.payment.transfer_content||'');
-  setState('Chuyển khoản đúng số tiền và nội dung. Thanh toán sẽ được xác nhận tự động.');
+  setState('Đã có thông tin thanh toán. Đang tải ảnh QR…');
   const tick=()=>{
    if(order!==ref||ref.done)return;
    const remaining=Math.max(0,ref.expires-Date.now()-ref.offset);

@@ -20,14 +20,14 @@ jobs:
           import time, urllib.request, urllib.error, sys
           origin = "https://tracuuhoadon.top"
           checks = {
-              "/": ["WEB V1.1.22b", "web/web-results.js?v=1122g", "web/web.css?v=1122g", "web/stock-cache.js?v=1122g", 'id="stockSkuDialog"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng", "Phát hiện lệch mã hàng, bạn có cập nhật không???", "DATA365", 'id="stockMapBtn" type="button" class="outline" hidden'],
-              "/user/": ["AutoTax V1.1.22", "authSection", 'href="/admin/" id="adminLink"', 'href="/admin/" hidden>Trang quản trị'],
-              "/admin/": ["Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")'],
+              "/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "web/web-results.js?v=1122h", "web/web.css?v=1122h", "web/stock-cache.js?v=1122g", 'id="stockSkuDialog"', "Liên kết lại mã hàng", 'class="dialog-heading sku-map-sticky-head"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng"],
+              "/user/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "authSection", 'href="/admin/" id="adminLink"', 'href="/admin/" hidden>Trang quản trị'],
+              "/admin/": ["<title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")'],
               "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
               "/web/web-results.js": ["resultPageSize=10", "RESULT_PAGE_SIZES=new Set([10,20,30])", "commitCatalogFile", "stockSkuSave", "stockSkuData365", "detectMismatch", "scheduleMismatchCheck", "catalogMst"],
               "/web/account-modal.js": ["if(id==='webLoginDialog')continue;", "data-web-close"],
-              "/web/web.js": ["function showQuotaWarning", "QUOTA_MESSAGE", "showQuotaWarning('invoice')"],
-              "/web/web.css": [".autotax-quota-dialog", ".autotax-quota-renew", "#22c55e", ".stock-sku-dialog", "#stockMapBtn[hidden]"],
+              "/web/web.js": ["function showQuotaWarning", "QUOTA_MESSAGE", "Hãy bấm Đăng nhập ở phía trên để sử dụng AutoTax."],
+              "/web/web.css": [".autotax-quota-dialog", ".stock-sku-dialog", ".sku-map-sticky-head", "#stockExport .stock-grid"],
               "/web/vault.js": ["mst-permission-tick", "Đã cấp quyền sử dụng", "mst-picker-head", "head.append(permission)"],
               "/web/stock-cache.js": ["AES-GCM", "keyOf=(user,platform)", "mst:taxId(mst)", "entitled(client)"],
               "/web/pdf.js": ["Signature valid", "drawSignatureWatermark", "Bản thể hiện dựng từ dữ liệu"],

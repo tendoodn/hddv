@@ -35,9 +35,21 @@
   if(confirmPassword!==undefined&&password!==confirmPassword)return 'Hai lần nhập mật khẩu không khớp.';
   return '';
  }
+ // Quy tắc duy nhất cho cả 3 giao diện: chọn theo hạn mức SỬ DỤNG ĐƯỢC.
+ // Khi cả hai loại đều hết, chỉ giữ loại đã chọn cuối cùng.
+ function quotaModes(entitlements){
+  const e=entitlements||{},invoice=e.packages?.invoice||{},mst=e.packages?.mst||{};
+  const invoiceUsable=Number(invoice.remaining||0)+Number(e.team_invoice_spendable_remaining||0)>0;
+  const mstUsable=Number(mst.active_quantity||0)+Number(e.team_mst_count||0)>0;
+  const last=e.mode==='invoice'?'invoice':'mst';
+  const options=invoiceUsable&&mstUsable?['mst','invoice']:
+   mstUsable?['mst']:invoiceUsable?['invoice']:[last];
+  const selected=options.includes(last)?last:options[0];
+  return {options,selected,invoiceUsable,mstUsable,autoSelect:options.length===1&&(invoiceUsable||mstUsable)};
+ }
  const forgotSuccess='Nếu email đã đăng ký, hướng dẫn đặt lại mật khẩu sẽ được gửi tới hộp thư.';
  Object.defineProperty(globalThis,'AutoTaxAccountFlow',{
-  value:Object.freeze({normalizeEmail,normalizeName,validEmail,validateSignup,message,duplicateSignup,forgotSuccess}),
+  value:Object.freeze({normalizeEmail,normalizeName,validEmail,validateSignup,message,duplicateSignup,forgotSuccess,quotaModes}),
   writable:false,configurable:true
  });
 })();

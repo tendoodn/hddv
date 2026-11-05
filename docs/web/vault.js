@@ -135,9 +135,9 @@ function renderPicker(){
   option.value=mst;option.textContent=mst+' — '+mstName(p);select.append(option);
   const card=document.createElement('div');card.className='mst-picker-card';
   const pick=document.createElement('button');pick.type='button';pick.className='mst-picker-choice';
-  const number=document.createElement('strong');number.textContent=mst;
-  const alias=document.createElement('small');alias.textContent=mstName(p);
-  pick.append(number,alias);
+  const head=document.createElement('span');head.className='mst-picker-head';
+  const number=document.createElement('strong');number.className='mst-picker-tax-id';number.textContent=mst;
+  head.append(number);
   if(!invoiceMode){
    const permission=document.createElement('small');
    permission.className='mst-picker-permission';
@@ -149,8 +149,10 @@ function renderPicker(){
    mark.textContent=p.mst_allowed?'✓':'✕';
    mark.setAttribute('aria-label',p.mst_allowed?'Đã được cấp quyền':'Chưa được cấp quyền');
    permission.append(mark);
-   pick.append(permission);
+   head.append(permission);
   }
+  const alias=document.createElement('small');alias.textContent=mstName(p);
+  pick.append(head,alias);
   pick.addEventListener('click',()=>{
    input.value=mst;select.value=mst;closePicker();
    select.dispatchEvent(new Event('change',{bubbles:true}));

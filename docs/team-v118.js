@@ -200,12 +200,18 @@ $('autotaxTeamPermissionForm').addEventListener('submit',e=>{
   const selected=id=>[...$(id).querySelectorAll('input:checked')].map(x=>x.value);
   try{
    const msts=selected('autotaxTeamPermissionMsts'),teamId=activeTeam;
+   const modes=selected('autotaxTeamPermissionModes');
    await rpc('autotax_team_set_permissions_v118',{
     p_team:teamId,p_user:editingPerson.user_id,
-    p_modes:selected('autotaxTeamPermissionModes'),p_msts:msts
+    p_modes:modes,p_msts:msts
    });
    $('autotaxTeamPermissionDialog').close();editingPerson=null;
-   notice('Đã lưu quyền sử dụng. MST được tick dùng hạn mức nhóm theo gói đã cấp; MST không được tick chỉ dùng hạn mức cá nhân.');
+   let shared={updated:0,skipped:0};
+   try{
+    if(modes.length&&msts.length)shared=await shareGrantedPasswords(teamId,msts);
+    notice('Đã cấp quyền nhóm. Đã đồng bộ mật khẩu cho '+shared.updated+' MST.'+
+      (shared.skipped?' Có '+shared.skipped+' MST chưa được cấp mật khẩu.':''),shared.skipped>0);
+   }catch(e){notice('Đã cấp quyền MST, nhưng chưa chia sẻ được mật khẩu: '+friendly(e),true)}
    await showDetail(teamId);
   }catch(err){
    const el=$('autotaxTeamPermissionStatus');el.hidden=false;
@@ -213,6 +219,47 @@ $('autotaxTeamPermissionForm').addEventListener('submit',e=>{
   }finally{btn.disabled=false}
  });
 });
+// Passwords are explicitly shared by the leader, then encrypted in the
+// private server vault; members can fetch only their currently shared MSTs.
+async function askTeamPassword(mst){
+ return new Promise(resolve=>{
+  const dlg=document.createElement('dialog');
+  dlg.className='autotax-signup-dialog';
+  const form=document.createElement('form');form.method='dialog';
+  const label=make('label','Mật khẩu HĐĐT của MST '+mst+' (để thành viên sử dụng)');
+  const input=document.createElement('input');input.type='password';
+  input.autocomplete='off';input.maxLength=256;input.required=true;
+  label.append(input);
+  const hint=make('p','Mật khẩu sẽ được mã hóa trên máy chủ và chỉ cấp cho thành viên đang được chia sẻ MST này.','muted');
+  const actions=make('div',null,'actions');
+  const save=make('button','Cấp mật khẩu');save.type='submit';
+  const cancel=make('button','Bỏ qua','secondary');cancel.type='button';
+  cancel.addEventListener('click',()=>dlg.close('cancel'));
+  actions.append(save,cancel);form.append(label,hint,actions);dlg.append(form);
+  document.body.append(dlg);
+  form.addEventListener('submit',event=>{
+   event.preventDefault();if(!input.value)return;
+   const pwd=input.value;input.value='';
+   dlg.addEventListener('close',()=>{dlg.remove();resolve(pwd)},{once:true});
+   dlg.close('save');
+  });
+  dlg.addEventListener('close',()=>{if(!dlg.isConnected)return;dlg.remove();resolve(null)},{once:true});
+  dlg.showModal();input.focus();
+ });
+}
+async function shareGrantedPasswords(teamId,msts){
+ let updated=0,skipped=0;
+ for(const mst of [...new Set(msts)]){
+  let password=null;
+  try{password=await window.AutoTaxSharedMstVault?.get?.(mst)}
+  catch(error){console.warn('Kho mật khẩu của trưởng nhóm chưa mở:',error.message)}
+  if(!password)password=await askTeamPassword(mst);
+  if(!password){skipped++;continue}
+  await window.AutoTaxTeamShared.sharePassword(teamId,mst,password);
+  updated++;
+ }
+ return {updated,skipped};
+}
 async function run(fn){try{await fn()}catch(e){notice(friendly(e),true)}}
 $('autotaxBasicTab').addEventListener('click',()=>showTab(false));
 $('autotaxTeamTab').addEventListener('click',()=>showTab(true));

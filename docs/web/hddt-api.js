@@ -496,6 +496,7 @@
 
   function invoiceFromXml(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    if(doc.querySelector('parsererror'))throw Error('XML hóa đơn không hợp lệ; thử dữ liệu chi tiết JSON.');
     // Use localName so <ns:HHDVu>/<ns:MHHDVu> work as well as unprefixed XML.
     const t = (el, tag) => el ? (Array.from(el.children).find(child=>child.localName===tag)?.textContent?.trim()??'') : '';
     // Thông tin khác của dòng (TTKhac/TTin): nhiều phần mềm hóa đơn ghi tiền thuế từng dòng ở "VATAmount"
@@ -503,13 +504,33 @@
       const tin = byName(h, 'TTin').find((x) => re.test(t(x, 'TTruong')));
       return tin ? num(t(tin, 'DLieu')) : null;
     };
+    // MHHDVu is optional. Many publishers place SKU/product identifiers in
+    // alternative tags or in line-level TTKhac/TTin entries.
+    const productCodeOf=h=>{
+      const aliases=['MHHDVu','MaHangHoa','MaHang','MaSanPham','MaSP',
+        'MaVatTu','MVT','SKU','ItemCode','ProductCode','GoodsCode','MaterialCode','MaHH'];
+      for(const name of aliases){
+        const value=t(h,name);
+        if(value&&value.length<=180)return value;
+      }
+      const norm=value=>String(value||'').normalize('NFD')
+        .replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d')
+        .toLowerCase().replace(/[^a-z0-9]/g,'');
+      for(const info of byName(h,'TTin')){
+        const label=norm(t(info,'TTruong')||t(info,'TenTruong'));
+        if(!/^(mahang|mahanghoa|mahh|mahanghoadichvu|masanpham|masp|mavattu|mvt|sku|itemcode|productcode|goodscode|materialcode|mhhdvu)$/.test(label))continue;
+        const code=t(info,'DLieu')||t(info,'GiaTri');
+        if(code&&code.length<=180)return code;
+      }
+      return '';
+    };
     const lines = byName(doc, 'HHDVu').map((h) => {
       const tc = t(h, 'TChat'), thtien = signed(tc, num(t(h, 'ThTien'))), tsuat = t(h, 'TSuat'), r = rateOf(tsuat);
       const tinh = r !== null && thtien !== null ? Math.round(thtien * r) : null;
       // Có phần mềm ghi VATAmount = 0 cho dòng 8% (trường để trống) → coi như không ghi khi tự tính ra khác 0
       let ghi = signed(tc, extra(h, /^(VATAmount|TThue|TienThue)$/i));
       if (ghi === 0 && tinh) ghi = null;
-      return { tchat: TCHAT[tc] || tc, ma: t(h, 'MHHDVu'), ten: t(h, 'THHDVu'), dvt: t(h, 'DVTinh'),
+      return { tchat: TCHAT[tc] || tc, ma: productCodeOf(h), ten: t(h, 'THHDVu'), dvt: t(h, 'DVTinh'),
         sl: num(t(h, 'SLuong')), dgia: signed(tc, num(t(h, 'DGia'))), ck: num(t(h, 'STCKhau')), thtien, tsuat,
         tthue: ghi ?? tinh, tthueTinh: ghi === null && tinh !== null };
     });

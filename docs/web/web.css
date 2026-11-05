@@ -543,3 +543,19 @@ td.audit-info{color:#c6c6db}
  #skuMapDialog .sku-map-sticky-head{top:0;margin:-12px -12px 10px;padding:12px}
  #stockExport .stock-grid #stockSkuOpen{font-size:11px;padding:7px 6px}
 }
+
+/* V1.1.25: recently-used MST is plain green text, inline between tax ID and permission. */
+.mst-picker-choice .mst-picker-head>.mst-picker-selected{
+ display:inline!important;order:0;flex:none;background:transparent!important;
+ border:0!important;box-shadow:none!important;border-radius:0!important;
+ color:#22c55e!important;padding:0!important;margin:0 1px!important;
+ font-size:11px!important;font-weight:850!important;white-space:nowrap;
+}
+.mst-picker-choice .mst-picker-head>.mst-picker-permission{order:0}
+.mst-picker-card .mst-picker-grant{
+ border:1px solid #2563eb!important;background:#132d4d!important;
+ color:#bfdbfe!important;font-size:11px!important;font-weight:750!important;
+ padding:8px 10px!important;border-radius:8px;cursor:pointer;max-width:125px;
+}
+.mst-picker-card .mst-picker-grant:hover{background:#164477!important}
+.mst-picker-card .mst-picker-readonly{font-size:11px;color:#86efac;max-width:115px;line-height:1.4}

@@ -770,6 +770,20 @@ function init(){
  const today=new Date();configureVnDates();setVnDate('toDate',dateOnly(today));
  setVnDate('fromDate',dateOnly(new Date(today.getFullYear(),today.getMonth(),1)));
  $('searchForm').addEventListener('submit',search);
+ $('clearLocalInvoiceHistory')?.addEventListener('click',async()=>{
+  if(busy)return show('Đang quét hoặc tải hóa đơn. Hãy hoàn tất trước khi xóa dữ liệu cục bộ.');
+  const mst=currentSearchMst();
+  if(!account?.id||!/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))
+   return show('Đăng nhập và chọn MST hợp lệ trước khi xóa lịch sử.');
+  if(!confirm('Xóa lịch sử và bộ nhớ đệm hóa đơn cho MST '+mst+' trên thiết bị này?\nDữ liệu quyền sử dụng và lượt đã ghi nhận trên Supabase vẫn được giữ nguyên.'))return;
+  const button=$('clearLocalInvoiceHistory');button.disabled=true;
+  try{
+   const count=await window.AutoTaxInvoiceCache?.clearForAccount(account.id,mst);
+   details.clear();pendingDetails.clear();rows=[];window.WebResults?.resetForSearch?.();
+   show('Đã xóa lịch sử hóa đơn cục bộ và '+(count||0)+' bản dữ liệu đệm cho MST '+mst+'.',true);
+  }catch(error){show('Không xóa được bộ nhớ đệm: '+(error.message||error))}
+  finally{button.disabled=false}
+ });
  // Bring MST profiles and mode from Supabase whenever this tab becomes active.
  // Both Web and Add-on use the same account records; never sync tax passwords.
  let profileRefreshBusy=false,lastProfileRefreshAt=0;

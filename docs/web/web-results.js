@@ -160,9 +160,11 @@ function finish(list,warnings=[]){
  const allowed=new Set((list||[]).map(keyOf));
  for(const key of checked)if(!allowed.has(key))checked.delete(key);
  render(list,warnings,{preserve:true});
+ scheduleMismatchCheck();
 }
 function resetForSearch(){
  dataset=[];visible=[];checked.clear();currentResultPage=1;lastStats=null;
+ ++mismatchCheckSeq;clearTimeout(mismatchCheckTimer);$('stockMapBtn').hidden=true;
  $('visibleKind').value='all';$('visibleMonth').value='';
  $('results').hidden=true;
 }
@@ -371,6 +373,42 @@ function updateStock(){
  stockStatus('Đang tải danh mục đã lưu '+stockPlatform.toUpperCase()+'…');
  void restoreCatalog().catch(error=>{stockStatus('Chưa khôi phục được SKU: '+error.message,true);updateSkuDialog()});
 }
+function scheduleMismatchCheck(){
+ const id=++mismatchCheckSeq;
+ clearTimeout(mismatchCheckTimer);
+ $('stockMapBtn').hidden=true;
+ if(!catalog.length||!validMst(currentMst())||!dataset.some(r=>r.kind==='purchase'))return;
+ mismatchCheckTimer=setTimeout(()=>void detectMismatch(id,0),650);
+}
+async function detectMismatch(id,tries){
+ if(id!==mismatchCheckSeq||!catalog.length||!validMst(currentMst()))return;
+ if(app()?.busy()){
+  if(tries<8)mismatchCheckTimer=setTimeout(()=>void detectMismatch(id,tries+1),1000);
+  return;
+ }
+ const user=app()?.getAccount?.()?.id,mst=currentMst(),platform=stockPlatform,key=catalogKey;
+ if(!user||catalogMst!==mst)return;
+ const target=dataset.filter(r=>r.kind==='purchase');
+ try{
+  // Check asynchronously in small batches; stop when the first unmapped item is found.
+  for(let index=0;index<target.length;index+=20){
+   if(id!==mismatchCheckSeq||app()?.busy())return;
+   const batch=target.slice(index,index+20);
+   const detailMap=await app().loadDetails(batch);
+   if(id!==mismatchCheckSeq||user!==app()?.getAccount?.()?.id||
+      mst!==currentMst()||platform!==stockPlatform||key!==catalogKey)return;
+   const missing=window.TendooImport.missing(batch,detailMap,catalog,skuLinks);
+   if(missing.length){
+    $('stockMapBtn').hidden=false;
+    $('stockMapBtn').title='Có '+missing.length+' mặt hàng không khớp mã SKU trong các hóa đơn đã kiểm tra';
+    return;
+   }
+  }
+  $('stockMapBtn').hidden=true;
+ }catch(error){
+  console.warn('Không kiểm tra được lệch SKU:',error?.message||error);
+ }
+}
 async function saveSkuConfig(){
  const selected=stagedCatalog;
  if(!selected)return skuFeedback('Hãy bấm Cập nhật file mới và chọn file trước.',true);
@@ -559,7 +597,14 @@ function init(){
   try{await persistMappings();$('skuMapDialog').close();await exportStock(true)}
   catch(e){stockStatus(e.message,true)}
  });
+ $('stockSkuOpen').addEventListener('click',openSkuConfig);
+ $('stockSkuChoose').addEventListener('click',()=>$('stockCatalog').click());
  $('stockCatalog').addEventListener('change',loadCatalog);
+ $('stockSkuSave').addEventListener('click',()=>void saveSkuConfig());
+ $('stockSkuData365').addEventListener('click',()=>void useData365());
+ const closeSku=()=>{if($('stockSkuDialog').open)$('stockSkuDialog').close();stagedCatalog=null;skuFeedback();updateSkuDialog()};
+ $('stockSkuClose').addEventListener('click',closeSku);
+ $('stockSkuCloseTop').addEventListener('click',closeSku);
  $('stockCatalogUpdate').addEventListener('click',()=>$('stockCatalogReplacement').click());
  $('stockCatalogReplacement').addEventListener('change',async event=>{
   const file=event.target.files?.[0];if(!file)return;
@@ -572,6 +617,15 @@ function init(){
  });
  document.addEventListener('autotax-web-user-ready',()=>void updateStock());
  $('stockPlatform').addEventListener('change',updateStock);
+ const changedMst=()=>{
+  clearTimeout(mstChangeTimer);
+  mstChangeTimer=setTimeout(()=>{
+   const mst=currentMst();
+   if(mst!==activeMst&&(validMst(mst)||!mst))updateStock();
+  },250);
+ };
+ $('mstFree').addEventListener('input',changedMst);
+ $('mst').addEventListener('change',changedMst);
  $('stockMapBtn').addEventListener('click',openMapping);
  $('stockDownloadBtn').addEventListener('click',()=>void exportStock(false));
  $('stockSingleBtn').addEventListener('click',()=>void exportStock(true));

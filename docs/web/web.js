@@ -300,6 +300,7 @@ async function refreshAccount(){
   account=session?.user||null;
   window.AutoTaxWebAccount?.sync(account);
   if(!account){
+   $('webTeamQuotaSummary').hidden=true;
    $('webModeControls').hidden=true;
    $('accountEmailLabel').textContent='Chưa đăng nhập';
    profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
@@ -339,6 +340,18 @@ async function refreshAccount(){
   const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_spendable_remaining||0)>0;
   const hasInvoice=Number(inv.purchased||0)>0||Number(ent.data?.team_invoice_purchased||0)>0||canInvoice||!!ent.data?.can_reread_charged_invoices;
   const canMst=Number(msts.active_quantity||0)>0||Number(ent.data?.team_mst_count||0)>0;
+  const ownSheets=Number(inv.remaining||0),groupSheets=Number(ent.data?.team_invoice_remaining||0);
+  const totalBought=Number(inv.purchased||0)+Number(ent.data?.team_invoice_purchased||0);
+  const ownMst=Number(msts.active_quantity||0),groupMst=Number(ent.data?.team_mst_package_capacity||0);
+  const teamMstShared=Number(ent.data?.team_mst_count||0),invoiceMstShared=Number(ent.data?.team_invoice_shared_mst_count||0);
+  const totalSheets=ownSheets+groupSheets;
+  $('webTeamQuotaSummary').hidden=false;
+  $('webTeamQuotaSummary').textContent=
+   'Hóa đơn: '+totalSheets.toLocaleString('vi-VN')+' / '+totalBought.toLocaleString('vi-VN')+
+   ' (cá nhân '+ownSheets.toLocaleString('vi-VN')+', nhóm '+groupSheets.toLocaleString('vi-VN')+')'+
+   ' · MST: '+(ownMst+groupMst).toLocaleString('vi-VN')+
+   ' (cá nhân '+ownMst+', nhóm '+groupMst+', đã chia sẻ '+teamMstShared+')'+
+   (groupSheets>0&&invoiceMstShared===0?' · Chờ trưởng nhóm cấp MST để sử dụng gói nhóm.':'');
   modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
   modeSelect.querySelector('[value="mst"]').disabled=!canMst;
   const dual=hasInvoice&&canMst;

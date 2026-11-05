@@ -425,3 +425,32 @@ td.audit-info{color:#c6c6db}
 .mst-picker-choice small.mst-picker-permission strong.mst-permission-cross{
  display:inline;color:#f87171!important;font-size:17px;font-weight:900;vertical-align:baseline
 }
+
+/* v1.1.22d — compact renewal next to the account gear. */
+#webUserBlock #webRenewNow{
+ display:inline-flex;align-items:center;justify-content:center;flex:none;
+ background:#dc2626;color:#fff;border:1px solid #ef4444;border-radius:8px;
+ padding:8px 11px;font-size:12px;font-weight:850;line-height:1.1;
+ text-decoration:none;white-space:nowrap;min-height:34px;
+}
+#webUserBlock #webRenewNow:hover,
+#webUserBlock #webRenewNow:focus-visible{background:#b91c1c;color:#fff}
+/* Keep the license label on the same header row as the MST; name below. */
+.mst-picker-choice .mst-picker-head{
+ display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;
+ width:100%;min-width:0;text-align:left;
+}
+.mst-picker-choice .mst-picker-head>.mst-picker-tax-id{
+ color:#fff;font-size:15px;font-weight:850;white-space:nowrap;flex:none;
+}
+.mst-picker-choice .mst-picker-head>.mst-picker-permission{
+ display:inline-flex;gap:4px;align-items:center;white-space:nowrap;
+ color:#d1d5db;font-weight:750;font-size:11px;
+}
+.mst-picker-choice .mst-picker-head .mst-permission-tick{color:#22c55e!important;font-size:17px;font-weight:950}
+.mst-picker-choice .mst-picker-head .mst-permission-cross{color:#ef4444!important;font-size:17px;font-weight:900}
+@media(max-width:400px){
+ #webUserBlock{gap:5px}
+ #webUserBlock #webRenewNow{padding:7px 8px;font-size:11px}
+ .mst-picker-choice .mst-picker-head{gap:4px 7px}
+}

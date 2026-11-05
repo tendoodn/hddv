@@ -1,11 +1,11 @@
-/* AutoTax Web V1.1.21: single XLSX, flat per-format ZIPs, one combined ZIP. */
+/* AutoTax 1.1.22: deterministic per-format exports, flat ZIP entries and provenance. */
 (()=>{
  'use strict';
  let pending=null;
  const enc=new TextEncoder();
  const MIME_XLSX='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
- const safe=value=>String(value??'').replace(/[\/\\:*?"<>|\x00-\x1f]/g,'_').replace(/^\.+/,'').slice(0,150)||'KhongRo';
- const last=name=>safe(String(name||'').replace(/\\/g,'/').split('/').pop());
+ const safe=value=>String(value??'').replace(/[\/\\:*?"<>|\x00-\x1f]/g,'_').replace(/^\.+/,'').trim().slice(0,120)||'KhongRo';
+ const basename=path=>safe(String(path||'').replace(/\\/g,'/').split('/').pop());
  const asBytes=async data=>{
   if(data instanceof Uint8Array)return data;
   if(data instanceof ArrayBuffer)return new Uint8Array(data);
@@ -14,152 +14,144 @@
   return enc.encode(String(data??''));
  };
  async function capture(name,data,mime){
-  if(!pending)throw Error('Không có phiên đóng gói ZIP đang chạy.');
+  if(!pending)throw Error('Không có phiên xuất đang chạy.');
   const path=String(name||'').replace(/\\/g,'/');
-  if(!path||path.split('/').some(part=>!part||part==='.'||part==='..'))
-   throw Error('Tên tệp xuất không an toàn.');
+  if(!path||path.split('/').some(x=>!x||x==='.'||x==='..'))throw Error('Đường dẫn không an toàn.');
   const bytes=await asBytes(data);
-  if(bytes.byteLength>100*1024*1024)throw Error('Tệp vượt giới hạn 100 MB.');
+  if(bytes.byteLength>100*1024*1024)throw Error('Tệp vượt 100 MB.');
   pending.push({name:path,data:bytes,mime:mime||'application/octet-stream'});
   return path;
  }
- function range(){
-  const period=window.WebInvoiceApp?.getPeriod?.()||{};
-  const date=value=>{
-   const match=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(value||''));
-   return match?match[3]+match[2]+match[1]:'KhongRoNgay';
+ function period(){
+  const p=window.WebInvoiceApp?.getPeriod?.()||{};
+  const date=s=>{
+   const raw=String(s||'');
+   const iso=/^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+   if(iso)return iso[3]+iso[2]+iso[1];
+   const vn=/^(\d{2})\/(\d{2})\/(\d{4})/.exec(raw);
+   return vn?vn[1]+vn[2]+vn[3]:'KhongRoNgay';
   };
-  const mst=String(window.WebInvoiceApp?.getMst?.()||'').replace(/\D/g,'')||'MST';
-  return {mst,from:date(period.from),to:date(period.to)};
+  const mst=String(window.WebInvoiceApp?.getMst?.()||'').replace(/\D/g,'')||'KhongRoMST';
+  const alias=document.querySelector('.mst-picker-card.selected .mst-picker-choice small')?.textContent?.trim()||
+   document.querySelector('#mst option:checked')?.textContent?.replace(mst,'').replace(/^[-–\s]+/,'').trim()||
+   (window.WebInvoiceApp?.getRows?.()||[]).find(x=>x.kind==='purchase')?.nmten||
+   (window.WebInvoiceApp?.getRows?.()||[]).find(x=>x.kind==='sold')?.nbten||'TenMST';
+  return {mst,from:date(p.from),to:date(p.to),alias:safe(alias).slice(0,75)};
  }
- const prefix=()=>{
-  const {mst,from,to}=range();
-  return mst+'_'+from+'_'+to;
- };
- const filenames=()=>({
-  excel:'Bang_ke_'+prefix()+'.xlsx',
-  xml:'XML_'+prefix()+'.zip',
-  html:'HTML_'+prefix()+'.zip',
-  pdfTax:'PDF_Thue_'+prefix()+'.zip',
-  pdf:'PDF_Goc_Dung_'+prefix()+'.zip',
-  all:'AutoTax_Tat_Ca_'+prefix()+'.zip'
- });
- const matches=(f,kind)=>{
-  const n=f.name.toLowerCase();
+ function names(){
+  const p=period(),base=p.mst+'_'+p.from+'_'+p.to;
+  return {
+   excel:'Bang_Thong_Ke_'+base+'.xlsx',
+   xml:'XML_'+base+'.zip',html:'HTML_'+base+'.zip',
+   pdfTax:'PDF_Dung_Tu_Thue_'+base+'.zip',
+   pdf:'PDF_Goc_'+base+'.zip',
+   all:p.mst+'_'+p.alias+'.zip'
+  };
+ }
+ function isKind(file,kind){
+  const n=file.name.toLowerCase();
   if(kind==='excel')return /\.xlsx$/i.test(n);
   if(kind==='xml')return /\.xml$/i.test(n);
   if(kind==='html')return /\.html?$/i.test(n);
-  // CQT can return a genuine PDF in its archive or an AutoTax-rendered copy.
-  // Both belong to PDF Thuế, never to the issuer-original ZIP.
-  const taxPdf=/^(?:pdf_thue_|pdf_nguon_tu_cong_thue\/)/i.test(f.name);
-  if(kind==='pdfTax')return /\.pdf$/i.test(n)&&taxPdf;
-  if(kind==='pdf')return /\.pdf$/i.test(n)&&!taxPdf;
+  const tax=/^(?:pdf_thue_|pdf_dung_tu_thue\/|pdf_nguon_tu_cong_thue\/)/i.test(file.name);
+  if(kind==='pdfTax')return /\.pdf$/i.test(n)&&tax;
+  if(kind==='pdf')return /\.pdf$/i.test(n)&&!tax;
   return false;
- };
- // Keep PDF ZIPs PDF-only, but preserve MST, signing month, direction and source.
- function pdfNameInsideZip(file,leaf){
-  const {mst}=range();
-  const signature=leaf.match(/_(\d{2})(\d{2})(\d{4})(?:_\d+)?\.pdf$/i);
-  const year=signature?signature[3]:'KhongRoNam';
-  const month=signature?signature[2]:'KhongRoThang';
-  const direction=/^MuaVao_/i.test(leaf)?'MuaVao':/^BanRa_/i.test(leaf)?'BanRa':'ChuaPhanLoai';
-  const source=/^PDF_NGUON_TU_CONG_THUE\//i.test(file.name)?'NguonCQT':
-   /^PDF_THUE_/i.test(file.name)?'ThueDung':
-   /^PDF_GOC_NHA_PHAT_HANH\//i.test(file.name)?'GocNPH':
-   /^PDF_NGUOI_DUNG/i.test(file.name)?'NguoiDung':'DungTuCQT';
-  return ['HoaDon',safe(mst),year,month,direction,source+'_'+leaf].join('/');
  }
- function categoryFiles(files,kind){
-  const names=new Set(),output=[];
-  for(const file of files.filter(f=>matches(f,kind))){
-   let name=last(file.name);
-   if(kind==='pdfTax'||kind==='pdf')name=pdfNameInsideZip(file,name);
-   const dot=name.lastIndexOf('.'),base=dot>=0?name.slice(0,dot):name,
-    ext=dot>=0?name.slice(dot):'';
-   let index=2;
-   while(names.has(name.toLocaleLowerCase('vi-VN')))
-    name=base+'_'+(index++)+ext;
-   names.add(name.toLocaleLowerCase('vi-VN'));
-   output.push({name,data:file.data});
+ function group(files,kind){
+  const out=[],used=new Set();
+  for(const f of files.filter(f=>isKind(f,kind))){
+   const pieces=f.name.replace(/\\/g,'/').split('/').filter(Boolean);
+   let name=basename(f.name);
+   // Invoice-specific HTML packages often repeat the same "index.html" filename.
+   if(kind==='html'&&pieces.length>2)name=safe(pieces.at(-2))+'_'+name;
+   const dot=name.lastIndexOf('.'),stem=dot===-1?name:name.slice(0,dot),ext=dot===-1?'':name.slice(dot);
+   let suffix=2;
+   while(used.has(name.toLocaleLowerCase('vi-VN')))name=stem+'_'+suffix+++ext;
+   used.add(name.toLocaleLowerCase('vi-VN'));
+   out.push({name,data:f.data,originalPath:f.name});
   }
-  return output;
+  return out;
  }
- function manifest(kind,files){
-  const {mst,from,to}=range();
-  const label=kind==='xml'?'XML goc tu Cong Thue':'HTML tu du lieu tra cuu Cong Thue';
+ function sourceText(kind,items,extra=''){
+  const p=period();
+  const source=kind==='pdfTax'?'PDF dựng từ dữ liệu hóa đơn do cổng Thuế cung cấp, KHÔNG PHẢI PDF GỐC.':
+    kind==='xml'?'XML từ gói hóa đơn điện tử của cổng Thuế.':
+    kind==='html'?'HTML được lấy từ dữ liệu gói tra cứu cổng Thuế.':
+    'Bảng kê được AutoTax tạo từ dữ liệu tra cứu.';
   return [
-   'AUTOTAX - THONG TIN VA NGUON DU LIEU',
-   'Dinh dang: '+label,
-   'MST tra cuu: '+mst,
-   'Tu ngay: '+from+' | Den ngay: '+to,
-   'Nguon: Cong tra cuu hoa don dien tu - hoadondientu.gdt.gov.vn',
-   'Tong tep '+kind.toUpperCase()+': '+files.length,
-   'Chi bao gom file '+(kind==='xml'?'.xml':'.html')+' va tep thong tin nay.',
-   'Danh sach tep:',
-   ...files.map(f=>'- '+f.name),
-   'Luu y: Thong tin la du lieu tra cuu, khong thay the xac thuc hoa don goc.'
+   'AutoTax 1.1.22 - TONG HOP NGUON TEP',
+   'Dinh dang: '+kind.toUpperCase(),
+   'Ma so thue: '+p.mst,
+   'Khoang ngay: '+p.from+' - '+p.to,
+   'Nguon: https://hoadondientu.gdt.gov.vn/',
+   source,
+   'So tep: '+items.length,
+   'Danh sach:',
+   ...items.map(f=>'- '+f.name+' | '+f.originalPath),
+   extra
   ].join('\r\n');
  }
- function buildFormat(files,kind){
-  const output=categoryFiles(files,kind);
-  if(!output.length)throw Error('Không có dữ liệu '+kind.toUpperCase()+' hợp lệ để xuất.');
-  if(kind==='xml'||kind==='html')
-   output.push({name:'THONG_TIN_NGUON.txt',data:enc.encode(manifest(kind,output))});
-  return window.Zip.writeZip(output);
+ function category(files,kind){
+  const entries=group(files,kind);
+  if(!entries.length)throw Error('Không có dữ liệu '+kind.toUpperCase()+' để xuất.');
+  return entries.map(f=>({name:f.name,data:f.data})).concat([{
+   name:'THONG_TIN_NGUON.txt',data:enc.encode(sourceText(kind,entries,
+    files.filter(f=>/nguon_pdf_ma_tra_cuu\.txt$/i.test(f.name)).map(f=>new TextDecoder().decode(f.data)).join('\n')))
+  }]);
  }
  async function saveResult(files,label){
-  const names=filenames(),storage=window.AutoTaxDownloadFolder;
+  const output=names(),storage=window.AutoTaxDownloadFolder;
   if(label==='excel'){
-   const items=categoryFiles(files,'excel');
-   if(items.length!==1)throw Error('Excel cần đúng một tệp XLSX, thực tế: '+items.length);
-   await storage.saveRootFile(names.excel,items[0].data,MIME_XLSX);
-   window.WebInvoiceApp?.show?.('Đã lưu Excel: '+names.excel,true);
-   return names.excel;
+   const x=group(files,'excel');
+   if(x.length!==1)throw Error('Mỗi lần xuất Excel cần đúng một tệp XLSX.');
+   await storage.saveRootFile(output.excel,x[0].data,MIME_XLSX);
+   return output.excel;
   }
-  if(label==='all'){
-   const book=categoryFiles(files,'excel');
-   if(book.length!==1)throw Error('Thiếu file bảng kê Excel trong gói tổng.');
-   const outer=[{name:names.excel,data:book[0].data}];
-   for(const kind of ['xml','html','pdfTax','pdf']){
-    try{outer.push({name:names[kind],data:buildFormat(files,kind)})}
-    catch(error){console.warn('AutoTax: bỏ qua ZIP '+kind+': '+error.message)}
+  if(label==='all'||label==='TatCa'){
+   const books=group(files,'excel');
+   if(books.length!==1)throw Error('Gói tổng thiếu một bảng kê Excel.');
+   const all=[{name:output.excel,data:books[0].data}];
+   // Files inside each folder are flat; only one TXT summarizes provenance.
+   const folders={pdfTax:'PDF',xml:'XML',html:'HTML'};
+   for(const [kind,folder] of Object.entries(folders)){
+    try{
+     for(const file of category(files,kind))all.push({name:folder+'/'+file.name,data:file.data});
+    }catch(e){console.warn('AutoTax: '+kind,e.message)}
    }
-   await storage.saveRootArchive(names.all,window.Zip.writeZip(outer));
-   window.WebInvoiceApp?.show?.('Đã lưu '+names.all+' gồm '+outer.length+' tệp (1 Excel và các ZIP định dạng có dữ liệu).',true);
-   return names.all;
+   all.push({name:'EXCEL/THONG_TIN_NGUON.txt',data:enc.encode(
+    sourceText('excel',books,'Bang thong ke XLSX nam tai thu muc goc: '+output.excel))});
+   await storage.saveRootArchive(output.all,window.Zip.writeZip(all));
+   return output.all;
   }
   if(['xml','html','pdfTax','pdf'].includes(label)){
-   const zipped=buildFormat(files,label);
-   await storage.saveRootArchive(names[label],zipped);
-   window.WebInvoiceApp?.show?.('Đã lưu '+names[label],true);
-   return names[label];
+   const zip=window.Zip.writeZip(category(files,label));
+   await storage.saveRootArchive(output[label],zip);
+   return output[label];
   }
-  // Existing stock-import export is intentionally kept independent.
-  const safeFiles=files.map(f=>({name:f.name,data:f.data}));
-  if(!safeFiles.length)throw Error('Không có dữ liệu xuất phiếu nhập kho.');
-  const name='NhapHang_'+prefix()+'.zip';
-  await storage.saveRootArchive(name,window.Zip.writeZip(safeFiles));
+  if(!files.length)throw Error('Không có tệp xuất phiếu nhập kho.');
+  const name='NhapHang_'+period().mst+'.zip';
+  await storage.saveRootArchive(name,window.Zip.writeZip(files.map(f=>({name:basename(f.name),data:f.data}))));
   return name;
  }
  async function batch(job,label){
-  if(pending)throw Error('Một phiên xuất dữ liệu khác đang chạy.');
+  if(pending)throw Error('Đang có phiên xuất dữ liệu khác.');
   if(!window.Zip?.writeZip||!window.AutoTaxDownloadFolder?.saveRootArchive||
-    !window.AutoTaxDownloadFolder?.saveRootFile)
-   throw Error('Bộ ZIP hoặc API thư mục xuất chưa sẵn sàng.');
+    !window.AutoTaxDownloadFolder?.saveRootFile)throw Error('Chưa có bộ ZIP hoặc quyền lưu file.');
   pending=[];
   try{
    const result=await job();
    const files=pending;
    if(files.reduce((sum,f)=>sum+f.data.byteLength,0)>350*1024*1024)
-    throw Error('Dữ liệu vượt 350 MB, hãy xuất theo tháng.');
+    throw Error('Tổng dữ liệu vượt 350 MB. Hãy xuất theo tháng.');
    pending=null;
-   await saveResult(files,label);
+   window.WebInvoiceApp?.progress?.('Đang đóng gói và ghi tệp xuống thiết bị…');
+   const written=await saveResult(files,label);
+   window.WebInvoiceApp?.progress?.('Đã lưu hoàn tất: '+written);
    return result;
   }finally{pending=null}
  }
  const mark=()=>pending?pending.length:0;
- const rollback=point=>{if(pending&&Number.isInteger(point))pending.length=Math.max(0,Math.min(point,pending.length))};
- window.AutoTaxZipExport=Object.freeze({
-  isCapturing:()=>pending!==null,capture,batch,mark,rollback
- });
+ const rollback=n=>{if(pending&&Number.isInteger(n))pending.length=Math.max(0,Math.min(n,pending.length))};
+ window.AutoTaxZipExport=Object.freeze({isCapturing:()=>pending!==null,capture,batch,mark,rollback});
 })();

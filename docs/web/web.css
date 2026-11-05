@@ -481,3 +481,30 @@ td.audit-info{color:#c6c6db}
 .result-page-nav #resultPageSize{min-width:65px;width:auto;min-height:34px;padding:5px 9px;background:#202127;border:1px solid #55545c;border-radius:8px;color:#f8fafc;font-size:12px;font-weight:750;cursor:pointer}
 .result-page-nav #resultPageSize:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
 @media(max-width:480px){.result-page-nav .result-page-size-label{margin-right:0;width:100%;justify-content:center}}
+
+/* SKU catalog popup, scoped MST and conditional SKU mismatch. */
+.stock-sku-config{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:0}
+.stock-sku-config>button{width:100%;min-height:40px;border:1px solid #636775;background:#292c37;color:#fff;border-radius:9px;font-size:12px;font-weight:850;padding:9px 13px;cursor:pointer}
+.stock-sku-config>button:hover{background:#363b4b}
+.stock-sku-config>small{font-size:11px;line-height:1.4;color:#b7d3bf}
+.stock-sku-dialog{box-sizing:border-box;width:min(650px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;margin:auto;padding:20px;border:1px solid #676875;border-radius:15px;background:#1a1a20;color:#f8fafc;box-shadow:0 24px 70px #000b}
+.stock-sku-dialog::backdrop{background:#05060acc}
+.stock-sku-dialog h2{margin:0;font-size:19px;color:#fff}
+.stock-sku-dialog .dialog-heading{margin-bottom:14px}
+.stock-sku-state{font-size:14px;font-weight:800;color:#f4f4f6;line-height:1.5}
+.stock-sku-selected{padding:9px 12px;border-radius:9px;background:#172d23;border:1px solid #2c6b45;color:#a3f2c2;font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+.stock-sku-selected[hidden],.stock-sku-feedback[hidden]{display:none!important}
+.stock-sku-dialog-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0 12px}
+.stock-sku-dialog-actions>button{font-size:12px;font-weight:800;border:1px solid #555762;border-radius:9px;min-height:40px;padding:8px 9px;background:#e5e7eb;color:#1f2937;cursor:pointer}
+.stock-sku-dialog-actions>button#stockSkuData365{background:#133b47;color:#c7f9ff;border-color:#2c7382}
+.stock-sku-dialog-actions>button#stockSkuSave{background:#b91c1c;color:white;border-color:#e14b50}
+.stock-sku-dialog-actions>button.outline{background:#30313a;color:#fff}
+.stock-sku-dialog-actions>button:disabled{opacity:.5;cursor:default}
+.stock-sku-explainer{font-size:12px;line-height:1.8;color:#b9bec9;margin:13px 0 0}
+.stock-sku-feedback{font-size:12px;border-radius:9px;border:1px solid #426951;background:#18291d;color:#c9efcd;padding:10px 12px;line-height:1.55}
+.stock-sku-feedback.error{border-color:#9f4c55;background:#361c22;color:#ffd5db}
+.stock-map-alert{margin:8px 0 0;display:flex;align-items:center}
+#stockMapBtn[hidden]{display:none!important}
+#stockMapBtn:not([hidden]){padding:9px 13px;border-radius:9px;border:1px solid #d09148;background:#3b2a1c;color:#ffe8bb;font-size:12px;font-weight:850;cursor:pointer}
+#stockMapBtn:not([hidden]):hover{background:#614128}
+@media(max-width:600px){.stock-sku-dialog{padding:14px}.stock-sku-dialog-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}

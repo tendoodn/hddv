@@ -1,7 +1,8 @@
 /* AutoTax Web v3.4: account-scoped MST picker and encrypted device credentials.
  * No vault passphrase UI. Credentials are encrypted with a non-extractable
  * WebCrypto AES-GCM key stored in IndexedDB on THIS device/browser only.
- * Profile names and MSTs come from Supabase; TAX PASSWORDS NEVER DO.
+ * Personal passwords use the account vault. Explicitly shared team credentials
+ * are retrieved per use from the server with live membership authorization.
  * Legacy passphrase-protected localStorage data is intentionally left intact,
  * but cannot be decrypted without its original passphrase. Enter the GDT
  * password again once to save it in the new device-local scheme.
@@ -227,11 +228,16 @@ async function select(mst){
  let previousLast='';try{previousLast=localStorage.getItem(lastKey())||'';localStorage.setItem(lastKey(),mst)}catch{}
  if(previousLast!==mst)renderPicker();
  try{
-  // Borrowed MST profile metadata grants lookup rights, not credential access.
-  // Never read a leader's tax password from cloud, local or team RPCs.
+  // Team password is served only for the MST currently granted to this
+  // member; do not save a personal copy to local IndexedDB or user vault.
   const profile=profiles.find(p=>p.mst===mst);
   if(profile?.source==='team'){
-   notify('Hồ sơ MST được chia sẻ. Mật khẩu của trưởng nhóm được bảo mật; nếu cần đăng nhập cổng Thuế, hãy dùng thông tin đăng nhập riêng.');
+   const sharedPassword=await window.AutoTaxTeamShared?.getPassword?.(mst);
+   if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
+   if(sharedPassword){
+    input.value=sharedPassword;
+    notify('Đã tự điền mật khẩu HĐĐT do trưởng nhóm chia sẻ cho MST '+mst+'.');
+   }else notify('MST nhóm chưa được cấp mật khẩu HĐĐT. Hãy đề nghị trưởng nhóm đồng bộ mật khẩu.');
    return;
   }
   // Personal MSTs continue to use the same encrypted cross-device vault.

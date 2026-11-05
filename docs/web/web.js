@@ -312,6 +312,18 @@ async function refreshAccount(){
   }
   $('authStatus').textContent=account.email+' · Đã kết nối';
   $('accountEmailLabel').textContent=account.email||'Tài khoản AutoTax';
+  // Invalidate only this member's local invoice details after a server reset.
+  // Historical invoice charge/dedupe records remain untouched.
+  try{
+   const invalidated=await window.AutoTaxMemberCacheReset?.check({
+    userId:account.id,token:session?.access_token
+   });
+   if(invalidated?.cleared&&!busy){
+    details.clear();pendingDetails.clear();rows=[];
+    window.WebResults?.resetForSearch?.();
+    show('Đã xóa bộ nhớ đệm hóa đơn thành viên trên thiết bị này. Bộ đếm nhóm bắt đầu lại từ 0.',true);
+   }
+  }catch(error){console.warn('Không kiểm tra được reset cache thành viên:',error.message)}
   const [ent,profiles,sharedRows]=await Promise.all([
    client.rpc('autotax_my_entitlements_v118'),
    client.rpc('addon_list_my_mst_assignments'),

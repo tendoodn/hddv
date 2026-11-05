@@ -82,7 +82,8 @@ async function pdfForInvoice(row,index,total,mode){
  const dateForFilename=window.Report.dateVN(signature||detail?.head?.nlap||row.tdlap).split('/').join('');
  const sellerMst=String(row.nbmst||detail?.head?.seller?.mst||'KhongRoMST').replace(/\D/g,'')||'KhongRoMST';
  const invoiceCode=safe(String(row.mhdon||row.mccqt||[row.khhdon,row.shdon].filter(Boolean).join('_')||'KhongRoMa'));
- const name=safe(sellerMst+'_'+invoiceCode+'_'+(dateForFilename||'KhongRoNgay'));
+ const direction=row.kind==='purchase'?'MuaVao':'BanRa';
+ const name=safe(direction+'_'+sellerMst+'_'+invoiceCode+'_'+(dateForFilename||'KhongRoNgay'));
  const lookup=window.HDDT.originalLookup(row,detail.head);
  // Use genuine PDF bytes only if included in a ZIP exported by GDT;
  // a reconstructed representation is NEVER mislabelled as source-original.

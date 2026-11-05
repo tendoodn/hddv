@@ -239,9 +239,43 @@ const $=id=>document.getElementById(id);let allUsers=[],allPackages=[],customerP
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
 function fmt(v){return v?new Date(v).toLocaleString("vi-VN"):"—"}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");if(!session)return;
-const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){msg("authMsg",error?'Không kiểm tra được quyền quản trị: '+error.message:'Tài khoản này không có quyền quản trị. Bạn vẫn đăng nhập AutoTax bình thường.',true);$("auth").classList.remove("hidden");return}
-$("app").classList.remove("hidden");void window.AdminSiteLinks?.load?.();await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
+async function boot(){
+ const {data,error:sessionError}=await client.auth.getSession();
+ const session=data?.session||null;
+ $("app").classList.add("hidden");
+ if(sessionError){
+  $("auth").classList.remove("hidden");
+  msg("authMsg","Không đọc được phiên đăng nhập: "+sessionError.message+" · Vui lòng kiểm tra kết nối và tải lại.",true);
+  return;
+ }
+ if(!session){$("auth").classList.remove("hidden");return}
+ // Xác thực quyền thật trên máy chủ. Không tự đăng xuất và KHÔNG đoán quyền theo email.
+ const {data:ok,error}=await client.rpc("addon_is_admin");
+ if(error){
+  $("auth").classList.remove("hidden");
+  msg("authMsg","Không kiểm tra được quyền Admin: "+error.message+" · Tài khoản vẫn đăng nhập; hãy thử lại.",true);
+  return;
+ }
+ if(ok!==true){
+  // Người dùng thường phải về /user với nguyên phiên Supabase, không signOut.
+  window.location.replace("/user");
+  return;
+ }
+ $("auth").classList.add("hidden");
+ $("app").classList.remove("hidden");
+ void window.AdminSiteLinks?.load?.();
+ // Lỗi tải một bảng không được đá Admin ra khỏi giao diện hoặc kích hoạt lại boot.
+ try{await loadUsers()}
+ catch(e){msg("msg","Lỗi tải danh sách người dùng: "+(e.message||e),true)}
+ if(allUsers.some(u=>u.legacy_pending)){
+  msg("msg","Supabase đang dùng schema cấp phép cũ. Danh sách khách hàng chỉ để tham khảo.",true);
+  return;
+ }
+ const sections=await Promise.allSettled([loadPlans(),loadUnlocks(),loadMstAssignments()]);
+ for(const result of sections){
+  if(result.status==="rejected")msg("msg","Một mục quản trị chưa tải được: "+(result.reason?.message||result.reason),true);
+ }
+}
 
 const DEFAULT_CODES=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50','DATA365'];
 async function loadPlans(){

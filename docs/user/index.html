@@ -216,6 +216,12 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 @media(max-width:480px){#mstSummaryModeSlot{width:100%}#mstSummaryModeSlot #modeSection{width:100%}.mst-quick-row #mstAllowControls{min-width:0}}
 #accountProfileEmail{background:#e5e7eb!important;color:#64748b!important;opacity:.75;cursor:not-allowed}
 #mstGrantAllow[hidden],#mstGrantUnlock[hidden]{display:none!important}
+/* Permissions editor: keep the control clickable; hide only inactive actions. */
+#mstGrantCancel[hidden],#mstGrantAllow[hidden],#mstGrantUnlock[hidden],#mstAllowHelp[hidden]{display:none!important}
+#mstGrantUnlock:not(:disabled){cursor:pointer}
+#mstAllowHelp:not([hidden]){display:block;margin:8px 0 12px;padding:8px 10px;
+ border-left:3px solid #2563eb;background:#eff6ff;color:#1e40af;line-height:1.5;font-size:12px}
+
 #headerLogoutBtn[hidden]{display:none!important}
 .portal-header-logout{cursor:pointer;white-space:nowrap;min-width:0}
 #invoicePlanCard,#mstPlanCard{transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
@@ -327,7 +333,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   </form>
   <div id="mstAllowControls" hidden>
 
-   <p class="muted mst-allow-help" hidden>Chọn MST được phép, không vượt số gói đã mua.</p>
+   <p id="mstAllowHelp" class="muted mst-allow-help" role="status" hidden>Chọn MST cá nhân được phép, không vượt hạn mức còn hiệu lực.</p>
    <div class="actions">
     <button id="mstGrantUnlock" type="button" class="secondary">Thiết lập lại quyền sử dụng</button>
     <button id="mstGrantAllow" type="button" hidden>Lưu cấu hình</button>
@@ -486,7 +492,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
 <script src="./data365-payment.js?v=1123data365qr1"></script>
-<script src="./customer.js?v=1125borrowed"></script>
+<script src="./customer.js?v=1125grantfix1"></script>
 <script src="./account-settings-v120.js?v=126email1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <style>

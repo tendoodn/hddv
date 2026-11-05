@@ -33,7 +33,7 @@
   };
   const mst=String(window.WebInvoiceApp?.getMst?.()||'').replace(/\D/g,'')||'KhongRoMST';
   const alias=document.querySelector('.mst-picker-card.selected .mst-picker-choice small')?.textContent?.trim()||
-   document.querySelector('#mst option:checked')?.textContent?.replace(mst,'').replace(/^[-–\s]+/,'').trim()||
+   (document.querySelector('#mst option:checked')?.value?document.querySelector('#mst option:checked')?.textContent?.replace(mst,'').replace(/^[-–\s]+/,'').trim():'')||
    (window.WebInvoiceApp?.getRows?.()||[]).find(x=>x.kind==='purchase')?.nmten||
    (window.WebInvoiceApp?.getRows?.()||[]).find(x=>x.kind==='sold')?.nbten||'TenMST';
   return {mst,from:date(p.from),to:date(p.to),alias:safe(alias).slice(0,75)};

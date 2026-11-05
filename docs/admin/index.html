@@ -240,7 +240,7 @@ function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","
 function fmt(v){return v?new Date(v).toLocaleString("vi-VN"):"—"}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");if(!session)return;
-const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){await client.auth.signOut();msg("authMsg","Tài khoản này không có quyền quản trị.",true);$("auth").classList.remove("hidden");return}
+const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){msg("authMsg",error?'Không kiểm tra được quyền quản trị: '+error.message:'Tài khoản này không có quyền quản trị. Bạn vẫn đăng nhập AutoTax bình thường.',true);$("auth").classList.remove("hidden");return}
 $("app").classList.remove("hidden");void window.AdminSiteLinks?.load?.();await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
 
 const DEFAULT_CODES=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50','DATA365'];
@@ -638,7 +638,7 @@ function renderUsers(){
  $("count").textContent=filtered.length+" tài khoản";
 }
 async function loadLogs(){const {data,error}=await client.rpc("addon_admin_list_logs",{p_limit:200});if(error)return msg("msg","Không tải được nhật ký: "+error.message,true);$("logs").innerHTML=(data||[]).map(l=>'<tr><td>'+fmt(l.created_at)+'</td><td>'+esc(l.actor_email)+'</td><td>'+esc(l.target_email)+'</td><td>'+esc(l.action)+'</td><td><code>'+esc(JSON.stringify(l.details||{}))+'</code></td></tr>').join("")||'<tr><td colspan="5">Chưa có nhật ký.</td></tr>'}
-$("login").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)msg("authMsg",error.message,true);else await boot()};
+$("login").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)msg("authMsg",error.message,true);else await bootOnce()};
 $("logout").onclick=async()=>{await client.auth.signOut();location.reload()};
 $("reload").onclick=loadUsers;
 // Debounce remote queries and prevent stale keystrokes from issuing hundreds of RPCs.
@@ -716,7 +716,20 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{
  if(logs)await loadLogs();
  if(feedback)await window.AdminFeedback?.load?.();
 });
-client.auth.onAuthStateChange(()=>setTimeout(boot,0));boot();
+// Không khởi tạo lại Admin khi Supabase làm mới token hoặc phát lại INITIAL_SESSION.
+let adminBootBusy=false,adminBootQueued=false,adminBootTimer=null;
+async function bootOnce(){
+ if(adminBootBusy){adminBootQueued=true;return}
+ adminBootBusy=true;
+ try{do{adminBootQueued=false;await boot()}while(adminBootQueued)}
+ catch(error){msg("authMsg","Không tải được trang quản trị: "+(error.message||error),true);$("auth").classList.remove("hidden")}
+ finally{adminBootBusy=false}
+}
+client.auth.onAuthStateChange((event)=>{
+ if(event!=='SIGNED_IN'&&event!=='SIGNED_OUT')return;
+ clearTimeout(adminBootTimer);adminBootTimer=setTimeout(()=>void bootOnce(),140);
+});
+void bootOnce();
 </script>
 <script src="./admin-discounts-v119.js?v=1"></script>
 <script src="./admin-mode-v120.js?v=1120fix3"></script>

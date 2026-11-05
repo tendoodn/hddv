@@ -73,6 +73,7 @@ function showQuotaWarning(mode=selectedMode){
  progress(QUOTA_MESSAGE);
 }
 const isQuotaMessage=message=>/(hết hạn mức|hạn mức tài khoản đạt giới hạn|gói MST đã hết hạn|MST vượt số lượng hồ sơ|gói số tờ không còn lượt mới|mst_capacity_reached|mst_package_expired|mst_capacity_reduced|invoice_package_required|quota_exceeded)/i.test(String(message||''));
+let scanQuotaCounter=null;
 const progress=msg=>{const log=$('progressLog'),line=document.createElement('div');line.className='autotax-terminal-line';const severity=/lỗi|thất bại|không thể|gián đoạn/i.test(String(msg))?'error':/cảnh báo|bỏ qua|chưa lấy|thiếu|lưu ý/i.test(String(msg))?'warn':/hoàn tất|thành công|đã tải|đã xuất/i.test(String(msg))?'success':'info';line.classList.add('terminal-'+severity);const clock=new Date().toLocaleTimeString('vi-VN',{hour12:false});line.textContent='['+clock+'] '+String(msg||'Đang xử lý…');log.append(line);while(log.children.length>5)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;};
 const busyState=(value,keepLog=false,success=false)=>{busy=!!value;
   const indicator=$('downloadConsoleDone'),spinner=$('downloadConsoleSpinner');
@@ -502,7 +503,12 @@ async function claimRows(all,mst){
   if(error)throw Error('Không kiểm tra được lượt hóa đơn: '+error.message);
   const allowed=new Set((data.allowed_items||[]).map(key));
   for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
-  progress('Đã ghi nhận '+Number(data.recorded_without_charge||0)+' hóa đơn bằng gói MST, '+Number(data.deducted||0)+' lượt số tờ mới; '+Number(data.previously_deducted||0)+' hóa đơn đọc lại không trừ lượt.');
+  scanQuotaCounter?.add(data);
+  progress('Lô xác minh: trừ '+Number(data.deducted||0)+' lượt số tờ (nhóm: '+
+   Number(data.team_deducted||0)+', cá nhân: '+Number(data.personal_deducted||0)+'); '+
+   Number(data.recorded_without_charge||0)+' hóa đơn dùng gói MST không trừ số tờ; '+
+   Number(data.previously_deducted||0)+' hóa đơn đọc lại không trừ; '+
+   Number(data.denied||0)+' hóa đơn thiếu quyền hoặc lượt.');
   if(Number(data.denied||0)>0&&selectedMode==='invoice'){
    showQuotaWarning('invoice');
   }
@@ -549,6 +555,7 @@ async function search(e){
   return;
  }
  stopped=false;quotaExceededDuringSearch=false;busyState(true);
+ scanQuotaCounter=window.AutoTaxAccountFlow.createScanQuotaCounter();
  let scanCompleted=false;
  $('results').hidden=true;// Redundant top-of-search totals were removed; results use #results only.
  window.WebResults?.resetForSearch?.();
@@ -628,7 +635,13 @@ async function search(e){
   if(isQuotaMessage(msg)&&!quotaExceededDuringSearch)showQuotaWarning(selectedMode);
   else show(quotaExceededDuringSearch?QUOTA_MESSAGE:msg);
  }
- finally{busyState(false,true,scanCompleted)}
+ finally{
+  // Even on Stop/Error, successfully authorized batches may have consumed
+  // quota. Always show the exact committed total for this scan session.
+  if(scanQuotaCounter)progress(scanQuotaCounter.summary());
+  scanQuotaCounter=null;
+  busyState(false,true,scanCompleted);
+ }
 }
 const pendingDetails=new Map();
 async function loadDetails(scopeRows=rows){

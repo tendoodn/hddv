@@ -307,7 +307,7 @@ async function refreshAccount(){
    // Clear catalog from the previous user's in-memory UI immediately after sign-out.
    document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:null}}));
    $('authStatus').textContent='Chưa đăng nhập — bấm Đăng nhập tại đây.';
-   show('Hãy bấm Đăng nhập ở phía trên để sử dụng AutoTax Web.');
+   show('Hãy bấm Đăng nhập ở phía trên để sử dụng AutoTax.');
    return;
   }
   $('authStatus').textContent=account.email+' · Đã kết nối';

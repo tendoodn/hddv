@@ -8,7 +8,7 @@
   {label:'Motel Nam Mỹ',url:'https://nammy.tendoo.net/vi/home'},
   {label:'Trang tính K',url:'https://tracuuhoadon.top/k'},
   {label:'Công cụ PDF',url:'https://tracuuhoadon.top/pdf/'},
-  {label:'Tra cứu hóa đơn Web',url:'https://tracuuhoadon.top/web.html'}
+  {label:'Tra cứu hóa đơn Web',url:'https://tracuuhoadon.top/'}
  ];
  const safeUrl=value=>{
   try{

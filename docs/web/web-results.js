@@ -21,7 +21,7 @@ let resultPageSize=10;
 let currentResultPage=1;
 let stockPlatform='tendoo',mappingReady=false,catalogRestoreSeq=0,catalogFilename='',catalogMst='',activeMst='';
 let stagedCatalog=null,mismatchCheckSeq=0,mismatchCheckTimer=null,mstChangeTimer=null;
-const currentMst=()=>String($('mstFree')?.value||app()?.getMst?.()||'').replace(/\D/g,'');
+const currentMst=()=>String($('mstFree')?$('mstFree').value:(app()?.getMst?.()||'')).replace(/\D/g,'');
 const validMst=mst=>/^(?:\d{10}|\d{12}|\d{13})$/.test(mst);
 function skuFeedback(message='',error=false){
  const node=$('stockSkuFeedback');node.textContent=message;node.hidden=!message;
@@ -621,7 +621,7 @@ function init(){
   clearTimeout(mstChangeTimer);
   mstChangeTimer=setTimeout(()=>{
    const mst=currentMst();
-   if(mst!==activeMst&&(validMst(mst)||!mst))updateStock();
+   if(mst!==activeMst)updateStock();
   },250);
  };
  $('mstFree').addEventListener('input',changedMst);

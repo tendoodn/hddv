@@ -297,7 +297,7 @@ td.audit-info{color:#c6c6db}
 @media(max-width:780px){.invoice-row-actions{min-width:174px!important}}
 
 
-/* Render at most 150 rows; filter/export still sees all authorized invoices. */
+/* Render 10, 20 or 30 invoice rows; filtered/export data remains available across pages. */
 .result-page-nav{display:flex;gap:8px;align-items:center;justify-content:flex-end;
  flex-wrap:wrap;padding:9px 0 12px;font-size:12px;color:#d6eaf4}
 .result-page-nav button{min-height:32px;padding:6px 9px;font-size:11px}
@@ -475,3 +475,9 @@ td.audit-info{color:#c6c6db}
  min-height:40px;padding:10px 18px;border:1px solid #62626e;
  border-radius:9px;background:#36333b;color:#f4f4f5;font-size:13px;font-weight:750;cursor:pointer;
 }
+
+/* Invoice page size control — default 10, options 20 and 30. */
+.result-page-nav .result-page-size-label{display:inline-flex;align-items:center;gap:7px;font-weight:750;font-size:12px;color:#d6eaf4;white-space:nowrap;margin-right:auto}
+.result-page-nav #resultPageSize{min-width:65px;width:auto;min-height:34px;padding:5px 9px;background:#202127;border:1px solid #55545c;border-radius:8px;color:#f8fafc;font-size:12px;font-weight:750;cursor:pointer}
+.result-page-nav #resultPageSize:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+@media(max-width:480px){.result-page-nav .result-page-size-label{margin-right:0;width:100%;justify-content:center}}

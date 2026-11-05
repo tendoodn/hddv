@@ -233,8 +233,8 @@ $('autotaxTeamPermissionForm').addEventListener('submit',e=>{
   try{
    const msts=selected('autotaxTeamPermissionMsts'),teamId=activeTeam;
    const modes=selected('autotaxTeamPermissionModes');
-   const beforeMsts=Array.isArray(editingPerson.allowed_msts)?editingPerson.allowed_msts:[];
-   const addedMsts=modes.length?msts.filter(mst=>!beforeMsts.includes(mst)):[];
+   // Keep the Save action independent of secret retrieval. The follow-up
+   // checks the server for only MSTs that still lack shared credentials.
    $('autotaxTeamPermissionStatus').hidden=false;
    $('autotaxTeamPermissionStatus').classList.remove('error');
    $('autotaxTeamPermissionStatus').textContent='Đang lưu quyền thành viên lên máy chủ…';
@@ -248,14 +248,17 @@ $('autotaxTeamPermissionForm').addEventListener('submit',e=>{
    $('autotaxTeamPermissionDialog').close();editingPerson=null;
    notice('Đã lưu quyền thành viên. Danh sách và mật khẩu nhóm đang được đồng bộ.');
    void showDetail(teamId).catch(err=>notice('Quyền đã lưu; chưa làm mới được danh sách: '+friendly(err),true));
-   if(addedMsts.length){
-    void shareGrantedPasswords(teamId,addedMsts).then(shared=>{
-     if(shared.skipped)notice('Đã lưu quyền nhóm; '+shared.skipped+' MST mới chưa được cấp mật khẩu.',true);
-     else if(shared.updated)notice('Đã lưu quyền nhóm và cấp mật khẩu HĐĐT cho '+shared.updated+' MST mới.');
-    }).catch(err=>notice('Quyền đã lưu nhưng chưa đồng bộ được mật khẩu: '+friendly(err),true));
-   }else{
-    // Existing grants need no repeat of password prompts or writes.
-    void syncPendingTeamPasswords();
+   if(modes.length&&msts.length){
+    void (async()=>{
+     // Missing-credential lookup includes existing grants as well as new ones,
+     // but avoids retransmitting passwords that have already been shared.
+     const pending=await rpc('autotax_team_passwords_needing_sync_v121');
+     const missing=msts.filter(mst=>(Array.isArray(pending)?pending:[]).includes(mst));
+     if(!missing.length)return;
+     const shared=await shareGrantedPasswords(teamId,missing);
+     if(shared.skipped)notice('Quyền đã lưu; '+shared.skipped+' MST vẫn chưa có mật khẩu chia sẻ.',true);
+     else if(shared.updated)notice('Đã lưu quyền và cập nhật mật khẩu cho '+shared.updated+' MST.');
+    })().catch(err=>notice('Quyền đã lưu nhưng chưa kiểm tra được mật khẩu MST: '+friendly(err),true));
    }
   }catch(err){
    const el=$('autotaxTeamPermissionStatus');el.hidden=false;

@@ -20,10 +20,11 @@ jobs:
           import time, urllib.request, urllib.error, sys
           origin = "https://tracuuhoadon.top"
           checks = {
-              "/": ["WEB V1.1.22", "downloadConsoleActive", "web/export-zip.js?v=1122"],
-              "/user/": ["Tài khoản AutoTax", "V1.1.22"],
-              "/admin/": ["Đăng nhập quản trị", "bootOnce", "V1.1.22"],
-              "/web/pdf.js": ["Signature valid", "Bản thể hiện dựng từ dữ liệu"],
+              "/": ["WEB V1.1.22b", "Tải PDF dựng lại", "web/date-slide-picker.js?v=1122b"],
+              "/user/": ["AutoTax V1.1.22", "authSection", "1ZRXaOkM2__NmLopxfqiCguoCl-sWSbN1"],
+              "/admin/": ["Đăng nhập quản trị", "bootOnce"],
+              "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
+              "/web/pdf.js": ["Signature valid", "drawSignatureWatermark", "Bản thể hiện dựng từ dữ liệu"],
               "/web/export-zip.js": ["PDF_Dung_Tu_Thue_", "Bang_Thong_Ke_"],
           }
           failed = []
@@ -48,6 +49,6 @@ jobs:
           for route,error in failed:
               print("FAIL",route,error)
           if failed:
-              print("Verify GitHub Pages source=main /docs and the custom domain.")
+              print("Live site does not yet match the current deployed AutoTax release.")
               sys.exit(1)
           PY

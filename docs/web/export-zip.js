@@ -49,14 +49,31 @@
   if(kind==='excel')return /\.xlsx$/i.test(n);
   if(kind==='xml')return /\.xml$/i.test(n);
   if(kind==='html')return /\.html?$/i.test(n);
-  if(kind==='pdfTax')return /\.pdf$/i.test(n)&&/^pdf_thue_/i.test(f.name);
-  if(kind==='pdf')return /\.pdf$/i.test(n)&&!/^pdf_thue_/i.test(f.name);
+  // CQT can return a genuine PDF in its archive or an AutoTax-rendered copy.
+  // Both belong to PDF Thuế, never to the issuer-original ZIP.
+  const taxPdf=/^(?:pdf_thue_|pdf_nguon_tu_cong_thue\/)/i.test(f.name);
+  if(kind==='pdfTax')return /\.pdf$/i.test(n)&&taxPdf;
+  if(kind==='pdf')return /\.pdf$/i.test(n)&&!taxPdf;
   return false;
  };
+ // Keep PDF ZIPs PDF-only, but preserve MST, signing month, direction and source.
+ function pdfNameInsideZip(file,leaf){
+  const {mst}=range();
+  const signature=leaf.match(/_(\\d{2})(\\d{2})(\\d{4})(?:_\\d+)?\\.pdf$/i);
+  const year=signature?signature[3]:'KhongRoNam';
+  const month=signature?signature[2]:'KhongRoThang';
+  const direction=/^MuaVao_/i.test(leaf)?'MuaVao':/^BanRa_/i.test(leaf)?'BanRa':'ChuaPhanLoai';
+  const source=/^PDF_NGUON_TU_CONG_THUE\\//i.test(file.name)?'NguonCQT':
+   /^PDF_THUE_/i.test(file.name)?'ThueDung':
+   /^PDF_GOC_NHA_PHAT_HANH\\//i.test(file.name)?'GocNPH':
+   /^PDF_NGUOI_DUNG/i.test(file.name)?'NguoiDung':'DungTuCQT';
+  return ['HoaDon',safe(mst),year,month,direction,source+'_'+leaf].join('/');
+ }
  function categoryFiles(files,kind){
   const names=new Set(),output=[];
   for(const file of files.filter(f=>matches(f,kind))){
    let name=last(file.name);
+   if(kind==='pdfTax'||kind==='pdf')name=pdfNameInsideZip(file,name);
    const dot=name.lastIndexOf('.'),base=dot>=0?name.slice(0,dot):name,
     ext=dot>=0?name.slice(dot):'';
    let index=2;

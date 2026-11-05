@@ -17,7 +17,7 @@ function secretEditor(){
  if(box)return box;
  const dialog=$('autotaxTeamPermissionDialog');
  box=make('section',null,'autotax-team-password-editor');box.id='autotaxTeamSecretEditor';
- box.innerHTML='<p class="muted">MST được tick sẽ hiện trên tài khoản thành viên, kể cả khi thành viên dùng chế độ số tờ. Mật khẩu chỉ chia sẻ cho thành viên được cấp MST.</p><div id="autotaxTeamSecretFields"></div>';
+ box.innerHTML='<div id="autotaxTeamSecretFields"></div>';
  const form=$('autotaxTeamPermissionForm'),actions=form.querySelector('.actions')||form.lastElementChild;
  actions?.before(box);
  return box;
@@ -187,7 +187,7 @@ async function showDetail(id){
    const preferredMode=leaderModes.includes(leaderEntitlements?.mode)?leaderEntitlements.mode:leaderModes[0];
    $('autotaxTeamPermissionModes').closest('.autotax-permission-field').hidden=!dualPlan;
    $('autotaxTeamPermissionHelp').textContent=dualPlan?
-     'Trưởng nhóm có cả gói MST và số tờ: chọn hình thức và MST cấp quyền.':
+     'Tick MST để chia sẻ hồ sơ; tick riêng chế độ MST hoặc Số tờ để cấp hạn mức tương ứng.':
      'Hình thức sử dụng mặc định theo gói đang hoạt động của trưởng nhóm; chỉ cần chọn MST cấp quyền.';
    const mc=$('autotaxTeamPermissionModes'),sc=$('autotaxTeamPermissionMsts');
    mc.replaceChildren();sc.replaceChildren();

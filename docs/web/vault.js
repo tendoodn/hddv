@@ -204,6 +204,18 @@ async function select(mst){
    notify('Đã tự điền mật khẩu MST '+mst+' từ kho mã hóa đồng bộ Web/Add-on.');
    return;
   }
+  const profile=profiles.find(p=>p.mst===mst);
+  if(profile?.source==='team'){
+   try{
+    const password=await window.AutoTaxTeamShared?.get(mst);
+    if(stamp!==requestSeq)return;
+    if(password){
+     input.value=password;
+     notify('Đã điền mật khẩu MST do trưởng nhóm chia sẻ (chỉ dùng trong phiên này).');
+    }else notify('MST nhóm chưa được trưởng nhóm chia sẻ mật khẩu. Vui lòng liên hệ trưởng nhóm.');
+   }catch(error){if(stamp===requestSeq)notify('Không lấy được mật khẩu nhóm: '+error.message,true)}
+   return;
+  }
   const record=await readStore('credentials',entryKey(mst));
   if(!record){
    notify('MST chưa có mật khẩu đồng bộ. Nhập và đăng nhập cổng Thuế một lần để lưu.');
@@ -231,7 +243,9 @@ async function setUser(userId,rows,mode='mst'){
  const previous=changed?[]:[...profiles];
  profiles=[...new Map((rows||[]).map(x=>{
   const mst=normalize(typeof x==='object'?x.mst:x);
-  return [mst,{mst,display_name:typeof x==='object'?String(x.display_name||'').slice(0,120):'',mst_allowed:typeof x==='object'?x.mst_allowed===true:false}];
+  return [mst,{mst,display_name:typeof x==='object'?String(x.display_name||'').slice(0,120):'',
+   mst_allowed:typeof x==='object'?x.mst_allowed===true:false,
+   source:typeof x==='object'&&x.source==='team'?'team':'personal'}];
  }).filter(([mst])=>/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))).values()];
  if(owner&&!invoiceMode){
   const allowed=new Set(profiles.map(p=>p.mst));
@@ -245,6 +259,10 @@ async function setUser(userId,rows,mode='mst'){
  if(!owner)notify('Đăng nhập AutoTax để xem hồ sơ MST đã liên kết.');
 }
 async function saveAfterLogin(mst,password){
+ // Borrowed group credentials must not become a permanent personal copy:
+ // membership revocation also revokes the right to retrieve them.
+ if(profiles.some(p=>p.mst===mst&&p.source==='team'))
+  return {stored:false,source:'team',shared:true};
  if(!owner||
     !/^(?:\d{10}|\d{12}|\d{13})$/.test(mst)||!password||password.length>MAX_PASS)return {stored:false};
  try{

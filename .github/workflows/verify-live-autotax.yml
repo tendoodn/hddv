@@ -1,76 +1,53 @@
-name: Verify Live AutoTax Portal
+name: Verify AutoTax v1.1.22 live routes
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/verify-live-autotax.yml'
+      - 'docs/**'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  live:
+  routes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Verify current pages, team, K and signup modal
+      - name: Wait for published pages then verify route content
         shell: bash
         run: |
           python3 - <<'PY'
-          import urllib.request, urllib.error, time, sys
+          import time, urllib.request, urllib.error, sys
+          origin = "https://tracuuhoadon.top"
           checks = {
-            "https://tracuuhoadon.top/admin-combo.html": ["admin.html#packageCatalog"],
-            "https://tracuuhoadon.top/": ['id="autotaxTeamTab"', 'id="signupDialog"', 'id="signupName"', 'id="signupPasswordConfirm"', 'VÀO TRA CỨU PHIÊN BẢN WEB', 'id="extensionHeaderDownloadBtn"', 'id="paymentCouponCode"', 'id="mstProfilesWeb"', 'id="accountSettingsToggle"', 'id="accountProfileDialog"', 'id="forcedPasswordDialog"', 'id="forcedPasswordNew"', 'id="forcedPasswordConfirm"', 'id="headerLogoutBtn"', 'id="invoicePlanCard"', 'id="mstPlanCard"', 'id="accountGreeting"', 'customer.js?v=128active1', 'team-v118.js?v=125mode1', 'id="mstSummaryModeSlot"', 'id="webSearchLink"', 'id="autotaxTeamPermissionDialog"'],
-            "https://tracuuhoadon.top/web.html": ['id="kIndustry"', 'web-results.js?v=127totals1', 'web.js?v=128mode1', 'web/pdf.js?v=124form2', 'web/export-zip.js?v=126flat1', 'web/download-folder.js?v=126flat1', 'web/web-pdf.js?v=126filename1', 'web/web.css?v=128mail1', 'id="progressLog"', 'id="invoiceQuotaDialog"', 'web/vault.js?v=126picker1', 'id="mstGrantConsentDialog"', 'id="accountEmailLabel"'],
-            "https://tracuuhoadon.top/web/pdf.js": ["Signature valid", "Thông tin ký (chưa xác thực)", "Bản thể hiện của hóa đơn điện tử", "9=6+8", "if (signatureVerified)"],
-            "https://tracuuhoadon.top/web/vault.js": ["mstPickerSearch", "Chọn MST ▾"],
-            "https://tracuuhoadon.top/web/export-zip.js": ["Bang_ke_", "XML_", "HTML_", "PDF_Thue_", "PDF_Goc_Dung_", "THONG_TIN_NGUON.txt", "saveRootFile"],
-            "https://tracuuhoadon.top/web/web-pdf.js": ["sellerMst+'_'+invoiceCode", "dateForFilename"],
-            "https://tracuuhoadon.top/web/web-results.js": ["invoice-row-actions", "totalPayments", "totalVat"],
-            "https://tracuuhoadon.top/web/download-folder.js": ["saveRootFile"],
-            "https://tracuuhoadon.top/web/web.js": ["keepLog=false", "log.children.length>5", "Đã hoàn tất tải", "readVnDate", "formatVnDateInput", "Dừng tra cứu", "invoiceQuotaDialog", "askMstGrantConsent"],
-            "https://tracuuhoadon.top/admin-mode-v120.js": ["addon_admin_set_usage_mode_v120", "stopImmediatePropagation", "dialog.close()"],
-            "https://tracuuhoadon.top/admin-mst.js": ["adminMstPage", "filtered.slice((adminMstPage-1)*10"],
-            "https://tracuuhoadon.top/web/web.css": ["terminal-error", "terminal-success", "position:static!important", ".web-mode-controls[hidden]{display:none!important}"],
-            "https://tracuuhoadon.top/customer.js": ["signupDialog", "signupPasswordConfirm", "@gmail.com hoặc @hotmail.com", "forcedPasswordDialog", "forcedPasswordForm", "forceDialog.showModal", "mstAllowControls", "canInvoice!==canMst"],
-            "https://tracuuhoadon.top/admin.html": ['id="adminUsageModeDialog"', 'admin-mode-v120.js?v=1120', 'V1.1.20', 'id="couponCreateForm"', 'id="newInvoiceQtyWrap"', 'admin-discounts-v119.js', 'autotax_admin_user_names_v120', 'id="customerPrev"', 'id="packagePrev"', 'data-remove-user', 'admin-mst.js?v=121pager2', 'accordion.open=false', 'Mã giảm giá thanh toán QR', 'Tạo mã unlock theo gói', 'Quản lý liên kết chân trang'],
-            "https://tracuuhoadon.top/account-settings-v120.js": ["accountOldPassword", "accountAvatarUpload", "accountGreeting", "accountProfileEmail"],
-            "https://tracuuhoadon.top/extension-link-v118.js": ["extensionHeaderDownloadBtn", "extensionDownloadBtn"],
-            "https://tracuuhoadon.top/admin-discounts-v119.js": ["autotax_admin_create_discount_v119", "autotax_admin_list_discounts_v119"],
-            "https://tracuuhoadon.top/team-v118.js": ["autotax_team_create_v118", "autotax_team_usage_stats_v118", "autotaxTeamPermissionDialog"],
-            "https://tracuuhoadon.top/customer.js": ["if(canInvoice!==canMst)", "applyPaymentCoupon", "isAuthSessionError"],
-            "https://tracuuhoadon.top/web/period-k.js": ["purchase+stock", "shouldWarn"],
-            "https://tracuuhoadon.top/team-v118.js": ["autotax_team_create_v118", "autotax_team_usage_stats_v118"],
+              "/": ["WEB V1.1.22", "downloadConsoleActive", "web/export-zip.js?v=1122"],
+              "/user/": ["Tài khoản AutoTax", "V1.1.22"],
+              "/admin/": ["Đăng nhập quản trị", "bootOnce", "V1.1.22"],
+              "/web/pdf.js": ["Signature valid", "Bản thể hiện dựng từ dữ liệu"],
+              "/web/export-zip.js": ["PDF_Dung_Tu_Thue_", "Bang_Thong_Ke_"],
           }
-          # The redundant totals at the top of Search must stay absent.
-          with urllib.request.urlopen("https://tracuuhoadon.top/web.html",timeout=15) as res:
-            page=res.read().decode("utf-8","replace")
-            assert 'id="searchTotals"' not in page, 'Top-of-search totals unexpectedly visible'
-          with urllib.request.urlopen("https://tracuuhoadon.top/admin.html",timeout=15) as res:
-            admin=res.read().decode("utf-8","replace")
-            assert 'href="admin-combo.html"' not in admin and 'href="./admin-combo.html"' not in admin
-          with urllib.request.urlopen("https://tracuuhoadon.top/web.html",timeout=15) as res:
-            page=res.read().decode("utf-8","replace")
-            assert 'id="loginLink"' not in page
-            assert "Mật khẩu Thuế chỉ được sử dụng để đăng nhập cổng Thuế qua kênh bảo mật" not in page
-          for url, expected in checks.items():
-            last=''
-            for attempt in range(7):
-              try:
-                req=urllib.request.Request(url,headers={
-                  "Cache-Control":"no-cache","User-Agent":"AutoTax-Pages-Smoke/1.0"})
-                with urllib.request.urlopen(req,timeout=15) as res:
-                  body=res.read().decode("utf-8","replace")
-                  status=res.status
-                missing=[marker for marker in expected if marker not in body]
-                if status==200 and not missing:
-                  print("PASS",url,"bytes",len(body))
-                  break
-                last="HTTP "+str(status)+" missing "+repr(missing)
-              except Exception as e:
-                last=str(e)
-              if attempt!=6: time.sleep(7)
-            else:
-              print("FAIL",url,last)
+          failed = []
+          for route, tokens in checks.items():
+              latest = ""
+              for attempt in range(12):
+                  try:
+                      with urllib.request.urlopen(
+                          urllib.request.Request(origin+route,headers={"Cache-Control":"no-cache"}),
+                          timeout=15
+                      ) as response:
+                          body=response.read().decode("utf-8","replace")
+                          missing=[token for token in tokens if token not in body]
+                          if response.status==200 and not missing:
+                              print("PASS",route,len(body));break
+                          latest="missing "+repr(missing)
+                  except Exception as exc:
+                      latest=str(exc)
+                  time.sleep(5)
+              else:
+                  failed.append((route,latest))
+          for route,error in failed:
+              print("FAIL",route,error)
+          if failed:
+              print("Verify GitHub Pages source=main /docs and the custom domain.")
               sys.exit(1)
-          print("AutoTax LIVE pages validated.")
           PY

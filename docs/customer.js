@@ -11,6 +11,7 @@ const $=id=>document.getElementById(id);
 const vnDate=value=>value?new Date(value).toLocaleDateString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
 const DUP_EMAIL="Email đã tồn tại.";
+const accountFlow=window.AutoTaxAccountFlow;
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
 let adminRoleCheckedUser='',adminRoleCheckedAt=0,adminRoleRequest=0;
 async function refreshExtensionDownloadLink(){
@@ -137,7 +138,7 @@ function prettyError(error){
   invoice_mode_not_selected:"Vui lòng chọn chế độ sử dụng hóa đơn.",
   invalid_mst:"MST phải có 10, 12 hoặc 13 chữ số (chi nhánh dạng 10-001)."
  };
- return known[code]||known[msg]||authErrorVi(error)||(/[À-ỹ]/.test(msg)?msg:"Không thực hiện được thao tác. Vui lòng thử lại.");
+ return known[code]||known[msg]||accountFlow?.message(error)||authErrorVi(error)||"Không thực hiện được thao tác. Vui lòng thử lại.";
 }
 const isAuthSessionError=error=>/Auth session missing|JWT expired|Invalid Refresh Token|refresh token not found/i.test(String(error?.message||error||''));
 async function rpc(name,args={}){
@@ -650,7 +651,7 @@ $("loginForm").addEventListener("submit",event=>{
  void action("loginBtn",async()=>{
  const password=$("password").value;
  const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password});
- if(error)throw Error(authErrorVi(error)||'Không đăng nhập được. Vui lòng thử lại.');
+ if(error)throw Error(accountFlow?.message(error)||"Không đăng nhập được. Vui lòng thử lại.");
  if(!data.user?.app_metadata?.autotax_force_password_change){
   try{await window.AutoTaxSharedMstVault.unlock(data.user.id,password)}
   catch(e){showMessage('Đã đăng nhập, nhưng kho MST cần mở khóa: '+e.message,true,'authMessage')}
@@ -686,15 +687,11 @@ $("signupForm").addEventListener("submit",event=>{
  const button=$("signupSubmitBtn");
  if(button.disabled)return;
  void (async()=>{
-  const name=$("signupName").value.trim().replace(/\s+/g," ");
-  const email=$("signupEmail").value.trim().toLowerCase();
+  const name=accountFlow.normalizeName($("signupName").value);
+  const email=accountFlow.normalizeEmail($("signupEmail").value);
   const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
-  if(name.length<2||name.length>100)return signupMessage("Tên người dùng phải từ 2 đến 100 ký tự.",true);
-  if(!email||!$("signupEmail").checkValidity())return signupMessage("Nhập email hợp lệ.",true);
-  if(!/^[^@\s]+@(gmail\.com|hotmail\.com|yahoo\.com|yahoo\.com\.vn)$/i.test(email))
-   return signupMessage("Chỉ cho phép đăng ký bằng Gmail, Hotmail hoặc Yahoo Mail.",true);
-  if(password.length<10)return signupMessage("Mật khẩu phải có tối thiểu 10 ký tự.",true);
-  if(password!==confirmPassword)return signupMessage("Mật khẩu nhập lại không khớp.",true);
+  const invalid=accountFlow.validateSignup({name,email,password,confirmPassword});
+  if(invalid)return signupMessage(invalid,true);
   button.disabled=true;
   try{
    const {data,error}=await client.auth.signUp({
@@ -707,7 +704,7 @@ $("signupForm").addEventListener("submit",event=>{
     }
     throw error;
    }
-   if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
+   if(accountFlow.duplicateSignup(data)){
     signupMessage(DUP_EMAIL,true);return;
    }
    // SignUp may establish a session when Supabase Confirm Email is disabled.
@@ -731,7 +728,7 @@ $("signupForm").addEventListener("submit",event=>{
 $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
  const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:"https://tracuuhoadon.top/"});
  if(error)throw error;
- showMessage("Đã gửi hướng dẫn khôi phục nếu email hợp lệ.",false,"authMessage");
+ showMessage(accountFlow.forgotSuccess,false,"authMessage");
 }));
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
 $("headerLogoutBtn").addEventListener("click",()=>action("headerLogoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));

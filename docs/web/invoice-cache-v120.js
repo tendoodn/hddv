@@ -1,4 +1,4 @@
-/* AutoTax 1.1.20 — local, account-scoped invoice detail cache.
+/* AutoTax 1.1.23 — local, account-scoped invoice detail cache.
  * Stores invoice payloads only (never passwords, GDT/AutoTax tokens, CAPTCHA).
  * Live server entitlement and quota checks MUST happen before every search.
  */
@@ -6,7 +6,8 @@
 'use strict';
 const DB='autotax_invoice_details_v120', STORE='invoices', VERSION=1;
 const MAX_ITEMS=600, MEMORY_ITEMS=90, MAX_ITEM_BYTES=3*1024*1024;
-const RECENT_MS=12*60*60*1000, HISTORICAL_MS=7*24*60*60*1000;
+// Independent of the Web result/history retention window (e.g. 7 days).
+const DETAIL_RETENTION_DAYS=10, DETAIL_TTL_MS=DETAIL_RETENTION_DAYS*24*60*60*1000;
 let opening, writes=0, hits=0, misses=0;
 const memory=new Map();
 const validScope=s=>!!s&&typeof s.userId==='string'&&s.userId.length>0&&
@@ -14,10 +15,7 @@ const validScope=s=>!!s&&typeof s.userId==='string'&&s.userId.length>0&&
 const identity=r=>[r?.kind,r?.form,r?.khmshdon,r?.khhdon,r?.shdon,r?.nbmst,r?.nmmst].map(v=>String(v??'')).join('|');
 const fingerprint=r=>[r?.tdlap,r?.tthai,r?.ttxly,r?.tgtttbso,r?.tgtthue,r?.id].map(v=>String(v??'')).join('|');
 const keyOf=(scope,row)=>scope.userId+'|'+scope.mst+'|'+identity(row)+'|'+fingerprint(row);
-const ttl=r=>{
- const t=Date.parse(r?.tdlap||r?.nlap||'');
- return Number.isFinite(t)&&Date.now()-t>45*24*60*60*1000?HISTORICAL_MS:RECENT_MS;
-};
+const ttl=()=>DETAIL_TTL_MS;
 function remember(key,record){
  memory.delete(key);memory.set(key,record);
  while(memory.size>MEMORY_ITEMS)memory.delete(memory.keys().next().value);
@@ -113,6 +111,29 @@ async function put(scope,row,detail){
   return true;
  }catch{return false}
 }
-function stats(){return {hits,misses,memoryItems:memory.size,persistent:!!('indexedDB' in globalThis)}}
-window.AutoTaxInvoiceCache=Object.freeze({get,put,stats,identity,fingerprint});
+// Explicit deletion of local invoice history also removes its cached payloads.
+ // Merely expiring a 7-day Web history listing does not remove a 10-day cache entry.
+async function clearForAccount(userId,mst=''){
+ if(!userId||typeof userId!=='string')return 0;
+ const prefix=userId+'|'+(mst?mst+'|':'');
+ for(const key of [...memory.keys()])if(key.startsWith(prefix))memory.delete(key);
+ const db=await open();if(!db)return 0;
+ return new Promise(resolve=>{
+  let count=0;
+  try{
+   const transaction=db.transaction(STORE,'readwrite'),store=transaction.objectStore(STORE);
+   store.openKeyCursor().onsuccess=event=>{
+    const cursor=event.target.result;
+    if(!cursor)return;
+    if(String(cursor.primaryKey).startsWith(prefix)){store.delete(cursor.primaryKey);count++}
+    cursor.continue();
+   };
+   transaction.oncomplete=()=>resolve(count);
+   transaction.onerror=()=>resolve(count);
+   transaction.onabort=()=>resolve(count);
+  }catch{resolve(count)}
+ });
+}
+function stats(){return {hits,misses,memoryItems:memory.size,persistent:!!('indexedDB' in globalThis),retentionDays:DETAIL_RETENTION_DAYS}}
+window.AutoTaxInvoiceCache=Object.freeze({get,put,stats,identity,fingerprint,clearForAccount});
 })();

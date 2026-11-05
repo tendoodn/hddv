@@ -532,6 +532,34 @@
     try{return new TextDecoder(charset).decode(b)}
     catch{return new TextDecoder('utf-8').decode(b)}
   }
+  // Bảng XML đầy đủ: một đường dẫn lá (kể cả giá trị rỗng) = một cột.
+  // Chỉ đánh chỉ số các phần tử cùng tên để không làm mất dòng hàng lặp.
+  // Tách văn bản dài thành nhiều cột vì mỗi ô Excel tối đa 32.767 ký tự.
+  function flattenXmlFields(doc){
+    const fields=Object.create(null);
+    const put=(key,value)=>{
+      const text=String(value??'').trim(),step=32760;
+      fields[key]=text.slice(0,step);
+      for(let n=1;n*step<text.length;n++)
+        fields[key+' / Phần '+(n+1)]=text.slice(n*step,(n+1)*step);
+    };
+    const walk=(node,path)=>{
+      if(!node||node.nodeType!==1)return;
+      for(const attr of Array.from(node.attributes||[]))
+        put(path+' / @'+attr.name,attr.value);
+      const children=Array.from(node.children||[]);
+      if(!children.length){put(path,node.textContent??'');return}
+      const groups=new Map();
+      for(const child of children){
+        const name=child.nodeName||child.localName;
+        const next=(groups.get(name)||0)+1;groups.set(name,next);
+        walk(child,path+' / '+name+'['+next+']');
+      }
+    };
+    const root=doc.documentElement;
+    if(root)walk(root,(root.nodeName||root.localName)+'[1]');
+    return fields;
+  }
   function invoiceFromXml(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if(doc.querySelector('parsererror'))throw Error('XML hóa đơn không hợp lệ; thử dữ liệu chi tiết JSON.');
@@ -576,7 +604,7 @@
     const fees = byName(doc, 'LPhi')
       .map((p) => ({ ten: t(p, 'TLPhi'), tien: num(t(p, 'TPhi')) }))
       .filter((p) => p.tien);
-    return { lines, fees, head: headFromXml(doc) };
+    return { lines, fees, head: headFromXml(doc), xmlFields: flattenXmlFields(doc) };
   }
   function linesFromDetail(det) {
     return (det.hdhhdvu || []).map((h) => ({

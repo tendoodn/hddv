@@ -312,11 +312,14 @@ async function refreshAccount(){
   }
   $('authStatus').textContent=account.email+' · Đã kết nối';
   $('accountEmailLabel').textContent=account.email||'Tài khoản AutoTax';
-  const [ent,profiles]=await Promise.all([
+  const [ent,profiles,sharedRows]=await Promise.all([
    client.rpc('autotax_my_entitlements_v118'),
-   client.rpc('addon_list_my_mst_assignments')
+   client.rpc('addon_list_my_mst_assignments'),
+   client.rpc('autotax_team_shared_mst_profiles_v119')
   ]);
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
+  if(sharedRows.error)console.warn('Không tải được MST nhóm:',sharedRows.error.message);
+  const shared=Array.isArray(sharedRows.data)?sharedRows.data:[];
   selectedMode=ent.data?.mode||'mst';
   const modeSelect=$('webUsageMode');
   modeSelect.value=selectedMode;
@@ -340,16 +343,21 @@ async function refreshAccount(){
   $('webUsageModeHint').textContent=dual?
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
     'Chỉ chuyển được khi cả hai gói có quyền sử dụng còn hiệu lực.';
-  profileMsts=(profiles.data||[]).map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
+  const ownProfiles=profiles.data||[];
+  const ownMsts=new Set(ownProfiles.map(x=>String(x.mst||'').replace(/\D/g,'')));
+  const borrowedProfiles=shared.filter(row=>!ownMsts.has(String(row.mst||'').replace(/\D/g,'')))
+   .map(row=>({...row,source:'team',mst_allowed:row.can_use_mst_package===true}));
+  const allProfiles=[...ownProfiles,...borrowedProfiles];
+  profileMsts=allProfiles.map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
   teamAllowedMsts=(ent.data?.team_mst_allowed_msts||[]).map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean);
   profileAllowedMsts=[...new Set([...(profiles.data||[]).filter(x=>x.mst_allowed===true)
    .map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean),...teamAllowedMsts])];
   profileDisplayNames.clear();profileVerifiedNames.clear();
-  for(const item of profiles.data||[]){
+  for(const item of allProfiles){
    profileDisplayNames.set(normalizedMst(item.mst),String(item.display_name||'').trim());
    if(item.name_verified_at)profileVerifiedNames.add(normalizedMst(item.mst));
   }
-  await window.GdtVault?.setUser(account.id,profiles.data||[],selectedMode);
+  await window.GdtVault?.setUser(account.id,allProfiles,selectedMode);
   maybeRemindTaxPassword(profiles.data||[]);
   document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
   if(selectedMode==='invoice')show('Chế độ số tờ: nhập MST bất kỳ, không cần thêm vào danh sách hồ sơ. Hệ thống sẽ trừ lượt hóa đơn mới.',true);

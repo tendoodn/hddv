@@ -20,16 +20,16 @@ jobs:
           import time, urllib.request, urllib.error, sys
           origin = "https://tracuuhoadon.top"
           checks = {
-              "/": ["WEB V1.1.22b", "web/web-results.js?v=1122f-pagination", "web/web.css?v=1122f-pagination", 'id="resultPageSize"', '<option value="10" selected>10</option>', '<option value="20">20</option>', '<option value="30">30</option>'],
+              "/": ["WEB V1.1.22b", "web/web-results.js?v=1122g", "web/web.css?v=1122g", "web/stock-cache.js?v=1122g", 'id="stockSkuDialog"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng", "Phát hiện lệch mã hàng, bạn có cập nhật không???", "DATA365", 'id="stockMapBtn" type="button" class="outline" hidden'],
               "/user/": ["AutoTax V1.1.22", "authSection", 'href="/admin/" id="adminLink"', 'href="/admin/" hidden>Trang quản trị'],
               "/admin/": ["Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")'],
               "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
-              "/web/web-results.js": ["resultPageSize=10", "RESULT_PAGE_SIZES=new Set([10,20,30])", "resultPageSize=RESULT_PAGE_SIZES.has(next)?next:10"],
+              "/web/web-results.js": ["resultPageSize=10", "RESULT_PAGE_SIZES=new Set([10,20,30])", "commitCatalogFile", "stockSkuSave", "stockSkuData365", "detectMismatch", "scheduleMismatchCheck", "catalogMst"],
               "/web/account-modal.js": ["if(id==='webLoginDialog')continue;", "data-web-close"],
               "/web/web.js": ["function showQuotaWarning", "QUOTA_MESSAGE", "showQuotaWarning('invoice')"],
-              "/web/web.css": [".autotax-quota-dialog", ".autotax-quota-renew", "#22c55e"],
+              "/web/web.css": [".autotax-quota-dialog", ".autotax-quota-renew", "#22c55e", ".stock-sku-dialog", "#stockMapBtn[hidden]"],
               "/web/vault.js": ["mst-permission-tick", "Đã cấp quyền sử dụng", "mst-picker-head", "head.append(permission)"],
-              "/web/web.css": [".mst-picker-permission", ".mst-picker-head", "#webRenewNow", "#22c55e"],
+              "/web/stock-cache.js": ["AES-GCM", "keyOf=(user,platform)", "mst:taxId(mst)", "entitled(client)"],
               "/web/pdf.js": ["Signature valid", "drawSignatureWatermark", "Bản thể hiện dựng từ dữ liệu"],
               "/web/export-zip.js": ["PDF_Dung_Tu_Thue_", "Bang_Thong_Ke_"],
           }

@@ -59,13 +59,13 @@
  // Keep PDF ZIPs PDF-only, but preserve MST, signing month, direction and source.
  function pdfNameInsideZip(file,leaf){
   const {mst}=range();
-  const signature=leaf.match(/_(\\d{2})(\\d{2})(\\d{4})(?:_\\d+)?\\.pdf$/i);
+  const signature=leaf.match(/_(\d{2})(\d{2})(\d{4})(?:_\d+)?\.pdf$/i);
   const year=signature?signature[3]:'KhongRoNam';
   const month=signature?signature[2]:'KhongRoThang';
   const direction=/^MuaVao_/i.test(leaf)?'MuaVao':/^BanRa_/i.test(leaf)?'BanRa':'ChuaPhanLoai';
-  const source=/^PDF_NGUON_TU_CONG_THUE\\//i.test(file.name)?'NguonCQT':
+  const source=/^PDF_NGUON_TU_CONG_THUE\//i.test(file.name)?'NguonCQT':
    /^PDF_THUE_/i.test(file.name)?'ThueDung':
-   /^PDF_GOC_NHA_PHAT_HANH\\//i.test(file.name)?'GocNPH':
+   /^PDF_GOC_NHA_PHAT_HANH\//i.test(file.name)?'GocNPH':
    /^PDF_NGUOI_DUNG/i.test(file.name)?'NguoiDung':'DungTuCQT';
   return ['HoaDon',safe(mst),year,month,direction,source+'_'+leaf].join('/');
  }

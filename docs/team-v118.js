@@ -11,7 +11,7 @@ const notice=(msg,error=false)=>{const n=$('autotaxTeamMessage');n.hidden=!msg;n
 const rpc=async(name,args)=>{const {data,error}=await db.rpc(name,args);if(error)throw error;return data};
 const friendly=e=>{const s=String(e?.message||e||'Không rõ lỗi');return ({user_not_registered:'Người dùng chưa tạo tài khoản AutoTax.',team_limit_reached:'Đã đạt giới hạn 50 nhóm.',not_team_owner:'Chỉ trưởng nhóm được thao tác.',team_access_denied:'Bạn không có quyền xem nhóm.',invalid_modes:'Chế độ sử dụng không hợp lệ.'})[s]||s};
 const current=()=>teams.find(t=>t.id===activeTeam);
-let syncingPasswordGrants=false;
+let syncingPasswordGrants=false,teamDetailRequest=0;
 async function syncPendingTeamPasswords(){
  if(syncingPasswordGrants||!teams.some(t=>t.owner_id===myId))return;
  syncingPasswordGrants=true;
@@ -89,7 +89,8 @@ async function refresh(){
   if(tr.error)throw tr.error;if(mr.error)throw mr.error;
   teams=tr.data||[];memberships=mr.data||[];myMsts=pr.error?[]:(pr.data||[]);
   renderTeams();
-  await syncPendingTeamPasswords();
+  // Password backfill is optional maintenance, never block opening the team UI.
+  void syncPendingTeamPasswords();
   if(activeTeam&&teams.some(t=>t.id===activeTeam))await showDetail(activeTeam);
   else {$('autotaxTeamDetail').hidden=true;activeTeam=''}
  }catch(e){notice(friendly(e),true)}
@@ -120,7 +121,7 @@ function renderTeams(){
   b.addEventListener('click',()=>run(async()=>{
    const detail=$('autotaxTeamDetail');
    if(activeTeam===team.id&&!detail.hidden){
-    detail.hidden=true;activeTeam='';editingPerson=null;
+    detail.hidden=true;activeTeam='';editingPerson=null;teamDetailRequest++;
     $('autotaxTeamPermissionDialog')?.close();
     renderTeams();
     return;
@@ -151,8 +152,14 @@ async function showDetail(id){
  $('autotaxTeamUsagePanel').hidden=true;
  $('autotaxTeamMembersPanel').hidden=false;
  $('autotaxTeamMembersBody').closest('table').querySelectorAll('thead th').forEach((th,i)=>{th.hidden=!owner&&i!==0});
- const people=await rpc('autotax_team_people_v118',{p_team:id});
- const usageStats=owner?await rpc('autotax_team_usage_stats_v118',{p_team:id}):[];
+ const detailRequest=++teamDetailRequest;
+ // Two independent queries run in parallel; formerly the stats RPC waited for
+ // the member-list RPC on every open and after every Save.
+ const [people,usageStats]=await Promise.all([
+  rpc('autotax_team_people_v118',{p_team:id}),
+  owner?rpc('autotax_team_usage_stats_v118',{p_team:id}):Promise.resolve([])
+ ]);
+ if(detailRequest!==teamDetailRequest||activeTeam!==id||$('autotaxTeamDetail').hidden)return;
  const usageByMember=new Map((usageStats||[]).map(x=>[x.user_id,x]));
  const tbody=$('autotaxTeamMembersBody'),usage=$('autotaxTeamUsageBody');
  tbody.replaceChildren();usage.replaceChildren();
@@ -226,18 +233,30 @@ $('autotaxTeamPermissionForm').addEventListener('submit',e=>{
   try{
    const msts=selected('autotaxTeamPermissionMsts'),teamId=activeTeam;
    const modes=selected('autotaxTeamPermissionModes');
-   await rpc('autotax_team_set_permissions_v118',{
+   const beforeMsts=Array.isArray(editingPerson.allowed_msts)?editingPerson.allowed_msts:[];
+   const addedMsts=modes.length?msts.filter(mst=>!beforeMsts.includes(mst)):[];
+   $('autotaxTeamPermissionStatus').hidden=false;
+   $('autotaxTeamPermissionStatus').classList.remove('error');
+   $('autotaxTeamPermissionStatus').textContent='Đang lưu quyền thành viên lên máy chủ…';
+   const updated=await rpc('autotax_team_set_permissions_v118',{
     p_team:teamId,p_user:editingPerson.user_id,
     p_modes:modes,p_msts:msts
    });
+   if(updated!==true)throw Error('Chưa ghi được quyền thành viên. Vui lòng thử lại.');
+   // The permission transaction is committed. Do not hold up the Save button
+   // for rebuilding two tables or for multiple tax-password vault requests.
    $('autotaxTeamPermissionDialog').close();editingPerson=null;
-   let shared={updated:0,skipped:0};
-   try{
-    if(modes.length&&msts.length)shared=await shareGrantedPasswords(teamId,msts);
-    notice('Đã cấp quyền nhóm. Đã đồng bộ mật khẩu cho '+shared.updated+' MST.'+
-      (shared.skipped?' Có '+shared.skipped+' MST chưa được cấp mật khẩu.':''),shared.skipped>0);
-   }catch(e){notice('Đã cấp quyền MST, nhưng chưa chia sẻ được mật khẩu: '+friendly(e),true)}
-   await showDetail(teamId);
+   notice('Đã lưu quyền thành viên. Danh sách và mật khẩu nhóm đang được đồng bộ.');
+   void showDetail(teamId).catch(err=>notice('Quyền đã lưu; chưa làm mới được danh sách: '+friendly(err),true));
+   if(addedMsts.length){
+    void shareGrantedPasswords(teamId,addedMsts).then(shared=>{
+     if(shared.skipped)notice('Đã lưu quyền nhóm; '+shared.skipped+' MST mới chưa được cấp mật khẩu.',true);
+     else if(shared.updated)notice('Đã lưu quyền nhóm và cấp mật khẩu HĐĐT cho '+shared.updated+' MST mới.');
+    }).catch(err=>notice('Quyền đã lưu nhưng chưa đồng bộ được mật khẩu: '+friendly(err),true));
+   }else{
+    // Existing grants need no repeat of password prompts or writes.
+    void syncPendingTeamPasswords();
+   }
   }catch(err){
    const el=$('autotaxTeamPermissionStatus');el.hidden=false;
    el.textContent=friendly(err);el.classList.add('error');

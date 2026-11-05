@@ -240,6 +240,9 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 .plan.stat.is-other-mode strong,.plan.stat.is-other-mode small{color:#606670!important}
 @media(max-width:520px){#headerLogoutBtn{font-size:10px!important;padding:6px 7px!important}}
 </style>
+<link rel="preconnect" href="https://ucqqjdsoyvvaxswzbhaw.supabase.co" crossorigin>
+<link rel="preconnect" href="https://img.vietqr.io">
+<link rel="dns-prefetch" href="//img.vietqr.io">
 </head>
 <body>
 <main class="wrap">
@@ -411,6 +414,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
    <p id="paymentCouponStatus" class="muted" role="status" aria-live="polite"></p>
   </div>
   <p class="muted" role="timer" aria-live="off">Thời gian hiển thị QR còn lại: <strong id="paymentCountdown">05:00</strong></p>
+  <p id="paymentQrLoading" class="muted" role="status" aria-live="polite" hidden>Đang tải ảnh QR thanh toán…</p>
   <img id="paymentQr" alt="QR thanh toán gói AutoTax">
   <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
   <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
@@ -502,7 +506,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <script src="./profile-credential.js?v=20261106teamsync"></script>
 <script src="./data365-payment.js?v=1123data365qr1"></script>
 <script src="./account-flow.js?v=20261106modes"></script>
-<script src="./customer.js?v=20261106modes"></script>
+<script src="./customer.js?v=20261106qrfast"></script>
 <script src="./account-settings-v120.js?v=126email1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <style>
@@ -513,7 +517,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 #invoiceTeamLimit,#mstTeamLimit{color:#047857;font-weight:750}
 </style>
 <script src="./team-shared-v119.js?v=20261106teamsync"></script>
-<script src="./team-v118.js?v=20261106teamsync2"></script>
+<script src="./team-v118.js?v=20261106teamfast"></script>
 <script src="./extension-link-v118.js?v=1119header1"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>

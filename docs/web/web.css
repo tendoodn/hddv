@@ -508,3 +508,38 @@ td.audit-info{color:#c6c6db}
 #stockMapBtn:not([hidden]){padding:9px 13px;border-radius:9px;border:1px solid #d09148;background:#3b2a1c;color:#ffe8bb;font-size:12px;font-weight:850;cursor:pointer}
 #stockMapBtn:not([hidden]):hover{background:#614128}
 @media(max-width:600px){.stock-sku-dialog{padding:14px}.stock-sku-dialog-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V1.1.22h — one aligned row for platform and SKU template action. */
+#stockExport .stock-grid{
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ align-items:end;
+ gap:10px;
+}
+#stockExport .stock-grid>label{min-width:0;align-self:end}
+#stockExport .stock-grid .stock-sku-config{
+ min-width:0;align-self:end;justify-content:flex-end;display:flex;
+}
+#stockExport .stock-grid #stockSkuOpen{
+ margin:0;width:100%;min-height:39px;
+ font-size:12px;line-height:1.25;text-align:center;
+}
+/* The mapping dialog's close control remains accessible while the list scrolls. */
+#skuMapDialog .sku-map-sticky-head{
+ position:sticky;top:-20px;z-index:25;
+ background:#151518;border-bottom:1px solid #44444d;
+ margin:-20px -20px 12px;padding:16px 20px 12px;
+ min-height:57px;
+}
+#skuMapDialog #closeSkuMap{
+ flex:none;position:relative;z-index:26;min-height:32px;
+ background:#33343b;color:#fff;border:1px solid #65656f;
+ padding:6px 12px;border-radius:8px;font-weight:800;cursor:pointer;
+}
+#skuMapDialog #closeSkuMap:hover{background:#494a52}
+@media(max-width:800px){
+ #stockExport .stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:480px){
+ #skuMapDialog .sku-map-sticky-head{top:-12px;margin:-12px -12px 10px;padding:12px}
+ #stockExport .stock-grid #stockSkuOpen{font-size:11px;padding:7px 6px}
+}

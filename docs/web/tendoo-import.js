@@ -191,6 +191,12 @@
       a.product.sku.localeCompare(b.product.sku,'vi'));
     return matches.slice(0,max).map(x=>x.product);
   }
+  // File xuất luôn ưu tiên SKU trong danh mục. Khi thiếu liên kết chỉ ghi gợi ý mã trên hóa đơn, không coi là mã đã xác thực.
+  function outputSku(line,product){
+    if(product?.sku)return product.sku;
+    const suggestion=String(line?.ma??'').trim().replace(/[\r\n\t]+/g,' ').slice(0,80);
+    return 'THIẾU MÃ'+(suggestion?' gợi ý '+suggestion:'');
+  }
   function findProduct(line,items,links={}){
     const key=norm(line.ten),linked=links[key];
     if(linked){const product=items.find(p=>p.sku===linked);if(product)return product}
@@ -238,7 +244,7 @@
         const product=findProduct(line,items,links);
         const cells=Array(sample.headers.length).fill('');
         const set=(role,value)=>{if(sample.columns[role]!=null)cells[sample.columns[role]]=value};
-        set('sku',product?.sku||'THIẾU MÃ');set('name',product?.name||String(line.ten));set('unit',line.dvt||product?.unit||'');
+        set('sku',outputSku(line,product));set('name',product?.name||String(line.ten));set('unit',line.dvt||product?.unit||'');
         set('type',product?.type||'Sản phẩm');set('quantity',num(line.sl));
         set('price',num(line.dgia));
         // STCKhau is a percentage. The Tendoo sample expects the fraction 0.03, not 3.
@@ -260,7 +266,7 @@
     }
     if(!files.length)throw Error('Không có hóa đơn mua vào đủ dữ liệu chi tiết.');
     files.push({name:'HUONG_DAN.txt',data:'AutoTax / Tendoo - '+count+' hoa don mua vao\n'+
-      'San pham chua khop duoc giu nguyen ten va ghi THIẾU MÃ trong cot SKU. Vui long doi chieu truoc khi nhap.\n'+
+      'San pham chua khop giu ten va ghi THIẾU MÃ gợi ý [mã trên hóa đơn] neu co. Day chi la goi y, phai doi chieu.\n'+
       'Mau: '+(sample.fileName||'mau Tendoo da tai')+'\n'+
       'Moi hoa don la mot file Excel. Can kiem tra truoc khi nhap kho.\n'+
       'Hoa don MTT duoc gan muc Khong chiu thue (KCT).\n'+
@@ -293,7 +299,7 @@
         cells[0]='Nhập kho mua hàng';cells[1]=date;cells[2]=doc;
         cells[4]=String(invoice.nbten||'');
         cells[5]='Nhập theo HĐ '+invoiceRef;
-        cells[7]=product?.sku||'THIẾU MÃ';
+        cells[7]=outputSku(line,product);
         cells[8]=product?.name||String(line.ten);
         cells[11]=warehouse;cells[13]=line.dvt||product?.unit||'';
         cells[14]=n;cells[15]=price;cells[16]=pretax;
@@ -315,7 +321,7 @@
     if(!files.length)throw Error('Không có hóa đơn mua vào đủ chi tiết để nhập kho MISA.');
     files.push({name:'HUONG_DAN.txt',data:'AutoTax / MISA eShop - '+count+' hoa don\n'+
       'Ma kho: '+warehouse+'\n'+'Ma chung tu cuoi duoc tao: '+lastIssued+'\n'+
-      'THIẾU MÃ: san pham chua co ma trong danh muc, can sua truoc khi nhap MISA.\n'+
+      'THIẾU MÃ gợi ý [mã trên hóa đơn]: chua lien ket SKU, kiem tra truoc khi nhap MISA.\n'+
       'Ngay chung tu lay tu ngay hoa don, kiem tra trong MISA truoc khi nhap.\n'+
       (skipped?'Bo qua '+skipped+' hoa don thieu chi tiet.\n':'')});
     return {zip:Zip.writeZip(files),count,skipped,missing:misses.length,lastIssued};

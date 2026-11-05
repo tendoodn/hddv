@@ -394,3 +394,44 @@ td.audit-info{color:#c6c6db}
 @keyframes autotax-download-pulse{50%{box-shadow:0 4px 22px rgba(230,0,18,.52)}}
 #downloadConsoleActive[hidden]{display:none!important}
 #downloadConsoleActive{font-size:11px;font-weight:800;color:#fef08a}
+
+/* V1.1.22b — sliding calendar, same month-by-month interaction as the Add-on. */
+.date-pair.autotax-vn-dates{position:relative;overflow:visible}
+.autotax-slide-calendar[hidden]{display:none!important}
+.autotax-slide-calendar{
+ position:absolute;left:0;top:calc(100% + 5px);z-index:1100;
+ width:min(326px,calc(100vw - 40px));box-sizing:border-box;
+ padding:10px;border:1px solid #53535b;border-radius:12px;
+ background:#2c2c32;color:#fff;box-shadow:0 18px 42px #000a;
+}
+.autotax-calendar-header,.autotax-calendar-footer{display:flex;align-items:center;justify-content:space-between;gap:5px}
+.autotax-calendar-header{margin-bottom:8px}
+.autotax-slide-calendar button{font:inherit;color:inherit;cursor:pointer;border:0;background:transparent;border-radius:6px}
+.autotax-calendar-arrow{width:35px;height:33px;font-size:28px;line-height:1;font-weight:400}
+.autotax-calendar-arrow:hover,.autotax-calendar-title:hover{background:#45454d}
+.autotax-calendar-title{font-size:13px!important;font-weight:800;padding:8px 10px;flex:1;text-align:center}
+.autotax-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;align-items:center}
+.autotax-calendar-weekday{display:grid;place-items:center;font-size:11px;font-weight:700;height:29px}
+.autotax-calendar-day{height:35px;font-size:13px!important;display:grid;place-items:center;min-width:0!important;padding:0!important}
+.autotax-calendar-day.outside{color:#888892!important}
+.autotax-calendar-day:hover:not(:disabled){background:#424b5a}
+.autotax-calendar-day.today{outline:1px solid #9ca3af;outline-offset:-2px}
+.autotax-calendar-day.selected{background:#4e94d7!important;color:white!important}
+.autotax-calendar-day:disabled{color:#65656b!important;cursor:not-allowed}
+.autotax-calendar-footer{margin-top:10px;padding:3px 4px}
+.autotax-calendar-link{padding:5px 8px!important;font-size:12px!important;color:#81b6ff!important}
+.autotax-calendar-chooser{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;padding:12px 4px;align-items:center}
+.autotax-calendar-chooser select{min-width:0!important;width:100%;padding:6px 4px;border-radius:6px;background:#3c3c43;color:#fff;border:1px solid #666}
+.autotax-calendar-apply{background:#2563eb!important;padding:8px 10px!important}
+@media(max-width:480px){.autotax-slide-calendar{left:0;right:auto;width:min(315px,calc(100vw - 36px))}}
+/* Credential suggestions belong to the AutoTax login form, not the tax-ID search. */
+#mstFree::-webkit-credentials-auto-fill-button{visibility:hidden;display:none!important}
+html body .topbar .toplinks #extensionHeaderDownloadBtn,
+html body #extensionHeaderDownloadBtn.autotax-extension-cta{
+ background:#e60012!important;color:#fff!important;border:2px solid #ffcad1!important;
+ border-radius:10px!important;padding:10px 17px!important;
+ font-size:13px!important;font-weight:850!important;
+ box-shadow:0 4px 18px #e6001255!important;
+ text-decoration:none!important;white-space:nowrap;
+}
+html body #extensionHeaderDownloadBtn.autotax-extension-cta:hover{background:#ac0010!important;transform:translateY(-1px)}

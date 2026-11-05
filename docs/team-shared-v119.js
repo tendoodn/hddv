@@ -59,5 +59,11 @@
    throw Error('Thông tin chia sẻ mật khẩu MST không hợp lệ.');
   return rpc('autotax_team_share_mst_password_v119',{p_team:teamId,p_mst:id,p_password:password});
  }
- window.AutoTaxTeamShared=Object.freeze({setAuthProvider,context,list,getPassword,sharePassword});
+ async function syncOwnedPassword(mst,password){
+  const id=NORMAL(mst);
+  if(!VALID(id)||typeof password!=='string'||!password||password.length>256)
+   throw Error('MST hoặc mật khẩu HĐĐT không hợp lệ.');
+  return rpc('autotax_team_sync_owner_mst_password_v121',{p_mst:id,p_password:password});
+ }
+ window.AutoTaxTeamShared=Object.freeze({setAuthProvider,context,list,getPassword,sharePassword,syncOwnedPassword});
 })();

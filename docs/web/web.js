@@ -336,8 +336,8 @@ async function refreshAccount(){
   const modeSelect=$('webUsageMode');
   modeSelect.value=selectedMode;
   const inv=ent.data?.packages?.invoice||{},msts=ent.data?.packages?.mst||{};
-  const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_remaining||0)>0;
-  const hasInvoice=Number(inv.purchased||0)>0||canInvoice||!!ent.data?.can_reread_charged_invoices;
+  const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_spendable_remaining||0)>0;
+  const hasInvoice=Number(inv.purchased||0)>0||Number(ent.data?.team_invoice_purchased||0)>0||canInvoice||!!ent.data?.can_reread_charged_invoices;
   const canMst=Number(msts.active_quantity||0)>0||Number(ent.data?.team_mst_count||0)>0;
   modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
   modeSelect.querySelector('[value="mst"]').disabled=!canMst;
@@ -354,7 +354,15 @@ async function refreshAccount(){
   }
   $('webUsageModeHint').textContent=dual?
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
-    'Chỉ chuyển được khi cả hai gói có quyền sử dụng còn hiệu lực.';
+    'Hạn mức cá nhân và nhóm được cộng khi còn quyền nhóm. Chỉ MST được trưởng nhóm chia sẻ mới dùng hạn mức nhóm.'; 
+  if(Number(ent.data?.team_invoice_remaining||0)>0 || Number(ent.data?.team_mst_package_capacity||0)>0){
+    $('webUsageModeHint').textContent+=
+      ' Nhóm: '+Number(ent.data?.team_invoice_remaining||0).toLocaleString('vi-VN')+' tờ, '+
+      Number(ent.data?.team_mst_package_capacity||0).toLocaleString('vi-VN')+' MST gói ('+
+      Number(ent.data?.team_mst_count||0).toLocaleString('vi-VN')+' MST đã cấp).'+
+      (Number(ent.data?.team_invoice_shared_mst_count||0)===0?
+      ' Trưởng nhóm chưa chọn MST nên chưa thể dùng gói nhóm.':'');
+  }
   const ownProfiles=profiles.data||[];
   // A borrowed MST is a read-only alias of the leader's profile even if this
   // member previously saved the same tax ID independently.
@@ -365,11 +373,14 @@ async function refreshAccount(){
    const original=merged.get(mst)||{};
    merged.set(mst,{...original,...sharedRow,source:'team',mst,
     mst_allowed:sharedRow.can_use_mst_package===true||
+      sharedRow.can_use_invoice_package===true||
       sharedRow.personally_authorized===true||original.mst_allowed===true});
   }
   const allProfiles=[...merged.values()];
   profileMsts=allProfiles.map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
-  teamAllowedMsts=(ent.data?.team_mst_allowed_msts||[]).map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean);
+  teamAllowedMsts=[...new Set([...(ent.data?.team_mst_allowed_msts||[]),
+    ...shared.filter(x=>x.can_use_invoice_package===true).map(x=>x.mst)]
+    .map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean))];
   profileAllowedMsts=[...new Set([...allProfiles.filter(x=>x.mst_allowed===true)
    .map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean),...teamAllowedMsts])];
   profileDisplayNames.clear();profileVerifiedNames.clear();

@@ -66,6 +66,7 @@ const busyState=(value,keepLog=false,success=false)=>{busy=!!value;
   const indicator=$('downloadConsoleDone'),spinner=$('downloadConsoleSpinner');
   if(indicator)indicator.hidden=!!value||!success;
   if(spinner)spinner.hidden=!value;
+  const active=$('downloadConsoleActive');if(active)active.hidden=!value;
   $('progress').hidden=!value&&!keepLog;if(value){$('progressLog').replaceChildren();progress('Khởi tạo phiên xử lý…');$('stopBtn').textContent='Dừng'}else if(keepLog){$('stopBtn').textContent='Đóng'}$('searchBtn').disabled=false;$('searchBtn').textContent=value?'Dừng tra cứu':'⌕ Tìm kiếm hóa đơn';
   for(const id of ['exportAllZip','exportExcel','exportXml','exportHtml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};

@@ -49,6 +49,7 @@ async function refreshAdminVisibility(userId){
  }catch(error){if(request===adminRoleRequest){setAdminVisibility(false);adminRoleCheckedAt=0;console.warn('Không xác minh được quyền admin:',error.message)}}
 }
 let paymentCountdownTimer=null,paymentChannel=null,paymentOrder=null;
+let paymentCreating=false,paymentRequestEpoch=0;
 let paymentStatusPromise=null,postExpiryTimer=null;
 let mstEditing='',mstEditOriginalName='',mstGrantUnlocked=false,canDeleteMstProfiles=false;
 // Limit old MST migration to 2 concurrent background reads to keep the UI responsive.
@@ -145,6 +146,11 @@ function addText(node,tag,value,className=""){
 }
 function setBusy(id,flag){$(id).disabled=!!flag}
 function closePayment(){
+ ++paymentRequestEpoch;
+ const qrLoading=$('paymentQrLoading');if(qrLoading)qrLoading.hidden=true;
+ const timer=$('paymentCountdown')?.closest('[role="timer"]');if(timer)timer.hidden=false;
+ const verify=$('checkPaymentBtn');if(verify)verify.hidden=false;
+ const qr=$('paymentQr');if(qr){qr.onload=null;qr.onerror=null;qr.hidden=false}
  if(ordersWatch)clearInterval(ordersWatch);
  if(paymentCloseTimer)clearTimeout(paymentCloseTimer);
  if(paymentCountdownTimer)clearInterval(paymentCountdownTimer);
@@ -573,7 +579,21 @@ async function buy(packageCode,button,options={}){
   }catch(error){showMessage("Không mở được DATA365: "+prettyError(error),true)}
   return;
  }
- button.disabled=true;
+ if(paymentCreating||button.disabled)return;
+ paymentCreating=true;button.disabled=true;
+ // Show the checkout immediately. Do not show a QR or permit payment until
+ // the server has created a real order with a validated amount and expiry.
+ closePayment();
+ const requestEpoch=paymentRequestEpoch;
+ $('paymentArea').hidden=false;
+ $('paymentInfo').textContent='Đang tạo đơn '+packageCode+' và mã QR bảo mật…';
+ $('paymentQr').hidden=true;
+ $('paymentQrLoading').hidden=false;
+ $('paymentCountdown').closest('[role="timer"]').hidden=true;
+ $('checkPaymentBtn').hidden=true;
+ $('applyPaymentCoupon').disabled=true;
+ $('paymentArea').scrollIntoView({behavior:'instant',block:'nearest'});
+ showMessage('Đang yêu cầu mã QR thanh toán từ máy chủ…');
  try{
   const {data:{session}}=await client.auth.getSession();
   if(!session)throw Error("Vui lòng đăng nhập lại trước khi thanh toán.");
@@ -582,10 +602,12 @@ async function buy(packageCode,button,options={}){
    body:JSON.stringify({package_code:packageCode,coupon_code:options.coupon||null,replace_order_id:options.replaceId||null})
   });
   const result=await response.json();
+  if(requestEpoch!==paymentRequestEpoch)return;
   if(!response.ok||!result.success||!result.payment?.qr_url)throw Error(result.error||"Không tạo được đơn hàng.");
   const expiresAt=Date.parse(result.payment.expires_at||result.order?.qr_expires_at);
   if(!Number.isFinite(expiresAt))throw Error("Hệ thống chưa trả về hạn QR. Vui lòng tải lại trang và thử lại.");
-  closePayment();
+  // Keep the already-open checkout. Closing here would hide it and invalidate
+  // a user request; only replace the placeholder with confirmed payment data.
   const serverTime=Date.parse(result.server_time);
   const order={
    id:result.order.order_id,packageCode,
@@ -602,8 +624,18 @@ async function buy(packageCode,button,options={}){
   $("paymentInfo").textContent=vnMoney(result.payment.amount_vnd)+" · "+
    result.payment.bank_name+" · "+result.payment.account_name+
    " · Nội dung: "+result.payment.transfer_content;
-  $("paymentQr").src=result.payment.qr_url;
-  $("paymentArea").hidden=false;
+  const qr=$('paymentQr'),loading=$('paymentQrLoading');
+  qr.onload=()=>{if(paymentOrder!==order||requestEpoch!==paymentRequestEpoch)return;
+    loading.hidden=true;qr.hidden=false;};
+  qr.onerror=()=>{if(paymentOrder!==order||requestEpoch!==paymentRequestEpoch)return;
+    loading.textContent='Ảnh QR đang tải lỗi. Bạn có thể thử mở lại QR hoặc dùng thông tin chuyển khoản đã hiển thị.';};
+  loading.textContent='Đã có thông tin thanh toán. Đang tải ảnh QR…';
+  qr.decoding='async';qr.loading='eager';qr.fetchPriority='high';
+  qr.src=result.payment.qr_url;
+  $('paymentCountdown').closest('[role="timer"]').hidden=false;
+  $('checkPaymentBtn').hidden=false;
+  $('applyPaymentCoupon').disabled=false;
+  $('paymentArea').hidden=false;
   const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   $("paymentArea").scrollIntoView({behavior:reducedMotion?"instant":"smooth",block:"center"});
   showMessage("Đã tạo đơn "+packageCode+". QR tự ẩn sau 5 phút; hệ thống theo dõi thanh toán tự động.");
@@ -625,8 +657,15 @@ async function buy(packageCode,button,options={}){
    },()=>{void checkPaymentStatus()})
    .subscribe();
   void checkPaymentStatus();
- }catch(error){showMessage("Không tạo được đơn: "+prettyError(error),true)}
- finally{button.disabled=false}
+ }catch(error){
+  if(requestEpoch===paymentRequestEpoch){
+   $('paymentInfo').textContent='Không tạo được mã QR: '+prettyError(error);
+   $('paymentQrLoading').hidden=true;
+   showMessage('Không tạo được đơn: '+prettyError(error),true);
+  }
+ }finally{paymentCreating=false;button.disabled=false;
+  if(requestEpoch===paymentRequestEpoch)$('applyPaymentCoupon').disabled=false;
+ }
 }
 $("applyPaymentCoupon").addEventListener("click",()=>{
  if(!paymentOrder)return showMessage("Chưa có QR để áp dụng mã.",true);

@@ -612,10 +612,9 @@ function download(filename,data,mime){
  return Promise.resolve();
 }
 async function exportFileCore(kind){
- if(busy)return;
  const targetRows=window.WebResults?.exportRows?.()||rows;
  if(!targetRows.length)return show('Không có hóa đơn trong phạm vi xuất. Kiểm tra các ô đã tick hoặc tháng được chọn.');
- stopped=false;busyState(true);show('');
+ stopped=false;
  let exportCompleted=false;
  const label={excel:'Excel',xml:'XML',html:'HTML',pdf:'PDF nhà phát hành',pdfTax:'PDF Thuế'}[kind]||kind;
  progress('Bắt đầu tải '+targetRows.length+' hóa đơn · '+label+'…');
@@ -681,23 +680,39 @@ async function exportFileCore(kind){
   exportCompleted=true;
   progress('Đã hoàn tất tải '+label+' · '+targetRows.length+' hóa đơn.');
  }catch(e){progress('Lỗi xuất '+label+': '+e.message);show('Không xuất được tệp: '+e.message);throw e}
- finally{busyState(false,true,exportCompleted)}
+ finally{/* Download Console chỉ hoàn tất sau khi ZIP thực sự được lưu. */}
 }
 async function exportFile(kind){
+ if(kind==='pdf'){
+  show('PDF Gốc nhà phát hành: đang chờ phát triển tiếp. Nút PDF dựng từ dữ liệu Thuế vẫn hoạt động bình thường.',true);
+  return;
+ }
+ if(busy)return;
+ if(!window.AutoTaxZipExport)return show('Bộ ZIP chưa tải xong; hãy làm mới trang.');
+ busyState(true);show('');
+ let success=false;
  try{
-  if(!window.AutoTaxZipExport)throw Error('Thiếu bộ ZIP.');
   if(kind==='all'){
    const warnings=[];
    await window.AutoTaxZipExport.batch(async()=>{
-    for(const type of ['excel','xml','html','pdfTax','pdf']){
+    for(const type of ['excel','xml','html','pdfTax']){
      const point=window.AutoTaxZipExport.mark();
      try{await exportFileCore(type)}
-     catch(e){window.AutoTaxZipExport.rollback(point);warnings.push(type+': '+e.message)}
+     catch(error){window.AutoTaxZipExport.rollback(point);warnings.push(type+': '+error.message)}
     }
-   },'TatCa');
-   if(warnings.length)show('ZIP đã tạo; thiếu dữ liệu ở định dạng: '+warnings.join('; '),true);
-  }else await window.AutoTaxZipExport.batch(()=>exportFileCore(kind),kind);
- }catch(e){show('Không xuất được ZIP: '+e.message)}
+   },'all');
+   if(warnings.length)show('ZIP đã tạo, định dạng không đủ dữ liệu: '+warnings.join('; '),true);
+  }else{
+   await window.AutoTaxZipExport.batch(()=>exportFileCore(kind),kind);
+  }
+  success=true;
+  progress('Hoàn tất quét, xuất và ghi tệp trên thiết bị.');
+ }catch(error){
+  progress('Lỗi xuất tệp: '+(error.message||error));
+  show('Không xuất được dữ liệu: '+(error.message||error));
+ }finally{
+  busyState(false,true,success);
+ }
 }
 // Shared in-page adapter: export and stock tools use the exact same invoice rows
 // and fetchInvoice() implementation as the extension.

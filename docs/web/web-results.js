@@ -418,7 +418,7 @@ async function saveSkuConfig(){
   if(selected.user!==app()?.getAccount?.()?.id||selected.platform!==stockPlatform||selected.mst!==currentMst())
    throw Error('Tài khoản, MST hoặc phần mềm đã thay đổi. Hãy chọn file lại.');
   const result=await commitCatalogFile(selected.file,selected.items);
-  const message='Đã lưu '+result.count+' SKU'+(result.online?' và đồng bộ DATA365 online.': ' cục bộ; cần gói DATA365 để đồng bộ máy khác.');
+  const message='Đã ghi đè file SKU cũ bằng '+result.count+' mã mới'+(result.online?' và đồng bộ DATA365 online.': ' trong bộ nhớ mã hóa cục bộ; cần DATA365 để đồng bộ máy khác.');
   skuFeedback(message);stockStatus(message);
  }catch(error){skuFeedback(error.message||String(error),true)}
  finally{updateSkuDialog()}
@@ -430,7 +430,7 @@ async function useData365(){
   const active=await cache().entitled(client);
   if(!active){
    skuFeedback('Chưa có DATA365 còn hạn. Mở trang tài khoản để mua theo giá Admin cấu hình.');
-   window.open('/user/#planSection','_blank','noopener');
+   window.location.assign('/user/#planSection');
    return;
   }
   if(!validMst(mst)||!catalog.length||catalogMst!==mst)

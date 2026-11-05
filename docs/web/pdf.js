@@ -526,7 +526,7 @@
     const signatureVerified = sg?.verified === true ||
       sg?.verification?.valid === true || sg?.validation?.status === 'valid';
     const GREEN = '0.0 0.62 0.12', NEUTRAL = '0.37 0.37 0.37';
-    const markColor = GREEN;
+    const markColor = signatureVerified ? GREEN : NEUTRAL;
     const bw = Math.min(242, sw - 5), bx = X0 + sw + (sw - bw) / 2;
     const sourceTime = sg?.time || h.signatureTime || '';
     const displayedDate = sourceTime || h.nlap || row.tdlap || '';
@@ -536,13 +536,14 @@
     const name = sg?.name || sg?.subject || h.nbten || row.nbten || '';
     const details = [
       'Được ký bởi: ' + (name || 'Chưa có thông tin người bán'),
-      (sourceTime ? 'Ký ngày: ' : 'Ngày hóa đơn: ') + (signedAt || 'Không có ngày')
+      (sourceTime ? 'Ký ngày: ' : 'Ngày hóa đơn: ') + (signedAt || 'Không có ngày'),
+      ...(!signatureVerified ? ['Chưa xác minh chữ ký số trên PDF dựng'] : [])
     ];
     const tw = bw - (signatureVerified ? 62 : 14);
     const wrapped = details.flatMap((s) => doc.wrap(s, tw, 9));
     const bh = Math.max(58, 24 + wrapped.length * 12 + 6);
     doc.rect(bx, sy, bw, bh, { color: markColor, lw: 1.1 });
-    doc.text(bx + 7, sy + 5, signatureVerified ? 'Signature valid' : 'Thông tin ký số',
+    doc.text(bx + 7, sy + 5, 'Signature valid',
       { size: 11.5, bold: true, color: markColor });
     wrapped.forEach((t, k) =>
       doc.text(bx + 7, sy + 23 + k * 12, t, { size: 9, bold: true, color: markColor }));

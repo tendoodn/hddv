@@ -9,9 +9,9 @@
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax V1.1.22b Web · Tra cứu và tải hóa đơn điện tử</title>
+<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=1122g">
+<link rel="stylesheet" href="./web/web.css?v=1122h">
 </head>
 <body>
 <style>
@@ -195,7 +195,6 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
         <label>Nền tảng<select id="stockPlatform"><option value="tendoo">Tendoo</option><option value="misa">MISA eShop</option></select></label>
         <div class="stock-sku-config">
           <button id="stockSkuOpen" type="button" class="outline">Cập nhật file mẫu SKU / Mã hàng</button>
-          <small id="stockSkuMiniStatus">Đang kiểm tra danh mục SKU đã lưu…</small>
         </div>
         <label id="warehouseWrap" hidden>Mã kho MISA (*)<input id="stockWarehouse" placeholder="KHO01" maxlength="60"></label>
         <label id="stockDocWrap" hidden>Số chứng từ MISA gần nhất (*)<input id="stockLastDoc" placeholder="NK0001" maxlength="50"></label>
@@ -272,7 +271,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
     <p id="stockSkuFeedback" class="stock-sku-feedback" role="status" aria-live="polite" hidden></p>
   </dialog>
   <dialog id="skuMapDialog" class="stock-map-dialog" aria-labelledby="skuMapTitle">
-    <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
+    <div class="dialog-heading sku-map-sticky-head"><h2 id="skuMapTitle">Liên kết lại mã hàng</h2><button type="button" id="closeSkuMap" class="outline" aria-label="Đóng popup liên kết mã hàng">Đóng ✕</button></div>
     <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p><input id="stockCatalogReplacement" type="file" accept=".xlsx,.csv" hidden>
     <div id="skuMapList"></div>
     <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất ZIP</button><button id="downloadSingleMappedStock" type="button" class="outline">Tải từng tờ nhập hàng</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
@@ -393,7 +392,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/web.js?v=1122e1"></script>
 <script src="./web/account-modal.js?v=1122e1"></script>
 <script src="./extension-link-v118.js?v=121account2"></script>
-<script src="./web/web-results.js?v=1122g"></script>
+<script src="./web/web-results.js?v=1122h"></script>
 <script src="./web/pdf-preview-v120a.js?v=1120a"></script>
 <script src="./web/issuer-pdf.js?v=121vinvoice"></script>
 <script src="./web/audit.js?v=1"></script>

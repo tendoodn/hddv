@@ -68,21 +68,32 @@ function drainLegacyMstQueue(){
    .finally(()=>{legacyMstActive--;drainLegacyMstQueue()});
  }
 }
+const personalMstCapacity=()=>Math.max(0,Number(state?.packages?.mst?.active_quantity)||0);
 function updateMstGrantPreview(){
- const cap=Number(state?.packages?.mst?.active_quantity||0);
+ const cap=personalMstCapacity();
  const granted=document.querySelectorAll('#mstList .mst-allow-checkbox:checked').length;
- $('mstAllowedSummary').textContent=(mstGrantUnlocked?'Đang chọn (chưa lưu): ':'Đã cấp quyền ')+granted+' / '+cap+' MST';
+ $('mstAllowedSummary').textContent=(mstGrantUnlocked?'Đang chọn (chưa lưu): ':'Đã cấp quyền ')+granted+' / '+cap+' MST cá nhân';
  $('mstAllowedSummary').classList.toggle('error',granted>cap);
 }
 function setMstGrantUnlocked(value){
- mstGrantUnlocked=!!value&&Number(state?.packages?.mst?.active_quantity||0)>0;
+ // The user can always open settings. Zero personal slots must not make the
+ // settings button unclickable; group grants stay read-only and independent.
+ const cap=personalMstCapacity();
+ mstGrantUnlocked=!!value;
  $('mstGrantAllow').hidden=!mstGrantUnlocked;
- $('mstGrantAllow').disabled=!mstGrantUnlocked;
- $('mstGrantCancel').hidden=true;
+ $('mstGrantAllow').disabled=!mstGrantUnlocked||cap<1;
+ $('mstGrantCancel').hidden=!mstGrantUnlocked;
  $('mstGrantUnlock').hidden=mstGrantUnlocked;
- $('mstGrantUnlock').disabled=Number(state?.packages?.mst?.active_quantity||0)<1;
+ $('mstGrantUnlock').disabled=false;
+ const help=$('mstAllowHelp');
+ if(help){
+  help.hidden=!mstGrantUnlocked;
+  help.textContent=cap>0?
+   'Chọn MST cá nhân được cấp phép, tối đa '+cap+' MST. Hồ sơ trưởng nhóm chia sẻ chỉ được xem, không thể sửa/xóa tại đây.':
+   'Tài khoản hiện không có hạn mức MST cá nhân để điều chỉnh. Quyền MST nhóm được cấp riêng; muốn cấp thêm quyền MST cá nhân, vui lòng gia hạn gói MST.';
+ }
  for(const box of document.querySelectorAll('#mstList .mst-allow-checkbox'))
-  box.disabled=!mstGrantUnlocked;
+  box.disabled=!mstGrantUnlocked||cap<1||box.dataset.sharedReadonly==='true';
  updateMstGrantPreview();
 }
 function showMessage(text,bad=false,target="accountMessage"){
@@ -346,7 +357,8 @@ async function loadMstAssignments(){
   const check=document.createElement("input");check.type="checkbox";check.className="mst-allow-checkbox";
   check.value=item.mst;check.checked=item.mst_allowed===true;
   const borrowedMeta=sharedByMst.get(item.mst);
-  check.disabled=!!borrowedMeta||!mstGrantUnlocked;
+  if(borrowedMeta)check.dataset.sharedReadonly='true';
+  check.disabled=!!borrowedMeta||!mstGrantUnlocked||personalMstCapacity()<1;
   if(borrowedMeta)allow.title='MST thuộc kho được trưởng nhóm chia sẻ, không thể sửa hồ sơ hoặc mật khẩu.';
   const caption=document.createElement("span");
   caption.className='mst-permission-status';
@@ -706,20 +718,22 @@ $("webAddMstForm").addEventListener("submit",e=>{
  openMstEditor();
 });
 $("mstGrantUnlock").addEventListener("click",()=>{
- if(Number(state?.packages?.mst?.active_quantity||0)<1)
-  return showMessage("Bạn chưa có gói MST đang hiệu lực để thiết lập quyền.",true);
  setMstGrantUnlocked(true);
- showMessage("Đã mở cấu hình. Chọn các MST được cấp phép, sau đó bấm Lưu cấu hình.");
+ if(personalMstCapacity()<1){
+  showMessage("Đã mở phần thiết lập. Tài khoản chưa có hạn mức MST cá nhân; quyền MST trưởng nhóm vẫn được giữ nguyên.");
+ }else{
+  showMessage("Đã mở cấu hình. Chọn các MST cá nhân được cấp phép, sau đó bấm Lưu cấu hình.");
+ }
 });
 $("mstGrantCancel").addEventListener("click",()=>{
  setMstGrantUnlocked(false);void loadMstAssignments();
 });
 $("mstGrantAllow").addEventListener("click",async()=>{
  if(!mstGrantUnlocked)return showMessage("Bấm Thiết lập lại quyền sử dụng để chọn MST.",true);
- if(Number(state?.packages?.mst?.active_quantity||0)<1)
-  return showMessage("Bạn chưa có gói MST đang hiệu lực để cấp quyền.",true);
+ if(personalMstCapacity()<1)
+  return showMessage("Bạn chưa có hạn mức MST cá nhân để lưu cấu hình. Quyền MST của trưởng nhóm không bị thay đổi.",true);
  const all=[...document.querySelectorAll("#mstList .mst-allow-checkbox:checked")].map(x=>x.value);
- const capacity=Number(state?.packages?.mst?.active_quantity||0);
+ const capacity=personalMstCapacity();
  if(all.length>capacity){
   if(!$("mstProfileLimitDialog").open)$("mstProfileLimitDialog").showModal();
   return showMessage("Bạn chọn "+all.length+" MST nhưng gói chỉ cho phép "+capacity+". Bỏ tick hoặc mua thêm gói MST.",true);
@@ -735,7 +749,7 @@ $("mstGrantAllow").addEventListener("click",async()=>{
   if(/mst_capacity_reached|mst_package_expired|trial_mst_already_used/i.test(String(error.message||error)))
    if(!$("mstProfileLimitDialog").open)$("mstProfileLimitDialog").showModal();
   showMessage(prettyError(error),true);
- }finally{button.disabled=false}
+ }finally{button.disabled=!mstGrantUnlocked||personalMstCapacity()<1}
 });
 $("mstProfileCancel").addEventListener("click",()=>$("mstProfileDialog").close());
 $("mstProfileLimitClose").addEventListener("click",()=>$("mstProfileLimitDialog").close());

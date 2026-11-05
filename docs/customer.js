@@ -252,7 +252,16 @@ async function refresh(){
   }else{
    showMessage("Chưa đồng bộ được dữ liệu Supabase V3.2: "+prettyError(error),true);
   }
- }finally{checking=false}
+ }finally{
+  checking=false;
+  const waiting=$('accountSessionPending');
+  if(waiting)waiting.hidden=true;
+  // If a network error occurs before determining the session, show an actionable form.
+  if($('dashboard').hidden&&$('authSection').hidden){
+   $('authSection').hidden=false;
+   showMessage('Không thể khôi phục phiên. Kiểm tra kết nối hoặc đăng nhập lại.',true,'authMessage');
+  }
+ }
 }
 async function loadPackages(){
  const rows=await rpc("addon_list_packages");

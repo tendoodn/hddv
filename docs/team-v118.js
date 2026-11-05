@@ -132,8 +132,8 @@ async function showDetail(id){
    const preferredMode=leaderModes.includes(leaderEntitlements?.mode)?leaderEntitlements.mode:leaderModes[0];
    $('autotaxTeamPermissionModes').closest('.autotax-permission-field').hidden=!dualPlan;
    $('autotaxTeamPermissionHelp').textContent=dualPlan?
-     'Tick MST để cấp quyền dùng từng hồ sơ bằng hạn mức MST trưởng nhóm. Tick Số tờ để chia sẻ hạn mức hóa đơn của trưởng nhóm, không giới hạn theo danh sách MST được tick. Nếu không được cấp quyền nhóm, hệ thống dùng hạn mức cá nhân.':
-     'Quyền sử dụng được cấp theo gói còn hiệu lực của trưởng nhóm. Chỉ các MST được tick mới hưởng hạn mức MST nhóm; Số tờ không phụ thuộc danh sách MST.';
+     'Chỉ những MST được trưởng nhóm tick chia sẻ mới được sử dụng gói MST hoặc Số tờ của nhóm (theo chế độ được cấp). MST thành viên tự nhập, không có trong danh sách chia sẻ, luôn dùng hạn mức cá nhân.':
+     'Quyền nhóm chỉ áp dụng cho MST được trưởng nhóm tick chia sẻ. MST khác do thành viên tự nhập sử dụng hạn mức cá nhân.';
    const mc=$('autotaxTeamPermissionModes'),sc=$('autotaxTeamPermissionMsts');
    mc.replaceChildren();sc.replaceChildren();
    for(const [value,label] of [['mst','MST'],['invoice','Số tờ']]){
@@ -188,7 +188,7 @@ $('autotaxTeamPermissionForm').addEventListener('submit',e=>{
     p_modes:selected('autotaxTeamPermissionModes'),p_msts:msts
    });
    $('autotaxTeamPermissionDialog').close();editingPerson=null;
-   notice('Đã lưu quyền sử dụng. Hạn mức trưởng nhóm được ưu tiên cho các quyền đã tick; MST không được chia sẻ sẽ dùng hạn mức cá nhân.');
+   notice('Đã lưu quyền sử dụng. MST được tick dùng hạn mức nhóm theo gói đã cấp; MST không được tick chỉ dùng hạn mức cá nhân.');
    await showDetail(teamId);
   }catch(err){
    const el=$('autotaxTeamPermissionStatus');el.hidden=false;

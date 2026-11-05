@@ -11,6 +11,27 @@ const notice=(msg,error=false)=>{const n=$('autotaxTeamMessage');n.hidden=!msg;n
 const rpc=async(name,args)=>{const {data,error}=await db.rpc(name,args);if(error)throw error;return data};
 const friendly=e=>{const s=String(e?.message||e||'Không rõ lỗi');return ({user_not_registered:'Người dùng chưa tạo tài khoản AutoTax.',team_limit_reached:'Đã đạt giới hạn 50 nhóm.',not_team_owner:'Chỉ trưởng nhóm được thao tác.',team_access_denied:'Bạn không có quyền xem nhóm.',invalid_modes:'Chế độ sử dụng không hợp lệ.'})[s]||s};
 const current=()=>teams.find(t=>t.id===activeTeam);
+let syncingPasswordGrants=false;
+async function syncPendingTeamPasswords(){
+ if(syncingPasswordGrants||!teams.some(t=>t.owner_id===myId))return;
+ syncingPasswordGrants=true;
+ try{
+  const pending=await rpc('autotax_team_passwords_needing_sync_v121');
+  let synced=0,missing=0;
+  for(const mst of Array.isArray(pending)?pending:[]){
+   let password=null;
+   try{password=await window.AutoTaxSharedMstVault?.get?.(mst)}
+   catch(e){console.warn('Kho mật khẩu trưởng nhóm đang khóa:',e.message)}
+   if(password){
+    await window.AutoTaxTeamShared.syncOwnedPassword(mst,password);
+    synced++;
+   }else missing++;
+  }
+  if(synced)notice('Đã đồng bộ tự động mật khẩu HĐĐT cho '+synced+' MST nhóm.');
+  if(missing)notice('Có '+missing+' MST nhóm chưa có mật khẩu đồng bộ. Mở phân quyền thành viên và lưu để cấp mật khẩu.',true);
+ }catch(error){console.warn('Chưa đồng bộ được mật khẩu MST nhóm:',error.message)}
+ finally{syncingPasswordGrants=false}
+}
 
 // A team grants independently selected quota modes and selected MST profile access.
 async function renderSharedMstPanel(){
@@ -65,6 +86,7 @@ async function refresh(){
   if(tr.error)throw tr.error;if(mr.error)throw mr.error;
   teams=tr.data||[];memberships=mr.data||[];myMsts=pr.error?[]:(pr.data||[]);
   renderTeams();
+  await syncPendingTeamPasswords();
   if(activeTeam&&teams.some(t=>t.id===activeTeam))await showDetail(activeTeam);
   else {$('autotaxTeamDetail').hidden=true;activeTeam=''}
  }catch(e){notice(friendly(e),true)}

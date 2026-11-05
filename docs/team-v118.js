@@ -154,15 +154,14 @@ async function showDetail(id){
  $('autotaxTeamMembersPanel').hidden=false;
  $('autotaxTeamMembersBody').closest('table').querySelectorAll('thead th').forEach((th,i)=>{th.hidden=!owner&&i!==0});
  const detailRequest=++teamDetailRequest;
- // Two independent queries run in parallel; formerly the stats RPC waited for
- // the member-list RPC on every open and after every Save.
- const [people,usageStats]=await Promise.all([
-  rpc('autotax_team_people_v118',{p_team:id}),
-  owner?rpc('autotax_team_usage_stats_v118',{p_team:id}):Promise.resolve([])
- ]);
+ // Start both requests together, but don't make the member list wait for the
+ // slower history query. The usage counters are filled in when ready.
+ const usageLater=(owner?rpc('autotax_team_usage_stats_v118',{p_team:id}):Promise.resolve([]))
+  .then(data=>({data})).catch(error=>({error}));
+ const people=await rpc('autotax_team_people_v118',{p_team:id});
  if(detailRequest!==teamDetailRequest||activeTeam!==id||$('autotaxTeamDetail').hidden)return;
- const usageByMember=new Map((usageStats||[]).map(x=>[x.user_id,x]));
  const tbody=$('autotaxTeamMembersBody'),usage=$('autotaxTeamUsageBody');
+ const usageRows=new Map();
  tbody.replaceChildren();usage.replaceChildren();
  const allPeople=[...people];
  for(const person of allPeople){
@@ -215,15 +214,23 @@ async function showDetail(id){
   actions.append(remove);
   tr.append(name,email,modes,msts,actions);tbody.append(tr);
   const used=make('tr');
-  const counts=usageByMember.get(person.user_id)||{invoice_count:0,mst_count:0};
   used.append(make('td',person.display_name||'—'),make('td',person.email||'—'),
-   make('td',Number(counts.invoice_count||0).toLocaleString('vi-VN')),
-   make('td',Number(counts.mst_count||0).toLocaleString('vi-VN')));
-  usage.append(used);
+   make('td','Đang tải…'),make('td','Đang tải…'));
+  usage.append(used);usageRows.set(person.user_id,used);
  }
  if(!allPeople.length)tbody.append(make('tr',''));
  if(owner)$('autotaxTeamSharedPasswords')?.remove();
- else await renderSharedMstPanel();
+ else void renderSharedMstPanel();
+ void usageLater.then(({data,error})=>{
+  if(detailRequest!==teamDetailRequest||activeTeam!==id||$('autotaxTeamDetail').hidden)return;
+  if(error){console.warn('Chưa lấy được thống kê nhóm:',error.message);return;}
+  const byMember=new Map((data||[]).map(x=>[x.user_id,x]));
+  for(const [userId,row] of usageRows){
+   const counts=byMember.get(userId)||{invoice_count:0,mst_count:0};
+   row.children[2].textContent=Number(counts.invoice_count||0).toLocaleString('vi-VN');
+   row.children[3].textContent=Number(counts.mst_count||0).toLocaleString('vi-VN');
+  }
+ });
 }
 $('autotaxTeamPermissionClose').addEventListener('click',()=>$('autotaxTeamPermissionDialog').close());
 $('autotaxTeamPermissionForm').addEventListener('submit',e=>{

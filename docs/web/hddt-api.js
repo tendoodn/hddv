@@ -570,12 +570,19 @@
     if (row.ttxly !== 6) {
       try {
         const buf = new Uint8Array(await (await get(URL_XML(ep, row), action('Xuất xml', row), { shouldStop, timeout: FORMS[row.form].timeout, retries: FORMS[row.form].retries, onWait })).arrayBuffer());
-        if (buf[0] !== 0x50 || buf[1] !== 0x4b) throw new Error('Cổng không trả file zip');
+        // Portal deployments may deliver signed source XML directly instead
+        // of ZIP. Inspect bytes, never re-encode original bytes for export.
+        if(buf[0]!==0x50||buf[1]!==0x4b){
+          const rawXml=Zip.text(buf).replace(/^\uFEFF/,'').trim();
+          if(!/^<(?:\?xml\b|HDon\b|[\w-]+:HDon\b)/i.test(rawXml))
+            throw new Error('Cổng không trả ZIP hoặc XML hóa đơn hợp lệ');
+          return {source:'xml',xml:buf,files:{'invoice.xml':buf},...invoiceFromXml(rawXml)};
+        }
         const files = await Zip.readZip(buf);
         const name = (re) => Object.keys(files).find((n) => re.test(n));
         // Giữ NGUYÊN bytes gốc (XML có chữ ký số, có thể có BOM): giải mã rồi mã hóa lại làm phần mềm
         // của Cục Thuế (iTaxViewer) báo "Tệp hồ sơ không đúng định dạng". Chỉ giải mã để đọc dòng hàng hóa.
-        const xmlName = name(/\.xml$/i);
+        const xmlName = name(/(?:^|\/)(?:invoice|hoadon|hddt|h_don)[^/]*\.xml$/i) || name(/\.xml$/i);
         if (xmlName) return { source: 'xml', xml: files[xmlName], files, ...invoiceFromXml(Zip.text(files[xmlName])) };
       } catch (e) {
         if (shouldStop() || e.status === 401) throw e;

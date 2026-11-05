@@ -34,11 +34,17 @@ async function cryptoKey(){
  }
  return key;
 }
+// Exactly one encrypted catalog per account and software; the saved MST identifies its owner profile.
 const keyOf=(user,platform)=>user+':'+platform;
+const taxId=v=>String(v||'').replace(/\D/g,'');
+const validMst=v=>/^(?:\d{10}|\d{12}|\d{13})$/.test(taxId(v));
 const valid=v=>!!v&&Array.isArray(v.products)&&v.products.length>0&&
  typeof v.updatedAt==='string'&&v.products.every(x=>x&&typeof x.sku==='string'&&typeof x.name==='string');
+const scoped=(catalog,mst)=>catalog&&validMst(mst)&&(!catalog.mst||taxId(catalog.mst)===taxId(mst));
+const bindMst=(catalog,mst)=>({...catalog,mst:taxId(mst)});
 async function saveLocal(user,platform,value){
- if(!user||!['misa','tendoo'].includes(platform)||!valid(value))throw Error('Dữ liệu danh mục không hợp lệ.');
+ if(!user||!['misa','tendoo'].includes(platform)||!valid(value)||!validMst(value.mst))
+  throw Error('Danh mục cần gắn với một hồ sơ MST hợp lệ.');
  const iv=crypto.getRandomValues(new Uint8Array(12));
  const bytes=await crypto.subtle.encrypt({name:'AES-GCM',iv},await cryptoKey(),
   new TextEncoder().encode(JSON.stringify(value)));
@@ -70,6 +76,7 @@ async function loadCloud(user,platform,client){
  return valid(data?.catalog)?data.catalog:null;
 }
 async function saveCloud(user,platform,value,client){
+ if(!valid(value)||!validMst(value?.mst))throw Error('Danh mục chưa gắn với MST hợp lệ.');
  if(!client||!await entitled(client))return false;
  const {error}=await client.from('addon_user_stock_catalogs')
   .upsert({user_id:user,platform,catalog:value,updated_at:new Date().toISOString()},
@@ -77,16 +84,25 @@ async function saveCloud(user,platform,value,client){
  if(error)throw Error(error.message);
  return true;
 }
-async function restore(user,platform,client){
- const local=await loadLocal(user,platform);
+async function restore(user,platform,client,mst){
+ const currentMst=taxId(mst);
+ if(!validMst(currentMst))return {catalog:null,source:'none'};
+ const stored=await loadLocal(user,platform);
+ const local=scoped(stored,currentMst)?bindMst(stored,currentMst):null;
  try{
-  const remote=await loadCloud(user,platform,client);
-  if(!remote)return {catalog:local,source:local?'local':'none'};
+  const savedRemote=await loadCloud(user,platform,client);
+  const remote=scoped(savedRemote,currentMst)?bindMst(savedRemote,currentMst):null;
+  if(!remote){
+   // Another MST may own the one cloud slot. Never overwrite it just by opening this profile.
+   if(local&&!stored?.mst)await saveLocal(user,platform,local);
+   return {catalog:local,source:local?'local':'none'};
+  }
   if(!local||Date.parse(remote.updatedAt)>Date.parse(local.updatedAt)){
    await saveLocal(user,platform,remote);
    return {catalog:remote,source:'online'};
   }
-  if(Date.parse(local.updatedAt)>Date.parse(remote.updatedAt))
+  if(local&&(!stored?.mst))await saveLocal(user,platform,local);
+  if(local&&Date.parse(local.updatedAt)>Date.parse(remote.updatedAt))
    await saveCloud(user,platform,local,client);
   return {catalog:local,source:'local'};
  }catch(error){
@@ -95,8 +111,8 @@ async function restore(user,platform,client){
 }
 window.AutoTaxWebStockCache=Object.freeze({
  saveLocal,loadLocal,saveCloud,loadCloud,restore,entitled,
- makePayload:(name,products)=>({
-  filename:String(name||'catalog.xlsx').slice(0,180),products,
+ makePayload:(name,products,mst)=>({
+  filename:String(name||'catalog.xlsx').slice(0,180),products,mst:taxId(mst),
   updatedAt:new Date().toISOString()
  })
 });

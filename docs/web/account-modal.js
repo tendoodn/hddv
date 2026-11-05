@@ -20,6 +20,8 @@ const authErrorVi=error=>{
  if(/same_password|new password should be different/.test(value))return 'Mật khẩu mới phải khác mật khẩu cũ.';
  if(/session_not_found|session expired|jwt expired|auth session missing|refresh token/.test(value))return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
  if(/network|failed to fetch|fetch failed|timeout/.test(value))return 'Không kết nối được máy chủ. Vui lòng thử lại.';
+ const original=String(error?.message||error||'');
+ if(/[À-ỹ]/.test(original))return original;
  return 'Không thực hiện được thao tác. Vui lòng thử lại.';
 };
 const allowedEmail=v=>/^[^@\s]+@(gmail\.com|hotmail\.com|yahoo\.com|yahoo\.com\.vn)$/i.test(v);

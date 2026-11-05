@@ -154,7 +154,16 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  .portal-account-head>.autotax-account-tabs{justify-content:flex-start}
  .portal-account-head>.account-quick-actions{grid-column:1}
 }
-.autotax-account-tabs,.autotax-team-subtabs{display:flex;gap:6px;flex-wrap:wrap}.autotax-tab{border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}.autotax-tab.is-active{background:#164e63;color:#fff;border-color:#164e63}.autotax-team-panel[hidden],#autotaxTeamDetail[hidden]{display:none!important}#dashboard.autotax-team-active>:not(#autotaxAccountSummary):not(#autotaxTeamPanel):not(#forcedPasswordNotice){display:none!important}#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head){display:none!important}.autotax-team-list{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.autotax-team-list button{max-width:100%;overflow-wrap:anywhere}.autotax-team-panel td{vertical-align:top}.autotax-team-panel td label{display:block;white-space:nowrap;margin:4px 0}.autotax-team-panel td button{margin:3px}.autotax-team-panel td input[type=checkbox]{margin-right:5px}.autotax-team-panel .table-wrap{overflow-x:auto}.autotax-team-subtabs{margin:12px 0}
+.autotax-account-tabs,.autotax-team-subtabs{display:flex;gap:6px;flex-wrap:wrap}.autotax-tab{border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}.autotax-tab.is-active{background:#164e63;color:#fff;border-color:#164e63}.autotax-team-panel[hidden],#autotaxTeamDetail[hidden]{display:none!important}#dashboard.autotax-team-active>:not(#autotaxAccountSummary):not(#autotaxTeamPanel):not(#forcedPasswordNotice){display:none!important}#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head){display:none!important}.autotax-team-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:12px 0;align-items:stretch}
+.autotax-team-list .autotax-team-button{width:100%;min-width:0;min-height:50px;white-space:normal;overflow-wrap:anywhere;text-align:center;padding:10px 8px;border-radius:11px;border:1px solid #fecaca;background:#fff1f2;color:#991b1b;font-weight:700;cursor:pointer}
+.autotax-team-list .autotax-team-button.is-active{background:#b91c1c;border-color:#991b1b;color:#fff}
+.autotax-team-list .autotax-team-button:focus-visible{outline:3px solid #fb7185;outline-offset:2px}
+.autotax-team-list .notice,.autotax-team-list>p{grid-column:1/-1}
+#autotaxTeamDetailTitle{display:none!important}
+@media(max-width:1050px){.autotax-team-list{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:800px){.autotax-team-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:550px){.autotax-team-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:340px){.autotax-team-list{grid-template-columns:minmax(0,1fr)}}.autotax-team-panel td{vertical-align:top}.autotax-team-panel td label{display:block;white-space:nowrap;margin:4px 0}.autotax-team-panel td button{margin:3px}.autotax-team-panel td input[type=checkbox]{margin-right:5px}.autotax-team-panel .table-wrap{overflow-x:auto}.autotax-team-subtabs{margin:12px 0}
 
 /* AutoTax self-service account registration — accessible modal, responsive inputs. */
 .autotax-signup-dialog{width:min(510px,calc(100vw - 28px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #f0c3c9;border-radius:16px;padding:22px;background:#fff;color:#281b21;box-shadow:0 25px 75px #3c0a1540}
@@ -504,7 +513,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 #invoiceTeamLimit,#mstTeamLimit{color:#047857;font-weight:750}
 </style>
 <script src="./team-shared-v119.js?v=1126metadataonly"></script>
-<script src="./team-v118.js?v=1126profilesonly"></script>
+<script src="./team-v118.js?v=20261106toggle5cols"></script>
 <script src="./extension-link-v118.js?v=1119header1"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>

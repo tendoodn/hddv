@@ -1,0 +1,26 @@
+{
+  "name": "AutoTax unified data contract",
+  "version": "1.1.24",
+  "canonical_backend": "Supabase ucqqjdsoyvvaxswzbhaw",
+  "schema": {
+    "accounts": "auth.users + addon_profiles",
+    "mst_profiles": "addon_mst_assignments; autotax_team_shared_mst_profiles_v119()",
+    "mst_access": "autotax_verify_session_mst_v118() / addon_verify_session_mst_v33() compatibility",
+    "entitlements": "autotax_my_entitlements_v118() / addon_my_entitlements() compatibility",
+    "invoice_usage": "autotax_claim_invoice_quota_v118() / addon_claim_invoice_quota() compatibility",
+    "sku": "addon_user_stock_catalogs (account + platform) with catalog.mst",
+    "shared_mst_password": "autotax_private.team_mst_credentials_v119 (server encrypted, group permission gated)",
+    "invoice_detail_cache": "IndexedDB autotax_invoice_details_v120 (local per origin, 10d)",
+    "clipboard": "OS clipboard only on explicit user interaction; not cloud-synced or silently read"
+  },
+  "principal_keys": [
+    "supabase_user_id",
+    "normalized_mst",
+    "platform"
+  ],
+  "limits": {
+    "local_invoice_cache_days": 10,
+    "max_stock_catalogs_per_platform": 1
+  },
+  "scope_note": "Web and Chrome Extension have isolated browser origins. Cloud records are shared through authorized Supabase RPCs; local files, cache, and clipboard are not automatically transmitted."
+}

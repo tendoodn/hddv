@@ -100,86 +100,82 @@ async function decryptPassword(record){
  return new TextDecoder().decode(plain);
 }
 const mstName=profile=>profile.display_name||profile.name||'Chưa đặt tên hồ sơ';
+function closePicker(){
+ $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
+}
+function filterPicker(){
+ const query=$('mstFree').value.trim().toLocaleLowerCase('vi-VN');
+ const numeric=normalize(query);
+ for(const card of $('mstPickerMenu').querySelectorAll('.mst-picker-card')){
+  const text=card.textContent.toLocaleLowerCase('vi-VN');
+  card.hidden=!!query&&!text.includes(query)&&(!numeric||!text.includes(numeric));
+ }
+}
+function openPicker(){
+ $('mstPickerMenu').hidden=false;$('mstPickerToggle').setAttribute('aria-expanded','true');
+ filterPicker();
+}
 function renderPicker(){
- const select=$('mst'),old=select.value;
- const remembered=owner?localStorage.getItem(lastKey()):null;
+ const select=$('mst'),input=$('mstFree'),typed=input.value.trim(),old=select.value;
+ let remembered='';try{remembered=owner?localStorage.getItem(lastKey())||'':''}catch{}
  select.replaceChildren();
- const empty=document.createElement('option');
- empty.value='';empty.textContent='＋ Thêm MST mới';select.append(empty);
+ const empty=document.createElement('option');empty.value='';empty.textContent='Nhập MST mới';select.append(empty);
  const menu=$('mstPickerMenu');menu.replaceChildren();
- const search=document.createElement('input');
- search.id='mstPickerSearch';search.type='search';search.autocomplete='off';
- search.placeholder='Tìm nhanh MST hoặc tên người nộp thuế';
- search.setAttribute('aria-label','Tìm MST trong danh sách');
- search.className='mst-picker-search';
- search.addEventListener('input',()=>{
-  const query=search.value.trim().toLocaleLowerCase('vi-VN');
-  for(const card of menu.querySelectorAll('.mst-picker-card'))
-   card.hidden=!card.textContent.toLocaleLowerCase('vi-VN').includes(query);
- });
- search.addEventListener('keydown',event=>event.stopPropagation());
- menu.append(search);
- const add=document.createElement('button');
- add.type='button';add.className='mst-picker-choice';add.textContent='＋ Thêm MST mới';
+ const add=document.createElement('button');add.type='button';add.className='mst-picker-choice mst-picker-add';
+ add.textContent='＋ Nhập MST mới';
  add.addEventListener('click',()=>{
-  select.value='';$('mstFree').value='';$('mstFree').hidden=false;
-  menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
-  $('mstPickerToggle').dataset.userPicked='yes';
-  $('gdtPassword').value='';updateChosen();$('mstFree').focus();
+  select.value='';input.value='';$('gdtPassword').value='';
+  closePicker();requestSeq++;notify('Nhập MST 10, 12 hoặc 13 chữ số để tra cứu.');
+  input.focus();
  });
  menu.append(add);
- const visibleProfiles=profiles; // Always display all saved MSTs; authorization is checked on search.
- for(const p of visibleProfiles){
+ const ordered=[...profiles].sort((a,b)=>{
+  if(a.mst===remembered)return -1;
+  if(b.mst===remembered)return 1;
+  return mstName(a).localeCompare(mstName(b),'vi',{sensitivity:'base'})||
+   a.mst.localeCompare(b.mst);
+ });
+ for(const p of ordered){
   const mst=p.mst;
-  const opt=document.createElement('option');
-  opt.value=mst;opt.textContent=mst+' — '+mstName(p);
-  select.append(opt);
+  const option=document.createElement('option');
+  option.value=mst;option.textContent=mst+' — '+mstName(p);select.append(option);
   const card=document.createElement('div');card.className='mst-picker-card';
-  const pick=document.createElement('button');
-  pick.type='button';pick.className='mst-picker-choice';
+  const pick=document.createElement('button');pick.type='button';pick.className='mst-picker-choice';
   const number=document.createElement('strong');number.textContent=mst;
   const alias=document.createElement('small');alias.textContent=mstName(p);
-  pick.append(number,alias);
   const permission=document.createElement('small');
-  permission.textContent=p.mst_allowed?'Đã được cấp quyền MST':'Chưa cấp quyền MST · vẫn có thể dùng gói số tờ';
+  permission.textContent=p.mst_allowed?'Đã cấp quyền MST':'Chưa cấp quyền MST · có thể tra cứu bằng gói số tờ';
   permission.className=p.mst_allowed?'mst-picker-allowed':'mst-picker-not-allowed';
-  pick.append(permission);
+  pick.append(number,alias,permission);
   pick.addEventListener('click',()=>{
-   $('mstFree').value='';$('mstFree').hidden=true;select.value=mst;select.dispatchEvent(new Event('change',{bubbles:true}));
-   menu.hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
-   $('mstPickerToggle').dataset.userPicked='yes';updateChosen();
+   input.value=mst;select.value=mst;closePicker();
+   select.dispatchEvent(new Event('change',{bubbles:true}));
   });
   card.append(pick);
-  // Deleting a profile now also removes backend invoice deduction history.
-  // Keep this destructive action only in the dedicated customer portal.
-  const manage=document.createElement('a');
-  manage.href='./';manage.target='_blank';manage.rel='noopener noreferrer';
-  manage.className='mst-picker-remove';manage.textContent='Quản lý';
-
-  card.append(manage);menu.append(card);
+  const manage=document.createElement('a');manage.href='/user';
+  manage.target='_blank';manage.rel='noopener noreferrer';manage.className='mst-picker-remove';
+  manage.textContent='Quản lý';card.append(manage);menu.append(card);
  }
- const typed=normalize($('mstFree').value);
- const wanted=visibleProfiles.some(p=>p.mst===typed)?typed:
-  visibleProfiles.some(p=>p.mst===old)?old:
-  visibleProfiles.some(p=>p.mst===remembered)?remembered:visibleProfiles[0]?.mst||'';
- select.value=wanted;$('mstFree').hidden=!!wanted;
- if(wanted)$('mstFree').value='';
- $('mstProfileCount').textContent=visibleProfiles.length+' / '+profiles.length+' hồ sơ';
+ const valid=m=>profiles.some(p=>p.mst===m);
+ const typedMst=normalize(typed),wanted=valid(typedMst)?typedMst:
+  valid(old)?old:valid(remembered)?remembered:ordered[0]?.mst||'';
+ select.value=wanted;
+ input.hidden=false;
+ if(!typed||valid(typedMst))input.value=wanted;
+ $('mstProfileCount').textContent=profiles.length+' hồ sơ đã lưu';
  updateChosen();
+ if(!menu.hidden)filterPicker();
 }
 function updateChosen(){
- const mst=$('mst').value,p=profiles.find(x=>x.mst===mst);
- $('mstPickerToggle').textContent=$('mstPickerToggle').dataset.userPicked==='yes'&&p?
-  p.mst+' · '+mstName(p)+' ▾':'Chọn MST ▾';
- for(const card of $('mstPickerMenu').children){
-  const chosen=card.querySelector('.mst-picker-choice');
-  const selected=!!chosen&&chosen.querySelector('strong')?.textContent===mst;
+ const mst=$('mst').value;
+ $('mstPickerToggle').textContent='▾';
+ for(const card of $('mstPickerMenu').querySelectorAll('.mst-picker-card')){
+  const selected=card.querySelector('strong')?.textContent===mst;
   card.classList.toggle('selected',selected);
-  chosen?.querySelectorAll('.mst-picker-selected').forEach(el=>el.remove());
+  card.querySelector('.mst-picker-selected')?.remove();
   if(selected){
    const badge=document.createElement('span');badge.className='mst-picker-selected';
-   badge.textContent='Đang chọn';
-   chosen.append(badge);
+   badge.textContent='Gần đây';card.querySelector('.mst-picker-choice')?.append(badge);
   }
  }
 }
@@ -189,7 +185,8 @@ async function select(mst){
  updateChosen();
  if(!owner||!(/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))||
    false)return;
- try{localStorage.setItem(lastKey(),mst)}catch{}
+ let previousLast='';try{previousLast=localStorage.getItem(lastKey())||'';localStorage.setItem(lastKey(),mst)}catch{}
+ if(previousLast!==mst)renderPicker();
  try{
   // First read the shared end-to-end encrypted cloud vault; then migrate old local data.
   let cloud=null;
@@ -218,11 +215,11 @@ async function setUser(userId,rows,mode='mst'){
  const wasInvoiceMode=invoiceMode,wasOwner=owner,previousProfilesJson=JSON.stringify(profiles);
  invoiceMode=mode==='invoice';
  $('mstPickerToggle').hidden=false;
- $('mstFree').placeholder=invoiceMode?'Nhập MST bất kỳ (gói số tờ)':'Nhập MST mới để thêm vào gói MST';
+ $('mstFree').placeholder=invoiceMode?'Nhập hoặc tìm MST (gói số tờ)':'Nhập MST hoặc tìm theo tên hồ sơ';
  const changed=(userId||'')!==owner;
  if(changed){
   $('mstPickerToggle').dataset.userPicked='';
-  owner=userId||'';deviceKey=null;requestSeq++;$('gdtPassword').value='';
+  owner=userId||'';deviceKey=null;requestSeq++;$('gdtPassword').value='';$('mstFree').value='';
   $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
  }
  const previous=changed?[]:[...profiles];
@@ -261,7 +258,7 @@ async function saveAfterLogin(mst,password){
   }
  }catch(e){notify('Không thể lưu mật khẩu vào bộ nhớ được mã hóa: '+(e.message||e),true);return {stored:false}}
 }
-async function forget(mst=$('mst').value){
+async function forget(mst=normalize($('mstFree').value||$('mst').value)){
  if(!owner||!mst)return;
  await window.AutoTaxSharedMstVault?.remove(mst);
  await deleteStore('credentials',entryKey(mst));
@@ -280,34 +277,49 @@ function claimPasswordReminder(mst){
 }
 function lock(){requestSeq++;deviceKey=null;$('gdtPassword').value=''}
 function init(){
- const closePicker=()=>{
-  $('mstPickerMenu').hidden=true;
-  $('mstPickerToggle').setAttribute('aria-expanded','false');
- };
- $('mstPickerToggle').addEventListener('click',()=>{
-  const menu=$('mstPickerMenu');menu.hidden=!menu.hidden;
-  $('mstPickerToggle').setAttribute('aria-expanded',String(!menu.hidden));
-  if(!menu.hidden){
-   const search=$('mstPickerSearch');if(search){search.value='';
-    menu.querySelectorAll('.mst-picker-card').forEach(card=>card.hidden=false);
-    search.focus();}
+ const input=$('mstFree'),selector=$('mst'),toggle=$('mstPickerToggle');
+ toggle.addEventListener('click',()=>{$('mstPickerMenu').hidden?openPicker():closePicker();input.focus();});
+ input.addEventListener('focus',openPicker);
+ input.addEventListener('input',()=>{
+  const typed=normalize(input.value);
+  const exact=profiles.find(p=>p.mst===typed);
+  if(typed&&/^(?:\d{10}|\d{12}|\d{13})$/.test(typed)){
+   if(exact){
+    if(selector.value!==exact.mst){selector.value=exact.mst;void select(exact.mst)}
+   }else selector.value='';
+  }else selector.value='';
+  requestSeq++;$('gdtPassword').value='';
+  openPicker();updateChosen();
+  if(exact&&selector.value===exact.mst)void select(exact.mst);
+ });
+ input.addEventListener('keydown',event=>{
+  if(event.key==='ArrowDown'){openPicker();event.preventDefault();return}
+  if(event.key==='Escape'){closePicker();return}
+  if(event.key==='Enter'&&!$('mstPickerMenu').hidden){
+   const typed=normalize(input.value);
+   if(/^(?:\d{10}|\d{12}|\d{13})$/.test(typed)){closePicker();return}
+   const first=[...$('mstPickerMenu').querySelectorAll('.mst-picker-card:not([hidden]) .mst-picker-choice')][0];
+   if(first){event.preventDefault();first.click()}
   }
  });
  document.addEventListener('pointerdown',event=>{
   if(!$('mstPickerMenu').hidden&&!$('mstPickerMenu').contains(event.target)&&
-     !$('mstPickerToggle').contains(event.target))closePicker();
+   !toggle.contains(event.target)&&!input.contains(event.target))closePicker();
  },{capture:true});
  document.addEventListener('keydown',event=>{if(event.key==='Escape')closePicker()});
- $('mst').addEventListener('change',()=>{
-  $('mstFree').value='';$('mstFree').hidden=!!$('mst').value;
-  if(!$('mst').value)$('mstFree').focus();
-  void select($('mst').value);
+ selector.addEventListener('change',()=>{
+  input.value=selector.value;input.hidden=false;closePicker();
+  void select(selector.value);
  });
- $('mstFree').addEventListener('change',()=>{
-  $('mst').value='';void select(normalize($('mstFree').value));
+ input.addEventListener('change',()=>{
+  const mst=normalize(input.value);
+  if(/^(?:\d{10}|\d{12}|\d{13})$/.test(mst)&&selector.value!==mst){
+   selector.value=profiles.some(p=>p.mst===mst)?mst:'';
+   void select(mst);
+  }
  });
  $('mstForgetPassword').addEventListener('click',()=>{
-  if(confirm('Xóa mật khẩu cổng Thuế đã lưu của MST đang chọn trên thiết bị này?'))
+  if(confirm('Xóa mật khẩu cổng Thuế đã lưu của MST đang nhập?'))
    void forget().catch(e=>notify(e.message,true));
  });
 }

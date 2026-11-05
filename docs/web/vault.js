@@ -111,9 +111,10 @@ function filterPicker(){
   card.hidden=!!query&&!text.includes(query)&&(!numeric||!text.includes(numeric));
  }
 }
-function openPicker(){
+function openPicker(showAll=false){
  $('mstPickerMenu').hidden=false;$('mstPickerToggle').setAttribute('aria-expanded','true');
- filterPicker();
+ if(showAll)$('mstPickerMenu').querySelectorAll('.mst-picker-card').forEach(card=>card.hidden=false);
+ else filterPicker();
 }
 function renderPicker(){
  const select=$('mst'),input=$('mstFree'),typed=input.value.trim(),old=select.value;
@@ -278,14 +279,14 @@ function claimPasswordReminder(mst){
 function lock(){requestSeq++;deviceKey=null;$('gdtPassword').value=''}
 function init(){
  const input=$('mstFree'),selector=$('mst'),toggle=$('mstPickerToggle');
- toggle.addEventListener('click',()=>{$('mstPickerMenu').hidden?openPicker():closePicker();input.focus();});
- input.addEventListener('focus',openPicker);
+ toggle.addEventListener('click',()=>{$('mstPickerMenu').hidden?openPicker(true):closePicker();});
+ input.addEventListener('focus',()=>openPicker(true));
  input.addEventListener('input',()=>{
   const typed=normalize(input.value);
   const exact=profiles.find(p=>p.mst===typed);
   if(typed&&/^(?:\d{10}|\d{12}|\d{13})$/.test(typed)){
    if(exact){
-    if(selector.value!==exact.mst){selector.value=exact.mst;void select(exact.mst)}
+    if(selector.value!==exact.mst)selector.value=exact.mst
    }else selector.value='';
   }else selector.value='';
   requestSeq++;$('gdtPassword').value='';
@@ -293,7 +294,7 @@ function init(){
   if(exact&&selector.value===exact.mst)void select(exact.mst);
  });
  input.addEventListener('keydown',event=>{
-  if(event.key==='ArrowDown'){openPicker();event.preventDefault();return}
+  if(event.key==='ArrowDown'){openPicker(true);event.preventDefault();return}
   if(event.key==='Escape'){closePicker();return}
   if(event.key==='Enter'&&!$('mstPickerMenu').hidden){
    const typed=normalize(input.value);

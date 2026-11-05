@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
 <title>AutoTax V1.1.22b Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=1122d">
+<link rel="stylesheet" href="./web/web.css?v=1122e1">
 </head>
 <body>
 <style>
@@ -249,12 +249,21 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
     <div id="skuMapList"></div>
     <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất ZIP</button><button id="downloadSingleMappedStock" type="button" class="outline">Tải từng tờ nhập hàng</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
   </dialog>
-  <dialog id="invoiceQuotaDialog" aria-label="Hết hạn mức hóa đơn"><h2>Hết hạn mức tra cứu</h2><p>hết hạn mức tra cứu vui lòng mua thêm số hoá đơn</p><div class="actions"><a href="/user#planSection" target="_blank" rel="noopener noreferrer" class="outline">Mua thêm số hóa đơn</a><button type="button" id="invoiceQuotaClose">Đóng</button></div></dialog>
-<dialog id="mstLimitDialog" class="stock-map-dialog">
-  <h2>Đã đạt giới hạn MST</h2>
-  <p>Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp</p>
-  <p><a href="/user" target="_blank" rel="noopener noreferrer">Mở Quản lý tài khoản</a></p>
-  <button id="mstLimitClose" type="button">Đóng</button>
+  <dialog id="invoiceQuotaDialog" class="autotax-quota-dialog" aria-labelledby="invoiceQuotaTitle">
+  <h2 id="invoiceQuotaTitle">Hạn mức tài khoản</h2>
+  <p>Hạn mức tài khoản đạt giới hạn. Vui lòng gia hạn thêm</p>
+  <div class="autotax-quota-actions">
+   <a href="/user/" class="autotax-quota-renew" target="_blank" rel="noopener noreferrer">Gia hạn</a>
+   <button type="button" id="invoiceQuotaClose" class="autotax-quota-close">Đóng</button>
+  </div>
+ </dialog>
+<dialog id="mstLimitDialog" class="autotax-quota-dialog" aria-labelledby="mstLimitTitle">
+  <h2 id="mstLimitTitle">Hạn mức tài khoản</h2>
+  <p>Hạn mức tài khoản đạt giới hạn. Vui lòng gia hạn thêm</p>
+  <div class="autotax-quota-actions">
+   <a href="/user/" class="autotax-quota-renew" target="_blank" rel="noopener noreferrer">Gia hạn</a>
+   <button type="button" id="mstLimitClose" class="autotax-quota-close">Đóng</button>
+  </div>
  </dialog>
  <dialog id="mstPasswordReminder" class="stock-map-dialog">
   <h2>Đến hạn nhắc đổi mật khẩu cổng Thuế</h2>
@@ -353,8 +362,8 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/export-zip.js?v=1122"></script>
 <script src="./web/invoice-cache-v120.js?v=120cache1"></script>
 <script src="./web/date-slide-picker.js?v=1122b"></script>
-<script src="./web/web.js?v=1122b"></script>
-<script src="./web/account-modal.js?v=121account2"></script>
+<script src="./web/web.js?v=1122e1"></script>
+<script src="./web/account-modal.js?v=1122e1"></script>
 <script src="./extension-link-v118.js?v=121account2"></script>
 <script src="./web/web-results.js?v=120nov2"></script>
 <script src="./web/pdf-preview-v120a.js?v=1120a"></script>

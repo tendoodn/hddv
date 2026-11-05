@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
 <title>AutoTax V1.1.22 Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=1122">
+<link rel="stylesheet" href="./web/web.css?v=1122b">
 </head>
 <body>
 <style>
@@ -34,7 +34,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 </script>
 <main class="wrap">
   <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB V1.1.22</span></a>
-    <div class="toplinks"><a id="extensionHeaderDownloadBtn" href="https://drive.google.com/file/d/1UmGKNJel6IwXA_74f2QZXlH_t2vTv2B8/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
+    <div class="toplinks"><a id="extensionHeaderDownloadBtn" class="autotax-extension-cta" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 17px;border-radius:10px;background:#e60012;color:#fff;font-weight:800;border:2px solid #ffcad1;box-shadow:0 4px 18px rgba(230,0,18,.34)" href="https://drive.google.com/file/d/1UmGKNJel6IwXA_74f2QZXlH_t2vTv2B8/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">⬇ Tải Extension Chrome V1.1.22</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>
     <p>Tra cứu hóa đơn → Chọn hồ sơ → Xuất Excel, XML và PDF nhà phát hành</p>
@@ -90,7 +90,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
           <label for="mst">Mã số thuế <em>*</em></label>
           <div class="mst-combobox">
            <select id="mst" name="mst" class="mst-hidden-select" aria-label="Hồ sơ MST đã chọn" tabindex="-1"><option value="">Nhập MST mới</option></select>
-           <input id="mstFree" name="mstFree" type="text" inputmode="search" maxlength="120" autocomplete="off"
+           <input id="mstFree" name="tax_id_lookup" type="search" inputmode="search" maxlength="120" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true"
             placeholder="Nhập MST hoặc tìm theo tên hồ sơ…" aria-label="Nhập hoặc tìm kiếm MST" aria-controls="mstPickerMenu">
            <button id="mstPickerToggle" class="mst-picker-toggle" type="button" aria-label="Mở danh sách MST" aria-controls="mstPickerMenu" aria-expanded="false">▾</button>
           </div>
@@ -109,7 +109,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
           <div class="date-pair autotax-vn-dates">
  <div class="vn-date-field"><input type="text" id="fromDate" name="fromDate" inputmode="numeric" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/yyyy" maxlength="10" autocomplete="off" required aria-label="Từ ngày, ngày/tháng/năm"><button type="button" id="fromDatePick" class="outline" title="Chọn ngày bắt đầu" aria-label="Mở lịch chọn từ ngày">📅</button><input type="date" id="fromDateNative" tabindex="-1" aria-hidden="true" lang="vi-VN"></div>
  <div class="vn-date-field"><input type="text" id="toDate" name="toDate" inputmode="numeric" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/yyyy" maxlength="10" autocomplete="off" required aria-label="Đến ngày, ngày/tháng/năm"><button type="button" id="toDatePick" class="outline" title="Chọn ngày kết thúc" aria-label="Mở lịch chọn đến ngày">📅</button><input type="date" id="toDateNative" tabindex="-1" aria-hidden="true" lang="vi-VN"></div>
- </div><small>Ngày / tháng / năm (dd/mm/yyyy). Bấm biểu tượng lịch để chọn ngày.</small>
+ </div><small>Ngày / tháng / năm (dd/mm/yyyy). Bấm lịch để chọn ngày, dùng ‹ › hoặc vuốt ngang để đổi tháng.</small>
         </div>
         <div class="field field-note">
           <label>Phiên làm việc</label><p id="gdtStatus">Mật khẩu được ghi nhớ dạng mã hóa trên thiết bị sau khi xác thực thành công.</p><p id="captchaStatus" class="captcha-status" aria-live="polite">AutoTax sẽ tự nhận dạng CAPTCHA. Bạn chỉ cần MST và mật khẩu.</p>
@@ -351,7 +351,8 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/web-pdf.js?v=1122"></script>
 <script src="./web/export-zip.js?v=1122"></script>
 <script src="./web/invoice-cache-v120.js?v=120cache1"></script>
-<script src="./web/web.js?v=1122"></script>
+<script src="./web/date-slide-picker.js?v=1122b"></script>
+<script src="./web/web.js?v=1122b"></script>
 <script src="./web/account-modal.js?v=121account2"></script>
 <script src="./extension-link-v118.js?v=121account2"></script>
 <script src="./web/web-results.js?v=120nov2"></script>

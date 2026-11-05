@@ -344,13 +344,21 @@ async function refreshAccount(){
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
     'Chỉ chuyển được khi cả hai gói có quyền sử dụng còn hiệu lực.';
   const ownProfiles=profiles.data||[];
-  const ownMsts=new Set(ownProfiles.map(x=>String(x.mst||'').replace(/\D/g,'')));
-  const borrowedProfiles=shared.filter(row=>!ownMsts.has(String(row.mst||'').replace(/\D/g,'')))
-   .map(row=>({...row,source:'team',mst_allowed:row.can_use_mst_package===true}));
-  const allProfiles=[...ownProfiles,...borrowedProfiles];
+  // A borrowed MST is a read-only alias of the leader's profile even if this
+  // member previously saved the same tax ID independently.
+  const merged=new Map(ownProfiles.map(x=>[normalizedMst(x.mst),{...x,source:'personal'}]));
+  for(const sharedRow of shared){
+   const mst=normalizedMst(sharedRow.mst);
+   if(!mst)continue;
+   const original=merged.get(mst)||{};
+   merged.set(mst,{...original,...sharedRow,source:'team',mst,
+    mst_allowed:sharedRow.can_use_mst_package===true||
+      sharedRow.personally_authorized===true||original.mst_allowed===true});
+  }
+  const allProfiles=[...merged.values()];
   profileMsts=allProfiles.map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean);
   teamAllowedMsts=(ent.data?.team_mst_allowed_msts||[]).map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean);
-  profileAllowedMsts=[...new Set([...(profiles.data||[]).filter(x=>x.mst_allowed===true)
+  profileAllowedMsts=[...new Set([...allProfiles.filter(x=>x.mst_allowed===true)
    .map(x=>String(x.mst||'').replace(/\D/g,'')).filter(Boolean),...teamAllowedMsts])];
   profileDisplayNames.clear();profileVerifiedNames.clear();
   for(const item of allProfiles){

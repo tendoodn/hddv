@@ -39,4 +39,12 @@
   try{return await task}finally{inFlight.delete(userId)}
  }
  window.AutoTaxMemberCacheReset=Object.freeze({check});
+ // Extension session events are emitted after login/license refresh and also
+ // on initial sidebar recovery. This invalidates cache before a new scan.
+ document.addEventListener("autotax-license-change",event=>{
+  const session=event.detail?.session;
+  if(!session?.access_token||!session?.user?.id)return;
+  void check({userId:session.user.id,token:session.access_token})
+   .catch(error=>console.warn("AutoTax member cache reset:",error.message));
+ });
 })();

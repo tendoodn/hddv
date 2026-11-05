@@ -9,9 +9,9 @@
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax V1.1.20 Web · Tra cứu và tải hóa đơn điện tử</title>
+<title>AutoTax V1.1.22 Web · Tra cứu và tải hóa đơn điện tử</title>
 <meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
-<link rel="stylesheet" href="./web/web.css?v=121account2">
+<link rel="stylesheet" href="./web/web.css?v=1122">
 </head>
 <body>
 <style>
@@ -33,7 +33,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 });
 </script>
 <main class="wrap">
-  <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB V1.1.20</span></a>
+  <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB V1.1.22</span></a>
     <div class="toplinks"><a id="extensionHeaderDownloadBtn" href="https://drive.google.com/file/d/1Y6iXUJeicgWwtlUowvrxGQfk4PYgBr_j/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>
@@ -143,7 +143,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
       </div>
       
       <button id="searchBtn" type="button" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
-      <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" id="downloadConsoleSpinner" aria-hidden="true"></span><span id="downloadConsoleDone" class="autotax-console-done" hidden>✓ Đã xong</span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
+      <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" id="downloadConsoleSpinner" aria-hidden="true"></span><span id="downloadConsoleActive" hidden>Đang tải…</span><span id="downloadConsoleDone" class="autotax-console-done" hidden>✓ Đã xong</span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
       <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
       <small>Chọn thư mục lưu lần đầu khi bấm Tìm kiếm. Các lần sau dùng lại thư mục đã chọn khi trình duyệt còn cấp quyền.</small>
 
@@ -171,8 +171,8 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
         <button id="exportExcel" type="button">Tải Excel</button>
         <button id="exportXml" type="button">Tải XML</button>
         <button id="exportHtml" type="button">Tải HTML</button>
-        <button id="exportPdfTax" type="button" title="Ưu tiên PDF nguyên bản nếu có trong gói dữ liệu của cổng Thuế; nếu không có sẽ xuất bản thể hiện ghi rõ nguồn.">Tải PDF Thuế</button>
-        <button id="exportPdf" type="button" title="Thử PDF gốc của nhà phát hành trước; nếu không lấy được sẽ tạo PDF dựng lại và báo rõ nguồn.">Tải PDF gốc-dựng (thử nghiệm)</button>
+        <button id="exportPdfTax" type="button" title="PDF dựng từ dữ liệu Thuế, không phải PDF gốc.">Tải PDF dựng</button>
+        <button id="exportPdf" type="button" title="Chờ phát triển chức năng PDF gốc hàng loạt.">PDF Gốc (chờ phát triển)</button>
       </div>
     </div>
     <p class="result-help">Phạm vi tải được xác định tự động: nếu có hóa đơn đã tick trong danh sách đang hiển thị thì chỉ tải các hóa đơn đó; nếu không tick, tải tất cả hóa đơn thuộc bộ lọc hiện tại. Không cần chọn thêm chế độ xuất. Việc lấy PDF gốc phụ thuộc nhà phát hành và bước xác thực hợp lệ.</p>
@@ -344,14 +344,14 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/stock-cache.js?v=113"></script>
 <script src="./web/download-folder.js?v=126flat1"></script>
 <script src="./mst-sync.js?v=118"></script>
-<script src="./web/vault.js?v=121search2"></script>
+<script src="./web/vault.js?v=1122"></script>
 <script src="./web/pdf.js?v=121eSignatureWatermark"></script>
 <script src="./web/issuer-archive.js?v=1118"></script>
 <script src="./web/vinvoice-bridge.js?v=121vinvoice"></script>
-<script src="./web/web-pdf.js?v=121vinvoice"></script>
-<script src="./web/export-zip.js?v=126flat1"></script>
+<script src="./web/web-pdf.js?v=1122"></script>
+<script src="./web/export-zip.js?v=1122"></script>
 <script src="./web/invoice-cache-v120.js?v=120cache1"></script>
-<script src="./web/web.js?v=121account2"></script>
+<script src="./web/web.js?v=1122"></script>
 <script src="./web/account-modal.js?v=121account2"></script>
 <script src="./extension-link-v118.js?v=121account2"></script>
 <script src="./web/web-results.js?v=120nov2"></script>

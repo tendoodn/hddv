@@ -71,7 +71,7 @@ $('accountProfileForm').addEventListener('submit',async event=>{
   if(!session?.user?.email)throw Error('Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.');
   if(newPass){
    const {error:passwordError}=await client.auth.signInWithPassword({email:session.user.email,password:oldPass});
-   if(passwordError)throw Error('Mật khẩu cũ không đúng. '+passwordError.message);
+   if(passwordError)throw Error('Sai mật khẩu cũ.');
   }
   const data={full_name:name,display_name:name,avatar_data_url:avatarToSave===logo?null:avatarToSave};
   const change={data,...(newPass?{password:newPass}:{})};
@@ -85,7 +85,7 @@ $('accountProfileForm').addEventListener('submit',async event=>{
   await render();
   if(typeof refresh==='function')await refresh();
   status('Đã lưu tên và avatar'+(newPass?' cùng mật khẩu mới':'')+'.');
- }catch(error){status('Không lưu được: '+error.message,true)}
+ }catch(error){status('Không lưu được: '+(window.AutoTaxAuthErrorVi?.(error)||(/[À-ỹ]/.test(error.message||'')?error.message:'Vui lòng kiểm tra thông tin và thử lại.')),true)}
  finally{btn.disabled=false}
 });
 client.auth.onAuthStateChange(event=>{

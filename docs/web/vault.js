@@ -215,7 +215,11 @@ function updateChosen(){
  }
 }
 async function select(mst){
- const input=$('gdtPassword');input.value='';
+ const input=$('gdtPassword');input.value='';input.type='password';
+ const borrowed=profiles.some(p=>p.mst===mst&&p.source==='team');
+ const eye=$('togglePassword'),forget=$('mstForgetPassword');
+ if(eye)eye.hidden=borrowed;
+ if(forget)forget.hidden=borrowed;
  const stamp=++requestSeq;
  updateChosen();
  if(!owner||!(/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))||
@@ -223,18 +227,11 @@ async function select(mst){
  let previousLast='';try{previousLast=localStorage.getItem(lastKey())||'';localStorage.setItem(lastKey(),mst)}catch{}
  if(previousLast!==mst)renderPicker();
  try{
-  // Shared MST passwords are fetched with membership authorization first.
-  // Never copy the leader's password into the member's personal/local vault.
+  // Borrowed MST profile metadata grants lookup rights, not credential access.
+  // Never read a leader's tax password from cloud, local or team RPCs.
   const profile=profiles.find(p=>p.mst===mst);
   if(profile?.source==='team'){
-   try{
-    const password=await window.AutoTaxTeamShared?.get(mst);
-    if(stamp!==requestSeq)return;
-    if(password){
-     input.value=password;
-     notify('Đã điền mật khẩu MST do trưởng nhóm chia sẻ (chỉ dùng trong phiên này).');
-    }else notify('MST nhóm chưa được trưởng nhóm chia sẻ mật khẩu. Vui lòng liên hệ trưởng nhóm.');
-   }catch(error){if(stamp===requestSeq)notify('Không lấy được mật khẩu nhóm: '+error.message,true)}
+   notify('Hồ sơ MST được chia sẻ. Mật khẩu của trưởng nhóm được bảo mật; nếu cần đăng nhập cổng Thuế, hãy dùng thông tin đăng nhập riêng.');
    return;
   }
   // Personal MSTs continue to use the same encrypted cross-device vault.
@@ -280,6 +277,17 @@ async function setUser(userId,rows,mode='mst'){
    can_use_mst_package:typeof x==='object'&&x.can_use_mst_package===true,
    personally_authorized:typeof x==='object'&&x.personally_authorized===true}];
  }).filter(([mst])=>/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))).values()];
+ const currentIds=new Set(profiles.map(p=>p.mst));
+ const revoked=previous.filter(p=>p.source==='team'&&!currentIds.has(p.mst)).map(p=>p.mst);
+ if(revoked.length){
+  const activeMst=normalize($('mstFree').value||$('mst').value);
+  if(revoked.includes(activeMst)){
+   $('mstFree').value='';$('mst').value='';$('gdtPassword').value='';
+   $('gdtPassword').type='password';
+   const eye=$('togglePassword');if(eye)eye.hidden=false;
+  }
+  document.dispatchEvent(new CustomEvent('autotax-team-msts-revoked',{detail:{msts:revoked}}));
+ }
  if(owner&&!invoiceMode){
   const allowed=new Set(profiles.map(p=>p.mst));
   for(const old of previous)if(!allowed.has(old.mst))
@@ -316,7 +324,7 @@ async function saveAfterLogin(mst,password){
  }catch(e){notify('Không thể lưu mật khẩu vào bộ nhớ được mã hóa: '+(e.message||e),true);return {stored:false}}
 }
 async function forget(mst=normalize($('mstFree').value||$('mst').value)){
- if(!owner||!mst)return;
+ if(!owner||!mst||profiles.some(p=>p.mst===mst&&p.source==='team'))return;
  await window.AutoTaxSharedMstVault?.remove(mst);
  await deleteStore('credentials',entryKey(mst));
  $('gdtPassword').value='';notify('Đã xóa mật khẩu MST '+mst+' trên kho đồng bộ và thiết bị.');

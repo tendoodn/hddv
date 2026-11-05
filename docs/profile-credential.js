@@ -50,12 +50,17 @@ async function decrypt(user,record){
   secret,new Uint8Array(record.data));
  return new TextDecoder().decode(bytes);
 }
+async function syncTeamMst(mst,password){
+ try{await window.AutoTaxTeamShared?.syncOwnedPassword?.(mst,password)}
+ catch(error){console.warn('Mật khẩu HĐĐT nhóm chưa đồng bộ:',error.message)}
+}
 async function save(user,mst,password){
  if(!user||!valid(mst)||typeof password!=='string'||!password||password.length>256)
   throw Error('Cần tài khoản, MST và mật khẩu hợp lệ.');
  let prior=null;
  try{prior=await decrypt(user,await read(user,mst))}catch{}
  if(prior===password){
+  await syncTeamMst(mst,password);
   try{await window.AutoTaxSharedMstVault?.importLocal(mst,password);return {stored:true,changed:false,synced:true}}
   catch(e){return {stored:true,changed:false,synced:false,error:e.message}}
  }
@@ -68,6 +73,7 @@ async function save(user,mst,password){
   tx.objectStore('credentials').put({v:2,iv:[...iv],data:[...data]},user+':'+normalize(mst));
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
  });
+ await syncTeamMst(mst,password);
  try{
   await window.AutoTaxSharedMstVault?.save(mst,password);
   return {stored:true,changed:true,synced:true};

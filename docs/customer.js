@@ -137,7 +137,7 @@ function prettyError(error){
   invoice_mode_not_selected:"Vui lòng chọn chế độ sử dụng hóa đơn.",
   invalid_mst:"MST phải có 10, 12 hoặc 13 chữ số (chi nhánh dạng 10-001)."
  };
- return known[code]||known[msg]||authErrorVi(error)||( /[a-z]{3,}\\s+[a-z]{3,}/i.test(msg)&&!/[À-ỹ]/.test(msg) ? "Không thực hiện được thao tác. Vui lòng thử lại." : msg );
+ return known[code]||known[msg]||authErrorVi(error)||(/[À-ỹ]/.test(msg)?msg:"Không thực hiện được thao tác. Vui lòng thử lại.");
 }
 const isAuthSessionError=error=>/Auth session missing|JWT expired|Invalid Refresh Token|refresh token not found/i.test(String(error?.message||error||''));
 async function rpc(name,args={}){

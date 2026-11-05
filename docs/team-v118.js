@@ -77,14 +77,15 @@ async function renderSharedMstPanel(){
    field.setAttribute('aria-label','Mật khẩu MST '+profile.mst);
    const reveal=make('button','Xem mật khẩu','secondary');reveal.type='button';
    reveal.disabled=!profile.has_shared_password;
+   let shown=false;
    reveal.addEventListener('click',async()=>{
+    if(shown){field.type='password';field.value='';reveal.textContent='Xem mật khẩu';shown=false;return}
     reveal.disabled=true;
     try{
      const pwd=await client.get(profile.mst);
      if(!pwd)throw Error('Trưởng nhóm chưa chia sẻ mật khẩu hoặc quyền MST đã bị thu hồi.');
-     field.value=pwd;field.type='text';
+     field.value=pwd;field.type='text';shown=true;
      reveal.textContent='Ẩn mật khẩu';
-     reveal.onclick=()=>{field.type='password';field.value='';reveal.textContent='Xem mật khẩu';reveal.onclick=null};
     }catch(error){notice(error.message,true)}
     finally{reveal.disabled=false}
    });

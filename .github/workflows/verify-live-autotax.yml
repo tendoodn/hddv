@@ -1,4 +1,4 @@
-name: Verify AutoTax v1.1.25 separate MST grants and invoice codes
+name: Verify AutoTax v1.1.26 team MST profiles without passwords
 on:
   push:
     branches: [main]
@@ -20,15 +20,15 @@ jobs:
           import time, urllib.request, urllib.error, sys
           origin = "https://tracuuhoadon.top"
           checks = {
-              "/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "WEB V1.1.25", "data365-payment.js?v=1123data365qr1", "web/web-results.js?v=1123data365qr1", "web/web.css?v=1125recent", "web/stock-cache.js?v=1122g", "web/tendoo-import.js?v=1123", "web/invoice-cache-v120.js?v=1123", "web/report.js?v=1125codes", "team-shared-v119.js?v=119team1", "web/vault.js?v=1125sharedmst", "web/web.js?v=1125sharedmst", 'id="clearLocalInvoiceHistory"', 'id="stockSkuDialog"', "Liên kết lại mã hàng", 'class="dialog-heading sku-map-sticky-head"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng"],
-              "/user/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.25</span>", 'id="invoiceTeamLimit"', 'id="mstTeamLimit"', "team-shared-v119.js?v=119team1", "team-v118.js?v=1125splitrights", "customer.js?v=1125grantfix1", 'id="mstAllowHelp"', "Thiết lập lại quyền sử dụng"],
-              "/admin/": ["<title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.25 · ADMIN</span>", "adminSessionPending", "Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")', 'id="grantCustomerSearch"', 'id="grantCustomerMatches"', 'function renderGrantMatches()'],
+              "/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "WEB V1.1.26", "data365-payment.js?v=1123data365qr1", "web/web-results.js?v=1123data365qr1", "web/web.css?v=1125recent", "web/stock-cache.js?v=1122g", "web/tendoo-import.js?v=1123", "web/invoice-cache-v120.js?v=1123", "web/report.js?v=1125codes", "team-shared-v119.js?v=1126metadataonly", "web/vault.js?v=1126profilesonly", "web/web.js?v=1126profilesonly", 'id="clearLocalInvoiceHistory"', 'id="stockSkuDialog"', "Liên kết lại mã hàng", 'class="dialog-heading sku-map-sticky-head"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng"],
+              "/user/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.26</span>", 'id="invoiceTeamLimit"', 'id="mstTeamLimit"', "team-shared-v119.js?v=1126metadataonly", "team-v118.js?v=1126profilesonly", "customer.js?v=1125grantfix1", 'id="mstAllowHelp"', "Thiết lập lại quyền sử dụng"],
+              "/admin/": ["<title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.26 · ADMIN</span>", "adminSessionPending", "Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")', 'id="grantCustomerSearch"', 'id="grantCustomerMatches"', 'function renderGrantMatches()'],
               "/data365-payment.js": ["package_code:'DATA365',coupon_code:null,replace_order_id:null", "addon_my_order_status", "data?.status==='paid'", "setState(SUCCESS,'success')", "5000)"],
               "/customer.js": ['if(packageCode==="DATA365")', "Thanh toán QR DATA365", "autotax_member_authorize_shared_mst_v120", "$('mstGrantUnlock').disabled=false", "$('mstGrantCancel').hidden=!mstGrantUnlocked", "box.dataset.sharedReadonly==='true'", "personalMstCapacity"],
               "/admin-site-links.js": ["$('adminComboPackagesLink')?.remove();"],
-              "/team-shared-v119.js": ["AutoTaxTeamShared", "autotax_team_shared_mst_profiles_v119", "autotax_team_get_shared_mst_password_v119", "autotax_team_share_mst_password_v119"],
-              "/team-v118.js": ["publishSharedPasswords", "renderSharedMstPanel", "autotax_team_set_permissions_v118"],
-              "/web/vault.js": ["AutoTaxTeamShared?.get(mst)", "source:'team'", "autotax_member_authorize_shared_mst_v120", "mst-picker-selected"],
+              "/team-shared-v119.js": ["AutoTaxTeamShared", "autotax_team_shared_mst_profiles_v119", "Object.freeze({setAuthProvider,context,list})"],
+              "/team-v118.js": ["renderSharedMstPanel", "Hồ sơ MST trưởng nhóm chia sẻ", "autotax_team_set_permissions_v118"],
+              "/web/vault.js": ["Mật khẩu của trưởng nhóm được bảo mật", "source:'team'", "autotax_member_authorize_shared_mst_v120", "autotax-team-msts-revoked"],
               "/web/report.js": ["const productCodeOf", "productCodeOf(l)", "Mã hàng hóa"],
               "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
               "/web/web-results.js": ["resultPageSize=10", "RESULT_PAGE_SIZES=new Set([10,20,30])", "commitCatalogFile", "stockSkuSave", "stockSkuData365", "AutoTaxData365Payment.open", "detectMismatch", "scheduleMismatchCheck", "catalogMst"],
@@ -42,6 +42,11 @@ jobs:
               "/web/pdf.js": ["Signature valid", "drawSignatureWatermark", "Bản thể hiện dựng từ dữ liệu"],
               "/web/export-zip.js": ["PDF_Dung_Tu_Thue_", "Bang_Thong_Ke_"],
           }
+          blocked = {
+              "/team-v118.js": ["Mật khẩu MST ", "publishSharedPasswords(", "Xem mật khẩu"],
+              "/team-shared-v119.js": ["autotax_team_get_shared_mst_password_v119", "autotax_team_share_mst_password_v119"],
+              "/web/vault.js": ["AutoTaxTeamShared?.get(mst)", "Đã điền mật khẩu MST do trưởng nhóm"],
+          }
           failed = []
           for route, tokens in checks.items():
               latest = ""
@@ -53,9 +58,10 @@ jobs:
                       ) as response:
                           body=response.read().decode("utf-8","replace")
                           missing=[token for token in tokens if token not in body]
-                          if response.status==200 and not missing:
+                          unexpected=[token for token in blocked.get(route,[]) if token in body]
+                          if response.status==200 and not missing and not unexpected:
                               print("PASS",route,len(body));break
-                          latest="missing "+repr(missing)
+                          latest="missing "+repr(missing)+", unexpected "+repr(unexpected)
                   except Exception as exc:
                       latest=str(exc)
                   time.sleep(5)

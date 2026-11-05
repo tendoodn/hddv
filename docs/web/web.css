@@ -382,16 +382,6 @@ td.audit-info{color:#c6c6db}
  .web-dialog-actions button,.web-dialog-actions .web-dialog-button{font-size:11px;padding:7px 5px}
 }
 
-/* AutoTax 1.1.22: extension download is the primary action on Web. */
-#extensionHeaderDownloadBtn{
- display:inline-flex;align-items:center;justify-content:center;
- padding:10px 17px;border-radius:10px;background:#e60012;color:#fff;
- border:2px solid #ffcad1;text-decoration:none;font-weight:850;
- box-shadow:0 4px 18px rgba(230,0,18,.34);
- animation:autotax-download-pulse 2.5s ease-in-out infinite;
-}
-#extensionHeaderDownloadBtn:hover{background:#ad0010;transform:translateY(-1px)}
-@keyframes autotax-download-pulse{50%{box-shadow:0 4px 22px rgba(230,0,18,.52)}}
 #downloadConsoleActive[hidden]{display:none!important}
 #downloadConsoleActive{font-size:11px;font-weight:800;color:#fef08a}
 
@@ -426,12 +416,7 @@ td.audit-info{color:#c6c6db}
 @media(max-width:480px){.autotax-slide-calendar{left:0;right:auto;width:min(315px,calc(100vw - 36px))}}
 /* Credential suggestions belong to the AutoTax login form, not the tax-ID search. */
 #mstFree::-webkit-credentials-auto-fill-button{visibility:hidden;display:none!important}
-html body .topbar .toplinks #extensionHeaderDownloadBtn,
-html body #extensionHeaderDownloadBtn.autotax-extension-cta{
- background:#e60012!important;color:#fff!important;border:2px solid #ffcad1!important;
- border-radius:10px!important;padding:10px 17px!important;
- font-size:13px!important;font-weight:850!important;
- box-shadow:0 4px 18px #e6001255!important;
- text-decoration:none!important;white-space:nowrap;
-}
-html body #extensionHeaderDownloadBtn.autotax-extension-cta:hover{background:#ac0010!important;transform:translateY(-1px)}
+
+/* Keep permissions vivid despite the more specific small-text rule. */
+.mst-picker-choice small.mst-picker-allowed{color:#22c55e!important;font-weight:850}
+.mst-picker-choice small.mst-picker-not-allowed{color:#f87171!important;font-weight:800}

@@ -237,9 +237,9 @@ async function refresh(){
   $("licenseTitle").textContent=selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"":"Chưa có gói hiệu lực";
   $("licenseTitle").hidden=!!license.allowed&&!(selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices);
   $("invoiceBalance").textContent=invRemaining.toLocaleString("vi-VN")+" / "+invTotal.toLocaleString("vi-VN");
-  $("invoiceTeamLimit").textContent="Hạn mức nhóm. SL: "+teamInvoice.toLocaleString("vi-VN");
+  $("invoiceTeamLimit").textContent="Cá nhân: "+Number(invoice.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamInvoice.toLocaleString("vi-VN");
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
-  $("mstTeamLimit").textContent="Hạn mức nhóm. SL: "+teamMst.toLocaleString("vi-VN")+" MST";
+  $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMst.toLocaleString("vi-VN")+" MST";
   $("mstExpiry").textContent="Hạn gói cá nhân: gần nhất "+vnDate(mst.nearest_expiry)+" · xa nhất "+vnDate(mst.farthest_expiry);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
   const modeCounts={invoice:Number(invoice.remaining||0)+teamInvoice,mst:Number(mst.active_quantity||0)+teamMst};
@@ -518,14 +518,19 @@ async function finishPaidOrder(order){
  let balancesText="Thông tin gói đã ghi nhận trên máy chủ.";
  try{
   await refresh();
-  const licenses=await rpc("addon_my_entitlements");
+  const licenses=await rpc("autotax_my_entitlements_v118");
   state=licenses;
   const inv=licenses.packages?.invoice||{},mst=licenses.packages?.mst||{};
-  const remaining=Number(inv.remaining||0),purchased=Number(inv.purchased||0);
-  const capacity=Number(mst.active_quantity||0);
+  const teamSheets=Number(licenses.team_invoice_remaining||0);
+  const teamPurchased=Number(licenses.team_invoice_purchased||0);
+  const teamMsts=Number(licenses.team_mst_count||0);
+  const remaining=Number(inv.remaining||0)+teamSheets,purchased=Number(inv.purchased||0)+teamPurchased;
+  const capacity=Number(mst.active_quantity||0)+teamMsts;
   // Update the visible counters from the same authoritative response.
   $("invoiceBalance").textContent=remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN");
   $("mstCapacity").textContent=capacity.toLocaleString("vi-VN")+" MST";
+  $("invoiceTeamLimit").textContent="Cá nhân: "+Number(inv.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamSheets.toLocaleString("vi-VN");
+  $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMsts.toLocaleString("vi-VN")+" MST";
   $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   balancesText="Hóa đơn: "+remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN")+
    " lượt\nMST hiện có: "+capacity.toLocaleString("vi-VN")+
@@ -910,5 +915,19 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
  await refresh();
 }));
 client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")location.replace("/");});
+// Membership and quota figures are live entitlements, never permanent account balances.
+// Re-query the server when returning to the page, so removal from a team drops its
+// contributed quota without touching the member's personal quota or history.
+let lastQuotaRefresh=0;
+function refreshTeamBalances(){
+ if(document.hidden||$("dashboard").hidden||checking)return;
+ const now=Date.now();
+ if(now-lastQuotaRefresh<12000)return;
+ lastQuotaRefresh=now;
+ void refresh();
+}
+window.addEventListener("focus",refreshTeamBalances);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshTeamBalances()});
+setInterval(refreshTeamBalances,60000);
 try{const email=localStorage.getItem('autotax_recent_email');if(email&&!$('email').value)$('email').value=email}catch{}
 refresh();

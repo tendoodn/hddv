@@ -221,7 +221,7 @@ $('webNewPasswordForm').addEventListener('submit',async e=>{
   if(error)throw Error('Đã đổi mật khẩu, nhưng cần đăng nhập lại: '+error.message);
   account=data.user;saveEmail(email);
   try{await window.AutoTaxSharedMstVault?.unlock(data.user.id,pass)}catch(err){console.warn('Kho MST chưa mở khóa:',err.message)}
-  recovery=false;$('webNewPassword').value='';$('webNewPasswordConfirm').value='';
+  recovery=false;window.__autotaxRecoveryFromUrl=false;$('webNewPassword').value='';$('webNewPasswordConfirm').value='';
   closeAll();update();await window.AutoTaxRefreshWebAccount?.();
  }catch(error){message('webNewPasswordStatus',error.message||'Không đổi được mật khẩu.',true)}
  finally{btn.disabled=false}
@@ -229,7 +229,7 @@ $('webNewPasswordForm').addEventListener('submit',async e=>{
 client.auth.onAuthStateChange((event,session)=>{
  queueMicrotask(async()=>{
   account=session?.user||null;update();
-  if(event==='PASSWORD_RECOVERY'){
+  if(event==='PASSWORD_RECOVERY'||(window.__autotaxRecoveryFromUrl&&account&&!recovery)){
    recovery=true;$('webNewPasswordTitle').textContent='Đặt mật khẩu mới';
    message('webNewPasswordStatus');open('webNewPasswordDialog');
   }else if(account?.app_metadata?.autotax_force_password_change&&!recovery&&event!=='SIGNED_OUT'){
@@ -242,7 +242,9 @@ client.auth.onAuthStateChange((event,session)=>{
 $('webAccountNotice').hidden=true;
 client.auth.getSession().then(({data:{session}})=>{
  account=session?.user||null;update();
- if(account?.app_metadata?.autotax_force_password_change&&!recovery){
+ if(window.__autotaxRecoveryFromUrl&&account){
+  recovery=true;$('webNewPasswordTitle').textContent='Đặt mật khẩu mới';open('webNewPasswordDialog');
+ }else if(account?.app_metadata?.autotax_force_password_change&&!recovery){
   $('webNewPasswordTitle').textContent='Đổi mật khẩu sau khi Admin cấp lại';
   open('webNewPasswordDialog');
  }

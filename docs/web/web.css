@@ -381,3 +381,16 @@ td.audit-info{color:#c6c6db}
  .web-dialog-actions{gap:6px}
  .web-dialog-actions button,.web-dialog-actions .web-dialog-button{font-size:11px;padding:7px 5px}
 }
+
+/* AutoTax 1.1.22: extension download is the primary action on Web. */
+#extensionHeaderDownloadBtn{
+ display:inline-flex;align-items:center;justify-content:center;
+ padding:10px 17px;border-radius:10px;background:#e60012;color:#fff;
+ border:2px solid #ffcad1;text-decoration:none;font-weight:850;
+ box-shadow:0 4px 18px rgba(230,0,18,.34);
+ animation:autotax-download-pulse 2.5s ease-in-out infinite;
+}
+#extensionHeaderDownloadBtn:hover{background:#ad0010;transform:translateY(-1px)}
+@keyframes autotax-download-pulse{50%{box-shadow:0 4px 22px rgba(230,0,18,.52)}}
+#downloadConsoleActive[hidden]{display:none!important}
+#downloadConsoleActive{font-size:11px;font-weight:800;color:#fef08a}

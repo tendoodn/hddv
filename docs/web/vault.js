@@ -120,7 +120,7 @@ function renderPicker(){
  const select=$('mst'),input=$('mstFree'),typed=input.value.trim(),old=select.value;
  let remembered='';try{remembered=owner?localStorage.getItem(lastKey())||'':''}catch{}
  select.replaceChildren();
- const empty=document.createElement('option');empty.value='';empty.textContent='Nhập MST mới';select.append(empty);
+ const empty=document.createElement('option');empty.value='';empty.textContent='MST đã lưu';select.append(empty);
  const menu=$('mstPickerMenu');menu.replaceChildren();
  // MST mới được nhập trực tiếp vào ô tìm kiếm, không thêm mục lựa chọn riêng.
  const ordered=[...profiles].sort((a,b)=>{

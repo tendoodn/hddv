@@ -219,7 +219,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
  <p id="adminFeedbackCount" class="muted"></p>
  <div id="adminFeedbackList"></div>
 </section>
-<div id="logsPanel" class="panel hidden"><h2>Nhật ký thao tác</h2><div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Khách hàng</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody id="logs"></tbody></table></div></div>
+<div id="logsPanel" class="panel hidden"><h2>Nhật ký thao tác (50 bản ghi mới nhất)</h2><p class="muted">Bản ghi cũ hơn tự động được xóa khỏi máy chủ.</p><div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Khách hàng</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody id="logs"></tbody></table></div></div>
 </section></main>
 <script>
 /* Wrap existing controls in native <details> without replacing form/input nodes. */
@@ -755,7 +755,7 @@ function renderUsers(){
  $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
  $("count").textContent=filtered.length+" tài khoản";
 }
-async function loadLogs(){const {data,error}=await client.rpc("addon_admin_list_logs",{p_limit:200});if(error)return msg("msg","Không tải được nhật ký: "+error.message,true);$("logs").innerHTML=(data||[]).map(l=>'<tr><td>'+fmt(l.created_at)+'</td><td>'+esc(l.actor_email)+'</td><td>'+esc(l.target_email)+'</td><td>'+esc(l.action)+'</td><td><code>'+esc(JSON.stringify(l.details||{}))+'</code></td></tr>').join("")||'<tr><td colspan="5">Chưa có nhật ký.</td></tr>'}
+async function loadLogs(){const {data,error}=await client.rpc("addon_admin_list_logs",{p_limit:50});if(error)return msg("msg","Không tải được nhật ký: "+error.message,true);$("logs").innerHTML=(data||[]).map(l=>'<tr><td>'+fmt(l.created_at)+'</td><td>'+esc(l.actor_email)+'</td><td>'+esc(l.target_email)+'</td><td>'+esc(l.action)+'</td><td><code>'+esc(JSON.stringify(l.details||{}))+'</code></td></tr>').join("")||'<tr><td colspan="5">Chưa có nhật ký.</td></tr>'}
 $("login").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)msg("authMsg",error.message,true);else await bootOnce()};
 $("logout").onclick=async()=>{await client.auth.signOut();location.reload()};
 $("reload").onclick=loadUsers;

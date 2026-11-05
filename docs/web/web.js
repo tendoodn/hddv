@@ -618,7 +618,7 @@ async function exportFileCore(kind){
  if(!targetRows.length)return show('Không có hóa đơn trong phạm vi xuất. Kiểm tra các ô đã tick hoặc tháng được chọn.');
  stopped=false;
  let exportCompleted=false;
- const label={excel:'Excel',xml:'XML',html:'HTML',pdf:'PDF nhà phát hành',pdfTax:'PDF Thuế'}[kind]||kind;
+ const label={excel:'Excel',xml:'XML',html:'HTML',pdf:'PDF nhà phát hành',pdfTax:'PDF dựng lại'}[kind]||kind;
  progress('Bắt đầu tải '+targetRows.length+' hóa đơn · '+label+'…');
  try{
   const stamp=(readVnDate('fromDate')||'').replace(/-/g,'')+'_'+(readVnDate('toDate')||'').replace(/-/g,'')+
@@ -676,7 +676,7 @@ async function exportFileCore(kind){
     '. '+(result.errors.length?result.errors.length+
     ' hóa đơn chưa lấy được PDF gốc — xem link/mã tra cứu trong tệp hướng dẫn ZIP.':
     'Đã tải toàn bộ tệp có thể truy cập.')+
-    ' Chế độ '+(mode==='tax'?'PDF Thuế: ưu tiên PDF có sẵn trong gói nguồn cổng Thuế, nếu không có sẽ dựng bản thể hiện.':'PDF gốc: ưu tiên bản nhà phát hành, nếu không tải được sẽ dùng bản dựng có ghi nhãn.')+' Mọi PDF dựng đều ghi rõ KHÔNG PHẢI GỐC.',
+    ' Chế độ '+(mode==='tax'?'PDF dựng lại: tạo theo cùng mẫu trình bày với nút Xem PDF trên Web và Add-on, không phải PDF gốc.':'PDF gốc: ưu tiên bản nhà phát hành, nếu không tải được sẽ dùng bản dựng có ghi nhãn.')+' Mọi PDF dựng đều ghi rõ KHÔNG PHẢI GỐC.',
     result.errors.length===0);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}
   exportCompleted=true;

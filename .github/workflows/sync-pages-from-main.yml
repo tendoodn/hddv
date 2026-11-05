@@ -1,0 +1,78 @@
+name: Publish AutoTax main docs to configured GitHub Pages branch
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/sync-pages-from-main.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: autotax-live-pages-source
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Mirror only /docs to the configured Pages branch when source is not main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,sys
+          base='https://api.github.com/repos/tendoodn/hddv'
+          headers={
+             'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+             'Accept':'application/vnd.github+json',
+             'X-GitHub-Api-Version':'2026-03-10',
+             'Content-Type':'application/json'
+          }
+          def api(route,method='GET',payload=None):
+              data=None if payload is None else json.dumps(payload).encode()
+              request=urllib.request.Request(base+route,data=data,headers=headers,method=method)
+              try:
+                  with urllib.request.urlopen(request,timeout=30) as reply:
+                      content=reply.read().decode()
+                      return json.loads(content) if content else {}
+              except urllib.error.HTTPError as exc:
+                  raise RuntimeError(method+' '+route+': '+str(exc.code)+' '+exc.read().decode()[:500])
+          pages=api('/pages')
+          source=pages.get('source') or {}
+          branch=source.get('branch')
+          path=source.get('path')
+          print('Configured Pages source:',branch,path,'build_type=',pages.get('build_type'))
+          if branch=='main' and path=='/docs':
+              print('Pages already deploys main/docs: no mirroring necessary.')
+              sys.exit(0)
+          if branch!='feature/addon-license-portal' or path!='/docs':
+              raise RuntimeError('Unexpected Pages source; refusing to modify a branch: '+repr(source))
+          def head(branch_name):
+              return api('/git/ref/heads/'+branch_name)['object']['sha']
+          main=head('main')
+          target=head(branch)
+          main_tree=api('/git/commits/'+main)['tree']['sha']
+          target_tree=api('/git/commits/'+target)['tree']['sha']
+          def docs_sha(tree_sha):
+              tree=api('/git/trees/'+tree_sha)['tree']
+              return next(x['sha'] for x in tree if x['path']=='docs' and x['type']=='tree')
+          wanted=docs_sha(main_tree)
+          previous=docs_sha(target_tree)
+          if previous==wanted:
+              print('Pages /docs already equals main /docs:',wanted)
+          else:
+              tree=api('/git/trees','POST',{'base_tree':target_tree,'tree':[{
+                 'path':'docs','mode':'040000','type':'tree','sha':wanted
+              }]})
+              commit=api('/git/commits','POST',{
+                 'message':'deploy(pages): synchronize main /docs into live branch',
+                 'tree':tree['sha'],
+                 'parents':[target]
+              })
+              api('/git/refs/heads/'+branch,'PATCH',{'sha':commit['sha'],'force':False})
+              print('Mirrored main /docs SHA',wanted,'into',branch,'new commit',commit['sha'])
+          result=api('/pages/builds','POST',{})
+          print('Requested Pages build:',result.get('status'))
+          PY

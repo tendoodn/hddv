@@ -47,9 +47,39 @@
   const selected=options.includes(last)?last:options[0];
   return {options,selected,invoiceUsable,mstUsable,autoSelect:options.length===1&&(invoiceUsable||mstUsable)};
  }
+ // Thống kê số lượt MỚI bị trừ trong đúng phiên quét hiện tại.
+ // Lấy số liệu từ RPC xác nhận giao dịch, không tính từ số hóa đơn tìm thấy
+ // hoặc chênh lệch số dư có thể thay đổi vì những phiên khác.
+ function createScanQuotaCounter(){
+  const totals={group:0,personal:0,charged:0,reread:0,mst:0,groupMst:0,denied:0,batches:0};
+  const safe=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?Math.floor(n):0};
+  function add(data){
+   if(!data||typeof data!=='object')return;
+   const group=safe(data.team_deducted);
+   const charged=safe(data.deducted);
+   const personal=data.personal_deducted===undefined?Math.max(0,charged-group):safe(data.personal_deducted);
+   totals.group+=group;
+   totals.personal+=personal;
+   totals.charged+=charged;
+   totals.reread+=safe(data.previously_deducted);
+   totals.mst+=safe(data.recorded_without_charge);
+   totals.groupMst+=safe(data.team_mst_reads);
+   totals.denied+=safe(data.denied);
+   totals.batches++;
+  }
+  function summary(){
+   return 'TỔNG KẾT PHIÊN QUÉT: Trừ '+totals.charged+' lượt số tờ'+
+    ' (hạn mức nhóm: '+totals.group+', cá nhân: '+totals.personal+'). '+
+    'Đọc lại không trừ: '+totals.reread+' hóa đơn. '+
+    'Đọc bằng gói MST (không trừ số tờ): '+totals.mst+' hóa đơn'+
+    (totals.groupMst?', trong đó MST nhóm: '+totals.groupMst:'')+
+    '. Không đủ quyền/lượt: '+totals.denied+' hóa đơn.';
+  }
+  return {add,summary,getTotals:()=>({...totals})};
+ }
  const forgotSuccess='Nếu email đã đăng ký, hướng dẫn đặt lại mật khẩu sẽ được gửi tới hộp thư.';
  Object.defineProperty(globalThis,'AutoTaxAccountFlow',{
-  value:Object.freeze({normalizeEmail,normalizeName,validEmail,validateSignup,message,duplicateSignup,forgotSuccess,quotaModes}),
+  value:Object.freeze({normalizeEmail,normalizeName,validEmail,validateSignup,message,duplicateSignup,forgotSuccess,quotaModes,createScanQuotaCounter}),
   writable:false,configurable:true
  });
 })();

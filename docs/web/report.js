@@ -58,9 +58,15 @@
   // Thông tin chỉ có khi đã tải chi tiết (XML): ngày ký số, hình thức thanh toán, mã + link tra cứu của nhà cung cấp
   const headOf = (details, r) => details.get(r.key)?.head || null;
   // Một hóa đơn có thể có nhiều mã hàng: lấy mã từ XML/JSON chi tiết, bỏ trùng và ghép trong cùng ô.
+  // Use the identical source-code extractor for XML and portal-JSON details.
+  // Never substitute an SKU from the warehouse catalog: these are original invoice codes.
+  const productCodeOf = (line) => String(
+    line?.ma ?? line?.mhhdvu ?? line?.maHangHoa ?? line?.maHang ??
+    line?.productCode ?? line?.sku ?? ''
+  ).trim();
   const productCodes = (details, r) => {
     const lines = details.get(r.key)?.lines || [];
-    const codes = [...new Set(lines.map((line) => String(line.ma || '').trim()).filter(Boolean))];
+    const codes = [...new Set(lines.map(productCodeOf).filter(Boolean))];
     return codes.join('; ').slice(0, 32767);
   };
   const signDate = (h) => dateVN(h?.seller?.time||h?.signatureTime||'');
@@ -159,9 +165,9 @@
       for (const l of invoiceLines(r, d)) {
         // Không cộng gộp giá trị của các loại tiền tệ khác nhau.
         const p = pctOf(l.tsuat), thue = l.tthue === null ? null : roundVND(l.tthue);
-        out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), dateVN(headOf(details,r)?.nlap||r.tdlap), mst, ten,
+        out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), productCodeOf(l), dateVN(headOf(details,r)?.nlap||r.tdlap), mst, ten,
           l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue, currency,
-          String(l.ma??'').trim(), signDate(headOf(details,r))]);
+          productCodeOf(l), signDate(headOf(details,r))]);
         sum.amount += l.thtien || 0; sum.tax += thue || 0;
       }
     }
@@ -169,13 +175,13 @@
     for (const currency of currencies) {
       const sum = sums.get(currency) || { amount: 0, tax: 0 };
       boldRows.add(out.length);
-      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '', '']);
+      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '', '']);
     }
     return {
       name, boldRows,
       columns: [
         { header: 'STT', width: 6, type: N }, { header: 'Loại', width: 9 }, { header: 'Mẫu số', width: 8 }, { header: 'Ký hiệu', width: 10 },
-        { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Ngày lập', width: 11 }, { header: 'MST đối tác', width: 15, type: T },
+        { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Mã hàng hóa', width: 22, type: T }, { header: 'Ngày lập', width: 11 }, { header: 'MST đối tác', width: 15, type: T },
         { header: 'Tên đối tác', width: 36 }, { header: 'Tính chất', width: 18 }, { header: 'Tên hàng hóa, dịch vụ', width: 48 },
         { header: 'ĐVT', width: 9 }, { header: 'Số lượng', width: 11, type: D }, { header: 'Đơn giá', width: 14, type: D },
         { header: 'Chiết khấu', width: 12, type: N }, { header: 'Thành tiền', width: 16, type: N }, { header: 'Thuế suất', width: 10, type: P },

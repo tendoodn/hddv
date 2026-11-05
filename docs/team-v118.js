@@ -53,8 +53,11 @@ async function renderSharedMstPanel(){
   for(const profile of profiles){
    const item=make('div',null,'autotax-team-shared-row');
    item.append(make('span',profile.mst+' · '+(profile.display_name||'Hồ sơ được chia sẻ')));
-   item.append(make('small',profile.can_use_mst_package?
-     'Được sử dụng hạn mức MST nhóm':'Hồ sơ được chia sẻ · không sử dụng hạn mức MST nhóm','muted'));
+   const rights=profile.can_use_mst_package?
+     'Được sử dụng hạn mức MST nhóm':profile.can_use_invoice_package?
+     'Được sử dụng hạn mức Số tờ nhóm':'Hồ sơ MST được chia sẻ';
+   const credential=profile.password_shared===true?'Mật khẩu HĐĐT đã được cấp':'Chưa được cấp mật khẩu HĐĐT';
+   item.append(make('small',rights+' · '+credential,'muted'));
    panel.append(item);
   }
  }catch(error){panel.append(make('p','Không tải được hồ sơ MST nhóm: '+error.message,'muted'))}

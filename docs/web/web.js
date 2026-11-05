@@ -62,6 +62,17 @@ const money=n=>Number(n||0).toLocaleString('vi-VN')+' ₫';
 const safe=s=>String(s||'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,70);
 const selected=name=>[...document.querySelectorAll('input[name="'+name+'"]:checked')].map(el=>el.value);
 const show=(msg,ok=false)=>{const box=$('notice');box.hidden=!msg;box.textContent=msg||'';box.classList.toggle('success',!!ok)};
+const QUOTA_MESSAGE='Hạn mức tài khoản đạt giới hạn. Vui lòng gia hạn thêm';
+const QUOTA_REASONS=new Set(['mst_not_whitelisted','mst_package_expired','mst_capacity_reduced','mst_capacity_reached','invoice_package_required','invoice_quota_exceeded','quota_exceeded','quota_reached','mst_limit_reached']);
+let quotaExceededDuringSearch=false;
+function showQuotaWarning(mode=selectedMode){
+ quotaExceededDuringSearch=true;
+ const dialog=$(mode==='invoice'?'invoiceQuotaDialog':'mstLimitDialog');
+ if(dialog&&!dialog.open)dialog.showModal();
+ show(QUOTA_MESSAGE);
+ progress(QUOTA_MESSAGE);
+}
+const isQuotaMessage=message=>/(hết hạn mức|hạn mức tài khoản đạt giới hạn|gói MST đã hết hạn|MST vượt số lượng hồ sơ|gói số tờ không còn lượt mới|mst_capacity_reached|mst_package_expired|mst_capacity_reduced|invoice_package_required|quota_exceeded)/i.test(String(message||''));
 const progress=msg=>{const log=$('progressLog'),line=document.createElement('div');line.className='autotax-terminal-line';const severity=/lỗi|thất bại|không thể|gián đoạn/i.test(String(msg))?'error':/cảnh báo|bỏ qua|chưa lấy|thiếu|lưu ý/i.test(String(msg))?'warn':/hoàn tất|thành công|đã tải|đã xuất/i.test(String(msg))?'success':'info';line.classList.add('terminal-'+severity);const clock=new Date().toLocaleTimeString('vi-VN',{hour12:false});line.textContent='['+clock+'] '+String(msg||'Đang xử lý…');log.append(line);while(log.children.length>5)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;};
 const busyState=(value,keepLog=false,success=false)=>{busy=!!value;
   const indicator=$('downloadConsoleDone'),spinner=$('downloadConsoleSpinner');
@@ -112,9 +123,12 @@ const messageOf=async res=>{
   gdt_sign_in_required:'Cổng Thuế yêu cầu đăng nhập lại.',
   gdt_mst_mismatch:'MST phiên Thuế không khớp MST hồ sơ AutoTax.',
   mst_profile_not_configured:'Hãy thêm MST này vào hồ sơ trên trang tài khoản AutoTax.',
-  mst_package_expired:'Gói MST đã hết hạn.',
-  mst_capacity_reduced:'MST vượt số lượng hồ sơ được phép.',
-  invoice_package_required:'Gói số tờ không còn lượt mới.',
+  mst_package_expired:QUOTA_MESSAGE,
+  mst_capacity_reduced:QUOTA_MESSAGE,
+  mst_capacity_reached:QUOTA_MESSAGE,
+  invoice_package_required:QUOTA_MESSAGE,
+  invoice_quota_exceeded:QUOTA_MESSAGE,
+  quota_exceeded:QUOTA_MESSAGE,
   origin_not_allowed:'Trang kết nối không đúng địa chỉ AutoTax chính thức.',
   upstream_path_not_allowed:'Đường dẫn API cổng Thuế chưa được hỗ trợ.',
  };
@@ -413,10 +427,12 @@ async function ensurePermission(mst){
  const {data,error}=await client.rpc('autotax_verify_session_mst_v118',{p_mst:mst});
  if(error)throw Error(error.message);
  if(!data?.allowed){
-  if(data?.reason==='mst_not_whitelisted'){
-   const dlg=$('mstLimitDialog');if(dlg&&!dlg.open)dlg.showModal();
+  const reason=String(data?.reason||'');
+  if(QUOTA_REASONS.has(reason)){
+   showQuotaWarning(data?.mode==='invoice'?'invoice':'mst');
+   throw Error(QUOTA_MESSAGE);
   }
-  throw Error('MST này chưa được cấp quyền hoặc gói đã hết hạn: '+(data?.reason||''));
+  throw Error('MST này chưa được cấp quyền hoặc gói đã hết hạn: '+reason);
  }
  selectedMode=data.mode||selectedMode;
 }
@@ -435,8 +451,7 @@ async function claimRows(all,mst){
   for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
   progress('Đã ghi nhận '+Number(data.recorded_without_charge||0)+' hóa đơn bằng gói MST, '+Number(data.deducted||0)+' lượt số tờ mới; '+Number(data.previously_deducted||0)+' hóa đơn đọc lại không trừ lượt.');
   if(Number(data.denied||0)>0&&selectedMode==='invoice'){
-   const dlg=$('invoiceQuotaDialog');if(dlg&&!dlg.open)dlg.showModal();
-   progress('hết hạn mức tra cứu vui lòng mua thêm số hoá đơn');
+   showQuotaWarning('invoice');
   }
  }
  return accepted;
@@ -480,7 +495,7 @@ async function search(e){
   if(error.name!=='AbortError')show('Không chọn được thư mục lưu: '+error.message);
   return;
  }
- stopped=false;busyState(true);
+ stopped=false;quotaExceededDuringSearch=false;busyState(true);
  let scanCompleted=false;
  $('results').hidden=true;// Redundant top-of-search totals were removed; results use #results only.
  window.WebResults?.resetForSearch?.();
@@ -493,10 +508,13 @@ async function search(e){
    const {data:grant,error:grantError}=await client.rpc('addon_register_gdt_signin_v115',{p_mst:mst});
    if(grantError)throw grantError;
    if(!grant?.allowed){
-    if(grant?.warning==='mst_capacity_reached')$('mstLimitDialog')?.showModal();
+    if(QUOTA_REASONS.has(String(grant?.warning||''))){
+     showQuotaWarning('mst');
+     throw Error(QUOTA_MESSAGE);
+    }
     throw Error(grant?.warning==='trial_mst_already_used'?
      'MST này đã dùng thử với tài khoản khác. Vui lòng mua gói MST hoặc liên hệ quản trị.':
-     'Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp');
+     'MST chưa được cấp quyền: '+String(grant?.warning||'Không xác định'));
    }
    profileAllowedMsts.push(mst);
   }
@@ -548,10 +566,15 @@ async function search(e){
   searchedBothKinds=selected('kind').includes('purchase')&&selected('kind').includes('sold');
   if(window.WebResults?.finish)window.WebResults.finish(rows,result.skipped||[]);
   else renderResults(rows,result.skipped||[]);
-  show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
+  if(quotaExceededDuringSearch)show(QUOTA_MESSAGE);
+  else show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
    (result.skipped?.length?' Nguồn chưa hoàn tất: '+result.skipped.join(', '):''),true);
   scanCompleted=true;
- }catch(error){show(error.message||'Tra cứu không thành công.');}
+ }catch(error){
+  const msg=error?.message||'Tra cứu không thành công.';
+  if(isQuotaMessage(msg)&&!quotaExceededDuringSearch)showQuotaWarning(selectedMode);
+  else show(quotaExceededDuringSearch?QUOTA_MESSAGE:msg);
+ }
  finally{busyState(false,true,scanCompleted)}
 }
 const pendingDetails=new Map();

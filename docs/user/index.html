@@ -339,8 +339,8 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  </details>
   <div class="portal-mode-toolbar"><h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2></div>
   <div class="grid">
-   <div class="plan stat" id="invoicePlanCard" data-plan-family="invoice"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
-   <div class="plan stat" id="mstPlanCard" data-plan-family="mst"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
+   <div class="plan stat" id="invoicePlanCard" data-plan-family="invoice"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small>Các lần mua được cộng dồn</small><small id="invoiceTeamLimit">Hạn mức nhóm. SL: 0</small><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
+   <div class="plan stat" id="mstPlanCard" data-plan-family="mst"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstTeamLimit">Hạn mức nhóm. SL: 0</small><small id="mstExpiry">—</small></div>
   </div>
   <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
  </div>
@@ -489,8 +489,21 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <script src="./customer.js?v=1123data365qr1"></script>
 <script src="./account-settings-v120.js?v=126email1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
+<style>
+.autotax-team-password-editor{margin:12px 0;padding:12px;border:1px solid #f1bdc5;border-radius:10px;background:#fffafa}
+.autotax-team-password-editor p{font-size:12px;line-height:1.5;margin:0 0 10px}
+#autotaxTeamSecretFields{display:grid;gap:9px;max-height:160px;overflow-y:auto}
+#autotaxTeamSecretFields label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:750}
+#autotaxTeamSecretFields input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px}
+.autotax-team-shared-passwords{margin-top:14px}
+.autotax-team-shared-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(140px,1fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #e5e7eb}
+.autotax-team-shared-row span{font-size:12px;overflow-wrap:anywhere}
+.autotax-team-shared-row input{min-width:0;box-sizing:border-box;width:100%}
+@media(max-width:600px){.autotax-team-shared-row{grid-template-columns:minmax(0,1fr) auto}.autotax-team-shared-row input{grid-column:1/-1;grid-row:2}}
+#invoiceTeamLimit,#mstTeamLimit{color:#047857;font-weight:750}
+</style>
 <script src="./team-shared-v119.js?v=119team1"></script>
-<script src="./team-v118.js?v=119team1"></script>
+<script src="./team-v118.js?v=119team2"></script>
 <script src="./extension-link-v118.js?v=1119header1"></script>
 <script src="./customer-feedback.js?v=116"></script>
 <script src="./password-toggle.js?v=116"></script>

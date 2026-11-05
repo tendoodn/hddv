@@ -856,7 +856,18 @@ function init(){
   if(govtToken&&x!==govtMst)clearGov();
   // GdtVault handles the selection event and encrypted credential autofill.
  });
- $('togglePassword').addEventListener('click',()=>{const input=$('gdtPassword');input.type=input.type==='password'?'text':'password'});
+ document.addEventListener('autotax-team-msts-revoked',event=>{
+  const revoked=event.detail?.msts||[];
+  if(govtMst&&revoked.includes(govtMst)){
+   clearGov();
+   show('Trưởng nhóm đã thu hồi hồ sơ MST. Phiên cổng Thuế liên quan đã được đóng.');
+  }
+ });
+ $('togglePassword').addEventListener('click',()=>{
+  // A member may never reveal the leader's password for a borrowed MST.
+  if($('togglePassword').hidden)return;
+  const input=$('gdtPassword');input.type=input.type==='password'?'text':'password';
+ });
  $('closeGdtLoginError').addEventListener('click',()=>$('gdtLoginErrorDialog').close());
  for(const [id,kind] of [['exportAllZip','all'],['exportExcel','excel'],['exportXml','xml'],['exportHtml','html'],['exportPdf','pdf'],['exportPdfTax','pdfTax']])
   $(id).addEventListener('click',()=>exportFile(kind));

@@ -79,8 +79,41 @@
   // Link mở được bằng 1 cú bấm trong Excel (HYPERLINK chỉ nhận ≤ 255 ký tự → link dài hơn để dạng chữ)
   const linkCell = (o) => (o.link ? (o.link.length <= 255 ? { link: o.link } : o.link) : '');
 
+  const XML_EXCEL_MAX_COLUMNS=16384;
+  const invoiceXmlKeys=(items,details)=>{
+    const keys=new Set();
+    for(const item of items)for(const key of Object.keys(details.get(item.r.key)?.xmlFields||{}))
+      keys.add(key);
+    return [...keys].sort((a,b)=>a.localeCompare(b,'vi',{numeric:true}));
+  };
+  // Preserve the entire XML even on unusually large invoices with more
+  // field paths than Excel's 16.384-column-per-sheet hard limit.
+  function xmlContinuationSheets(label,items,details,keys){
+    const ids=[
+      {header:'STT',width:6,type:'int'},
+      {header:'MST bên bán',width:18,type:'text'},
+      {header:'MST bên mua',width:18,type:'text'},
+      {header:'Ký hiệu',width:16,type:'text'},
+      {header:'Số hóa đơn',width:18,type:'text'}
+    ];
+    const capacity=XML_EXCEL_MAX_COLUMNS-ids.length,output=[];
+    for(let pos=0;pos<keys.length;pos+=capacity){
+      const part=keys.slice(pos,pos+capacity);
+      output.push({
+        name:'XML '+label+' '+(Math.floor(pos/capacity)+2),
+        columns:[...ids,...part.map(k=>({header:'XML / '+k,width:32,type:'text'}))],
+        rows:items.map(({r},i)=>[i+1,r.nbmst||'',r.nmmst||'',r.khhdon||'',String(r.shdon||''),
+          ...part.map(key=>details.get(r.key)?.xmlFields?.[key]??'')])
+      });
+    }
+    return output;
+  }
   function invoiceSheet(name, rows, details, withPdf, mstCheck, illegal) {
     const list = sorted(rows).map((r) => ({ r, m: money(r) }));
+    const xmlKeys=invoiceXmlKeys(list,details);
+    const baseSize=INVOICE_COLS.length+LOOKUP_COLS.length+(mstCheck?MST_COLS.length:0);
+    const keptXmlKeys=xmlKeys.slice(0,XML_EXCEL_MAX_COLUMNS-baseSize);
+    const extraXmlKeys=xmlKeys.slice(keptXmlKeys.length);
     const currencies = list.length ? [...new Set(list.map(({ r }) => currencyOf(r)))].sort() : ['VND'];
     const totals = currencies.map((currency) => {
       const group = list.filter(({ r }) => (currencyOf(r)) === currency);
@@ -90,7 +123,10 @@
       return row;
     });
     return {
-      name, columns: [...INVOICE_COLS, ...LOOKUP_COLS, ...(mstCheck ? MST_COLS : [])],
+      name, columns: [...INVOICE_COLS, ...LOOKUP_COLS, ...(mstCheck ? MST_COLS : []),
+        ...keptXmlKeys.map(k=>({header:'XML / '+k,width:32,type:'text'}))],
+      xmlContinuation:extraXmlKeys.length?
+        xmlContinuationSheets(name,list,details,extraXmlKeys):[],
       boldRows: new Set(totals.map((_, i) => list.length + i)),
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
@@ -98,7 +134,8 @@
           foreign(r) ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
           ...((o) => [o.name, o.code, headOf(details,r)?.lookup?.secretCode||'', linkCell(o)])(HDDT.originalLookup(r, headOf(details, r))),
-          ...(mstCheck ? mstRisk(r, illegal) : [])]),
+          ...(mstCheck ? mstRisk(r, illegal) : []),
+          ...keptXmlKeys.map(k=>details.get(r.key)?.xmlFields?.[k]??'')]),
         ...totals,
       ],
     };
@@ -773,6 +810,10 @@
       invoiceSheet('Mua vào', rows.filter((r) => r.kind === 'purchase'), details, opts.withPdf, want.seller, opts.illegal),
       invoiceSheet('Bán ra', rows.filter((r) => r.kind === 'sold'), details, opts.withPdf, want.seller, opts.illegal),
     ];
+    // Append overflow-only XML sheets without removing any existing report
+    // columns. The first 16.384 columns stay on the main invoice worksheets.
+    for(const base of sheets.slice(0,2))if(base.xmlContinuation?.length)
+      sheets.push(...base.xmlContinuation);
     if (opts.withLines) {
       sheets.push(linesSheet(rows.filter(r=>r.kind==='purchase'),details,'Chi tiết mua vào'));
       sheets.push(linesSheet(rows.filter(r=>r.kind==='sold'),details,'Chi tiết bán ra'));

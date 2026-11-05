@@ -105,24 +105,6 @@ function isPendingV32Backend(error){
  return String(error?.code||"")==="PGRST202" ||
    /could not find the function|schema cache|function .* does not exist/i.test(message);
 }
-function authErrorVi(error){
- const code=String(error?.code||'').toLowerCase();
- const msg=String(error?.message||error||'').toLowerCase();
- const value=code+' '+msg;
- if(/user_already_exists|email_exists|identity_already_exists|already registered|already in use|user already registered|email already exists/.test(value))return 'Email đã tồn tại.';
- if(/invalid_credentials|invalid login credentials|invalid password|wrong password|incorrect password/.test(value))return 'Sai mật khẩu.';
- if(/email_not_confirmed|email not confirmed/.test(value))return 'Email chưa được xác minh. Vui lòng kiểm tra hộp thư.';
- if(/user_not_found|user not found/.test(value))return 'Không tìm thấy tài khoản.';
- if(/weak_password|password should|password is too short|password must/.test(value))return 'Mật khẩu chưa đáp ứng yêu cầu bảo mật.';
- if(/over_email_send_rate_limit|email rate limit/.test(value))return 'Bạn đã yêu cầu gửi email quá nhiều lần. Vui lòng thử lại sau.';
- if(/over_request_rate_limit|too many requests|rate limit/.test(value))return 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau.';
- if(/signup_disabled|signups not allowed/.test(value))return 'Hệ thống đang tạm ngừng đăng ký tài khoản.';
- if(/email_address_invalid|invalid email|email address/.test(value))return 'Địa chỉ email không hợp lệ.';
- if(/same_password|new password should be different/.test(value))return 'Mật khẩu mới phải khác mật khẩu cũ.';
- if(/session_not_found|session expired|jwt expired|auth session missing|refresh token/.test(value))return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
- if(/network|failed to fetch|fetch failed|timeout/.test(value))return 'Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.';
- return null;
-}
 function prettyError(error){
  const code=String(error?.code||"");
  const msg=String(error?.message||error||"Không xác định");
@@ -138,7 +120,7 @@ function prettyError(error){
   invoice_mode_not_selected:"Vui lòng chọn chế độ sử dụng hóa đơn.",
   invalid_mst:"MST phải có 10, 12 hoặc 13 chữ số (chi nhánh dạng 10-001)."
  };
- return known[code]||known[msg]||accountFlow?.message(error)||authErrorVi(error)||"Không thực hiện được thao tác. Vui lòng thử lại.";
+ return known[code]||known[msg]||accountFlow.message(error);
 }
 const isAuthSessionError=error=>/Auth session missing|JWT expired|Invalid Refresh Token|refresh token not found/i.test(String(error?.message||error||''));
 async function rpc(name,args={}){

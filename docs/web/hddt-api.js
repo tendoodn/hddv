@@ -509,6 +509,22 @@
     };
   }
 
+  // Decode text according to the XML byte-order mark or declaration, but
+  // keep the downloaded Uint8Array untouched for signature-safe XML export.
+  function decodeXmlBytes(bytes){
+    const b=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+    let charset='utf-8';
+    if(b[0]===0xff&&b[1]===0xfe)charset='utf-16le';
+    else if(b[0]===0xfe&&b[1]===0xff)charset='utf-16be';
+    else{
+      const header=new TextDecoder('ascii').decode(b.subarray(0,180));
+      const declared=/^\s*<\?xml[^>]*encoding=["']([^"']+)["']/i.exec(header)?.[1];
+      if(declared&&/^(?:utf-8|utf8|utf-16(?:le|be)?|windows-1258|iso-8859-1)$/i.test(declared))
+        charset=declared.replace(/^utf8$/i,'utf-8');
+    }
+    try{return new TextDecoder(charset).decode(b)}
+    catch{return new TextDecoder('utf-8').decode(b)}
+  }
   function invoiceFromXml(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if(doc.querySelector('parsererror'))throw Error('XML hóa đơn không hợp lệ; thử dữ liệu chi tiết JSON.');
@@ -573,7 +589,7 @@
         // Portal deployments may deliver signed source XML directly instead
         // of ZIP. Inspect bytes, never re-encode original bytes for export.
         if(buf[0]!==0x50||buf[1]!==0x4b){
-          const rawXml=Zip.text(buf).replace(/^\uFEFF/,'').trim();
+          const rawXml=decodeXmlBytes(buf).replace(/^\uFEFF/,'').trim();
           if(!/^<(?:\?xml\b|HDon\b|[\w-]+:HDon\b)/i.test(rawXml))
             throw new Error('Cổng không trả ZIP hoặc XML hóa đơn hợp lệ');
           return {source:'xml',xml:buf,files:{'invoice.xml':buf},...invoiceFromXml(rawXml)};
@@ -583,7 +599,7 @@
         // Giữ NGUYÊN bytes gốc (XML có chữ ký số, có thể có BOM): giải mã rồi mã hóa lại làm phần mềm
         // của Cục Thuế (iTaxViewer) báo "Tệp hồ sơ không đúng định dạng". Chỉ giải mã để đọc dòng hàng hóa.
         const xmlName = name(/(?:^|\/)(?:invoice|hoadon|hddt|h_don)[^/]*\.xml$/i) || name(/\.xml$/i);
-        if (xmlName) return { source: 'xml', xml: files[xmlName], files, ...invoiceFromXml(Zip.text(files[xmlName])) };
+        if (xmlName) return { source: 'xml', xml: files[xmlName], files, ...invoiceFromXml(decodeXmlBytes(files[xmlName])) };
       } catch (e) {
         if (shouldStop() || e.status === 401) throw e;
         // không có hồ sơ gốc / lỗi khác sau khi đã thử lại → thử API chi tiết

@@ -234,7 +234,8 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 </header>
 
 
-<section id="authSection" class="panel">
+<div id="accountSessionPending" class="panel" role="status" aria-live="polite">Đang khôi phục phiên đăng nhập AutoTax…</div>
+<section id="authSection" class="panel" hidden>
  <form id="loginForm">
  <h2>Đăng nhập / tạo tài khoản</h2>
  <label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="email@example.com">
@@ -479,12 +480,12 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  <div class="actions"><button id="closePaymentSuccessBtn" type="button">Đã hiểu</button></div>
 </dialog>
 <section id="passwordRecovery" class="panel" hidden><h2>Đặt mật khẩu mới</h2><p class="muted">Nếu bạn vừa mở liên kết khôi phục, đăng nhập bằng liên kết và đổi mật khẩu ở phía trên.</p></section>
-<footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a id="adminFooterLink" href="/admin/" hidden>Trang quản trị</a></footer>
+<footer><a id="adminFooterLink" href="/admin/" hidden>Trang quản trị</a></footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=128active1"></script>
+<script src="./customer.js?v=1123sso1"></script>
 <script src="./account-settings-v120.js?v=126email1"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <script src="./team-v118.js?v=125mode1"></script>

@@ -89,10 +89,11 @@ async function refresh(){
   if(tr.error)throw tr.error;if(mr.error)throw mr.error;
   teams=tr.data||[];memberships=mr.data||[];myMsts=pr.error?[]:(pr.data||[]);
   renderTeams();
-  // Password backfill is optional maintenance, never block opening the team UI.
-  void syncPendingTeamPasswords();
+  // Prioritize the visible member list; optional credential maintenance begins
+  // only after the group panel has been drawn.
   if(activeTeam&&teams.some(t=>t.id===activeTeam))await showDetail(activeTeam);
   else {$('autotaxTeamDetail').hidden=true;activeTeam=''}
+  void syncPendingTeamPasswords();
  }catch(e){notice(friendly(e),true)}
 }
 function renderTeams(){

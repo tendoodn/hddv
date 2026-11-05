@@ -328,11 +328,15 @@ function openMstEditor(profile=null){
 }
 async function loadMstAssignments(){
  const list=$("mstList");list.replaceChildren();
- const [rows,deletePermission]=await Promise.all([
-  rpc("addon_list_my_mst_assignments"),rpc("addon_my_mst_deletion_allowed_v115")
+ const [rows,deletePermission,borrowed]=await Promise.all([
+  rpc("addon_list_my_mst_assignments"),
+  rpc("addon_my_mst_deletion_allowed_v115"),
+  rpc("autotax_team_shared_mst_profiles_v119")
  ]);
+ const shared=Array.isArray(borrowed)?borrowed:[];
+ const sharedByMst=new Map(shared.map(row=>[String(row.mst||''),row]));
  canDeleteMstProfiles=deletePermission===true;
- $("mstWebCount").textContent=String((rows||[]).length);
+ $("mstWebCount").textContent=String(new Set([...(rows||[]).map(x=>x.mst),...shared.map(x=>x.mst)]).size);
  const {data:{session}}=await client.auth.getSession();
  const userId=session?.user?.id;
  for(const item of rows||[]){
@@ -365,11 +369,16 @@ async function loadMstAssignments(){
     ' · '+(days>=80?'Đã đến hạn nhắc đổi':(80-days)+' ngày đến mốc nhắc đổi'):
     'Chưa ghi nhận ngày nhập/sửa mật khẩu',"muted");
   const actions=document.createElement("div");actions.className="mst-row-actions";
-  const edit=addText(actions,"button","Sửa");edit.className="secondary";
-  edit.type='button';edit.addEventListener('click',()=>openMstEditor(item));
-  if(userId)enqueueLegacyMstMigration(userId,item.mst);
+  const isBorrowed=sharedByMst.has(item.mst);
+  if(!isBorrowed){
+   const edit=addText(actions,"button","Sửa");edit.className="secondary";
+   edit.type='button';edit.addEventListener('click',()=>openMstEditor(item));
+   if(userId)enqueueLegacyMstMigration(userId,item.mst);
+  }else{
+   addText(actions,"span","MST trưởng nhóm chia sẻ · chỉ xem","muted");
+  }
   const button=addText(actions,"button","Xóa MST");button.className="secondary";
-  button.type='button';button.disabled=!canDeleteMstProfiles;
+  button.type='button';button.hidden=isBorrowed;button.disabled=isBorrowed||!canDeleteMstProfiles;
   if(!canDeleteMstProfiles){
    button.title='Tài khoản dùng thử hoặc đã hết hạn không được xóa MST. Chỉ tài khoản có gói hợp lệ không phải dùng thử được xóa.';
    button.textContent='Không thể xóa';
@@ -390,7 +399,40 @@ async function loadMstAssignments(){
    }catch(e){showMessage(prettyError(e),true);button.disabled=false}
   });
   line.append(name,actions);list.append(line);
-  if(state?.mode==='mst')maybeRemindMstPassword(item,userId);
+  if(state?.mode==='mst'&&!isBorrowed)maybeRemindMstPassword(item,userId);
+ }
+ // Borrowed profiles are displayed in the same MST vault but never get edit/delete controls.
+ const ownSet=new Set((rows||[]).map(x=>x.mst));
+ for(const borrowedMst of shared){
+  if(ownSet.has(borrowedMst.mst))continue;
+  const line=document.createElement("div");line.className="mst-row";
+  const flag=document.createElement("span");flag.className="mst-permission-status";
+  const sourceAllowed=borrowedMst.can_use_mst_package===true;
+  const personalAllowed=borrowedMst.personally_authorized===true;
+  flag.textContent=sourceAllowed?"✓ Hạn mức MST trưởng nhóm":
+   personalAllowed?"✓ Hạn mức MST cá nhân":"✕ Chưa cấp quyền MST";
+  flag.classList.toggle('is-granted',sourceAllowed||personalAllowed);
+  flag.classList.toggle('is-denied',!sourceAllowed&&!personalAllowed);
+  line.append(flag);
+  const info=document.createElement("div");info.className="mst-name";
+  addText(info,"strong",borrowedMst.mst);
+  addText(info,"div",borrowedMst.display_name||"MST được chia sẻ","mst-name");
+  addText(info,"small","Trưởng nhóm chia sẻ · chỉ xem; không được sửa hoặc xóa mật khẩu","muted");
+  const actions=document.createElement("div");actions.className="mst-row-actions";
+  if(!sourceAllowed){
+   const toggle=addText(actions,"button",personalAllowed?"Thu hồi quyền cá nhân":"Cấp quyền MST cá nhân");
+   toggle.className="secondary";toggle.type="button";
+   toggle.addEventListener("click",async()=>{
+    toggle.disabled=true;
+    try{
+     await rpc(personalAllowed?"autotax_member_revoke_shared_mst_v120":
+       "autotax_member_authorize_shared_mst_v120",{p_mst:borrowedMst.mst});
+     showMessage(personalAllowed?"Đã thu hồi quyền MST cá nhân.":"Đã cấp quyền cho MST "+borrowedMst.mst+" bằng hạn mức cá nhân.");
+     await loadMstAssignments();
+    }catch(e){showMessage(prettyError(e),true);toggle.disabled=false}
+   });
+  }
+  line.append(info,actions);list.append(line);
  }
  if(!list.children.length)addText(list,"p","Chưa có hồ sơ. Bấm Thêm MST để quản lý.","muted");
  updateMstGrantPreview();

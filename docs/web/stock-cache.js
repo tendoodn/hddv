@@ -91,7 +91,12 @@ async function restore(user,platform,client,mst){
  const local=scoped(stored,currentMst)?bindMst(stored,currentMst):null;
  try{
   const savedRemote=await loadCloud(user,platform,client);
-  const remote=scoped(savedRemote,currentMst)?bindMst(savedRemote,currentMst):null;
+  // Legacy cloud catalog without MST is adopted only once, then tagged online.
+  // A local catalog already tied to another MST must never lend ownership to it.
+  const allowLegacyCloud=!savedRemote?.mst&&(!stored?.mst||taxId(stored.mst)===currentMst);
+  const remote=(savedRemote?.mst||allowLegacyCloud)&&scoped(savedRemote,currentMst)?
+   bindMst(savedRemote,currentMst):null;
+  if(remote&&!savedRemote.mst)await saveCloud(user,platform,remote,client);
   if(!remote){
    // Another MST may own the one cloud slot. Never overwrite it just by opening this profile.
    if(local&&!stored?.mst)await saveLocal(user,platform,local);

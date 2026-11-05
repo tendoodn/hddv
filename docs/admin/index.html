@@ -149,7 +149,25 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
  <div class="actions"><button id="couponReload" class="secondary" type="button">Làm mới danh sách mã</button></div>
  <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Giá trị giảm</th><th>Sử dụng / Giới hạn</th><th>Hết hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="couponRows"><tr><td colspan="7">Đang tải mã…</td></tr></tbody></table></div>
 </section>
-<section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong các gói sản phẩm đang mở để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label>Khách hàng <select id="grantCustomer" aria-label="Khách hàng cần cấp gói"><option value="">Chọn khách hàng</option></select></label><label>Gói cần cấp <select id="grantPackage" aria-label="Gói cần cấp"><option value="">Chọn gói</option></select></label><button id="grantNow" type="button">Cấp gói cho khách hàng</button></div><div id="grantMessage" class="notice hidden" role="status"></div></section>
+<style>
+/* Fast customer selector is anchored to the grant controls only. */
+#adminPackageGrant .grant-customer-field{min-width:min(330px,100%);flex:1 1 330px;display:flex;flex-direction:column;gap:7px;font-weight:700}
+#adminPackageGrant .grant-search{display:block;position:relative;min-width:0}
+#grantCustomerSearch{width:100%;min-width:0}
+#grantCustomerMatches{position:absolute;z-index:90;top:calc(100% + 4px);left:0;right:0;max-height:276px;overflow-y:auto;border:1px solid #cbd5e1;border-radius:10px;background:white;box-shadow:0 14px 38px #0f172a33;padding:4px}
+#grantCustomerMatches.hidden{display:none!important}
+#grantCustomerMatches .grant-customer-choice{display:block;width:100%;border:0;text-align:left;color:#172033;background:white;padding:10px 12px;border-radius:6px;font-weight:650;font-size:13px;overflow-wrap:anywhere}
+#grantCustomerMatches .grant-customer-choice:hover,#grantCustomerMatches .grant-customer-choice:focus-visible{background:#eff6ff;outline:2px solid #93c5fd}
+#grantCustomerMatches small{font-weight:500}
+#grantCustomerMatches>.muted{display:block;padding:12px}
+</style>
+<section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong các gói sản phẩm đang mở để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label class="grant-customer-field" for="grantCustomerSearch">Khách hàng
+ <span class="grant-search">
+  <input id="grantCustomerSearch" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Tìm nhanh email, tên hoặc MST" aria-label="Tìm khách hàng để cấp gói" aria-controls="grantCustomerMatches" aria-expanded="false" aria-autocomplete="list">
+  <input id="grantCustomer" type="hidden" value="">
+  <div id="grantCustomerMatches" class="grant-customer-matches hidden" role="listbox" aria-label="Kết quả tìm khách hàng"></div>
+ </span>
+</label><label>Gói cần cấp <select id="grantPackage" aria-label="Gói cần cấp"><option value="">Chọn gói</option></select></label><button id="grantNow" type="button">Cấp gói cho khách hàng</button></div><div id="grantMessage" class="notice hidden" role="status"></div></section>
 <section class="panel" id="packageHistorySection"><div class="row"><div><h2>Lịch sử mua và cấp gói</h2><p class="sub">Mua gói và cấp gói bởi quản trị · mỗi trang tối đa 10 giao dịch.</p></div><button id="togglePackageHistory" class="secondary" type="button">Xem lịch sử gói</button></div></section>
 <dialog id="packageHistoryDialog" class="history-modal" aria-labelledby="packageHistoryTitle">
  <div class="row"><div><h2 id="packageHistoryTitle">Lịch sử mua và cấp gói</h2><p id="packageHistoryCount" class="muted"></p></div><button id="closePackageHistory" type="button" class="secondary" aria-label="Đóng lịch sử gói">Đóng ✕</button></div>
@@ -601,6 +619,34 @@ $("packageAdjustmentConfirm").onclick=async()=>{
 };
 
 
+// Admin grant: searchable customer combobox, linked to the canonical user ID.
+$("grantCustomerSearch").addEventListener("focus",renderGrantMatches);
+$("grantCustomerSearch").addEventListener("click",renderGrantMatches);
+$("grantCustomerSearch").addEventListener("input",()=>{
+ $("grantCustomer").value="";
+ renderGrantMatches();
+});
+$("grantCustomerSearch").addEventListener("keydown",event=>{
+ const menu=$("grantCustomerMatches");
+ if(event.key==="Escape"){menu.classList.add("hidden");$("grantCustomerSearch").setAttribute("aria-expanded","false");return}
+ if(event.key==="ArrowDown"){event.preventDefault();if(menu.classList.contains("hidden"))renderGrantMatches();menu.querySelector("button")?.focus();return}
+ if(event.key==="Enter"){
+  if(menu.classList.contains("hidden"))return;
+  const first=menu.querySelector("button");if(first){event.preventDefault();first.click()}
+ }
+});
+$("grantCustomerMatches").addEventListener("keydown",event=>{
+ if(event.key==="Escape"){event.preventDefault();$("grantCustomerMatches").classList.add("hidden");$("grantCustomerSearch").focus();return}
+ const buttons=[...$("grantCustomerMatches").querySelectorAll("button")],index=buttons.indexOf(document.activeElement);
+ if(event.key==="ArrowDown"){event.preventDefault();buttons[Math.min(buttons.length-1,index+1)]?.focus()}
+ if(event.key==="ArrowUp"){event.preventDefault();index<=0?$("grantCustomerSearch").focus():buttons[index-1]?.focus()}
+});
+document.addEventListener("pointerdown",event=>{
+ if(!event.target.closest(".grant-search")){
+  $("grantCustomerMatches").classList.add("hidden");
+  $("grantCustomerSearch").setAttribute("aria-expanded","false");
+ }
+});
 $("grantNow").onclick=async()=>{
  const id=$("grantCustomer").value,code=$("grantPackage").value;
  const user=allUsers.find(u=>u.user_id===id),pkg=allPackages.find(p=>p.code===code);
@@ -644,10 +690,41 @@ async function loadUsers(){
  }catch(e){console.warn('Chưa tải được tên hồ sơ:',e.message)}
  renderUsers();
 }
+function displayGrantCustomer(user){
+ const target=$("grantCustomer");
+ target.value=user?.user_id||"";
+ $("grantCustomerSearch").value=user?(user.email||user.display_name||user.user_id):"";
+ $("grantCustomerMatches").classList.add("hidden");
+ $("grantCustomerSearch").setAttribute("aria-expanded","false");
+}
+function renderGrantMatches(){
+ const input=$("grantCustomerSearch"),menu=$("grantCustomerMatches"),q=input.value.trim().toLocaleLowerCase("vi-VN");
+ menu.replaceChildren();
+ const allowed=allUsers.filter(u=>!u.legacy_pending);
+ const choices=allowed.filter(u=>{
+  const names=[u.email,u.display_name,u.user_id,...(u.mst_assignments||[]).map(v=>v.mst)];
+  return !q||names.some(v=>String(v||"").toLocaleLowerCase("vi-VN").includes(q));
+ }).slice(0,20);
+ for(const [i,user] of choices.entries()){
+  const button=document.createElement("button");
+  button.type="button";button.className="grant-customer-choice";button.setAttribute("role","option");
+  button.dataset.userId=user.user_id;
+  button.textContent=user.email||user.user_id;
+  if(user.display_name){
+   const sub=document.createElement("small");sub.textContent=" · "+user.display_name;button.append(sub);
+  }
+  button.addEventListener("click",()=>{displayGrantCustomer(user);$("grantPackage").focus()});
+  menu.append(button);
+ }
+ if(!choices.length){const empty=document.createElement("span");empty.className="muted";empty.textContent="Không tìm thấy khách hàng";menu.append(empty)}
+ menu.classList.remove("hidden");
+ input.setAttribute("aria-expanded","true");
+}
 function renderUsers(){
  const customer=$("grantCustomer"),prev=customer.value;
- customer.innerHTML='<option value="">Chọn khách hàng</option>'+allUsers.filter(u=>!u.legacy_pending).map(u=>'<option value="'+esc(u.user_id)+'">'+esc(u.email||u.user_id)+'</option>').join("");
- if(allUsers.some(u=>u.user_id===prev&&!u.legacy_pending))customer.value=prev;
+ const current=allUsers.find(u=>u.user_id===prev&&!u.legacy_pending);
+ if(current)displayGrantCustomer(current);
+ else if(prev)displayGrantCustomer(null);
  const mstFilter=$("customerMstSearch").value.trim().replace(/[^0-9]/g,"");
  const filter=$("customerPackageFilter").value;
  const now=Date.now();
@@ -723,7 +800,7 @@ $("users").onclick=async e=>{
   finally{b.disabled=false}
   return;
  }
- if(b.dataset.history){openPackageHistory(b.dataset.history);return;}if(b.dataset.grant){$("grantCustomer").value=b.dataset.grant;$("adminPackageGrant").scrollIntoView({behavior:"smooth",block:"center"});$("grantPackage").focus();return;}if(b.dataset.temp){
+ if(b.dataset.history){openPackageHistory(b.dataset.history);return;}if(b.dataset.grant){displayGrantCustomer(allUsers.find(u=>u.user_id===b.dataset.grant&&!u.legacy_pending));$("adminPackageGrant").scrollIntoView({behavior:"smooth",block:"center"});$("grantPackage").focus();return;}if(b.dataset.temp){
   const user=allUsers.find(u=>u.user_id===b.dataset.temp);
   if(!user||!confirm('Đổi ngay mật khẩu tài khoản '+(user.email||user.user_id)+
    ' thành 000000 và yêu cầu khách đổi mật khẩu ngay khi đăng nhập?'))return;

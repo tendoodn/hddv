@@ -34,8 +34,9 @@ const readVnDate=id=>parseVnDate($(id).value);
 const setVnDate=(id,iso)=>{$(id).value=vn(iso);const native=$(id+'Native');if(native)native.value=iso};
 function configureVnDates(){
  for(const id of ['fromDate','toDate']){
-  const text=$(id),native=$(id+'Native'),pick=$(id+'Pick');
-  native.addEventListener('change',()=>setVnDate(id,native.value));
+  const text=$(id),native=$(id+'Native');
+  // Keep hidden native value in sync for compatibility, but never open Chrome date UI.
+  native.addEventListener('change',()=>{if(native.value)setVnDate(id,native.value)});
   text.addEventListener('input',()=>{
    const raw=text.value,caret=text.selectionStart??raw.length;
    const before=raw.slice(0,caret).replace(/\D/g,'').length;
@@ -47,12 +48,12 @@ function configureVnDates(){
    text.setSelectionRange(position,position);
   });
   text.addEventListener('blur',()=>{const iso=readVnDate(id);if(iso)setVnDate(id,iso)});
-  pick.addEventListener('click',()=>{
-   if(readVnDate(id))native.value=readVnDate(id);
-   if(typeof native.showPicker==='function')native.showPicker();
-   else native.focus();
-  });
  }
+ window.AutoTaxWebDatePicker?.attach({
+  from:$('fromDate'),to:$('toDate'),
+  fromButton:$('fromDatePick'),toButton:$('toDatePick'),
+  onSelect:setVnDate
+ });
 }
 
 const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
@@ -66,6 +67,7 @@ const busyState=(value,keepLog=false,success=false)=>{busy=!!value;
   const indicator=$('downloadConsoleDone'),spinner=$('downloadConsoleSpinner');
   if(indicator)indicator.hidden=!!value||!success;
   if(spinner)spinner.hidden=!value;
+  const active=$('downloadConsoleActive');if(active)active.hidden=!value;
   $('progress').hidden=!value&&!keepLog;if(value){$('progressLog').replaceChildren();progress('Khởi tạo phiên xử lý…');$('stopBtn').textContent='Dừng'}else if(keepLog){$('stopBtn').textContent='Đóng'}$('searchBtn').disabled=false;$('searchBtn').textContent=value?'Dừng tra cứu':'⌕ Tìm kiếm hóa đơn';
   for(const id of ['exportAllZip','exportExcel','exportXml','exportHtml','exportPdf','exportPdfTax'])$(id).disabled=!!value;};
 const govSession={get token(){return govtToken}};
@@ -612,12 +614,11 @@ function download(filename,data,mime){
  return Promise.resolve();
 }
 async function exportFileCore(kind){
- if(busy)return;
  const targetRows=window.WebResults?.exportRows?.()||rows;
  if(!targetRows.length)return show('Không có hóa đơn trong phạm vi xuất. Kiểm tra các ô đã tick hoặc tháng được chọn.');
- stopped=false;busyState(true);show('');
+ stopped=false;
  let exportCompleted=false;
- const label={excel:'Excel',xml:'XML',html:'HTML',pdf:'PDF nhà phát hành',pdfTax:'PDF Thuế'}[kind]||kind;
+ const label={excel:'Excel',xml:'XML',html:'HTML',pdf:'PDF nhà phát hành',pdfTax:'PDF dựng lại'}[kind]||kind;
  progress('Bắt đầu tải '+targetRows.length+' hóa đơn · '+label+'…');
  try{
   const stamp=(readVnDate('fromDate')||'').replace(/-/g,'')+'_'+(readVnDate('toDate')||'').replace(/-/g,'')+
@@ -675,29 +676,45 @@ async function exportFileCore(kind){
     '. '+(result.errors.length?result.errors.length+
     ' hóa đơn chưa lấy được PDF gốc — xem link/mã tra cứu trong tệp hướng dẫn ZIP.':
     'Đã tải toàn bộ tệp có thể truy cập.')+
-    ' Chế độ '+(mode==='tax'?'PDF Thuế: ưu tiên PDF có sẵn trong gói nguồn cổng Thuế, nếu không có sẽ dựng bản thể hiện.':'PDF gốc: ưu tiên bản nhà phát hành, nếu không tải được sẽ dùng bản dựng có ghi nhãn.')+' Mọi PDF dựng đều ghi rõ KHÔNG PHẢI GỐC.',
+    ' Chế độ '+(mode==='tax'?'PDF dựng lại: tạo theo cùng mẫu trình bày với nút Xem PDF trên Web và Add-on, không phải PDF gốc.':'PDF gốc: ưu tiên bản nhà phát hành, nếu không tải được sẽ dùng bản dựng có ghi nhãn.')+' Mọi PDF dựng đều ghi rõ KHÔNG PHẢI GỐC.',
     result.errors.length===0);
   }else{throw Error('Định dạng tải không được hỗ trợ.');}
   exportCompleted=true;
   progress('Đã hoàn tất tải '+label+' · '+targetRows.length+' hóa đơn.');
  }catch(e){progress('Lỗi xuất '+label+': '+e.message);show('Không xuất được tệp: '+e.message);throw e}
- finally{busyState(false,true,exportCompleted)}
+ finally{/* Download Console chỉ hoàn tất sau khi ZIP thực sự được lưu. */}
 }
 async function exportFile(kind){
+ if(kind==='pdf'){
+  show('PDF Gốc nhà phát hành: đang chờ phát triển tiếp. Nút PDF dựng từ dữ liệu Thuế vẫn hoạt động bình thường.',true);
+  return;
+ }
+ if(busy)return;
+ if(!window.AutoTaxZipExport)return show('Bộ ZIP chưa tải xong; hãy làm mới trang.');
+ busyState(true);show('');
+ let success=false;
  try{
-  if(!window.AutoTaxZipExport)throw Error('Thiếu bộ ZIP.');
   if(kind==='all'){
    const warnings=[];
    await window.AutoTaxZipExport.batch(async()=>{
-    for(const type of ['excel','xml','html','pdfTax','pdf']){
+    for(const type of ['excel','xml','html','pdfTax']){
      const point=window.AutoTaxZipExport.mark();
      try{await exportFileCore(type)}
-     catch(e){window.AutoTaxZipExport.rollback(point);warnings.push(type+': '+e.message)}
+     catch(error){window.AutoTaxZipExport.rollback(point);warnings.push(type+': '+error.message)}
     }
-   },'TatCa');
-   if(warnings.length)show('ZIP đã tạo; thiếu dữ liệu ở định dạng: '+warnings.join('; '),true);
-  }else await window.AutoTaxZipExport.batch(()=>exportFileCore(kind),kind);
- }catch(e){show('Không xuất được ZIP: '+e.message)}
+   },'all');
+   if(warnings.length)show('ZIP đã tạo, định dạng không đủ dữ liệu: '+warnings.join('; '),true);
+  }else{
+   await window.AutoTaxZipExport.batch(()=>exportFileCore(kind),kind);
+  }
+  success=true;
+  progress('Hoàn tất quét, xuất và ghi tệp trên thiết bị.');
+ }catch(error){
+  progress('Lỗi xuất tệp: '+(error.message||error));
+  show('Không xuất được dữ liệu: '+(error.message||error));
+ }finally{
+  busyState(false,true,success);
+ }
 }
 // Shared in-page adapter: export and stock tools use the exact same invoice rows
 // and fetchInvoice() implementation as the extension.

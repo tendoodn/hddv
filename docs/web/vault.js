@@ -120,16 +120,9 @@ function renderPicker(){
  const select=$('mst'),input=$('mstFree'),typed=input.value.trim(),old=select.value;
  let remembered='';try{remembered=owner?localStorage.getItem(lastKey())||'':''}catch{}
  select.replaceChildren();
- const empty=document.createElement('option');empty.value='';empty.textContent='Nhập MST mới';select.append(empty);
+ const empty=document.createElement('option');empty.value='';empty.textContent='MST đã lưu';select.append(empty);
  const menu=$('mstPickerMenu');menu.replaceChildren();
- const add=document.createElement('button');add.type='button';add.className='mst-picker-choice mst-picker-add';
- add.textContent='＋ Nhập MST mới';
- add.addEventListener('click',()=>{
-  select.value='';input.value='';$('gdtPassword').value='';
-  closePicker();requestSeq++;notify('Nhập MST 10, 12 hoặc 13 chữ số để tra cứu.');
-  input.focus();
- });
- menu.append(add);
+ // MST mới được nhập trực tiếp vào ô tìm kiếm, không thêm mục lựa chọn riêng.
  const ordered=[...profiles].sort((a,b)=>{
   if(a.mst===remembered)return -1;
   if(b.mst===remembered)return 1;
@@ -144,10 +137,13 @@ function renderPicker(){
   const pick=document.createElement('button');pick.type='button';pick.className='mst-picker-choice';
   const number=document.createElement('strong');number.textContent=mst;
   const alias=document.createElement('small');alias.textContent=mstName(p);
-  const permission=document.createElement('small');
-  permission.textContent=p.mst_allowed?'Đã cấp quyền MST':'Chưa cấp quyền MST · có thể tra cứu bằng gói số tờ';
-  permission.className=p.mst_allowed?'mst-picker-allowed':'mst-picker-not-allowed';
-  pick.append(number,alias,permission);
+  pick.append(number,alias);
+  if(!invoiceMode){
+   const permission=document.createElement('small');
+   permission.textContent=p.mst_allowed?'Đã cấp quyền sử dụng ✓':'Chưa cấp quyền sử dụng ✕';
+   permission.className=p.mst_allowed?'mst-picker-allowed':'mst-picker-not-allowed';
+   pick.append(permission);
+  }
   pick.addEventListener('click',()=>{
    input.value=mst;select.value=mst;closePicker();
    select.dispatchEvent(new Event('change',{bubbles:true}));

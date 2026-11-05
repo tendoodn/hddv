@@ -54,7 +54,7 @@
     { header: 'Nhà cung cấp HĐĐT', width: 18 }, { header: 'Mã tra cứu', width: 18, type: T },
   ];
   // Chỉ khi chọn PDF: link tự mở tải PDF gốc ở cổng tra cứu của nhà cung cấp (extension không tự vào các cổng này – đa số có captcha)
-  const PDF_COLS = [{ header: 'Link tra cứu HĐ gốc', width: 30 }];
+  const LOOKUP_COLS = [{ header: 'Mã bảo mật tra cứu', width: 22, type: T }, { header: 'Link tra cứu HĐ gốc', width: 34 }];
   // Thông tin chỉ có khi đã tải chi tiết (XML): ngày ký số, hình thức thanh toán, mã + link tra cứu của nhà cung cấp
   const headOf = (details, r) => details.get(r.key)?.head || null;
   // Một hóa đơn có thể có nhiều mã hàng: lấy mã từ XML/JSON chi tiết, bỏ trùng và ghép trong cùng ô.
@@ -90,14 +90,14 @@
       return row;
     });
     return {
-      name, columns: [...INVOICE_COLS, ...(withPdf ? PDF_COLS : []), ...(mstCheck ? MST_COLS : [])],
+      name, columns: [...INVOICE_COLS, ...LOOKUP_COLS, ...(mstCheck ? MST_COLS : [])],
       boldRows: new Set(totals.map((_, i) => list.length + i)),
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
           String(r.shdon), productCodes(details, r), dateVN(headOf(details,r)?.nlap||r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, currencyOf(r),
           foreign(r) ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
-          ...((o) => [o.name, o.code, ...(withPdf ? [linkCell(o)] : [])])(HDDT.originalLookup(r, headOf(details, r))),
+          ...((o) => [o.name, o.code, headOf(details,r)?.lookup?.secretCode||'', linkCell(o)])(HDDT.originalLookup(r, headOf(details, r))),
           ...(mstCheck ? mstRisk(r, illegal) : [])]),
         ...totals,
       ],

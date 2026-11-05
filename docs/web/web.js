@@ -284,6 +284,7 @@ async function refreshAccount(){
   account=session?.user||null;
   window.AutoTaxWebAccount?.sync(account);
   if(!account){
+   $('webModeControls').hidden=true;
    $('accountEmailLabel').textContent='Chưa đăng nhập';
    profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
    window.GdtVault?.setUser(null,[]);

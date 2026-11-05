@@ -61,9 +61,11 @@ async function open(row){
   $('issuerPdfCode').value=code;
   $('copyIssuerCode').disabled=!code;
   if(link){$('issuerPdfLink').href=link;$('issuerPdfLink').hidden=false;}
-  current={row,link,code,detail};
+  const viaAddon=!!window.AutoTaxVinvoiceBridge?.matches(source,row,detail);
+  current={row,link,code,detail,viaAddon};
   $('issuerPdfAttach').disabled=false;
-  $('tryIssuerPdf').disabled=!directPdfLink(link);
+  $('tryIssuerPdf').textContent=viaAddon?'Lấy PDF Viettel từ Add-on':'Thử tải PDF trực tiếp';
+  $('tryIssuerPdf').disabled=!(viaAddon||directPdfLink(link));
   $('issuerPdfHelp').textContent=providerInstructions(source?.name||catalog?.name||'',link)+
    ' Nếu cổng đã xác thực nhưng Web bị CORS chặn, tải tệp trên chính trang phát hành hoặc dùng Add-on để nhận PDF qua phiên trang đó.';
   const previouslyAttached=window.WebPdfExport?.hasUserPdf(row);
@@ -107,6 +109,23 @@ async function downloadDirect(){
  }catch(err){status('Chưa thể tải PDF trực tiếp: '+(err.message||String(err))+
   '. Nếu cổng yêu cầu CAPTCHA, mở link tra cứu rồi nhập mã để tải bằng trang chính thức.');
  }finally{clearTimeout(timer);btn.disabled=!current?.link}
+}
+async function downloadFromAddon(){
+ if(!current?.row)return;
+ const btn=$('tryIssuerPdf'),row=current.row;
+ btn.disabled=true;
+ status('Đang tìm PDF gốc VInvoice đã được Add-on nhận từ trang Viettel…');
+ try{
+  const bytes=await window.AutoTaxVinvoiceBridge?.retrieve(row,window.WebInvoiceApp);
+  if(!bytes)throw Error('Chưa có PDF đã xác thực trong Add-on cho hóa đơn này. Mở Viettel từ mục Tiếp tục lấy PDF gốc trên Add-on, giải CAPTCHA, bấm Tải PDF rồi thử lại.');
+  if(current?.row!==row)return;
+  const issue=window.Report.dateVN(current.detail?.head?.nlap||row.tdlap).split('/').join('');
+  await window.WebInvoiceApp.saveFile('pdf_goc/'+safe(
+   (row.kind==='purchase'?'MuaVao_':'BanRa_')+row.khhdon+'_'+row.shdon+'_'+(issue||'KhongRoNgay'))+'.pdf',
+   bytes,'application/pdf');
+  status('Đã lấy PDF thật từ lượt tải hợp lệ tại VInvoice và lưu trong thư mục PDF gốc. AutoTax chưa tự xác minh chữ ký số.');
+ }catch(err){status('Chưa thể lấy PDF Viettel: '+(err.message||String(err)))}
+ finally{btn.disabled=!current?.viaAddon}
 }
 async function attachDownloaded(){
  if(!current?.row)return status('Chưa chọn hóa đơn cần gắn tệp.');
@@ -156,7 +175,7 @@ function init(){
   catch{const field=$('issuerPdfCode');field.focus();field.select();
    status('Không thể sao chép tự động. Mã đang được chọn để bạn sao chép bằng Ctrl+C.')}
  });
- $('tryIssuerPdf').addEventListener('click',()=>void downloadDirect());
+ $('tryIssuerPdf').addEventListener('click',()=>void (current?.viaAddon?downloadFromAddon():downloadDirect()));
 }
 window.IssuerPdf={open};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();

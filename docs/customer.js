@@ -285,7 +285,7 @@ async function loadPackages(){
    ? item.quantity+" lượt hóa đơn (cộng dồn khi mua thêm)"+(item.validity_days?" · hiệu lực "+item.validity_days+" ngày.": " · không hết hạn.")+" Không giới hạn MST tra cứu theo số lượt đã mua; tối đa 100 hồ sơ MST lưu cùng lúc."
    : item.quantity+" MST · "+(item.validity_days?item.validity_days+" ngày":"Chưa mở thời hạn")+". Không giới hạn số hóa đơn tra cứu trong phạm vi MST được quản lý.","muted");
   addText(card,"strong",vnMoney(item.price_vnd),"price");
-  const b=addText(card,"button","Chọn mua");
+  const b=addText(card,"button",item.code==="DATA365"?"Thanh toán QR DATA365":"Chọn mua");
   b.type="button";b.disabled=item.family==="mst"&&!item.validity_days;
   b.addEventListener("click",()=>buy(item.code,b));
   list.append(card);
@@ -467,6 +467,19 @@ async function checkPaymentStatus(manual=false){
  try{return await paymentStatusPromise}finally{paymentStatusPromise=null}
 }
 async function buy(packageCode,button,options={}){
+ if(packageCode==="DATA365"){
+  if(!window.AutoTaxData365Payment)return showMessage("Bộ thanh toán DATA365 chưa tải. Vui lòng tải lại trang.",true);
+  // Dedicated QR checkout; no coupon UI or replacement order for DATA365.
+  closePayment();
+  try{
+   await window.AutoTaxData365Payment.open({
+    client,
+    onPaid:async()=>{await refresh();},
+    onClose:()=>{const old=$("paymentSuccessDialog");if(old?.open)old.close();}
+   });
+  }catch(error){showMessage("Không mở được DATA365: "+prettyError(error),true)}
+  return;
+ }
  button.disabled=true;
  try{
   const {data:{session}}=await client.auth.getSession();

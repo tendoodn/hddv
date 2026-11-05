@@ -140,8 +140,15 @@ function renderPicker(){
   pick.append(number,alias);
   if(!invoiceMode){
    const permission=document.createElement('small');
-   permission.textContent=p.mst_allowed?'Đã cấp quyền sử dụng ✓':'Chưa cấp quyền sử dụng ✕';
-   permission.className=p.mst_allowed?'mst-picker-allowed':'mst-picker-not-allowed';
+   permission.className='mst-picker-permission';
+   permission.append(document.createTextNode(
+    p.mst_allowed?'Đã cấp quyền sử dụng ':'Chưa cấp quyền sử dụng '
+   ));
+   const mark=document.createElement('strong');
+   mark.className=p.mst_allowed?'mst-permission-tick':'mst-permission-cross';
+   mark.textContent=p.mst_allowed?'✓':'✕';
+   mark.setAttribute('aria-label',p.mst_allowed?'Đã được cấp quyền':'Chưa được cấp quyền');
+   permission.append(mark);
    pick.append(permission);
   }
   pick.addEventListener('click',()=>{

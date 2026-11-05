@@ -1,4 +1,4 @@
-name: Verify AutoTax v1.1.24 unified team live routes
+name: Verify AutoTax v1.1.25 separate MST grants and invoice codes
 on:
   push:
     branches: [main]
@@ -20,15 +20,16 @@ jobs:
           import time, urllib.request, urllib.error, sys
           origin = "https://tracuuhoadon.top"
           checks = {
-              "/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "WEB V1.1.24", "data365-payment.js?v=1123data365qr1", "web/web-results.js?v=1123data365qr1", "web/web.css?v=1123", "web/stock-cache.js?v=1122g", "web/tendoo-import.js?v=1123", "web/invoice-cache-v120.js?v=1123", "team-shared-v119.js?v=119team1", "web/vault.js?v=1124team", "web/web.js?v=1124team", 'id="clearLocalInvoiceHistory"', 'id="stockSkuDialog"', "Liên kết lại mã hàng", 'class="dialog-heading sku-map-sticky-head"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng"],
-              "/user/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.24</span>", 'id="invoiceTeamLimit"', 'id="mstTeamLimit"', "team-shared-v119.js?v=119team1", "team-v118.js?v=1124team", "customer.js?v=1124team"],
-              "/admin/": ["<title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.24 · ADMIN</span>", "adminSessionPending", "Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")', 'id="grantCustomerSearch"', 'id="grantCustomerMatches"', 'function renderGrantMatches()'],
+              "/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "WEB V1.1.25", "data365-payment.js?v=1123data365qr1", "web/web-results.js?v=1123data365qr1", "web/web.css?v=1125recent", "web/stock-cache.js?v=1122g", "web/tendoo-import.js?v=1123", "web/invoice-cache-v120.js?v=1123", "web/report.js?v=1125codes", "team-shared-v119.js?v=119team1", "web/vault.js?v=1125sharedmst", "web/web.js?v=1125sharedmst", 'id="clearLocalInvoiceHistory"', 'id="stockSkuDialog"', "Liên kết lại mã hàng", 'class="dialog-heading sku-map-sticky-head"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng"],
+              "/user/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.25</span>", 'id="invoiceTeamLimit"', 'id="mstTeamLimit"', "team-shared-v119.js?v=119team1", "team-v118.js?v=1125splitrights", "customer.js?v=1125borrowed"],
+              "/admin/": ["<title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "AUTOTAX <span>V1.1.25 · ADMIN</span>", "adminSessionPending", "Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")', 'id="grantCustomerSearch"', 'id="grantCustomerMatches"', 'function renderGrantMatches()'],
               "/data365-payment.js": ["package_code:'DATA365',coupon_code:null,replace_order_id:null", "addon_my_order_status", "data?.status==='paid'", "setState(SUCCESS,'success')", "5000)"],
-              "/customer.js": ['if(packageCode==="DATA365")', "Thanh toán QR DATA365"],
+              "/customer.js": ['if(packageCode==="DATA365")', "Thanh toán QR DATA365", "autotax_member_authorize_shared_mst_v120"],
               "/admin-site-links.js": ["$('adminComboPackagesLink')?.remove();"],
               "/team-shared-v119.js": ["AutoTaxTeamShared", "autotax_team_shared_mst_profiles_v119", "autotax_team_get_shared_mst_password_v119", "autotax_team_share_mst_password_v119"],
               "/team-v118.js": ["publishSharedPasswords", "renderSharedMstPanel", "autotax_team_set_permissions_v118"],
-              "/web/vault.js": ["AutoTaxTeamShared?.get(mst)", "source:'team'"],
+              "/web/vault.js": ["AutoTaxTeamShared?.get(mst)", "source:'team'", "autotax_member_authorize_shared_mst_v120", "mst-picker-selected"],
+              "/web/report.js": ["const productCodeOf", "productCodeOf(l)", "Mã hàng hóa"],
               "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
               "/web/web-results.js": ["resultPageSize=10", "RESULT_PAGE_SIZES=new Set([10,20,30])", "commitCatalogFile", "stockSkuSave", "stockSkuData365", "AutoTaxData365Payment.open", "detectMismatch", "scheduleMismatchCheck", "catalogMst"],
               "/web/account-modal.js": ["if(id==='webLoginDialog')continue;", "data-web-close"],

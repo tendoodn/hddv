@@ -34,8 +34,9 @@ const readVnDate=id=>parseVnDate($(id).value);
 const setVnDate=(id,iso)=>{$(id).value=vn(iso);const native=$(id+'Native');if(native)native.value=iso};
 function configureVnDates(){
  for(const id of ['fromDate','toDate']){
-  const text=$(id),native=$(id+'Native'),pick=$(id+'Pick');
-  native.addEventListener('change',()=>setVnDate(id,native.value));
+  const text=$(id),native=$(id+'Native');
+  // Keep hidden native value in sync for compatibility, but never open Chrome date UI.
+  native.addEventListener('change',()=>{if(native.value)setVnDate(id,native.value)});
   text.addEventListener('input',()=>{
    const raw=text.value,caret=text.selectionStart??raw.length;
    const before=raw.slice(0,caret).replace(/\D/g,'').length;
@@ -47,12 +48,12 @@ function configureVnDates(){
    text.setSelectionRange(position,position);
   });
   text.addEventListener('blur',()=>{const iso=readVnDate(id);if(iso)setVnDate(id,iso)});
-  pick.addEventListener('click',()=>{
-   if(readVnDate(id))native.value=readVnDate(id);
-   if(typeof native.showPicker==='function')native.showPicker();
-   else native.focus();
-  });
  }
+ window.AutoTaxWebDatePicker?.attach({
+  from:$('fromDate'),to:$('toDate'),
+  fromButton:$('fromDatePick'),toButton:$('toDatePick'),
+  onSelect:setVnDate
+ });
 }
 
 const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');

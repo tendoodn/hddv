@@ -504,7 +504,14 @@
       tgtcthue: num(d.tgtcthue), tgtthue: num(d.tgtthue), tgtttbso: num(d.tgtttbso), ttcktmai: num(d.ttcktmai),
       related: null, mccqt: d.mhdon || '', seller: null,
       signatureTime: String(d.nky??d.ngayKy??d.ngayky??'').trim(),
-      cqtSigned: false, hasSignBox: false, lookup: { code: '', link: '' },
+      cqtSigned: false, hasSignBox: false, lookup: (()=>{
+        const rawLink=String(d.linkTraCuu||d.linktracuu||d.lookupUrl||d.portalLink||'').trim();
+        let link='';
+        try{if(rawLink){const u=new URL(rawLink);if(u.protocol==='https:'&&!u.username&&!u.password)link=u.href}}catch{}
+        const code=String(d.maTraCuu||d.matracuu||d.lookupCode||d.fkey||'').trim().slice(0,150);
+        const secretCode=String(d.maBaoMat||d.mabimat||d.secretCode||'').trim().slice(0,150);
+        return {code:code||secretCode,link,secretCode};
+      })(),
       msttcgp: d.msttcgp || '',
     };
   }
@@ -573,7 +580,7 @@
   }
   function linesFromDetail(det) {
     return (det.hdhhdvu || []).map((h) => ({
-      tchat: TCHAT[h.tchat] || h.tchat || '', ma: String(h.mhhdvu??'').trim(), ten: h.ten, dvt: h.dvtinh, sl: num(h.sluong), dgia: signed(h.tchat, num(h.dgia)), ck: num(h.stckhau),
+      tchat: TCHAT[h.tchat] || h.tchat || '', ma: String(h.mhhdvu||h.maHangHoa||h.mahanghoa||h.maHang||h.sku||h.itemCode||h.productCode||'').trim(), ten: h.ten, dvt: h.dvtinh, sl: num(h.sluong), dgia: signed(h.tchat, num(h.dgia)), ck: num(h.stckhau),
       thtien: signed(h.tchat, num(h.thtien)), tsuat: h.ltsuat || (h.tsuat !== null && h.tsuat !== undefined ? `${Math.round(h.tsuat * 100)}%` : ''),
       tthue: signed(h.tchat, num(h.tthue)), tthueTinh: false,
     }));

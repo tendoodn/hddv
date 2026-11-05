@@ -158,9 +158,35 @@ function renderPicker(){
    select.dispatchEvent(new Event('change',{bubbles:true}));
   });
   card.append(pick);
-  const manage=document.createElement('a');manage.href='/user';
-  manage.target='_blank';manage.rel='noopener noreferrer';manage.className='mst-picker-remove';
-  manage.textContent='Quản lý';card.append(manage);menu.append(card);
+  if(p.source==='team'){
+   const granted=p.can_use_mst_package===true||p.personally_authorized===true;
+   if(!granted){
+    const authorize=document.createElement('button');authorize.type='button';
+    authorize.className='mst-picker-grant';authorize.textContent='Cấp quyền MST cá nhân';
+    authorize.title='Dùng hạn mức MST cá nhân, không dùng gói MST trưởng nhóm';
+    authorize.addEventListener('click',async()=>{
+     authorize.disabled=true;
+     try{
+      const client=window.AutoTaxSharedClient;
+      const {error}=await client.rpc('autotax_member_authorize_shared_mst_v120',{p_mst:mst});
+      if(error)throw error;
+      notify('Đã cấp quyền MST '+mst+' bằng hạn mức cá nhân.');
+      await window.AutoTaxRefreshWebAccount?.();
+     }catch(error){notify('Không cấp được quyền MST cá nhân: '+error.message,true)}
+     finally{authorize.disabled=false}
+    });
+    card.append(authorize);
+   }else{
+    const readonly=document.createElement('small');
+    readonly.className='mst-picker-readonly';readonly.textContent='MST chia sẻ · chỉ xem';
+    card.append(readonly);
+   }
+  }else{
+   const manage=document.createElement('a');manage.href='/user';
+   manage.target='_blank';manage.rel='noopener noreferrer';manage.className='mst-picker-remove';
+   manage.textContent='Quản lý';card.append(manage);
+  }
+  menu.append(card);
  }
  const valid=m=>profiles.some(p=>p.mst===m);
  const typedMst=normalize(typed),wanted=valid(typedMst)?typedMst:
@@ -181,7 +207,10 @@ function updateChosen(){
   card.querySelector('.mst-picker-selected')?.remove();
   if(selected){
    const badge=document.createElement('span');badge.className='mst-picker-selected';
-   badge.textContent='Gần đây';card.querySelector('.mst-picker-choice')?.append(badge);
+   badge.textContent='Gần đây';
+   const head=card.querySelector('.mst-picker-head');
+   const permission=head?.querySelector('.mst-picker-permission');
+   if(permission)head.insertBefore(badge,permission);else head?.append(badge);
   }
  }
 }
@@ -194,16 +223,8 @@ async function select(mst){
  let previousLast='';try{previousLast=localStorage.getItem(lastKey())||'';localStorage.setItem(lastKey(),mst)}catch{}
  if(previousLast!==mst)renderPicker();
  try{
-  // First read the shared end-to-end encrypted cloud vault; then migrate old local data.
-  let cloud=null;
-  try{cloud=await window.AutoTaxSharedMstVault?.get(mst)}
-  catch(e){notify('Kho đồng bộ chưa sẵn sàng: '+e.message,true)}
-  if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
-  if(cloud){
-   input.value=cloud;
-   notify('Đã tự điền mật khẩu MST '+mst+' từ kho mã hóa đồng bộ Web/Add-on.');
-   return;
-  }
+  // Shared MST passwords are fetched with membership authorization first.
+  // Never copy the leader's password into the member's personal/local vault.
   const profile=profiles.find(p=>p.mst===mst);
   if(profile?.source==='team'){
    try{
@@ -214,6 +235,16 @@ async function select(mst){
      notify('Đã điền mật khẩu MST do trưởng nhóm chia sẻ (chỉ dùng trong phiên này).');
     }else notify('MST nhóm chưa được trưởng nhóm chia sẻ mật khẩu. Vui lòng liên hệ trưởng nhóm.');
    }catch(error){if(stamp===requestSeq)notify('Không lấy được mật khẩu nhóm: '+error.message,true)}
+   return;
+  }
+  // Personal MSTs continue to use the same encrypted cross-device vault.
+  let cloud=null;
+  try{cloud=await window.AutoTaxSharedMstVault?.get(mst)}
+  catch(e){notify('Kho đồng bộ chưa sẵn sàng: '+e.message,true)}
+  if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
+  if(cloud){
+   input.value=cloud;
+   notify('Đã tự điền mật khẩu MST '+mst+' từ kho mã hóa đồng bộ Web/Add-on.');
    return;
   }
   const record=await readStore('credentials',entryKey(mst));
@@ -245,7 +276,9 @@ async function setUser(userId,rows,mode='mst'){
   const mst=normalize(typeof x==='object'?x.mst:x);
   return [mst,{mst,display_name:typeof x==='object'?String(x.display_name||'').slice(0,120):'',
    mst_allowed:typeof x==='object'?x.mst_allowed===true:false,
-   source:typeof x==='object'&&x.source==='team'?'team':'personal'}];
+   source:typeof x==='object'&&x.source==='team'?'team':'personal',
+   can_use_mst_package:typeof x==='object'&&x.can_use_mst_package===true,
+   personally_authorized:typeof x==='object'&&x.personally_authorized===true}];
  }).filter(([mst])=>/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))).values()];
  if(owner&&!invoiceMode){
   const allowed=new Set(profiles.map(p=>p.mst));

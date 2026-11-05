@@ -276,6 +276,22 @@
   const X0 = M + 8, CW = W - 2 * M - 16; // vùng nội dung trong khung
   const rateKey = (t) => String(t || '').trim();
 
+
+  // Dấu tích từ ảnh người dùng cung cấp, được vector hóa để chìm vào nền khung chữ ký PDF dựng.
+  // Chỉ là họa tiết nền, KHÔNG phải bằng chứng đã xác thực chữ ký số.
+  function drawSignatureWatermark(doc, x, y, w, h) {
+    const shape = [[261,6],[257,2],[252,0],[242,1],[219,11],[189,30],[160,54],[138,76],[114,103],[88,138],[84,136],[70,118],[55,103],[40,93],[32,90],[20,89],[12,92],[3,100],[0,106],[0,110],[3,115],[12,122],[38,150],[76,207],[83,211],[93,210],[102,201],[118,170],[139,135],[173,89],[190,70],[221,40],[244,22],[257,14],[261,10]];
+    const markW = Math.min(90, w * 0.39, h * 0.88 * 262 / 211);
+    const scale = markW / 262;
+    const left = x + (w - markW) / 2;
+    const top = y + (h - 211 * scale) / 2;
+    const round = v => String(Math.round(v * 100) / 100);
+    const points = shape.map(([px, py], i) =>
+      round(left + px * scale) + ' ' + round(841.89 - top - py * scale) + ' ' + (i ? 'l' : 'm'));
+    // Màu xanh rất nhạt giả lập độ chìm ~20% trên nền trang PDF trắng.
+    doc.ops.push('q 0.80 0.93 0.80 rg ' + points.join(' ') + ' h f Q');
+  }
+
   // row: dòng danh sách của cổng; inv: kết quả HDDT.fetchInvoice; lookup: { name, link, code } nhà cung cấp + tra cứu
   async function buildInvoicePdf(row, inv, lookup = {}) {
     const doc = new Doc(await loadFonts());
@@ -542,6 +558,7 @@
     const wrapped = details.flatMap((s) => doc.wrap(s, tw, 9));
     const bh = Math.max(58, 24 + wrapped.length * 12 + 6);
     doc.rect(bx, sy, bw, bh, { color: markColor, lw: 1.1 });
+    drawSignatureWatermark(doc, bx, sy, bw, bh);
     doc.text(bx + 7, sy + 5, 'Signature valid',
       { size: 11.5, bold: true, color: markColor });
     wrapped.forEach((t, k) =>

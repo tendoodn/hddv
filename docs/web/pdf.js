@@ -91,7 +91,7 @@
 
   // ---------- Trang + chữ ----------
   const W = 595.28, H = 841.89, M = 28; // A4, khung viền cách mép 10 mm
-  const FRAME = 36, TOP = FRAME + 10, BOTTOM = H - M - 30; // khung viền: dòng ghi chú phía trên, chân trang phía dưới
+  const FRAME = 24, TOP = FRAME + 10, BOTTOM = H - M - 30; // khung viền: dòng ghi chú phía trên, chân trang phía dưới
   const hex4 = (n) => n.toString(16).padStart(4, '0');
   const num = (v) => (Math.round(v * 100) / 100).toString();
 
@@ -559,8 +559,8 @@
     const look = [lookup.code && `Mã tra cứu: ${lookup.code}`, lookup.link && `Tra cứu tại: ${lookup.link}`, lookup.name && `Nhà cung cấp HĐĐT: ${lookup.name}`,!vatColumns&&h.mccqt&&`Mã của CQT: ${h.mccqt}`].filter(Boolean).join('   ·   ');
     doc.pages.forEach((ops, i) => {
       doc.ops = ops;
-      doc.text(M, 7, 'Bản thể hiện dựng từ dữ liệu trên hoadondientu.gdt.gov.vn – không phải bản PDF gốc của nhà cung cấp hóa đơn điện tử', { size: 7.5, bold: true, color: RED, w: W - 2 * M, align: 'center' });
-      doc.text(M, 20, 'Chưa xác minh chữ ký số trên PDF dựng', { size: 8.5, bold: true, color: RED, w: W - 2 * M, align: 'center' });
+      // Một cảnh báo duy nhất ở đầu mỗi trang PDF dựng; màu đỏ và in đậm toàn bộ câu.
+      doc.text(M, 10, 'Bản thể hiện dựng từ dữ liệu trên hoadondientu.gdt.gov.vn – không phải bản PDF gốc của nhà cung cấp hóa đơn điện tử', { size: 7.5, bold: true, color: RED, w: W - 2 * M, align: 'center' });
       doc.rect(M, FRAME, W - 2 * M, H - M - FRAME, { lw: 1 });
       doc.line(M, BOTTOM + 4, W - M, BOTTOM + 4, LIGHT, 0.4);
       if (look) doc.para(X0, BOTTOM + 8, look, CW - 60, { size: 7.5, color: MUTED });

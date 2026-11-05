@@ -301,7 +301,9 @@ async function refreshAccount(){
   window.AutoTaxWebAccount?.sync(account);
   if(!account){
    $('webTeamQuotaSummary').hidden=true;
-   $('webModeControls').hidden=true;
+   $('webModeControls').hidden=false;
+   $('webUsageMode').disabled=true;
+   $('webUsageModeHint').textContent='Đăng nhập AutoTax để xem chế độ sử dụng.';
    $('accountEmailLabel').textContent='Chưa đăng nhập';
    profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
    window.GdtVault?.setUser(null,[]);
@@ -333,13 +335,23 @@ async function refreshAccount(){
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   if(sharedRows.error)console.warn('Không tải được MST nhóm:',sharedRows.error.message);
   const shared=Array.isArray(sharedRows.data)?sharedRows.data:[];
-  selectedMode=ent.data?.mode||'mst';
+  // Server has already applied the persisted automatic switch.
+  const choice=window.AutoTaxAccountFlow.quotaModes(ent.data);
+  selectedMode=choice.selected;
   const modeSelect=$('webUsageMode');
+  for(const option of modeSelect.options){
+   const visible=choice.options.includes(option.value);
+   option.hidden=!visible;option.disabled=!visible;
+  }
   modeSelect.value=selectedMode;
+  modeSelect.disabled=choice.options.length<2;
+  $('webModeControls').hidden=false;
+  if($('webModeControls').parentElement!==$('webAccountModeSlot'))
+   $('webAccountModeSlot').append($('webModeControls'));
   const inv=ent.data?.packages?.invoice||{},msts=ent.data?.packages?.mst||{};
-  const canInvoice=Number(inv.remaining||0)>0||Number(ent.data?.team_invoice_spendable_remaining||0)>0;
+  const canInvoice=choice.invoiceUsable,canMst=choice.mstUsable;
   const hasInvoice=Number(inv.purchased||0)>0||Number(ent.data?.team_invoice_purchased||0)>0||canInvoice||!!ent.data?.can_reread_charged_invoices;
-  const canMst=Number(msts.active_quantity||0)>0||Number(ent.data?.team_mst_count||0)>0;
+  const dual=choice.options.length===2;
   const ownSheets=Number(inv.remaining||0),groupSheets=Number(ent.data?.team_invoice_remaining||0);
   const totalBought=Number(inv.purchased||0)+Number(ent.data?.team_invoice_purchased||0);
   const ownMst=Number(msts.active_quantity||0),groupMst=Number(ent.data?.team_mst_package_capacity||0);
@@ -352,19 +364,6 @@ async function refreshAccount(){
    ' · MST: '+(ownMst+groupMst).toLocaleString('vi-VN')+
    ' (cá nhân '+ownMst+', nhóm '+groupMst+', đã chia sẻ '+teamMstShared+')'+
    (groupSheets>0&&invoiceMstShared===0?' · Chờ trưởng nhóm cấp MST để sử dụng gói nhóm.':'');
-  modeSelect.querySelector('[value="invoice"]').disabled=!canInvoice;
-  modeSelect.querySelector('[value="mst"]').disabled=!canMst;
-  const dual=hasInvoice&&canMst;
-  modeSelect.disabled=!dual;
-  $('webModeControls').hidden=!dual;
-  if(dual&&$('webModeControls').parentElement!==$('webAccountModeSlot'))
-   $('webAccountModeSlot').append($('webModeControls'));
-  // Force the only spendable family. When both are exhausted, retain the last selected mode.
-  if(canInvoice!==canMst&&selectedMode!==(canInvoice?'invoice':'mst')){
-   const auto=canInvoice?'invoice':'mst';
-   const changed=await client.rpc('autotax_set_usage_mode_v118',{p_mode:auto});
-   if(!changed.error){selectedMode=auto;modeSelect.value=auto;}
-  }
   $('webUsageModeHint').textContent=dual?
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
     'Hạn mức cá nhân và nhóm được cộng khi còn quyền nhóm. Chỉ MST được trưởng nhóm chia sẻ mới dùng hạn mức nhóm.'; 

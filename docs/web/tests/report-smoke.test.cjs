@@ -47,6 +47,16 @@ assert.ok(book[1].rows.filter(r=>typeof r[0]==='number').every(r=>r[1]==='Bán r
 const usd=book[0].rows.find(r=>r[1]==='Tổng (USD)');
 assert.ok(usd,'Currency variants must be combined in one USD subtotal');
 assert.equal(usd[13],30);assert.equal(usd[14],3);assert.equal(usd[16],33);
+// Lowercase/whitespace currency must preserve the exchange rate in the invoice sheet.
+assert.equal(book[0].rows.find(r=>r[6]==='001')[17],'USD');
+assert.equal(book[0].rows.find(r=>r[6]==='001')[18],26000);
+assert.equal(book[0].rows.find(r=>r[6]==='002')[18],26000);
+// A VND invoice with whitespace/case variants must not show an exchange rate.
+const vndVariant=context.window.Report.buildSheets([
+  {...base,key:'v1',kind:'purchase',shdon:'006',dvtte:' vnd ',tgia:26000}
+],new Map(),{sheets:{reduction:false,risk:false,seller:false,adjust:false,hdkd:false,gtgt:false}})[0];
+assert.equal(vndVariant.rows[0][17],'VND');
+assert.equal(vndVariant.rows[0][18],null);
 assert.equal(book[0].rows.find(r=>r[6]==='002')[19],'Điều chỉnh');
 assert.equal(book[0].rows.find(r=>r[6]==='003')[19],'Đã hủy');
 assert.equal(book[1].rows.find(r=>r[6]==='004')[19],'Đã thay thế');

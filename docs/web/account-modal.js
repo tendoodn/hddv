@@ -50,6 +50,9 @@ window.AutoTaxWebAccount={sync};
 const close=id=>{if($(id)?.open)$(id).close()};
 for(const id of dialogs){
  const d=$(id);
+ // Đăng nhập không được đóng chỉ vì người dùng bấm vào vùng nền bên ngoài.
+ // Chỉ dùng nút Đóng, đăng nhập thành công, hoặc thao tác chuyển popup.
+ if(id==='webLoginDialog')continue;
  d.addEventListener('click',e=>{if(e.target===d&&id!=='webNewPasswordDialog')close(id)});
 }
 document.querySelectorAll('[data-web-close]').forEach(b=>b.addEventListener('click',()=>close(b.dataset.webClose)));

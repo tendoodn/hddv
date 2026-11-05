@@ -635,7 +635,8 @@
     const mst = head?.msttcgp || row.msttcgp || '', p = PROVIDERS[mst] || {};
     const link=head?.lookup?.link||row.lookup?.link||p.url||'';
     const code=head?.lookup?.code||row.lookup?.code||lookupCodeInUrl(link)||'';
-    return { name: p.name || (mst ? `MST ${mst}` : ''), link, code };
+    return { name: p.name || (mst ? `MST ${mst}` : ''), link, code,
+      secretCode: head?.lookup?.secretCode || row.lookup?.secretCode || '' };
   }
 
   // ---- Đối chiếu MST với DS công khai sử dụng hóa đơn không hợp pháp ----

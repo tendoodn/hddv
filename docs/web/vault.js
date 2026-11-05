@@ -140,7 +140,7 @@ function renderPicker(){
   pick.append(number,alias);
   if(!invoiceMode){
    const permission=document.createElement('small');
-   permission.textContent=p.mst_allowed?'✓ Đã cấp quyền sử dụng':'✕ Chưa cấp quyền sử dụng';
+   permission.textContent=p.mst_allowed?'Đã cấp quyền sử dụng ✓':'Chưa cấp quyền sử dụng ✕';
    permission.className=p.mst_allowed?'mst-picker-allowed':'mst-picker-not-allowed';
    pick.append(permission);
   }

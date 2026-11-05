@@ -191,24 +191,23 @@ async function refresh(){
   void refreshExtensionDownloadLink();
   $("userEmail").textContent=session.user.email||"";
   let license=await rpc("autotax_my_entitlements_v118");
-  const initialInvoice=license.packages?.invoice||{},initialMst=license.packages?.mst||{};
-  // A purchased family is distinct from currently spendable balance.
-  // The group leader's invoice quota also counts as an available family for members.
-  const hasInvoice=Number(initialInvoice.purchased||0)>0||Number(license.team_invoice_remaining||0)>0||
-    !!license.team_invoice_available||!!license.can_reread_charged_invoices;
-  // Only spendable invoice sheets count as an available mode; reread rights are retained separately.
-  const canInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_spendable_remaining||0)>0;
-  const canMst=Number(initialMst.active_quantity||0)>0||Number(license.team_mst_count||0)>0;
-  const hasMst=canMst;
-  if(canInvoice!==canMst){
-   const automatic=canInvoice?'invoice':'mst';
-   if(license.mode!==automatic){
-    try{
-     await rpc('autotax_set_usage_mode_v118',{p_mode:automatic});
-     license=await rpc("autotax_my_entitlements_v118");
-    }catch(modeError){showMessage('Không tự chuyển được chế độ: '+prettyError(modeError),true)}
-   }
+  // Một nguồn quy tắc cho user/web/addon, không căn cứ vào gói đã hết hạn.
+  let modeChoice=accountFlow.quotaModes(license);
+  if(modeChoice.autoSelect){
+   try{
+    // Persist even when the server already returned the effective mode: the
+    // previous selected mode might still be stored and must survive a team kick.
+    await rpc('autotax_set_usage_mode_v118',{p_mode:modeChoice.selected});
+    license=await rpc("autotax_my_entitlements_v118");
+    modeChoice=accountFlow.quotaModes(license);
+   }catch(modeError){showMessage('Không lưu được chế độ tự động: '+prettyError(modeError),true)}
   }
+  const hasInvoice=Number(license.packages?.invoice?.purchased||0)>0||
+    Number(license.team_invoice_purchased||0)>0||modeChoice.invoiceUsable||
+    !!license.can_reread_charged_invoices;
+  const hasMst=modeChoice.mstUsable;
+  const canInvoice=modeChoice.invoiceUsable;
+  const canMst=modeChoice.mstUsable;
   state=license;
   const invoice=license.packages?.invoice||{};
   const mst=license.packages?.mst||{};
@@ -220,7 +219,7 @@ async function refresh(){
   const invRemaining=Number(invoice.remaining||0)+teamInvoice;
   const invTotal=Number(invoice.purchased||0)+Number(license.team_invoice_purchased||0);
   const mstCapacity=Number(mst.active_quantity||0)+teamMst;
-  const selected=license.mode||"mst";
+  const selected=modeChoice.selected;
   $("licenseTitle").textContent=selected==="invoice"&&(Number(invoice.remaining||0)+teamInvoiceUsable)===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"":(teamInvoice>0||teamMst>0)?"Đã nhận gói nhóm · chờ trưởng nhóm chia sẻ MST":"Chưa có gói hiệu lực";
   $("licenseTitle").hidden=!!license.allowed&&!(selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices);
   $("invoiceBalance").textContent=invRemaining.toLocaleString("vi-VN")+" / "+invTotal.toLocaleString("vi-VN");
@@ -232,16 +231,20 @@ async function refresh(){
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
   const modeCounts={invoice:Number(invoice.remaining||0)+teamInvoiceUsable,mst:Number(mst.active_quantity||0)+teamMstShared};
   const spendableInvoice=modeCounts.invoice>0,spendableMst=modeCounts.mst>0;
-  $("modeSection").hidden=!(hasInvoice&&hasMst);
+  $("modeSection").hidden=false;
+  for(const option of $("usageMode").options){
+   const visible=modeChoice.options.includes(option.value);
+   option.hidden=!visible;option.disabled=!visible;
+  }
+  $("usageMode").disabled=modeChoice.options.length<2;
   const selectedCard=$(selected==='invoice'?'invoicePlanCard':'mstPlanCard');
   const otherCard=$(selected==='invoice'?'mstPlanCard':'invoicePlanCard');
   for(const card of [selectedCard,otherCard])card.classList.remove('is-selected-mode','is-other-mode');
   selectedCard.classList.add('is-selected-mode');otherCard.classList.add('is-other-mode');
   selectedCard.setAttribute('aria-current','true');otherCard.removeAttribute('aria-current');
   $("usageMode").value=selected;
-  $("usageMode").querySelector('option[value="invoice"]').disabled=!canInvoice;
-  $("usageMode").querySelector('option[value="mst"]').disabled=!hasMst;
-  $("usageMode").title=hasInvoice&&hasMst?
+
+  $("usageMode").title=modeChoice.options.length===2?
     'Có gói MST và số tờ (gồm quyền trưởng nhóm). Hai chế độ không chạy đồng thời.':
     'Chế độ được chọn tự động theo gói hiện có.';
   // Personal MST whitelist configuration is available even when the invoice mode is active.

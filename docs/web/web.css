@@ -454,3 +454,24 @@ td.audit-info{color:#c6c6db}
  #webUserBlock #webRenewNow{padding:7px 8px;font-size:11px}
  .mst-picker-choice .mst-picker-head{gap:4px 7px}
 }
+
+/* Quota warning for both MST and invoice plans; keeps renew action discoverable. */
+.autotax-quota-dialog{
+ box-sizing:border-box;width:min(440px,calc(100vw - 28px));max-width:calc(100vw - 28px);
+ margin:auto;padding:22px;border:1px solid #b84b56;border-radius:16px;
+ background:#21161b;color:#fff3f3;box-shadow:0 24px 68px #000b;
+}
+.autotax-quota-dialog::backdrop{background:#030306b9}
+.autotax-quota-dialog h2{margin:0 0 12px;font-size:20px;line-height:1.35;color:#ff7c87}
+.autotax-quota-dialog p{margin:0 0 20px;font-size:15px;font-weight:650;line-height:1.55;color:#ffe1e4}
+.autotax-quota-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+.autotax-quota-actions .autotax-quota-renew{
+ display:inline-flex;align-items:center;justify-content:center;
+ background:#dc2626;color:#fff;text-decoration:none;border:1px solid #ef4444;
+ border-radius:9px;padding:10px 18px;font-size:13px;font-weight:850;min-height:40px;
+}
+.autotax-quota-actions .autotax-quota-renew:hover{background:#b91c1c;color:#fff}
+.autotax-quota-actions .autotax-quota-close{
+ min-height:40px;padding:10px 18px;border:1px solid #62626e;
+ border-radius:9px;background:#36333b;color:#f4f4f5;font-size:13px;font-weight:750;cursor:pointer;
+}

@@ -3,6 +3,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const client=window.AutoTaxSharedClient;
+const accountFlow=window.AutoTaxAccountFlow;
 if(!client||!$('webLoginDialog'))return;
 const dialogs=['webLoginDialog','webSignupDialog','webForgotDialog','webResetSentDialog','webNewPasswordDialog','webProfileDialog'];
 const logo='/favicon.svg?v=20261102b';
@@ -94,7 +95,7 @@ $('webLoginForm').addEventListener('submit',async e=>{
  btn.disabled=true;message('webLoginStatus');
  try{
   const {data,error}=await client.auth.signInWithPassword({email,password});
-  if(error)throw error;
+  if(error)throw Error(accountFlow.message(error));
   account=data.user;saveEmail(email);
   if(!account?.app_metadata?.autotax_force_password_change){
    try{await window.AutoTaxSharedMstVault?.unlock(account.id,password)}
@@ -107,18 +108,16 @@ $('webLoginForm').addEventListener('submit',async e=>{
    $('webNewPasswordTitle').textContent='Đổi mật khẩu sau khi Admin cấp lại';
    open('webNewPasswordDialog');
   }
- }catch(error){message('webLoginStatus',authErrorVi(error),true)}
+ }catch(error){message('webLoginStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
 $('webSignupForm').addEventListener('submit',async e=>{
  e.preventDefault();
- const btn=$('webSignupSubmit'),name=$('webSignupName').value.trim().replace(/\s+/g,' ');
- const email=$('webSignupEmail').value.trim().toLowerCase();
+ const btn=$('webSignupSubmit'),name=accountFlow.normalizeName($('webSignupName').value);
+ const email=accountFlow.normalizeEmail($('webSignupEmail').value);
  const pass=$('webSignupPassword').value,confirm=$('webSignupConfirm').value;
- if(name.length<2||name.length>100)return message('webSignupStatus','Tên người dùng phải từ 2 đến 100 ký tự.',true);
- if(!allowedEmail(email))return message('webSignupStatus','Chỉ hỗ trợ Gmail, Hotmail hoặc Yahoo Mail.',true);
- if(pass.length<10||pass.length>128)return message('webSignupStatus','Mật khẩu phải từ 10 đến 128 ký tự.',true);
- if(pass!==confirm)return message('webSignupStatus','Hai lần nhập mật khẩu không khớp.',true);
+ const invalid=accountFlow.validateSignup({name,email,password:pass,confirmPassword:confirm});
+ if(invalid)return message('webSignupStatus',invalid,true);
  btn.disabled=true;message('webSignupStatus');
  try{
   const {data,error}=await client.auth.signUp({email,password:pass,options:{data:{full_name:name,display_name:name}}});
@@ -127,7 +126,7 @@ $('webSignupForm').addEventListener('submit',async e=>{
     throw Error('Email đã tồn tại.');
    throw error;
   }
-  if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0)
+  if(accountFlow.duplicateSignup(data))
    throw Error('Email đã tồn tại.');
   if(data?.session){const {error:out}=await client.auth.signOut();if(out)throw out;}
   saveEmail(email);
@@ -136,7 +135,7 @@ $('webSignupForm').addEventListener('submit',async e=>{
   message('webLoginStatus',data?.session?'Đăng ký thành công. Bấm Đăng nhập để tiếp tục.':
    'Đã tạo yêu cầu đăng ký. Nếu hệ thống yêu cầu xác minh email, hãy xác minh rồi đăng nhập.');
   $('webLoginSubmit').focus();
- }catch(error){message('webSignupStatus',authErrorVi(error),true)}
+ }catch(error){message('webSignupStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
 $('webForgotForm').addEventListener('submit',async e=>{
@@ -149,7 +148,7 @@ $('webForgotForm').addEventListener('submit',async e=>{
   if(error)throw error;
   open('webResetSentDialog');
   resetCloseTimer=setTimeout(closeAll,10000);
- }catch(error){message('webForgotStatus',authErrorVi(error),true)}
+ }catch(error){message('webForgotStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
 $('webResetSentClose').addEventListener('click',closeAll);
@@ -204,7 +203,7 @@ $('webProfileForm').addEventListener('submit',async e=>{
   if(newPass)try{await window.AutoTaxSharedMstVault?.rekey(newPass)}catch(err){message('webProfileStatus','Đã đổi mật khẩu, nhưng cần mở lại kho MST: '+err.message,true);return;}
   account=data.user;update();close('webProfileDialog');
   await window.AutoTaxRefreshWebAccount?.();
- }catch(error){message('webProfileStatus',authErrorVi(error),true)}
+ }catch(error){message('webProfileStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
 $('webLogout').addEventListener('click',async()=>{
@@ -244,7 +243,7 @@ $('webNewPasswordForm').addEventListener('submit',async e=>{
   try{await window.AutoTaxSharedMstVault?.unlock(data.user.id,pass)}catch(err){console.warn('Kho MST chưa mở khóa:',err.message)}
   recovery=false;window.__autotaxRecoveryFromUrl=false;$('webNewPassword').value='';$('webNewPasswordConfirm').value='';
   closeAll();update();await window.AutoTaxRefreshWebAccount?.();
- }catch(error){message('webNewPasswordStatus',authErrorVi(error),true)}
+ }catch(error){message('webNewPasswordStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
 client.auth.onAuthStateChange((event,session)=>{

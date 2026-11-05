@@ -405,37 +405,52 @@
   function lookupOf(doc) {
     // TTKhac varies by provider: Fkey, Mã tra cứu, mã bí mật, PortalLink etc.
     // Never invent a lookup code. Only use URLs from the invoice's own XML.
-    let code = '', link = '';
+    let code = '', link = '', secretCode = '';
+    const normalized=value=>String(value||'').normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d')
+      .toLowerCase().replace(/[^a-z0-9]/g,'');
     const linkValue = (value) => {
-      const v = String(value || '').trim();
-      const candidate = /^https?:\/\//i.test(v) ? v :
-        /^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?$/i.test(v) ? 'https://' + v : '';
+      let v = String(value || '').trim();
+      if(/^https?%3a%2f%2f/i.test(v))try{v=decodeURIComponent(v)}catch{}
+      const embedded=v.match(/https?:\/\/[^\s<>"']+/i);
+      const raw=(embedded?embedded[0]:v).replace(/[),.;]+$/,'');
+      const candidate = /^https?:\/\//i.test(raw) ? raw :
+        /^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?$/i.test(raw) ? 'https://' + raw : '';
       try {
         if (!candidate) return '';
         const u = new URL(candidate);
-        return u.protocol === 'https:' && !u.username && !u.password ? u.href : '';
+        return u.protocol === 'https:' && !u.username && !u.password && u.href.length<=2048 ? u.href : '';
       } catch { return ''; }
     };
     for (const tin of byName(doc, 'TTin')) {
       if (tin.closest('HHDVu, NBan, NMua, DSCKS')) continue;
       const k = txt(kid(tin, 'TTruong')), v = txt(kid(tin, 'DLieu'));
       if (!v) continue;
-      if (LOOKUP.test(k)) {
+      if (LOOKUP.test(k) || LOOKUP.test(normalized(k))) {
         if (/link|url|website|portal|^dc\s*tc$/i.test(k)) link ||= linkValue(v);
         else if (/^https?:\/\//i.test(v)) link ||= linkValue(v);
-        else if (v.length <= 150) code ||= v;
+        else if (v.length <= 150){
+          if(/bimat|baomat|secret|security/.test(normalized(k)))secretCode ||= v;
+          else code ||= v;
+        }
       }
     }
-    for (const tag of ['Fkey', 'FKey', 'LookupCode', 'MaTraCuu', 'MaBaoMat', 'SecretCode', 'SearchKey']) {
+    for (const tag of ['Fkey', 'FKey', 'LookupCode', 'MaTraCuu',
+      'MTCuu', 'MTC', 'KeySearch', 'VerificationCode', 'MaNhanHoaDon',
+      'MaBaoMat', 'MaBiMat', 'SecretCode', 'SecurityCode', 'SearchKey']) {
       const v = txt(byName(doc, tag)[0]);
-      if (v && v.length <= 150 && !/^https?:\/\//i.test(v)) code ||= v;
+      if (v && v.length <= 150 && !/^https?:\/\//i.test(v)){
+        if(/bimat|baomat|secret|security/i.test(normalized(tag)))secretCode ||= v;
+        else code ||= v;
+      }
     }
-    for (const tag of ['PortalLink', 'LookupUrl', 'TraCuuURL', 'SearchUrl', 'URLTraCuu']) {
+    for (const tag of ['PortalLink', 'LookupUrl', 'TraCuuURL',
+      'SearchUrl', 'URLTraCuu', 'LinkTraCuu', 'DiaChiTraCuu', 'DCTC', 'TraCuuLink']) {
       link ||= linkValue(txt(byName(doc, tag)[0]));
     }
     // Some issuers include the lookup code in a signed URL query (?mtc=...).
     // Extract only recognized keys; never fabricate codes or use auth tokens.
-    return { code: code || lookupCodeInUrl(link), link };
+    return { code: code || secretCode || lookupCodeInUrl(link), link, secretCode };
   }
   function lookupCodeInUrl(value) {
     try {

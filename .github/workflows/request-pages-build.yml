@@ -1,0 +1,35 @@
+name: Request Pages rebuild for AutoTax
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/request-pages-build.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Request GitHub Pages build from current source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request,urllib.error
+          api='https://api.github.com/repos/tendoodn/hddv/pages/builds'
+          req=urllib.request.Request(api,data=b'{}',method='POST',headers={
+              'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+              'Accept':'application/vnd.github+json',
+              'X-GitHub-Api-Version':'2022-11-28',
+              'Content-Type':'application/json'})
+          try:
+              with urllib.request.urlopen(req,timeout=25) as response:
+                  print('Pages build request',response.status,response.read().decode()[:500])
+          except urllib.error.HTTPError as error:
+              print('Could not request Pages build:',error.code,error.read().decode()[:1000])
+              raise
+          PY

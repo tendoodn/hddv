@@ -20,11 +20,14 @@ jobs:
           import time, urllib.request, urllib.error, sys
           origin = "https://tracuuhoadon.top"
           checks = {
-              "/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "WEB V1.1.23", "web/web-results.js?v=1123", "web/web.css?v=1123", "web/stock-cache.js?v=1122g", "web/tendoo-import.js?v=1123", "web/invoice-cache-v120.js?v=1123", 'id="clearLocalInvoiceHistory"', 'id="stockSkuDialog"', "Liên kết lại mã hàng", 'class="dialog-heading sku-map-sticky-head"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng"],
-              "/user/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "authSection", 'href="/admin/" id="adminLink"', 'id="accountSessionPending"', 'id="authSection" class="panel" hidden'],
-              "/admin/": ["<title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "adminSessionPending", "Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")'],
+              "/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "WEB V1.1.23", "data365-payment.js?v=1123data365qr1", "web/web-results.js?v=1123data365qr1", "web/web.css?v=1123", "web/stock-cache.js?v=1122g", "web/tendoo-import.js?v=1123", "web/invoice-cache-v120.js?v=1123", 'id="clearLocalInvoiceHistory"', 'id="stockSkuDialog"', "Liên kết lại mã hàng", 'class="dialog-heading sku-map-sticky-head"', 'id="stockSkuOpen"', "Cập nhật file mẫu SKU / Mã hàng"],
+              "/user/": ["<title>AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "authSection", 'href="/admin/" id="adminLink"', 'id="accountSessionPending"', 'id="authSection" class="panel" hidden', "data365-payment.js?v=1123data365qr1", "customer.js?v=1123data365qr1"],
+              "/admin/": ["<title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>", "adminSessionPending", "Đăng nhập quản trị", "bootOnce", 'window.location.replace("/user")', 'id="grantCustomerSearch"', 'id="grantCustomerMatches"', 'function renderGrantMatches()'],
+              "/data365-payment.js": ["package_code:'DATA365',coupon_code:null,replace_order_id:null", "addon_my_order_status", "data?.status==='paid'", "setState(SUCCESS,'success')", "5000)"],
+              "/customer.js": ['if(packageCode==="DATA365")', "Thanh toán QR DATA365"],
+              "/admin-site-links.js": ["$('adminComboPackagesLink')?.remove();"],
               "/web/date-slide-picker.js": ["AutoTaxWebDatePicker", "touchstart", "Tháng"],
-              "/web/web-results.js": ["resultPageSize=10", "RESULT_PAGE_SIZES=new Set([10,20,30])", "commitCatalogFile", "stockSkuSave", "stockSkuData365", "detectMismatch", "scheduleMismatchCheck", "catalogMst"],
+              "/web/web-results.js": ["resultPageSize=10", "RESULT_PAGE_SIZES=new Set([10,20,30])", "commitCatalogFile", "stockSkuSave", "stockSkuData365", "AutoTaxData365Payment.open", "detectMismatch", "scheduleMismatchCheck", "catalogMst"],
               "/web/account-modal.js": ["if(id==='webLoginDialog')continue;", "data-web-close"],
               "/web/web.js": ["function showQuotaWarning", "QUOTA_MESSAGE", "Hãy bấm Đăng nhập ở phía trên để sử dụng AutoTax.", "clearLocalInvoiceHistory"],
               "/web/web.css": [".autotax-quota-dialog", ".stock-sku-dialog", ".sku-map-sticky-head", "#stockExport .stock-grid"],

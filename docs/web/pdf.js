@@ -91,7 +91,7 @@
 
   // ---------- Trang + chữ ----------
   const W = 595.28, H = 841.89, M = 28; // A4, khung viền cách mép 10 mm
-  const FRAME = 24, TOP = FRAME + 10, BOTTOM = H - M - 30; // khung viền: dòng ghi chú phía trên, chân trang phía dưới
+  const FRAME = 36, TOP = FRAME + 10, BOTTOM = H - M - 30; // khung viền: dòng ghi chú phía trên, chân trang phía dưới
   const hex4 = (n) => n.toString(16).padStart(4, '0');
   const num = (v) => (Math.round(v * 100) / 100).toString();
 
@@ -522,10 +522,10 @@
     let sy = doc.y + 42;
     const sg = h.seller;
     // X509SubjectName và SigningTime chỉ chứng minh XML có thông tin ký;
-    // "Signature valid" chỉ có khi một bộ xác thực mật mã đáng tin đã đặt verified=true.
+    // Dòng Signature valid dùng nhãn xanh theo giao diện; cảnh báo màu đỏ ở đầu trang ghi rõ PDF dựng chưa xác minh chữ ký.
     const signatureVerified = sg?.verified === true ||
       sg?.verification?.valid === true || sg?.validation?.status === 'valid';
-    const GREEN = '0.0 0.62 0.12', NEUTRAL = '0.37 0.37 0.37';
+    const GREEN = '0.0 0.62 0.12';
     const markColor = GREEN;
     const bw = Math.min(242, sw - 5), bx = X0 + sw + (sw - bw) / 2;
     const sourceTime = sg?.time || h.signatureTime || '';
@@ -542,7 +542,7 @@
     const wrapped = details.flatMap((s) => doc.wrap(s, tw, 9));
     const bh = Math.max(58, 24 + wrapped.length * 12 + 6);
     doc.rect(bx, sy, bw, bh, { color: markColor, lw: 1.1 });
-    doc.text(bx + 7, sy + 5, signatureVerified ? 'Signature valid' : 'Thông tin ký số',
+    doc.text(bx + 7, sy + 5, 'Signature valid',
       { size: 11.5, bold: true, color: markColor });
     wrapped.forEach((t, k) =>
       doc.text(bx + 7, sy + 23 + k * 12, t, { size: 9, bold: true, color: markColor }));
@@ -559,7 +559,8 @@
     const look = [lookup.code && `Mã tra cứu: ${lookup.code}`, lookup.link && `Tra cứu tại: ${lookup.link}`, lookup.name && `Nhà cung cấp HĐĐT: ${lookup.name}`,!vatColumns&&h.mccqt&&`Mã của CQT: ${h.mccqt}`].filter(Boolean).join('   ·   ');
     doc.pages.forEach((ops, i) => {
       doc.ops = ops;
-      doc.text(M, 10, 'Bản thể hiện dựng từ dữ liệu trên hoadondientu.gdt.gov.vn – không phải bản PDF gốc của nhà cung cấp hóa đơn điện tử', { size: 7, italic: true, color: MUTED, w: W - 2 * M, align: 'center' });
+      doc.text(M, 7, 'Bản thể hiện dựng từ dữ liệu trên hoadondientu.gdt.gov.vn – không phải bản PDF gốc của nhà cung cấp hóa đơn điện tử', { size: 7.5, bold: true, color: RED, w: W - 2 * M, align: 'center' });
+      doc.text(M, 20, 'Chưa xác minh chữ ký số trên PDF dựng', { size: 8.5, bold: true, color: RED, w: W - 2 * M, align: 'center' });
       doc.rect(M, FRAME, W - 2 * M, H - M - FRAME, { lw: 1 });
       doc.line(M, BOTTOM + 4, W - M, BOTTOM + 4, LIGHT, 0.4);
       if (look) doc.para(X0, BOTTOM + 8, look, CW - 60, { size: 7.5, color: MUTED });

@@ -570,8 +570,8 @@ $("signupForm").addEventListener("submit",event=>{
   const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
   if(name.length<2||name.length>100)return signupMessage("Tên người dùng phải từ 2 đến 100 ký tự.",true);
   if(!email||!$("signupEmail").checkValidity())return signupMessage("Nhập email hợp lệ.",true);
-  if(!/^[^@\s]+@(gmail\.com|hotmail\.com)$/i.test(email))
-   return signupMessage("Chỉ cho phép đăng ký bằng email @gmail.com hoặc @hotmail.com.",true);
+  if(!/^[^@\s]+@(gmail\.com|hotmail\.com|yahoo\.com|yahoo\.com\.vn)$/i.test(email))
+   return signupMessage("Chỉ cho phép đăng ký bằng Gmail, Hotmail hoặc Yahoo Mail.",true);
   if(password.length<10)return signupMessage("Mật khẩu phải có tối thiểu 10 ký tự.",true);
   if(password!==confirmPassword)return signupMessage("Mật khẩu nhập lại không khớp.",true);
   button.disabled=true;
@@ -608,7 +608,7 @@ $("signupForm").addEventListener("submit",event=>{
  })();
 });
 $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
- const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:location.href.split("#")[0]});
+ const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:"https://tracuuhoadon.top/"});
  if(error)throw error;
  showMessage("Đã gửi hướng dẫn khôi phục nếu email hợp lệ.",false,"authMessage");
 }));
@@ -791,6 +791,6 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
  showMessage('Mật khẩu đã được thay đổi.');
  await refresh();
 }));
-client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")$("passwordRecovery").hidden=false});
+client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")location.replace("/");});
 try{const email=localStorage.getItem('autotax_recent_email');if(email&&!$('email').value)$('email').value=email}catch{}
 refresh();

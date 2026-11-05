@@ -30,6 +30,7 @@
 
 <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('tab1', this)">TÍNH GIÁ</button>
+    <button class="tab-btn" onclick="switchTab('tab2', this)">TÍNH THUẾ</button>
     <button class="tab-btn" onclick="switchTab('tab3', this)">BÁO GIÁ</button>
     <button class="tab-btn" onclick="switchTab('tab4', this)">KẾ TOÁN</button>
 </div>
@@ -1024,32 +1025,17 @@
             </button>
         </div>
     </div>
-    <footer class="baogia-tax-footer" style="text-align:center;padding:18px 15px 95px;font-size:.85rem"><a href="#tinh-thue" id="tax-footer-link" style="color:#6c757d;text-decoration:underline">Công cụ tính thuế</a></footer>
     <div class="floating-contact">
     <a href="https://zalo.me/0868838242" class="contact-zalo zalo-btn" target="_blank" title="Chat Zalo">
         <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" alt="Zalo">
     </a>
 
-    <a href="tel:0868838242" class="contact-phone phone-btn" title="Gọi Hotline" aria-label="Gọi hotline 0868838242">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.19 18a19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.09 3.18 2 2 0 0 1 4.08 1h3a2 2 0 0 1 2 1.72c.12.96.34 1.9.66 2.81a2 2 0 0 1-.45 2.11L8.02 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.54 2.81.66A2 2 0 0 1 22 16.92z"/></svg>
+    <a href="tel:0868838242" class="contact-phone phone-btn" title="Gọi Hotline">
+        <img src="https://canpos.vn/wp-content/plugins/button-contact-vr/img/phone.png" alt="Phone">
     </a>
     </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="script.js"></script>
-<script>
-(function () {
-  function openTax() {
-    document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
-    document.querySelectorAll('.tabs .tab-btn').forEach(function(el){ el.classList.remove('active'); });
-    var tab = document.getElementById('tab2');
-    if (tab) { tab.classList.add('active'); window.scrollTo(0, 0); }
-  }
-  var link = document.getElementById('tax-footer-link');
-  if (link) link.addEventListener('click', function(e){ e.preventDefault(); if(location.hash !== '#tinh-thue') history.pushState(null, '', '#tinh-thue'); openTax(); });
-  window.addEventListener('hashchange', function(){ if(location.hash === '#tinh-thue') openTax(); });
-  if (location.hash === '#tinh-thue') openTax();
-})();
-</script>
 
 <script src="../site-footer.js?v=118"></script>
 </body>

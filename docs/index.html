@@ -1,495 +1,363 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#09090b">
 <link rel="preconnect" href="https://ucqqjdsoyvvaxswzbhaw.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax V1.1.20 — Tài khoản và gói sử dụng</title>
-<style>
-:root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#291b1f;background:#fff8f8;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
-*{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
-header,.row,.mst-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-header{margin-bottom:24px;position:sticky;top:0;z-index:5;background:#fff;border:1px solid var(--tendoo-line);border-radius:12px;padding:10px 16px;box-shadow:0 2px 12px #ae000f0d}.brand{font-size:21px;font-weight:850}.brand span{color:var(--tendoo)}
-h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:16px;margin:10px 0}
-.panel,.plan{background:#fff;border:1px solid #f1c7cc;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 20px #1e293b09}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-.grid .plan{margin:0}
-.package-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.package-grid .plan{padding:14px;display:flex;flex-direction:column;min-width:0}
-.package-grid .plan h3{font-size:15px;margin:0 0 8px}
-.package-grid .plan p{font-size:12px;line-height:1.5;flex:1}
-.package-grid .plan .price{font-size:19px;margin:10px 0}
-.package-grid .plan button{width:100%;padding:9px 7px}
-@media(max-width:900px){.package-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:600px){.package-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:360px){.package-grid{grid-template-columns:1fr}} .muted,small{color:#64748b}.price{font-size:21px;display:block;margin:12px 0}
-label{font-size:13px;font-weight:650;display:block;margin:12px 0 6px}
-input,select{font:inherit;padding:10px 12px;border-radius:9px;border:1px solid #cbd5e1;max-width:100%;min-width:0}
-input{width:100%}button{border:0;padding:11px 15px;border-radius:9px;background:var(--tendoo);color:#fff;font:inherit;font-weight:700;cursor:pointer}
-button.secondary{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}button:disabled{opacity:.55;cursor:not-allowed}
-.actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0}
-.notice{margin:12px 0;padding:12px;border-radius:9px;background:var(--tendoo-soft);color:#9f1239;white-space:pre-wrap}
-.error{background:#fef2f2;color:#991b1b}a{color:var(--tendoo-dark)}
-.mst-row{padding:11px 0;border-bottom:1px solid #e2e8f0}.mst-row small{display:block;margin-top:4px}
-.stat strong{display:block;font-size:23px;margin:8px 0}.stat small{display:block}
-#paymentQr{width:min(100%,270px);border:1px solid #e2e8f0;border-radius:12px}
-.activation-grid{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
-.activation-grid>.panel{flex:1 1 360px;min-width:0;margin:14px 0}
-#paymentArea{text-align:center;scroll-margin-block:24px}
-#paymentArea #paymentQr{display:block;margin:14px auto}
-#paymentArea #paymentInfo{margin-left:auto;margin-right:auto;max-width:680px;overflow-wrap:anywhere}
-#paymentArea .actions{justify-content:center}
-#paymentArea small{display:block;margin:0 auto;max-width:650px;line-height:1.5}
-@media(max-width:700px){.activation-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0}.activation-grid>.panel{width:100%}}
-footer{padding:16px 0 28px;color:#64748b;font-size:12px}
-.payment-success-modal{max-width:min(460px,92vw);padding:26px;border-radius:16px;border:1px solid #d1fae5;background:#fff;color:#172033;box-shadow:0 24px 80px #0f172a44}
-.payment-success-modal::backdrop{background:#0f172a99}
-.payment-success-head{display:flex;gap:12px;align-items:center;margin-bottom:14px}
-.payment-success-head span{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border-radius:50%;background:#dcfce7;color:#15803d;font-weight:800;font-size:26px}
-.payment-success-head h2{margin:0}
-[hidden]{display:none!important}
-@media(max-width:540px){.wrap{padding:18px 12px}.panel{padding:14px}h1{font-size:22px}}
- 
-/* Đồng nhất với sidepanel Tendoo đỏ, không thay đổi API/nhật ký thanh toán */
-body{background:#fff8f8}
-button:hover:not(:disabled){filter:brightness(.97)}
-.panel,.plan{box-shadow:0 3px 15px #8000120b}
-.portal-account-head{padding-bottom:8px;border-bottom:1px solid var(--tendoo-line)}
-.portal-account-head strong{color:#930013;overflow-wrap:anywhere}
-.mst-accordion{padding:0 16px}
-.mst-accordion h2{font-size:19px;margin:0 0 8px}.mst-row .mst-name{color:#4b5563;font-size:12px;margin-top:4px;font-weight:600}.mst-row .mst-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mst-accordion summary{cursor:pointer;list-style:none;font-weight:800;color:#b00014;padding:15px 0;display:flex;gap:10px;align-items:center}
-.mst-accordion summary::-webkit-details-marker{display:none}
-.mst-accordion summary span{padding:1px 9px;border-radius:15px;background:#fff1f2}
-.mst-accordion summary small{margin-left:auto}
-#webAddMstForm input{width:auto;flex:1 1 200px}
-#webAddMstForm button{white-space:nowrap}
-input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
-.license-token{color:#b00014}
-
-
-/* Portal shares the compact red account layout from the extension. */
-.extension-download-link{display:inline-flex;align-items:center;padding:10px 13px;border-radius:9px;background:var(--tendoo);color:#fff;text-decoration:none;font-size:13px;font-weight:750}
-.extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
-/* Five account actions always stay on one line. Narrow screens scroll this row horizontally. */
-.portal-account-head{display:flex;flex-direction:column;align-items:stretch;gap:10px}
-.account-quick-actions{display:grid;grid-template-columns:repeat(5,minmax(145px,1fr));gap:7px;width:100%;overflow-x:auto;padding-bottom:4px}
-.account-quick-actions .account-link-btn,.account-quick-actions button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:39px;height:auto;min-width:0;margin:0;padding:7px 8px;text-align:center;white-space:nowrap;font-size:12px;line-height:1.15;border-radius:9px;text-decoration:none;font-weight:750}
-.account-quick-actions .account-link-btn{border:1px solid var(--tendoo-line);background:#fff1f2;color:var(--tendoo-dark)}
-.account-quick-actions .account-link-btn:hover{background:#ffe4e6}
-.account-quick-actions .extension-download-link{border-color:var(--tendoo);background:var(--tendoo);color:#fff}
-.account-quick-actions .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
-@media(max-width:600px){.portal-account-head .account-quick-actions{grid-template-columns:repeat(5,minmax(124px,1fr));gap:5px;max-width:100%}}
-
-.portal-header-actions{gap:8px;margin:0}
-.portal-admin-link{display:inline-flex;align-items:center;padding:10px 13px;border:1px solid var(--tendoo-line);border-radius:9px;background:#fff1f2;color:var(--tendoo-dark);font-size:13px;font-weight:750;text-decoration:none}
-.portal-admin-link:hover{background:#ffe4e6;color:var(--tendoo-dark)}
-#adminLink[hidden],#adminFooterLink[hidden]{display:none!important}
-.web-search-blink{background:#ffedf2!important;border-color:#e11d48!important;color:#9f1239!important;animation:autotaxWebBlink 1.8s ease-in-out infinite;will-change:box-shadow}
-@keyframes autotaxWebBlink{0%,100%{box-shadow:0 0 0 0 rgba(225,29,72,.32);opacity:1}50%{box-shadow:0 0 0 5px rgba(225,29,72,0);opacity:.58}}
-@media(prefers-reduced-motion:reduce){.web-search-blink{animation:none;will-change:auto}}
-@media(max-width:430px){.portal-header-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.portal-header-actions a{justify-content:center;text-align:center;padding:9px 6px;font-size:12px}}
-
-.portal-mode-toolbar{margin:12px 0;border-top:1px solid var(--tendoo-line);padding-top:10px}
-#modeSection{display:grid;grid-template-columns:auto minmax(130px,250px);align-items:center;gap:6px 12px}
-#modeSection[hidden]{display:none!important}
-#modeSection label{margin:0;font-weight:750;color:#9f1239}
-#modeSection p{grid-column:1/-1;font-size:12px;margin:0 0 4px}
-.portal-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
-.portal-quick-actions button{min-width:0;white-space:nowrap;padding:9px 5px}
-#passwordPanel{border-color:var(--tendoo-line)}
-#dashboard.autotax-force-password > *{opacity:.32;pointer-events:none}
-#forcedPasswordDialog{width:min(440px,calc(100vw - 22px));max-width:96vw;border-radius:15px;border:1px solid #fda4af;padding:22px;background:#fff;color:#1f2937;box-shadow:0 25px 90px #17050c55}
-#forcedPasswordDialog::backdrop{background:#090a11b8}
-#forcedPasswordDialog h2{color:#ad152b;font-size:20px;margin:0 0 10px}
-#forcedPasswordDialog p{font-size:13px;line-height:1.5}
-#forcedPasswordDialog label{display:block;margin:11px 0 5px;font-size:13px;font-weight:750}
-#forcedPasswordDialog input{width:100%;box-sizing:border-box;min-width:0}
-#forcedPasswordDialog button{width:100%;margin-top:13px}
-#forcedPasswordDialog .notice[hidden]{display:none!important}
-#forcedPasswordDialog .autotax-password-eye{display:block!important;position:relative!important;width:100%!important;max-width:100%!important}
-#forcedPasswordDialog .autotax-password-eye>input{display:block!important;width:100%!important;max-width:100%!important;padding-right:48px!important}
-#forcedPasswordDialog .autotax-password-eye>button.autotax-eye-button{position:absolute!important;right:6px!important;top:50%!important;transform:translateY(-50%)!important;display:flex!important;align-items:center;justify-content:center;width:36px!important;min-width:36px!important;height:34px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;z-index:2}
-@media(max-width:450px){.portal-quick-actions{gap:5px}.portal-quick-actions button{font-size:11px;padding:8px 3px}}
-
-/* V1.1.20: explicit MST grant checkboxes in the customer portal. */
-#mstProfilesWeb summary{display:flex;align-items:center;gap:10px;cursor:pointer}
-#mstProfilesWeb summary strong{font-size:16px}
-#mstProfilesWeb summary small{font-size:12px}
-#mstAllowControls{margin:12px 0;padding:12px;border:1px solid #edc1c6;border-radius:10px}
-#mstAllowControls[hidden]{display:none!important}
-.mst-allow-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;flex:0 0 auto;padding:7px}
-.mst-allow-check input{width:19px;height:19px;accent-color:#16a34a}
-.mst-permission-status{font-size:12px;font-weight:800;transition:color .12s ease}
-.mst-permission-status.is-granted{color:#15803d}
-.mst-permission-status.is-denied{color:#dc2626}
-.mst-row{display:flex;gap:10px;align-items:flex-start}
-.mst-row>.mst-name{flex:1}
-.feedback-thread{margin:12px 0;padding:13px 15px;border:1px solid var(--tendoo-line);border-radius:11px;background:#fff}
-.feedback-thread p{white-space:pre-wrap;overflow-wrap:anywhere;margin:9px 0}
-.feedback-reply{padding:11px;margin-top:9px;border-left:4px solid var(--tendoo);background:#fff1f2;border-radius:7px}
-.feedback-reply small{display:block;margin:6px 0}
-#feedbackDialog{width:min(680px,94vw);max-height:88vh;overflow-y:auto}
-#feedbackBody{display:block;width:100%;font:inherit;line-height:1.5;padding:10px;resize:vertical;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px}
-#feedbackImages{margin:8px 0}
-.autotax-coupon-box{margin-top:14px;padding:12px;border:1px dashed #e9aab3;border-radius:12px;background:#fffafb}.autotax-coupon-box .actions{display:flex;align-items:center;gap:10px}.autotax-coupon-box input{width:auto;flex:1 1 200px}.autotax-coupon-box button{white-space:nowrap}.autotax-license-notice{margin-top:10px}
-
-/* Download Extension always sits to the right of the AutoTax brand, even on the login screen. */
-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto;margin:0 0 0 auto}
-.portal-header-download{background:#a9071b;color:#fff;border-color:#a9071b;white-space:nowrap}
-.portal-header-download:hover{background:#830213;color:#fff}
-@media(max-width:520px){header{padding:9px 10px;gap:6px;flex-wrap:nowrap}header .brand{font-size:15px;white-space:nowrap}header .brand img{width:25px;height:25px;margin-right:3px!important}header .portal-header-actions{display:flex;grid-template-columns:none;width:auto;min-width:0;gap:5px}header .portal-header-download{font-size:10px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.2;max-width:130px}header #adminLink:not([hidden]){font-size:10px;padding:7px 5px}}
-</style>
-<style>
-
-/* Same-row account heading and team switch, without displacing quick actions. */
-.portal-account-head{display:grid;grid-template-columns:minmax(180px,1fr) auto;align-items:center;gap:10px 14px}
-.portal-account-head>.autotax-account-tabs{justify-content:flex-end;align-items:center}
-.portal-account-head>.account-quick-actions{grid-column:1/-1}
-@media(max-width:680px){
- .portal-account-head{grid-template-columns:minmax(0,1fr)}
- .portal-account-head>.autotax-account-tabs{justify-content:flex-start}
- .portal-account-head>.account-quick-actions{grid-column:1}
-}
-.autotax-account-tabs,.autotax-team-subtabs{display:flex;gap:6px;flex-wrap:wrap}.autotax-tab{border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}.autotax-tab.is-active{background:#164e63;color:#fff;border-color:#164e63}.autotax-team-panel[hidden],#autotaxTeamDetail[hidden]{display:none!important}#dashboard.autotax-team-active>:not(#autotaxAccountSummary):not(#autotaxTeamPanel):not(#forcedPasswordNotice){display:none!important}#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head){display:none!important}.autotax-team-list{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.autotax-team-list button{max-width:100%;overflow-wrap:anywhere}.autotax-team-panel td{vertical-align:top}.autotax-team-panel td label{display:block;white-space:nowrap;margin:4px 0}.autotax-team-panel td button{margin:3px}.autotax-team-panel td input[type=checkbox]{margin-right:5px}.autotax-team-panel .table-wrap{overflow-x:auto}.autotax-team-subtabs{margin:12px 0}
-
-/* AutoTax self-service account registration — accessible modal, responsive inputs. */
-.autotax-signup-dialog{width:min(510px,calc(100vw - 28px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #f0c3c9;border-radius:16px;padding:22px;background:#fff;color:#281b21;box-shadow:0 25px 75px #3c0a1540}
-.autotax-signup-dialog::backdrop{background:rgba(24,20,26,.70)}
-.autotax-signup-dialog form{display:flex;flex-direction:column;gap:9px}
-.autotax-signup-dialog label{font-weight:700;font-size:13px}
-.autotax-signup-dialog input{display:block;width:100%;min-width:0;padding:11px 12px;border-radius:9px;border:1px solid #cfd4db;background:#fff;color:#20242a;font:inherit}
-.autotax-signup-dialog input:focus{outline:2px solid #e60012;outline-offset:1px}
-.autotax-signup-dialog .autotax-signup-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.autotax-signup-dialog h2{font-size:21px;margin:0}
-.autotax-signup-dialog .actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:8px}
-.autotax-signup-dialog .actions button{flex:1;white-space:nowrap}
-.autotax-signup-dialog #signupStatus{margin:4px 0}
-@media(max-width:480px){.autotax-signup-dialog{padding:17px}.autotax-signup-dialog h2{font-size:18px}}
-/* AutoTax v120 compact signup + profile UI */
-.autotax-signup-dialog{width:min(440px,calc(100vw - 16px));padding:14px 17px;max-height:calc(100dvh - 16px)}
-.autotax-signup-dialog form{gap:5px}.autotax-signup-dialog label{font-size:12px;line-height:1.25;margin:0}
-.autotax-signup-dialog input:not([type="file"]){padding:7px 9px;min-height:34px}
-.autotax-signup-dialog p{margin:4px 0;font-size:11px;line-height:1.35}
-.autotax-signup-dialog .actions{padding-top:3px;gap:7px}.autotax-signup-dialog .actions button{min-height:34px;padding:6px 9px}
-.portal-account-head{display:flex!important;flex-direction:row!important;justify-content:space-between;align-items:center!important;gap:12px}
-.autotax-welcome{display:flex;gap:12px;align-items:center;min-width:0}
-.autotax-welcome img,.autotax-avatar-picker img{object-fit:cover;flex:0 0 auto;border-radius:50%;border:2px solid #edb0b8;background:white}
-.autotax-welcome-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.autotax-welcome-copy strong{font-size:18px;overflow-wrap:anywhere}.autotax-welcome-copy span{font-size:12px;color:#64748b}
-.autotax-settings-wrap{position:relative;flex:0 0 auto}.autotax-settings-toggle{font-size:25px;width:44px;height:44px;display:grid;place-items:center;padding:0;border-radius:50%;border:1px solid #e9adb6;background:#fff1f2;color:#a3071c}
-.autotax-settings-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:205px;background:#fff;box-shadow:0 12px 30px #30172036;border:1px solid #f0c9cd;border-radius:12px;padding:5px}
-.autotax-settings-menu[hidden]{display:none!important}.autotax-settings-menu button{display:block;width:100%;text-align:left;background:#fff;color:#26191a;border:0;padding:11px 12px;border-radius:7px;font-size:13px}.autotax-settings-menu button:hover{background:#fff1f2}
-.autotax-primary-nav{margin:12px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.autotax-primary-nav>a{padding:9px 12px;font-size:12px}
-#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head):not(.autotax-primary-nav){display:none!important}
-#dashboard.autotax-team-active #autotaxAccountSummary>.autotax-primary-nav{display:flex!important}
-.autotax-avatar-picker{display:flex;align-items:center;gap:10px;padding:4px 0}.autotax-avatar-picker input[type=file]{font-size:11px;width:100%;max-width:245px}.autotax-avatar-picker small{font-size:10px;display:block;color:#64748b}
-.autotax-team-permissions-dialog .autotax-permission-field{padding:9px;background:#fff8f8;border:1px solid #f2d1d5;border-radius:9px}.autotax-permission-field>div{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding:5px 0}.autotax-permission-field label{display:flex;gap:8px;align-items:center}.autotax-permission-field input[type=checkbox]{width:auto;min-height:0}
-@media(max-width:480px){.autotax-welcome-copy strong{font-size:15px}.autotax-welcome-copy span{font-size:11px}.autotax-welcome img{width:43px;height:43px}.autotax-primary-nav{gap:5px}.autotax-primary-nav .autotax-tab,.autotax-primary-nav>a{font-size:11px;padding:7px}}
-
-/* Customer requested compact header tabs, signup email link and explicit MST grant */
-.portal-head-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}
-.portal-head-tools .autotax-primary-nav{margin:0;gap:4px;flex-wrap:nowrap}
-.portal-head-tools .autotax-primary-nav button{font-size:11px;padding:8px 9px;white-space:nowrap}
-.portal-account-head{flex-wrap:wrap!important}
-.autotax-signup-mail-link{display:block;background:#e5fff1;color:#065f46;padding:10px;border-radius:9px;border:1px solid #59c7a1;font-size:12px;margin-top:8px;text-decoration:underline}
-.autotax-signup-mail-link[hidden]{display:none!important}
-.mst-auto-grant-row{display:flex!important;align-items:center;gap:10px;border:1px solid #b4dcc3;background:#f0fff5;border-radius:9px;padding:9px;font-size:13px}
-.mst-auto-grant-row input{flex:0 0 auto;width:18px;height:18px;min-height:auto}
-.web-search-blink{display:inline-flex;justify-content:center;align-items:center;border:1px solid #15803d!important;background:#ecfdf5!important;color:#166534!important;animation:autotaxWebPulse 2.2s ease-in-out infinite}
-@keyframes autotaxWebPulse{50%{box-shadow:0 0 0 5px rgba(34,197,94,.18),0 0 15px rgba(34,197,94,.3)}}
-@media(prefers-reduced-motion:reduce){.web-search-blink{animation:none}}
-@media(max-width:640px){.portal-head-tools{width:100%;justify-content:flex-end}.portal-head-tools .autotax-primary-nav button{font-size:10px;padding:7px 6px}.portal-header-actions{flex-wrap:wrap}.portal-header-actions a{white-space:normal;font-size:11px}}
-
-.mst-quick-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
-.mst-quick-row form{margin:0;flex:0 0 auto}.mst-quick-row #mstAllowControls{margin:0;flex:1;min-width:260px}.mst-quick-row .actions{align-items:center;gap:5px;flex-wrap:wrap}
-.mst-quick-row button{min-height:34px;padding:7px 10px}
-#mstProfilesWeb summary{justify-content:space-between;flex-wrap:wrap}
-#mstSummaryModeSlot{margin-left:auto}#mstSummaryModeSlot #modeSection{display:inline-flex;gap:5px;align-items:center;margin:0;padding:0;min-width:0}
-#mstSummaryModeSlot #modeSection select{max-width:185px;min-width:0;font-size:12px;padding:5px 7px}
-#mstSummaryModeSlot #modeSection label{font-size:11px}
-#mstSummaryModeSlot #modeSection[hidden]{display:none!important}
-.portal-mode-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
-.portal-mode-toolbar #licenseTitle{font-size:12px;line-height:1.3;min-width:0;margin:0}
-@media(max-width:480px){#mstSummaryModeSlot{width:100%}#mstSummaryModeSlot #modeSection{width:100%}.mst-quick-row #mstAllowControls{min-width:0}}
-#accountProfileEmail{background:#e5e7eb!important;color:#64748b!important;opacity:.75;cursor:not-allowed}
-#mstGrantAllow[hidden],#mstGrantUnlock[hidden]{display:none!important}
-#headerLogoutBtn[hidden]{display:none!important}
-.portal-header-logout{cursor:pointer;white-space:nowrap;min-width:0}
-#invoicePlanCard,#mstPlanCard{transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
-.plan.stat.is-selected-mode{background:#e7f8ed!important;border:2px solid #27ae63!important;color:#11512f!important;box-shadow:0 1px 10px #2ea86919}
-.plan.stat.is-selected-mode strong,.plan.stat.is-selected-mode small{color:#11512f!important}
-.plan.stat.is-other-mode{background:#f1f2f4!important;border:1px solid #cbd0d6!important;color:#606670!important;opacity:.86;box-shadow:none}
-.plan.stat.is-other-mode strong,.plan.stat.is-other-mode small{color:#606670!important}
-@media(max-width:520px){#headerLogoutBtn{font-size:10px!important;padding:6px 7px!important}}
-</style>
+<title>AutoTax V1.1.20 Web · Tra cứu và tải hóa đơn điện tử</title>
+<meta name="description" content="Tra cứu hóa đơn điện tử trên web, dùng chung tài khoản và quyền AutoTax.">
+<link rel="stylesheet" href="./web/web.css?v=121account2">
 </head>
 <body>
+<style>
+#autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}
+#autotaxZaloDock.collapsed{transform:translateX(calc(100% - 47px))}
+#autotaxZaloDock>a{background:#0564dc;border:1px solid #c0e7ff;color:white;text-decoration:none;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 2px 14px #0002}
+#autotaxZaloSlide{background:#0564dc;color:#fff;border:1px solid #fff6;border-radius:12px;padding:9px;cursor:pointer;min-width:47px}
+@media(max-width:600px){#autotaxZaloDock{top:58px;right:4px}}
+</style>
+<div id="autotaxZaloDock" class="collapsed">
+ <button type="button" id="autotaxZaloSlide" aria-expanded="false" aria-label="Trượt mở liên hệ Zalo">Zalo ◀</button>
+ <a href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer">Nhắn Zalo 0868838242</a>
+ <a href="tel:0868838242">Gọi 0868838242</a>
+</div>
+<script>
+document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
+ const dock=document.getElementById('autotaxZaloDock'),open=dock.classList.toggle('collapsed')===false;
+ this.setAttribute('aria-expanded',String(open));this.textContent=open?'Zalo ▶':'Zalo ◀';
+});
+</script>
 <main class="wrap">
-<header>
-  <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.20</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/1q0WZKcGx62EjYJl9dUvpVR_DvzEuDGPH/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a id="webSearchLink" class="portal-admin-link portal-header-download web-search-blink" href="./web.html">VÀO TRA CỨU PHIÊN BẢN WEB</a><a href="./admin.html?v=1.1.20" id="adminLink" class="portal-admin-link" hidden>Quản trị</a><button id="headerLogoutBtn" type="button" class="portal-admin-link portal-header-logout" hidden>Đăng xuất</button></nav>
-</header>
-
-
-<section id="authSection" class="panel">
- <form id="loginForm">
- <h2>Đăng nhập / tạo tài khoản</h2>
- <label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="email@example.com">
- <label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
- <div class="actions"><button id="loginBtn" type="submit">Đăng nhập</button><button id="signupBtn" class="secondary" type="button">Tạo tài khoản</button><button id="resetBtn" class="secondary" type="button">Quên mật khẩu</button><a class="account-link-btn" href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer">Liên hệ Admin cấp lại mật khẩu · Zalo</a></div>
- <div id="authMessage" class="notice" hidden></div>
-
- </form>
-</section>
-<dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
- <form id="signupForm" autocomplete="on">
-  <div class="autotax-signup-head"><h2 id="signupDialogTitle">Tạo tài khoản AutoTax</h2><button id="signupCloseBtn" type="button" class="secondary" aria-label="Đóng đăng ký">✕</button></div>
-  <p class="muted">Điền đầy đủ thông tin để đăng ký tài khoản mới. Tài khoản dùng chung trên Web và Extension.</p>
-  <label for="signupName">Tên người dùng</label>
-  <input id="signupName" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Họ tên hoặc tên hiển thị">
-  <label for="signupEmail">Email</label>
-  <input id="signupEmail" type="email" required autocomplete="email" placeholder="ten@gmail.com hoặc ten@hotmail.com">
-  <small>Chỉ hỗ trợ đăng ký Gmail hoặc Hotmail.</small>
-  <label for="signupPassword">Mật khẩu</label>
-  <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
-  <label for="signupPasswordConfirm">Nhập lại mật khẩu</label>
-  <input id="signupPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo">
-  <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây. Email xác minh hiện có thể mang tiêu đề <strong>Supabase Auth</strong>; hãy kiểm tra cả thư mục Spam.</p>
-  <div id="signupStatus" class="notice" role="status" aria-live="polite" hidden></div>
-  <div class="actions"><button id="signupSubmitBtn" type="submit">Tạo tài khoản</button><button id="signupCancelBtn" class="secondary" type="button">Đóng</button></div>
- </form>
-</dialog>
-<dialog id="accountProfileDialog" class="autotax-signup-dialog autotax-profile-dialog" aria-labelledby="accountProfileTitle">
- <form id="accountProfileForm" autocomplete="on">
-  <h2 id="accountProfileTitle">Cập nhật thông tin tài khoản</h2>
-  <div class="autotax-avatar-picker"><img id="accountAvatarPreview" src="./favicon.svg?v=20261102b" width="72" height="72" alt="Ảnh đại diện"><div><label for="accountAvatarUpload" class="account-avatar-label">Thay đổi ảnh đại diện</label><input id="accountAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp"><small>Để trống để giữ avatar hiện tại. Mặc định: logo AutoTax.</small></div></div>
-  <label for="accountProfileEmail">Email tài khoản (không thể thay đổi)</label><input id="accountProfileEmail" type="email" readonly disabled aria-readonly="true" autocomplete="email" title="Email đăng ký không thể sửa" class="account-readonly-email">
-  <label for="accountDisplayName">Tên người dùng</label><input id="accountDisplayName" type="text" minlength="2" maxlength="100" required autocomplete="name">
-  <label for="accountOldPassword">Mật khẩu cũ (chỉ nhập khi muốn đổi)</label><input id="accountOldPassword" type="password" autocomplete="current-password" placeholder="Để trống nếu không đổi mật khẩu">
-  <label for="accountNewPassword">Mật khẩu mới</label><input id="accountNewPassword" type="password" autocomplete="new-password" minlength="10" placeholder="Để trống nếu không đổi mật khẩu">
-  <p id="accountProfileStatus" class="notice" role="status" hidden></p>
-  <div class="actions"><button id="accountProfileSave" type="submit">Lưu</button><button id="accountProfileClose" class="secondary" type="button">Đóng</button></div>
- </form>
-</dialog>
-<dialog id="forcedPasswordDialog" aria-labelledby="forcedPasswordTitle" aria-modal="true">
- <form id="forcedPasswordForm" autocomplete="off">
-  <h2 id="forcedPasswordTitle">Đổi mật khẩu bắt buộc</h2>
-  <p>Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.</p>
-  <label for="forcedPasswordNew">Mật khẩu mới</label>
-  <input id="forcedPasswordNew" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập mật khẩu mới">
-  <label for="forcedPasswordConfirm">Nhập lại mật khẩu mới</label>
-  <input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập lại mật khẩu">
-  <p id="forcedPasswordError" class="notice error" role="alert" hidden></p>
-  <button id="forcedPasswordSave" type="submit">Lưu mật khẩu mới</button>
- </form>
-</dialog>
-<section id="dashboard" hidden>
- <div class="panel" id="autotaxAccountSummary">
-  <div class="row portal-account-head">
-   <div class="autotax-welcome">
-    <img id="accountAvatar" src="./favicon.svg?v=20261102b" alt="Ảnh đại diện" width="52" height="52">
-    <div class="autotax-welcome-copy"><strong id="accountGreeting">Xin chào bạn !!!</strong><span>Chúc bạn có một ngày mới tốt lành.</span><span id="userEmail" hidden></span></div>
-   </div>
-   <div class="portal-head-tools">
-    <nav class="autotax-account-tabs autotax-primary-nav" aria-label="Trang tài khoản">
-      <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Trang chủ</button>
-      <button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button>
-    </nav>
-    <div class="autotax-settings-wrap">
-    <button id="accountSettingsToggle" type="button" class="autotax-settings-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="accountSettingsMenu" aria-label="Cài đặt tài khoản" title="Cài đặt tài khoản">⚙</button>
-    <div id="accountSettingsMenu" class="autotax-settings-menu" hidden>
-     <button type="button" id="accountEditProfile">Cập nhật thông tin</button>
-     <button type="button" id="accountFeedbackMenu">Phản hồi</button>
-     <button type="button" id="accountGiftMenu">🎁 Quà tặng</button>
-     <button type="button" id="accountLogoutMenu">Đăng xuất</button>
+  <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB V1.1.20</span></a>
+    <div class="toplinks"><a id="extensionHeaderDownloadBtn" href="https://drive.google.com/file/d/1q0WZKcGx62EjYJl9dUvpVR_DvzEuDGPH/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
+  <header class="hero">
+    <h1>Tải hóa đơn điện tử hàng loạt</h1>
+    <p>Tra cứu hóa đơn → Chọn hồ sơ → Xuất Excel, XML và PDF nhà phát hành</p>
+    
+  </header>
+  <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
+    <div class="account-line">
+      <div id="webAccountModeSlot">
+        <div id="webAccountTools" class="web-account-tools">
+          <button id="webLoginOpen" type="button" class="web-login-open">Đăng nhập</button>
+          <div id="webUserBlock" class="web-user-block" hidden>
+           <img id="webAvatar" src="./favicon.svg?v=20261102b" alt="" width="30" height="30">
+           <strong id="webGreeting">Xin chào bạn</strong>
+           <div class="web-settings-wrap">
+            <button id="webSettingsToggle" type="button" aria-label="Cài đặt tài khoản" aria-expanded="false" aria-controls="webSettingsMenu" title="Cài đặt tài khoản">⚙</button>
+            <nav id="webSettingsMenu" class="web-settings-menu" hidden aria-label="Cài đặt tài khoản">
+             <button type="button" id="webEditProfile">Cập nhật thông tin</button>
+             <a href="/user">Quản lý tài khoản</a>
+             <a href="/user?panel=feedback">Phản hồi</a>
+             <a href="/user?panel=gift">🎁 Quà tặng</a>
+             <button type="button" id="webLogout">Đăng xuất</button>
+            </nav>
+           </div>
+          </div>
+          <span id="authStatus" hidden>Đang xác minh đăng nhập…</span>
+        </div>
+        <span id="webAccountNotice" class="web-account-notice" hidden></span>
+      </div>
+      <span id="accountEmailLabel" class="account-email-label" role="status" hidden>Chưa đăng nhập</span>
     </div>
-    </div>
-   </div>
-  </div>
-  <div class="autotax-hidden-actions" hidden>
-   <a id="extensionDownloadBtn" href="https://drive.google.com/file/d/1q0WZKcGx62EjYJl9dUvpVR_DvzEuDGPH/view?usp=drivesdk">Tải Extension Chrome</a>
-   <button id="feedbackOpen" type="button">Phản hồi</button>
-   <button id="logoutBtn" type="button">Đăng xuất</button>
-   <button id="giftWebBtn" type="button">Quà tặng</button>
-   <button id="passwordOpenBtn" type="button">Đổi mật khẩu</button>
-  </div>
-   <details id="mstProfilesWeb" class="panel mst-accordion">
-  <summary><strong>Bấm để thiết lập MST được cấp phép</strong> <span id="mstWebCount">0</span><span id="mstSummaryModeSlot"><span id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select></span></span></summary>
-  
-   
-  <div class="mst-quick-row"><form id="webAddMstForm" class="actions">
-   <input id="webAddMst" hidden>
-   <button type="submit">+ Thêm MST</button>
-  </form>
-  <div id="mstAllowControls" hidden>
 
-   <p class="muted mst-allow-help" hidden>Chọn MST được phép, không vượt số gói đã mua.</p>
-   <div class="actions">
-    <button id="mstGrantUnlock" type="button" class="secondary">Thiết lập lại quyền sử dụng</button>
-    <button id="mstGrantAllow" type="button" hidden>Lưu cấu hình</button>
-    <button id="mstGrantCancel" type="button" class="secondary" hidden>Hủy chỉnh sửa</button>
-    <span id="mstAllowedSummary" class="muted" role="status"></span>
-   </div>
-  </div></div>
-  <div id="mstList"></div>
- </details>
-  <div class="portal-mode-toolbar"><h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2></div>
-  <div class="grid">
-   <div class="plan stat" id="invoicePlanCard" data-plan-family="invoice"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
-   <div class="plan stat" id="mstPlanCard" data-plan-family="mst"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
-  </div>
-  <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
+    <div class="web-mode-controls" id="webModeControls" hidden>
+  <label for="webUsageMode">Chế độ sử dụng</label>
+  <select id="webUsageMode" aria-label="Chuyển chế độ gói MST và số tờ" disabled>
+   <option value="mst">Chỉ sử dụng MST</option>
+   <option value="invoice">Chỉ sử dụng số tờ hóa đơn</option>
+  </select>
+  <small id="webUsageModeHint">Đang đồng bộ chế độ với Add-on…</small>
  </div>
- <section class="panel autotax-team-panel" id="autotaxTeamPanel" hidden>
-  <div class="row"><h2>Chế độ làm việc nhóm</h2><button type="button" id="autotaxTeamRefresh" class="secondary">Làm mới</button></div>
-  <p class="muted">Mỗi tài khoản có thể tạo tối đa 50 nhóm. Trưởng nhóm quản lý thành viên và quyền sử dụng; thành viên có thể xem thông tin nhóm và rời nhóm.</p>
-  <div id="autotaxTeamMessage" class="notice" role="status" hidden></div>
-  <div class="actions"><button id="autotaxTeamNew" type="button">+ Tạo thêm nhóm</button><span id="autotaxTeamCount" class="muted"></span></div>
-  <form id="autotaxTeamCreateForm" class="actions" hidden><label>Tên nhóm <input id="autotaxTeamName" maxlength="100" required placeholder="Ví dụ: Kế toán chi nhánh A"></label><button type="submit">Lưu nhóm</button><button type="button" class="secondary" id="autotaxTeamCancel">Hủy</button></form>
-  <div id="autotaxTeamInvitations"></div>
-  <div id="autotaxTeamList" class="autotax-team-list"></div>
-  <section id="autotaxTeamDetail" hidden>
-   <h3 id="autotaxTeamDetailTitle"></h3>
-   <nav class="autotax-team-subtabs" aria-label="Quản lý nhóm"><button type="button" id="autotaxTeamMembersTab" class="secondary">Quản lý thành viên nhóm</button><button type="button" id="autotaxTeamUsageTab" class="secondary">Lịch sử tiêu dùng thành viên</button></nav>
-   <dialog id="autotaxTeamPermissionDialog" class="autotax-signup-dialog autotax-team-permissions-dialog" aria-labelledby="autotaxTeamPermissionTitle">
- <form id="autotaxTeamPermissionForm">
-  <h2 id="autotaxTeamPermissionTitle">Phân quyền thành viên</h2>
-  <p id="autotaxTeamPermissionHelp" class="muted"></p>
-  <div class="autotax-permission-field"><strong>Hình thức sử dụng</strong><div id="autotaxTeamPermissionModes"></div></div>
-  <div class="autotax-permission-field"><strong>MST được phép dùng</strong><div id="autotaxTeamPermissionMsts"></div></div>
-  <p id="autotaxTeamPermissionStatus" class="notice" hidden></p>
-  <div class="actions"><button type="submit" id="autotaxTeamPermissionSave">Lưu</button><button type="button" class="secondary" id="autotaxTeamPermissionClose">Đóng</button></div>
- </form>
-</dialog>
-<div id="autotaxTeamMembersPanel">
-    <form id="autotaxTeamInviteForm" class="actions" hidden><label>Email thành viên <input type="email" id="autotaxTeamInviteEmail" required placeholder="email@gmail.com"></label><button type="submit">+ Thêm thành viên</button></form>
-    <div class="table-wrap"><table><thead><tr><th>Tên người dùng</th><th>Gmail</th><th>Hình thức sử dụng</th><th>MST được phép dùng</th><th>Thao tác</th></tr></thead><tbody id="autotaxTeamMembersBody"></tbody></table></div>
-   </div>
-   <div id="autotaxTeamUsagePanel" hidden><p class="muted">Lịch sử hiển thị số hóa đơn và MST thành viên đã tra cứu bằng quyền của nhóm. Lượt nhóm được ưu tiên trước gói cá nhân; các lượt đã cấp riêng vẫn được giữ nguyên.</p><div class="table-wrap"><table><thead><tr><th>Tên</th><th>Email</th><th>Đã sử dụng bao nhiêu tờ hóa đơn</th><th>Đã sử dụng bao nhiêu MST</th></tr></thead><tbody id="autotaxTeamUsageBody"></tbody></table></div></div>
-   <div class="actions"><button id="autotaxTeamLeave" type="button" class="secondary" hidden>Rời nhóm</button></div>
+ <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
+ <dialog id="mstGrantConsentDialog" class="web-consent-dialog" aria-label="Cấp quyền MST"><h2>Cấp quyền MST</h2><p>Bạn có muốn cấp phép cho MST này sử dụng gói MST không ?</p><div class="web-consent-actions"><button type="button" id="mstGrantConsentYes">Có</button><button type="button" id="mstGrantConsentNo">Không</button></div></dialog>
+    <div id="gdtConnectionHelp" class="gdt-connection-help" role="status" hidden>
+      <strong>Máy chủ chưa lấy được CAPTCHA từ cổng Thuế</strong>
+      <p>Không có ảnh thì cũng không thể nhập mã xác nhận thủ công. Bạn có thể thử kết nối lại hoặc kiểm tra trực tiếp cổng Thuế. AutoTax không trừ lượt hóa đơn khi chưa tra cứu thành công.</p>
+      <div class="connection-actions">
+        <button id="retryConnectionBtn" class="outline" type="button">Thử qua máy chủ khác</button>
+        <a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer" class="outline">Mở cổng Thuế ↗</a>
+      </div>
+    </div>
+    <form id="searchForm" autocomplete="off">
+      <div class="fields">
+        <div class="field">
+          <label for="mst">Mã số thuế <em>*</em></label>
+          <div class="mst-combobox">
+           <select id="mst" name="mst" class="mst-hidden-select" aria-label="Hồ sơ MST đã chọn" tabindex="-1"><option value="">Nhập MST mới</option></select>
+           <input id="mstFree" name="mstFree" type="text" inputmode="search" maxlength="120" autocomplete="off"
+            placeholder="Nhập MST hoặc tìm theo tên hồ sơ…" aria-label="Nhập hoặc tìm kiếm MST" aria-controls="mstPickerMenu">
+           <button id="mstPickerToggle" class="mst-picker-toggle" type="button" aria-label="Mở danh sách MST" aria-controls="mstPickerMenu" aria-expanded="false">▾</button>
+          </div>
+          <div id="mstPickerMenu" class="mst-picker-menu" hidden aria-label="Danh sách hồ sơ MST"></div>
+          <div class="vault-inline"><a href="/user" target="_blank" rel="noopener noreferrer">Quản lý / đổi tên hồ sơ MST</a><span id="mstProfileCount"></span></div>
+          <p id="mstPickerNotice" class="mst-picker-notice" role="status" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="gdtPassword">Mật khẩu cổng Thuế <em>*</em></label>
+          <div class="password-wrap"><input id="gdtPassword" name="gdtPassword" type="password" autocomplete="off" placeholder="Nhập một lần, tự điền khi chọn lại MST" maxlength="256">
+            <button id="togglePassword" type="button" aria-label="Hiện hoặc ẩn mật khẩu">◉</button></div>
+          <button id="mstForgetPassword" type="button" class="text-btn">Xóa mật khẩu đã lưu trên thiết bị này</button>
+        </div>
+        <div class="field">
+          <label for="fromDate">Khoảng ngày <em>*</em></label>
+          <div class="date-pair autotax-vn-dates">
+ <div class="vn-date-field"><input type="text" id="fromDate" name="fromDate" inputmode="numeric" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/yyyy" maxlength="10" autocomplete="off" required aria-label="Từ ngày, ngày/tháng/năm"><button type="button" id="fromDatePick" class="outline" title="Chọn ngày bắt đầu" aria-label="Mở lịch chọn từ ngày">📅</button><input type="date" id="fromDateNative" tabindex="-1" aria-hidden="true" lang="vi-VN"></div>
+ <div class="vn-date-field"><input type="text" id="toDate" name="toDate" inputmode="numeric" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/yyyy" maxlength="10" autocomplete="off" required aria-label="Đến ngày, ngày/tháng/năm"><button type="button" id="toDatePick" class="outline" title="Chọn ngày kết thúc" aria-label="Mở lịch chọn đến ngày">📅</button><input type="date" id="toDateNative" tabindex="-1" aria-hidden="true" lang="vi-VN"></div>
+ </div><small>Ngày / tháng / năm (dd/mm/yyyy). Bấm biểu tượng lịch để chọn ngày.</small>
+        </div>
+        <div class="field field-note">
+          <label>Phiên làm việc</label><p id="gdtStatus">Mật khẩu được ghi nhớ dạng mã hóa trên thiết bị sau khi xác thực thành công.</p><p id="captchaStatus" class="captcha-status" aria-live="polite">AutoTax sẽ tự nhận dạng CAPTCHA. Bạn chỉ cần MST và mật khẩu.</p>
+          <button id="clearGdt" type="button" class="text-btn">Xóa phiên Thuế</button>
+        </div>
+        <fieldset class="field checks"><legend>Loại hóa đơn <em>*</em></legend>
+          <label class="check"><input type="checkbox" name="kind" value="purchase" checked><span>Hóa đơn mua vào</span></label>
+          <label class="check"><input type="checkbox" name="kind" value="sold"><span>Hóa đơn bán ra</span></label>
+          <small class="k-hint">Cảnh báo hệ số K chỉ hoạt động khi chọn cả Mua vào và Bán ra.</small>
+          <div id="openingStockControl" class="opening-stock-control" hidden>
+            <button id="openingStockToggle" type="button" class="outline" aria-expanded="false">Nhập giá trị tồn kho đầu kỳ</button>
+            <label id="openingStockEditor" hidden for="openingStockInput">Giá trị tồn kho đầu kỳ (đồng)
+              <input id="openingStockInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Để trống: tồn đầu kỳ = 1">
+            </label>
+            <label for="kIndustry">Nhóm ngành · ngưỡng K tham khảo
+              <select id="kIndustry"><option value="commerce">Thương mại · cảnh báo K ≥ 2</option><option value="production">Sản xuất · cảnh báo K ≥ 4</option></select>
+            </label>
+            <small id="openingStockHint">Nhập giá trị tồn tại ngày đầu tiên của kỳ tra cứu.</small>
+          </div>
+        </fieldset>
+        <fieldset class="field checks"><legend>Hình thức</legend>
+          <label class="check"><input type="checkbox" name="form" value="hddt" checked><span>Hóa đơn điện tử</span></label>
+          <label class="check"><input type="checkbox" name="form" value="mtt" checked><span>Hóa đơn máy tính tiền</span></label>
+        </fieldset>
+      </div>
+      <div id="captchaBox" class="captcha-row" hidden>
+        <div class="captcha-info"><label for="captchaInput">Nhập CAPTCHA thủ công khi cần</label><span>Chỉ hiện khi AutoTax không nhận dạng được mã. Giữ nguyên chữ hoa/thường.</span></div>
+        <img id="captchaImage" alt="Ảnh CAPTCHA từ cổng Thuế" width="172" height="56" hidden>
+        <input id="captchaInput" type="text" inputmode="text" maxlength="20" placeholder="Mã trên ảnh (dự phòng)" autocomplete="off">
+        <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
+      </div>
+      
+      <button id="searchBtn" type="button" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
+      <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" id="downloadConsoleSpinner" aria-hidden="true"></span><span id="downloadConsoleDone" class="autotax-console-done" hidden>✓ Đã xong</span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
+      <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
+      <small>Chọn thư mục lưu lần đầu khi bấm Tìm kiếm. Các lần sau dùng lại thư mục đã chọn khi trình duyệt còn cấp quyền.</small>
+
+    </form>
   </section>
- </section>
- <div class="activation-grid">
- <div id="trialArea" class="panel" hidden>
-  <h2>Dùng thử 7 ngày · 1 MST + 100 hóa đơn</h2>
-  <p class="muted">Kích hoạt mà không cần nhập MST. Bạn có thể tra cứu ngay theo số tờ hoặc thêm 1 hồ sơ MST sau khi chuyển chế độ. Mỗi email chỉ có một lượt dùng thử.</p>
-  <input id="trialMst" hidden aria-hidden="true">
-  <div class="actions"><button id="trialBtn">Kích hoạt dùng thử</button></div>
- </div>
-
- </div>
-
-
-
- <div class="panel" id="paymentArea" hidden>
-  <h2>Thanh toán chuyển khoản</h2>
-  <p id="paymentInfo" class="notice"></p>
-  <div class="autotax-coupon-box">
-   <label for="paymentCouponCode">Mã giảm giá (nếu có)</label>
-   <div class="actions"><input id="paymentCouponCode" type="text" maxlength="32" autocomplete="off" placeholder="Nhập mã giảm tiền hoặc %" autocapitalize="characters">
-   <button id="applyPaymentCoupon" type="button" class="secondary">Áp dụng / bỏ mã</button></div>
-   <small>Áp dụng mã sẽ tạo QR mới theo số tiền được máy chủ xác nhận. QR cũ sẽ hết hiệu lực.</small>
-   <p id="paymentCouponStatus" class="muted" role="status" aria-live="polite"></p>
-  </div>
-  <p class="muted" role="timer" aria-live="off">Thời gian hiển thị QR còn lại: <strong id="paymentCountdown">05:00</strong></p>
-  <img id="paymentQr" alt="QR thanh toán gói AutoTax">
-  <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
-  <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
- </div>
- <div class="panel" id="planSection">
-  <div class="row"><h2>Mua gói mới</h2></div>
-  <div id="packageList" class="grid package-grid"></div>
- </div>
-
- <div class="panel" id="passwordPanel" hidden>
-  <div class="row"><h2>Đổi mật khẩu</h2><button id="passwordCloseBtn" type="button" class="secondary">Đóng</button></div><label for="newPassword">Mật khẩu mới</label>
-  <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
-  <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
- </div>
- <section id="customerInbox" class="panel">
-  <div class="row"><h2>Tin nhắn từ quản trị</h2>
-   <button id="feedbackInboxRefresh" type="button" class="secondary">Làm mới hộp thư</button></div>
-  <p class="muted">Tin trả lời từ quản trị sẽ tự biến mất sau 7 ngày. Bạn có thể xóa tin ngay sau khi đọc.</p>
-  <div id="feedbackInboxList" aria-live="polite">Đang tải hộp thư…</div>
- </section>
-</section>
-<dialog id="mstProfileDialog" class="payment-success-modal" aria-labelledby="mstProfileTitle">
- <h2 id="mstProfileTitle">Thêm hồ sơ MST</h2>
- <form id="mstProfileEditorForm">
-  <label for="mstProfileName">Tên người nộp thuế</label>
-  <input id="mstProfileName" type="text" maxlength="120" autocomplete="organization" placeholder="Tên NNT (sẽ xác nhận lại sau lần đăng nhập Thuế)">
-  <label for="mstProfileNumber">Mã số thuế</label>
-  <input id="mstProfileNumber" type="text" inputmode="numeric" maxlength="14" required placeholder="MST 10 / 12 / 13 số">
-  <label for="mstProfilePassword">Mật khẩu cổng hóa đơn điện tử</label>
-  <input id="mstProfilePassword" type="password" maxlength="256" autocomplete="off" placeholder="Mật khẩu (chỉ lưu mã hóa trên thiết bị này)">
-  <label for="mstProfilePasswordDate">Ngày nhập / sửa mật khẩu</label>
-  <input id="mstProfilePasswordDate" type="text" readonly placeholder="Tự cập nhật khi lưu mật khẩu">
-  <small>Nhắc đổi mật khẩu sau 80 ngày. Không thay đổi ngày khi chỉ sửa tên NNT. Nếu cổng Thuế không cung cấp ngày đổi gần nhất, hệ thống tính từ ngày bạn lưu mật khẩu.</small>
-  <div class="actions">
-   <button id="mstProfileSave" type="submit">Lưu hồ sơ</button>
-   <button id="mstProfileCancel" type="button" class="secondary">Hủy</button>
-  </div>
- </form>
- </dialog>
- <dialog id="mstProfileLimitDialog" class="payment-success-modal">
+  <section id="results" class="result-card" hidden>
+    <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
+    <p class="k-description">K = Tổng bán ra / (Tổng mua vào + Tồn đầu kỳ). Nếu thiếu số liệu tồn đầu, mua vào hoặc bán ra, giá trị thiếu được tính là 1. Đây là chỉ số tham khảo theo công thức đã chọn, không phải kết luận của cơ quan Thuế.</p>
+    <div class="invoice-stats">
+      <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
+      <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
+      <div><span>Mua vào / Bán ra</span><strong id="purchaseSaleTotals">—</strong></div>
+      <div><span>Hệ số K (tham khảo)</span><strong id="kRatio">—</strong><small id="kRatioSource" class="k-ratio-source"></small></div>
+    </div>
+    <div class="export-toolbar">
+      <label for="visibleKind">Lọc hiển thị
+        <select id="visibleKind"><option value="all">Mua vào + Bán ra</option><option value="purchase">Chỉ mua vào</option><option value="sold">Chỉ bán ra</option></select>
+      </label>
+      <label for="visibleMonth">Tháng hiển thị
+        <input id="visibleMonth" type="month" aria-label="Lọc tháng hiển thị"></label>
+      <button id="clearVisibleMonth" type="button" class="outline">Mọi tháng</button>
+      <span id="selectionCount" class="selection-count">Đã chọn 0 hóa đơn</span>
+      <div class="exports">
+         <button id="exportAllZip" type="button" title="Gói tổng hợp theo MST, chỉ tải một ZIP">Tải tất cả thành 1 ZIP</button>
+        <button id="exportExcel" type="button">Tải Excel</button>
+        <button id="exportXml" type="button">Tải XML</button>
+        <button id="exportHtml" type="button">Tải HTML</button>
+        <button id="exportPdfTax" type="button" title="Ưu tiên PDF nguyên bản nếu có trong gói dữ liệu của cổng Thuế; nếu không có sẽ xuất bản thể hiện ghi rõ nguồn.">Tải PDF Thuế</button>
+        <button id="exportPdf" type="button" title="Thử PDF gốc của nhà phát hành trước; nếu không lấy được sẽ tạo PDF dựng lại và báo rõ nguồn.">Tải PDF gốc-dựng (thử nghiệm)</button>
+      </div>
+    </div>
+    <p class="result-help">Phạm vi tải được xác định tự động: nếu có hóa đơn đã tick trong danh sách đang hiển thị thì chỉ tải các hóa đơn đó; nếu không tick, tải tất cả hóa đơn thuộc bộ lọc hiện tại. Không cần chọn thêm chế độ xuất. Việc lấy PDF gốc phụ thuộc nhà phát hành và bước xác thực hợp lệ.</p>
+    <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Thao tác hóa đơn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+    <nav id="resultPageNav" class="result-page-nav" aria-label="Phân trang kết quả hóa đơn">
+      <button type="button" class="outline" id="resultPagePrev">‹ Trang trước</button>
+      <span id="resultPageInfo" aria-live="polite">Trang 1/1</span>
+      <button type="button" class="outline" id="resultPageNext">Trang tiếp ›</button>
+    </nav>
+    <section id="stockExport" class="stock-export">
+      <h3>Xuất phiếu nhập kho (Tendoo / MISA)</h3>
+      <p>Chỉ áp dụng hóa đơn mua vào thuộc phạm vi xuất bên trên. Dữ liệu danh mục tải trên máy; biểu mẫu nhập kho dùng chung với AutoTax Extension.</p>
+      <div class="stock-grid">
+        <label>Nền tảng<select id="stockPlatform"><option value="tendoo">Tendoo</option><option value="misa">MISA eShop</option></select></label>
+        <label>Danh mục sản phẩm (.xlsx hoặc .csv)<input id="stockCatalog" type="file" accept=".xlsx,.csv"></label><small>Danh mục lưu cục bộ trên máy; gói DATA365 mở quyền đồng bộ khi chuyển máy.</small>
+        <label id="warehouseWrap" hidden>Mã kho MISA (*)<input id="stockWarehouse" placeholder="KHO01" maxlength="60"></label>
+        <label id="stockDocWrap" hidden>Số chứng từ MISA gần nhất (*)<input id="stockLastDoc" placeholder="NK0001" maxlength="50"></label>
+      </div>
+      <div class="stock-actions">
+        <button id="stockMapBtn" type="button" class="outline">Ánh xạ mã hàng</button>
+        <button id="stockDownloadBtn" type="button">Tải phiếu nhập kho ZIP</button>
+         <button id="stockSingleBtn" type="button" class="outline" title="Tải từng phiếu nhập hàng Excel độc lập">Tải riêng từng phiếu</button>
+        <span id="stockStatus" role="status"></span>
+      </div>
+    </section>
+  </section>
+  <dialog id="gdtLoginErrorDialog" class="invoice-detail-dialog" aria-labelledby="gdtLoginErrorTitle">
+    <div class="dialog-heading"><h2 id="gdtLoginErrorTitle">Mật khẩu cổng Thuế chưa chính xác</h2><button id="closeGdtLoginError" type="button" class="outline">Đóng</button></div>
+    <p id="gdtLoginErrorText">Cổng Thuế từ chối đăng nhập. Vui lòng nhập lại mật khẩu cho hồ sơ đang chọn.</p>
+  </dialog>
+  <dialog id="invoiceDetailDialog" class="invoice-detail-dialog" aria-labelledby="invoiceDetailTitle">
+    <div class="dialog-heading"><h2 id="invoiceDetailTitle">Chi tiết hóa đơn</h2><button id="closeInvoiceDetail" type="button" class="outline">Đóng</button></div>
+    <p id="invoiceDetailMeta"></p>
+    <div id="invoiceDetailStatus" class="muted"></div>
+    <div class="table-wrap"><table><thead><tr><th>STT</th><th>MST người bán</th><th>Tên người bán</th><th>Mã hàng hóa</th><th>Tên hàng hóa</th><th>Đơn vị tính</th><th>Thuế suất</th><th>Thành tiền chưa thuế</th><th>Thành tiền gồm thuế</th></tr></thead><tbody id="detailRows"></tbody><tfoot><tr><th colspan="8">Tổng tiền thuế</th><th id="detailTax">—</th></tr><tr><th colspan="8">Tổng tiền hóa đơn</th><th id="detailTotal">—</th></tr></tfoot></table></div>
+  </dialog>
+  <dialog id="issuerPdfDialog" class="stock-map-dialog" aria-labelledby="issuerPdfTitle">
+    <div class="dialog-heading"><h2 id="issuerPdfTitle">Tra PDF gốc từ nhà phát hành</h2><button type="button" class="outline" id="closeIssuerPdf">Đóng</button></div>
+    <p id="issuerPdfMeta">Đang kiểm tra dữ liệu XML/JSON hóa đơn…</p>
+    <div id="issuerPdfStatus" role="status" class="result-help"></div>
+    <div class="stock-grid">
+      <label>Đơn vị cung cấp hóa đơn <input id="issuerPdfName" readonly></label>
+      <label>Mã bảo mật / mã tra cứu <input id="issuerPdfCode" readonly placeholder="Chưa có trong XML"></label>
+    </div>
+    <div class="stock-actions">
+      <a id="issuerPdfLink" class="table-detail-btn" href="#" target="_blank" rel="noopener noreferrer" hidden>Mở trang tra cứu nhà phát hành ↗</a>
+      <button id="copyIssuerCode" type="button" class="outline">Sao chép mã tra cứu</button>
+      <button id="copyIssuerDetails" type="button" class="outline">Sao chép thông tin hóa đơn</button>
+      <button id="tryIssuerPdf" type="button">Thử tải PDF trực tiếp</button>
+    </div>
+    <div id="issuerPdfHelp" class="result-help">Thông tin thao tác theo nhà phát hành sẽ xuất hiện tại đây.</div>
+    <div class="stock-grid">
+      <label for="issuerPdfFile">PDF đã tải từ cổng nhà phát hành
+        <input id="issuerPdfFile" type="file" accept=".pdf,application/pdf">
+      </label>
+      <div style="align-self:end"><button id="issuerPdfAttach" type="button" disabled>Gắn PDF vào hóa đơn đang chọn</button></div>
+    </div>
+    <p class="result-help">Tệp PDF gắn thủ công chỉ được giữ trong bộ nhớ tab hiện tại; không tải lên Supabase. Khi xuất PDF/ZIP, tệp này được phân loại là <strong>người dùng cung cấp — chưa xác minh nguồn và chữ ký số</strong>. Hãy đối chiếu số hóa đơn và người bán trước khi gắn tệp.</p>
+    <p class="result-help">Nếu nhà phát hành yêu cầu CAPTCHA hoặc xác thực phiên riêng, hãy thao tác trên trang tra cứu chính thức rồi tải PDF về máy. Không dùng bản thể hiện từ cổng Thuế thay cho tệp nhà phát hành.</p>
+    <p class="result-help">Mã tra cứu sẽ chỉ hiển thị khi có dữ liệu nguồn; không tự suy đoán từ số hóa đơn.</p>
+  </dialog>
+  <dialog id="invoiceAuditDialog" class="invoice-detail-dialog invoice-audit-dialog" aria-labelledby="invoiceAuditTitle">
+    <div class="dialog-heading"><h2 id="invoiceAuditTitle">Kiểm tra tính hợp lệ và rủi ro hóa đơn</h2><button id="closeInvoiceAudit" type="button" class="outline">Đóng</button></div>
+    <p id="invoiceAuditMeta"></p>
+    <div id="invoiceAuditStatus" role="status">Đang kiểm tra dữ liệu hóa đơn…</div>
+    <div id="invoiceAuditSummary" class="invoice-audit-summary"></div>
+    <div class="table-wrap"><table><thead><tr><th>Mức độ</th><th>Nội dung đối chiếu</th><th>Kết quả / Điểm cần rà soát</th></tr></thead><tbody id="invoiceAuditRows"></tbody></table></div>
+    <p class="result-help">Đây là đánh giá tự động dựa trên dữ liệu cổng Thuế và phép đối chiếu. Không thay thế xác minh hóa đơn, chữ ký số hoặc kết luận của cơ quan thuế.</p>
+  </dialog>
+  <dialog id="skuMapDialog" class="stock-map-dialog" aria-labelledby="skuMapTitle">
+    <div class="dialog-heading"><h2 id="skuMapTitle">Ánh xạ sản phẩm chưa khớp</h2><button type="button" id="closeSkuMap" class="outline">Đóng</button></div>
+    <p>Gõ tên hoặc SKU để chọn sản phẩm trong danh mục. Có thể bỏ qua sản phẩm chưa khớp; file sẽ ghi THIẾU MÃ.</p><input id="stockCatalogReplacement" type="file" accept=".xlsx,.csv" hidden>
+    <div id="skuMapList"></div>
+    <div class="stock-actions"><button id="saveSkuMap" type="button">Lưu ánh xạ</button><button id="downloadMappedStock" type="button" class="outline">Lưu &amp; xuất ZIP</button><button id="downloadSingleMappedStock" type="button" class="outline">Tải từng tờ nhập hàng</button><button id="stockCatalogUpdate" type="button" style="background:#e60012;color:#fff;border:1px solid #b80010">Cập nhật lại file mẫu SKU</button></div>
+  </dialog>
+  <dialog id="invoiceQuotaDialog" aria-label="Hết hạn mức hóa đơn"><h2>Hết hạn mức tra cứu</h2><p>hết hạn mức tra cứu vui lòng mua thêm số hoá đơn</p><div class="actions"><a href="/user#planSection" target="_blank" rel="noopener noreferrer" class="outline">Mua thêm số hóa đơn</a><button type="button" id="invoiceQuotaClose">Đóng</button></div></dialog>
+<dialog id="mstLimitDialog" class="stock-map-dialog">
   <h2>Đã đạt giới hạn MST</h2>
   <p>Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp</p>
-  <div class="actions"><button id="mstProfileLimitClose" type="button">Đóng</button></div>
+  <p><a href="/user" target="_blank" rel="noopener noreferrer">Mở Quản lý tài khoản</a></p>
+  <button id="mstLimitClose" type="button">Đóng</button>
  </dialog>
- <dialog id="mstPassword80Dialog" class="payment-success-modal">
-  <h2>Nhắc đổi mật khẩu cổng Thuế</h2>
-  <p id="mstPassword80Text"></p>
-  <p class="muted">Mốc 80 ngày được tính từ lần lưu/sửa mật khẩu gần nhất, không khẳng định mật khẩu đã hết hạn theo quy định của cơ quan thuế.</p>
-  <div class="actions">
-   <a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Đổi mật khẩu cổng Thuế</a>
-   <button id="mstPassword80Close" type="button" class="secondary">Để sau</button>
-  </div>
+ <dialog id="mstPasswordReminder" class="stock-map-dialog">
+  <h2>Đến hạn nhắc đổi mật khẩu cổng Thuế</h2>
+  <p id="mstPasswordReminderText"></p>
+  <p><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Đổi mật khẩu trên cổng Thuế</a></p>
+  <button id="mstPasswordReminderClose" type="button">Để sau</button>
  </dialog>
-<dialog id="feedbackDialog" class="payment-success-modal" aria-labelledby="feedbackTitle">
- <h2 id="feedbackTitle">Gửi phản hồi AutoTax</h2>
- <form id="feedbackForm">
-  <label for="feedbackBody">Nội dung phản hồi (tối đa 1.000 từ)</label>
-  <textarea id="feedbackBody" rows="7" maxlength="7000" required
-   placeholder="Mô tả tính năng cần hỗ trợ, lỗi xảy ra và các bước thực hiện…"></textarea>
-  <label for="feedbackImages">Ảnh đính kèm (tối đa 5 ảnh, mỗi ảnh không quá 2 MB)</label>
-  <input id="feedbackImages" type="file" accept="image/png,image/jpeg,image/webp" multiple>
-  <small id="feedbackWordCount">0 / 1000 từ · 0 / 5 ảnh</small>
-  <p id="feedbackStatus" class="notice" role="status"></p>
-  <div class="actions">
-   <button id="feedbackSubmit" type="submit">Gửi phản hồi</button>
-   <button id="feedbackClose" type="button" class="secondary">Đóng</button>
-   <a href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer"
-    class="extension-download-link">Liên hệ Zalo 0868838242</a>
-  </div>
+ <dialog id="kWarningDialog" class="k-warning-dialog" aria-labelledby="kWarningTitle">
+    <h2 id="kWarningTitle">Cảnh báo rủi ro hệ số K</h2>
+    <p id="kWarningText"></p>
+    <label><input type="checkbox" id="disableKPopup"> Tắt popup cảnh báo hệ số K trên trình duyệt này</label>
+    <div class="stock-actions"><button id="closeKWarning" type="button">Đã hiểu</button></div>
+    <small>Hệ số K chỉ để tham khảo, không phải kết luận vi phạm thuế.</small>
+  </dialog>
+  <footer>
+    <p>Tra cứu dựa trên dữ liệu cổng Thuế. Việc kết nối thực tế còn phụ thuộc phản hồi và cơ chế xác thực của cổng Thuế.</p>
+  </footer>
+</main>
+<script>window.__autotaxRecoveryFromUrl=/type=recovery/.test(location.hash+location.search);</script>
+
+<!-- Account flows are accessible without leaving AutoTax Web. -->
+<dialog id="webLoginDialog" class="web-account-dialog" aria-labelledby="webLoginTitle">
+ <form id="webLoginForm">
+  <div class="web-dialog-head"><h2 id="webLoginTitle">Đăng nhập AutoTax</h2><button type="button" data-web-close="webLoginDialog" aria-label="Đóng">✕</button></div>
+  <label for="webLoginEmail">Tên đăng nhập (email)</label><input id="webLoginEmail" type="email" autocomplete="username" required>
+  <label for="webLoginPassword">Mật khẩu</label><input id="webLoginPassword" type="password" autocomplete="current-password" required>
+  <p id="webLoginStatus" class="web-dialog-status" hidden role="status"></p>
+  <div class="web-dialog-actions"><button id="webLoginSubmit" type="submit">Đăng nhập</button><button id="webLoginToSignup" type="button" class="outline">Tạo tài khoản</button></div>
+  <div class="web-dialog-actions"><button id="webLoginToForgot" type="button" class="outline">Quên mật khẩu</button><a href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer" class="web-dialog-button">Admin cấp lại mật khẩu</a></div>
  </form>
 </dialog>
-<dialog id="giftWebDialog" class="payment-success-modal" aria-labelledby="giftWebTitle">
- <h2 id="giftWebTitle">🎁 Kích hoạt mã quà tặng</h2>
- <p class="muted">Mã quà tặng chỉ sử dụng một lần.</p>
- <label for="unlockCode">Mã quà tặng</label><input id="unlockCode" autocomplete="off" placeholder="UNLOCK-...">
- <div class="actions"><button id="redeemBtn" type="button">Kích hoạt</button><button id="closeGiftWebBtn" type="button" class="secondary">Đóng</button></div>
+<dialog id="webSignupDialog" class="web-account-dialog" aria-labelledby="webSignupTitle">
+ <form id="webSignupForm">
+  <div class="web-dialog-head"><h2 id="webSignupTitle">Tạo tài khoản AutoTax</h2><button type="button" data-web-close="webSignupDialog" aria-label="Đóng">✕</button></div>
+  <label for="webSignupName">Tên người dùng</label><input id="webSignupName" required type="text" minlength="2" maxlength="100" autocomplete="name">
+  <label for="webSignupEmail">Email (Gmail / Hotmail / Yahoo)</label><input id="webSignupEmail" required type="email" autocomplete="email" placeholder="ten@gmail.com">
+  <label for="webSignupPassword">Mật khẩu</label><input id="webSignupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
+  <label for="webSignupConfirm">Nhập lại mật khẩu</label><input id="webSignupConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
+  <p id="webSignupStatus" class="web-dialog-status" hidden role="status"></p>
+  <div class="web-dialog-actions"><button id="webSignupSubmit" type="submit">Đăng ký</button><button type="button" data-web-close="webSignupDialog" class="outline">Đóng</button></div>
+ </form>
 </dialog>
-<dialog id="paymentSuccessDialog" class="payment-success-modal" aria-labelledby="paymentSuccessTitle">
- <div class="payment-success-head"><span aria-hidden="true">✓</span><h2 id="paymentSuccessTitle">Thanh toán thành công!</h2></div>
- <p id="paymentSuccessInfo"></p>
- <p id="paymentSuccessBalance" class="notice"></p>
- <div class="actions"><button id="closePaymentSuccessBtn" type="button">Đã hiểu</button></div>
+<dialog id="webForgotDialog" class="web-account-dialog" aria-labelledby="webForgotTitle">
+ <form id="webForgotForm">
+  <div class="web-dialog-head"><h2 id="webForgotTitle">Quên mật khẩu</h2><button type="button" data-web-close="webForgotDialog" aria-label="Đóng">✕</button></div>
+  <label for="webForgotEmail">Email đã đăng ký</label><input id="webForgotEmail" type="email" required autocomplete="email">
+  <p id="webForgotStatus" class="web-dialog-status" hidden role="status"></p>
+  <div class="web-dialog-actions"><button id="webForgotSubmit" type="submit">Gửi email reset</button><button type="button" data-web-close="webForgotDialog" class="outline">Đóng</button></div>
+ </form>
 </dialog>
-<section id="passwordRecovery" class="panel" hidden><h2>Đặt mật khẩu mới</h2><p class="muted">Nếu bạn vừa mở liên kết khôi phục, đăng nhập bằng liên kết và đổi mật khẩu ở phía trên.</p></section>
-<footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a id="adminFooterLink" href="admin.html" hidden>Trang quản trị</a></footer>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<dialog id="webResetSentDialog" class="web-account-dialog" aria-label="Kiểm tra email">
+ <h2>Kiểm tra email của bạn</h2><p>AutoTax đã tiếp nhận yêu cầu. Nếu email có tài khoản, liên kết đặt lại mật khẩu sẽ được gửi tới hộp thư (hãy kiểm tra cả thư mục Spam).</p>
+ <p>Thông báo tự đóng sau 10 giây.</p><button id="webResetSentClose" type="button">Đóng</button>
+</dialog>
+<dialog id="webNewPasswordDialog" class="web-account-dialog" aria-labelledby="webNewPasswordTitle">
+ <form id="webNewPasswordForm">
+  <div class="web-dialog-head"><h2 id="webNewPasswordTitle">Đặt mật khẩu mới</h2><button type="button" data-web-close="webNewPasswordDialog" aria-label="Đóng">✕</button></div>
+  <label for="webNewPassword">Mật khẩu mới</label><input id="webNewPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
+  <label for="webNewPasswordConfirm">Nhập lại mật khẩu mới</label><input id="webNewPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
+  <p id="webNewPasswordStatus" class="web-dialog-status" hidden role="status"></p>
+  <div class="web-dialog-actions"><button id="webNewPasswordSave" type="submit">Đổi mật khẩu</button><button type="button" data-web-close="webNewPasswordDialog" class="outline">Đóng</button></div>
+ </form>
+</dialog>
+<dialog id="webProfileDialog" class="web-account-dialog" aria-labelledby="webProfileTitle">
+ <form id="webProfileForm">
+  <div class="web-dialog-head"><h2 id="webProfileTitle">Cập nhật thông tin</h2><button type="button" data-web-close="webProfileDialog" aria-label="Đóng">✕</button></div>
+  <div class="web-profile-avatar"><img id="webProfileAvatar" src="./favicon.svg" alt="Ảnh đại diện" width="54" height="54"><label for="webProfileAvatarFile">Thay ảnh đại diện</label><input id="webProfileAvatarFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
+  <label for="webProfileName">Tên người dùng</label><input id="webProfileName" type="text" required minlength="2" maxlength="100">
+  <label for="webProfileEmail">Email đăng ký (không thay đổi)</label><input id="webProfileEmail" type="email" readonly>
+  <label for="webProfileOld">Mật khẩu cũ (để trống nếu không đổi)</label><input id="webProfileOld" type="password" autocomplete="current-password">
+  <label for="webProfileNew">Mật khẩu mới</label><input id="webProfileNew" type="password" minlength="10" autocomplete="new-password">
+  <p id="webProfileStatus" class="web-dialog-status" hidden role="status"></p>
+  <div class="web-dialog-actions"><button id="webProfileSave" type="submit">Lưu</button><button type="button" data-web-close="webProfileDialog" class="outline">Đóng</button></div>
+ </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script>
+<script src="./web/zip.js?v=1"></script>
+<script src="./web/xlsx.js?v=1"></script>
+<script src="./web/workbook-fast-v120.js?v=120w1"></script>
+<script src="./web/captcha-svg-templates.js?v=1"></script>
+<script src="./web/captcha-svg.js?v=1"></script>
+<script src="./web/issuer-portals.js?v=1118"></script>
+<script src="./web/period-k.js?v=1118k4"></script>
+<script src="./web/hddt-api.js?v=120speed1"></script>
+<script src="./web/report.js?v=1118"></script>
+<script src="./web/tendoo-import.js?v=2"></script>
+<script src="./web/stock-cache.js?v=113"></script>
+<script src="./web/download-folder.js?v=126flat1"></script>
 <script src="./mst-sync.js?v=118"></script>
-<script src="./profile-credential.js?v=118"></script>
-<script src="./customer.js?v=128active1"></script>
-<script src="./account-settings-v120.js?v=126email1"></script>
-<script src="./combo-portal-v118.js?v=1118combo3"></script>
-<script src="./team-v118.js?v=125mode1"></script>
-<script src="./extension-link-v118.js?v=1119header1"></script>
-<script src="./customer-feedback.js?v=116"></script>
+<script src="./web/vault.js?v=121search2"></script>
+<script src="./web/pdf.js?v=121cRedWarning"></script>
+<script src="./web/issuer-archive.js?v=1118"></script>
+<script src="./web/vinvoice-bridge.js?v=121vinvoice"></script>
+<script src="./web/web-pdf.js?v=121vinvoice"></script>
+<script src="./web/export-zip.js?v=126flat1"></script>
+<script src="./web/invoice-cache-v120.js?v=120cache1"></script>
+<script src="./web/web.js?v=121account2"></script>
+<script src="./web/account-modal.js?v=121account2"></script>
+<script src="./extension-link-v118.js?v=121account2"></script>
+<script src="./web/web-results.js?v=120nov2"></script>
+<script src="./web/pdf-preview-v120a.js?v=1120a"></script>
+<script src="./web/issuer-pdf.js?v=121vinvoice"></script>
+<script src="./web/audit.js?v=1"></script>
 <script src="./password-toggle.js?v=116"></script>
-<script src="./site-footer.js?v=1118"></script>
-</body>
-</html>
+<script src="./site-footer.js?v=118"></script>
+</body></html>

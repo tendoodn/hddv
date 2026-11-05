@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<base href="/">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://ucqqjdsoyvvaxswzbhaw.supabase.co" crossorigin>
+<link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
+<title>AutoTax V1.1.20 — Tài khoản và gói sử dụng</title>
+<style>
+:root{font-family:Roboto,Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#291b1f;background:#fff8f8;--tendoo:#e60012;--tendoo-dark:#ba0010;--tendoo-soft:#fff1f2;--tendoo-line:#fecdd3}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px 16px}
+header,.row,.mst-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header{margin-bottom:24px;position:sticky;top:0;z-index:5;background:#fff;border:1px solid var(--tendoo-line);border-radius:12px;padding:10px 16px;box-shadow:0 2px 12px #ae000f0d}.brand{font-size:21px;font-weight:850}.brand span{color:var(--tendoo)}
+h1{font-size:26px;margin:10px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:16px;margin:10px 0}
+.panel,.plan{background:#fff;border:1px solid #f1c7cc;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 20px #1e293b09}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.grid .plan{margin:0}
+.package-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.package-grid .plan{padding:14px;display:flex;flex-direction:column;min-width:0}
+.package-grid .plan h3{font-size:15px;margin:0 0 8px}
+.package-grid .plan p{font-size:12px;line-height:1.5;flex:1}
+.package-grid .plan .price{font-size:19px;margin:10px 0}
+.package-grid .plan button{width:100%;padding:9px 7px}
+@media(max-width:900px){.package-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.package-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:360px){.package-grid{grid-template-columns:1fr}} .muted,small{color:#64748b}.price{font-size:21px;display:block;margin:12px 0}
+label{font-size:13px;font-weight:650;display:block;margin:12px 0 6px}
+input,select{font:inherit;padding:10px 12px;border-radius:9px;border:1px solid #cbd5e1;max-width:100%;min-width:0}
+input{width:100%}button{border:0;padding:11px 15px;border-radius:9px;background:var(--tendoo);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button.secondary{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}button:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0}
+.notice{margin:12px 0;padding:12px;border-radius:9px;background:var(--tendoo-soft);color:#9f1239;white-space:pre-wrap}
+.error{background:#fef2f2;color:#991b1b}a{color:var(--tendoo-dark)}
+.mst-row{padding:11px 0;border-bottom:1px solid #e2e8f0}.mst-row small{display:block;margin-top:4px}
+.stat strong{display:block;font-size:23px;margin:8px 0}.stat small{display:block}
+#paymentQr{width:min(100%,270px);border:1px solid #e2e8f0;border-radius:12px}
+.activation-grid{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
+.activation-grid>.panel{flex:1 1 360px;min-width:0;margin:14px 0}
+#paymentArea{text-align:center;scroll-margin-block:24px}
+#paymentArea #paymentQr{display:block;margin:14px auto}
+#paymentArea #paymentInfo{margin-left:auto;margin-right:auto;max-width:680px;overflow-wrap:anywhere}
+#paymentArea .actions{justify-content:center}
+#paymentArea small{display:block;margin:0 auto;max-width:650px;line-height:1.5}
+@media(max-width:700px){.activation-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0}.activation-grid>.panel{width:100%}}
+footer{padding:16px 0 28px;color:#64748b;font-size:12px}
+.payment-success-modal{max-width:min(460px,92vw);padding:26px;border-radius:16px;border:1px solid #d1fae5;background:#fff;color:#172033;box-shadow:0 24px 80px #0f172a44}
+.payment-success-modal::backdrop{background:#0f172a99}
+.payment-success-head{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.payment-success-head span{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border-radius:50%;background:#dcfce7;color:#15803d;font-weight:800;font-size:26px}
+.payment-success-head h2{margin:0}
+[hidden]{display:none!important}
+@media(max-width:540px){.wrap{padding:18px 12px}.panel{padding:14px}h1{font-size:22px}}
+ 
+/* Đồng nhất với sidepanel Tendoo đỏ, không thay đổi API/nhật ký thanh toán */
+body{background:#fff8f8}
+button:hover:not(:disabled){filter:brightness(.97)}
+.panel,.plan{box-shadow:0 3px 15px #8000120b}
+.portal-account-head{padding-bottom:8px;border-bottom:1px solid var(--tendoo-line)}
+.portal-account-head strong{color:#930013;overflow-wrap:anywhere}
+.mst-accordion{padding:0 16px}
+.mst-accordion h2{font-size:19px;margin:0 0 8px}.mst-row .mst-name{color:#4b5563;font-size:12px;margin-top:4px;font-weight:600}.mst-row .mst-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mst-accordion summary{cursor:pointer;list-style:none;font-weight:800;color:#b00014;padding:15px 0;display:flex;gap:10px;align-items:center}
+.mst-accordion summary::-webkit-details-marker{display:none}
+.mst-accordion summary span{padding:1px 9px;border-radius:15px;background:#fff1f2}
+.mst-accordion summary small{margin-left:auto}
+#webAddMstForm input{width:auto;flex:1 1 200px}
+#webAddMstForm button{white-space:nowrap}
+input:focus,select:focus{outline:2px solid #e6001240;border-color:#e60012}
+.license-token{color:#b00014}
+
+
+/* Portal shares the compact red account layout from the extension. */
+.extension-download-link{display:inline-flex;align-items:center;padding:10px 13px;border-radius:9px;background:var(--tendoo);color:#fff;text-decoration:none;font-size:13px;font-weight:750}
+.extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+/* Five account actions always stay on one line. Narrow screens scroll this row horizontally. */
+.portal-account-head{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.account-quick-actions{display:grid;grid-template-columns:repeat(5,minmax(145px,1fr));gap:7px;width:100%;overflow-x:auto;padding-bottom:4px}
+.account-quick-actions .account-link-btn,.account-quick-actions button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:39px;height:auto;min-width:0;margin:0;padding:7px 8px;text-align:center;white-space:nowrap;font-size:12px;line-height:1.15;border-radius:9px;text-decoration:none;font-weight:750}
+.account-quick-actions .account-link-btn{border:1px solid var(--tendoo-line);background:#fff1f2;color:var(--tendoo-dark)}
+.account-quick-actions .account-link-btn:hover{background:#ffe4e6}
+.account-quick-actions .extension-download-link{border-color:var(--tendoo);background:var(--tendoo);color:#fff}
+.account-quick-actions .extension-download-link:hover{background:var(--tendoo-dark);color:#fff}
+@media(max-width:600px){.portal-account-head .account-quick-actions{grid-template-columns:repeat(5,minmax(124px,1fr));gap:5px;max-width:100%}}
+
+.portal-header-actions{gap:8px;margin:0}
+.portal-admin-link{display:inline-flex;align-items:center;padding:10px 13px;border:1px solid var(--tendoo-line);border-radius:9px;background:#fff1f2;color:var(--tendoo-dark);font-size:13px;font-weight:750;text-decoration:none}
+.portal-admin-link:hover{background:#ffe4e6;color:var(--tendoo-dark)}
+#adminLink[hidden],#adminFooterLink[hidden]{display:none!important}
+.web-search-blink{background:#ffedf2!important;border-color:#e11d48!important;color:#9f1239!important;animation:autotaxWebBlink 1.8s ease-in-out infinite;will-change:box-shadow}
+@keyframes autotaxWebBlink{0%,100%{box-shadow:0 0 0 0 rgba(225,29,72,.32);opacity:1}50%{box-shadow:0 0 0 5px rgba(225,29,72,0);opacity:.58}}
+@media(prefers-reduced-motion:reduce){.web-search-blink{animation:none;will-change:auto}}
+@media(max-width:430px){.portal-header-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.portal-header-actions a{justify-content:center;text-align:center;padding:9px 6px;font-size:12px}}
+
+.portal-mode-toolbar{margin:12px 0;border-top:1px solid var(--tendoo-line);padding-top:10px}
+#modeSection{display:grid;grid-template-columns:auto minmax(130px,250px);align-items:center;gap:6px 12px}
+#modeSection[hidden]{display:none!important}
+#modeSection label{margin:0;font-weight:750;color:#9f1239}
+#modeSection p{grid-column:1/-1;font-size:12px;margin:0 0 4px}
+.portal-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.portal-quick-actions button{min-width:0;white-space:nowrap;padding:9px 5px}
+#passwordPanel{border-color:var(--tendoo-line)}
+#dashboard.autotax-force-password > *{opacity:.32;pointer-events:none}
+#forcedPasswordDialog{width:min(440px,calc(100vw - 22px));max-width:96vw;border-radius:15px;border:1px solid #fda4af;padding:22px;background:#fff;color:#1f2937;box-shadow:0 25px 90px #17050c55}
+#forcedPasswordDialog::backdrop{background:#090a11b8}
+#forcedPasswordDialog h2{color:#ad152b;font-size:20px;margin:0 0 10px}
+#forcedPasswordDialog p{font-size:13px;line-height:1.5}
+#forcedPasswordDialog label{display:block;margin:11px 0 5px;font-size:13px;font-weight:750}
+#forcedPasswordDialog input{width:100%;box-sizing:border-box;min-width:0}
+#forcedPasswordDialog button{width:100%;margin-top:13px}
+#forcedPasswordDialog .notice[hidden]{display:none!important}
+#forcedPasswordDialog .autotax-password-eye{display:block!important;position:relative!important;width:100%!important;max-width:100%!important}
+#forcedPasswordDialog .autotax-password-eye>input{display:block!important;width:100%!important;max-width:100%!important;padding-right:48px!important}
+#forcedPasswordDialog .autotax-password-eye>button.autotax-eye-button{position:absolute!important;right:6px!important;top:50%!important;transform:translateY(-50%)!important;display:flex!important;align-items:center;justify-content:center;width:36px!important;min-width:36px!important;height:34px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;z-index:2}
+@media(max-width:450px){.portal-quick-actions{gap:5px}.portal-quick-actions button{font-size:11px;padding:8px 3px}}
+
+/* V1.1.20: explicit MST grant checkboxes in the customer portal. */
+#mstProfilesWeb summary{display:flex;align-items:center;gap:10px;cursor:pointer}
+#mstProfilesWeb summary strong{font-size:16px}
+#mstProfilesWeb summary small{font-size:12px}
+#mstAllowControls{margin:12px 0;padding:12px;border:1px solid #edc1c6;border-radius:10px}
+#mstAllowControls[hidden]{display:none!important}
+.mst-allow-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;flex:0 0 auto;padding:7px}
+.mst-allow-check input{width:19px;height:19px;accent-color:#16a34a}
+.mst-permission-status{font-size:12px;font-weight:800;transition:color .12s ease}
+.mst-permission-status.is-granted{color:#15803d}
+.mst-permission-status.is-denied{color:#dc2626}
+.mst-row{display:flex;gap:10px;align-items:flex-start}
+.mst-row>.mst-name{flex:1}
+.feedback-thread{margin:12px 0;padding:13px 15px;border:1px solid var(--tendoo-line);border-radius:11px;background:#fff}
+.feedback-thread p{white-space:pre-wrap;overflow-wrap:anywhere;margin:9px 0}
+.feedback-reply{padding:11px;margin-top:9px;border-left:4px solid var(--tendoo);background:#fff1f2;border-radius:7px}
+.feedback-reply small{display:block;margin:6px 0}
+#feedbackDialog{width:min(680px,94vw);max-height:88vh;overflow-y:auto}
+#feedbackBody{display:block;width:100%;font:inherit;line-height:1.5;padding:10px;resize:vertical;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px}
+#feedbackImages{margin:8px 0}
+.autotax-coupon-box{margin-top:14px;padding:12px;border:1px dashed #e9aab3;border-radius:12px;background:#fffafb}.autotax-coupon-box .actions{display:flex;align-items:center;gap:10px}.autotax-coupon-box input{width:auto;flex:1 1 200px}.autotax-coupon-box button{white-space:nowrap}.autotax-license-notice{margin-top:10px}
+
+/* Download Extension always sits to the right of the AutoTax brand, even on the login screen. */
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto;margin:0 0 0 auto}
+.portal-header-download{background:#a9071b;color:#fff;border-color:#a9071b;white-space:nowrap}
+.portal-header-download:hover{background:#830213;color:#fff}
+@media(max-width:520px){header{padding:9px 10px;gap:6px;flex-wrap:nowrap}header .brand{font-size:15px;white-space:nowrap}header .brand img{width:25px;height:25px;margin-right:3px!important}header .portal-header-actions{display:flex;grid-template-columns:none;width:auto;min-width:0;gap:5px}header .portal-header-download{font-size:10px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.2;max-width:130px}header #adminLink:not([hidden]){font-size:10px;padding:7px 5px}}
+</style>
+<style>
+
+/* Same-row account heading and team switch, without displacing quick actions. */
+.portal-account-head{display:grid;grid-template-columns:minmax(180px,1fr) auto;align-items:center;gap:10px 14px}
+.portal-account-head>.autotax-account-tabs{justify-content:flex-end;align-items:center}
+.portal-account-head>.account-quick-actions{grid-column:1/-1}
+@media(max-width:680px){
+ .portal-account-head{grid-template-columns:minmax(0,1fr)}
+ .portal-account-head>.autotax-account-tabs{justify-content:flex-start}
+ .portal-account-head>.account-quick-actions{grid-column:1}
+}
+.autotax-account-tabs,.autotax-team-subtabs{display:flex;gap:6px;flex-wrap:wrap}.autotax-tab{border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:700}.autotax-tab.is-active{background:#164e63;color:#fff;border-color:#164e63}.autotax-team-panel[hidden],#autotaxTeamDetail[hidden]{display:none!important}#dashboard.autotax-team-active>:not(#autotaxAccountSummary):not(#autotaxTeamPanel):not(#forcedPasswordNotice){display:none!important}#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head){display:none!important}.autotax-team-list{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.autotax-team-list button{max-width:100%;overflow-wrap:anywhere}.autotax-team-panel td{vertical-align:top}.autotax-team-panel td label{display:block;white-space:nowrap;margin:4px 0}.autotax-team-panel td button{margin:3px}.autotax-team-panel td input[type=checkbox]{margin-right:5px}.autotax-team-panel .table-wrap{overflow-x:auto}.autotax-team-subtabs{margin:12px 0}
+
+/* AutoTax self-service account registration — accessible modal, responsive inputs. */
+.autotax-signup-dialog{width:min(510px,calc(100vw - 28px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #f0c3c9;border-radius:16px;padding:22px;background:#fff;color:#281b21;box-shadow:0 25px 75px #3c0a1540}
+.autotax-signup-dialog::backdrop{background:rgba(24,20,26,.70)}
+.autotax-signup-dialog form{display:flex;flex-direction:column;gap:9px}
+.autotax-signup-dialog label{font-weight:700;font-size:13px}
+.autotax-signup-dialog input{display:block;width:100%;min-width:0;padding:11px 12px;border-radius:9px;border:1px solid #cfd4db;background:#fff;color:#20242a;font:inherit}
+.autotax-signup-dialog input:focus{outline:2px solid #e60012;outline-offset:1px}
+.autotax-signup-dialog .autotax-signup-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.autotax-signup-dialog h2{font-size:21px;margin:0}
+.autotax-signup-dialog .actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:8px}
+.autotax-signup-dialog .actions button{flex:1;white-space:nowrap}
+.autotax-signup-dialog #signupStatus{margin:4px 0}
+@media(max-width:480px){.autotax-signup-dialog{padding:17px}.autotax-signup-dialog h2{font-size:18px}}
+/* AutoTax v120 compact signup + profile UI */
+.autotax-signup-dialog{width:min(440px,calc(100vw - 16px));padding:14px 17px;max-height:calc(100dvh - 16px)}
+.autotax-signup-dialog form{gap:5px}.autotax-signup-dialog label{font-size:12px;line-height:1.25;margin:0}
+.autotax-signup-dialog input:not([type="file"]){padding:7px 9px;min-height:34px}
+.autotax-signup-dialog p{margin:4px 0;font-size:11px;line-height:1.35}
+.autotax-signup-dialog .actions{padding-top:3px;gap:7px}.autotax-signup-dialog .actions button{min-height:34px;padding:6px 9px}
+.portal-account-head{display:flex!important;flex-direction:row!important;justify-content:space-between;align-items:center!important;gap:12px}
+.autotax-welcome{display:flex;gap:12px;align-items:center;min-width:0}
+.autotax-welcome img,.autotax-avatar-picker img{object-fit:cover;flex:0 0 auto;border-radius:50%;border:2px solid #edb0b8;background:white}
+.autotax-welcome-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.autotax-welcome-copy strong{font-size:18px;overflow-wrap:anywhere}.autotax-welcome-copy span{font-size:12px;color:#64748b}
+.autotax-settings-wrap{position:relative;flex:0 0 auto}.autotax-settings-toggle{font-size:25px;width:44px;height:44px;display:grid;place-items:center;padding:0;border-radius:50%;border:1px solid #e9adb6;background:#fff1f2;color:#a3071c}
+.autotax-settings-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:205px;background:#fff;box-shadow:0 12px 30px #30172036;border:1px solid #f0c9cd;border-radius:12px;padding:5px}
+.autotax-settings-menu[hidden]{display:none!important}.autotax-settings-menu button{display:block;width:100%;text-align:left;background:#fff;color:#26191a;border:0;padding:11px 12px;border-radius:7px;font-size:13px}.autotax-settings-menu button:hover{background:#fff1f2}
+.autotax-primary-nav{margin:12px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.autotax-primary-nav>a{padding:9px 12px;font-size:12px}
+#dashboard.autotax-team-active #autotaxAccountSummary>:not(.portal-account-head):not(.autotax-primary-nav){display:none!important}
+#dashboard.autotax-team-active #autotaxAccountSummary>.autotax-primary-nav{display:flex!important}
+.autotax-avatar-picker{display:flex;align-items:center;gap:10px;padding:4px 0}.autotax-avatar-picker input[type=file]{font-size:11px;width:100%;max-width:245px}.autotax-avatar-picker small{font-size:10px;display:block;color:#64748b}
+.autotax-team-permissions-dialog .autotax-permission-field{padding:9px;background:#fff8f8;border:1px solid #f2d1d5;border-radius:9px}.autotax-permission-field>div{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding:5px 0}.autotax-permission-field label{display:flex;gap:8px;align-items:center}.autotax-permission-field input[type=checkbox]{width:auto;min-height:0}
+@media(max-width:480px){.autotax-welcome-copy strong{font-size:15px}.autotax-welcome-copy span{font-size:11px}.autotax-welcome img{width:43px;height:43px}.autotax-primary-nav{gap:5px}.autotax-primary-nav .autotax-tab,.autotax-primary-nav>a{font-size:11px;padding:7px}}
+
+/* Customer requested compact header tabs, signup email link and explicit MST grant */
+.portal-head-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}
+.portal-head-tools .autotax-primary-nav{margin:0;gap:4px;flex-wrap:nowrap}
+.portal-head-tools .autotax-primary-nav button{font-size:11px;padding:8px 9px;white-space:nowrap}
+.portal-account-head{flex-wrap:wrap!important}
+.autotax-signup-mail-link{display:block;background:#e5fff1;color:#065f46;padding:10px;border-radius:9px;border:1px solid #59c7a1;font-size:12px;margin-top:8px;text-decoration:underline}
+.autotax-signup-mail-link[hidden]{display:none!important}
+.mst-auto-grant-row{display:flex!important;align-items:center;gap:10px;border:1px solid #b4dcc3;background:#f0fff5;border-radius:9px;padding:9px;font-size:13px}
+.mst-auto-grant-row input{flex:0 0 auto;width:18px;height:18px;min-height:auto}
+.web-search-blink{display:inline-flex;justify-content:center;align-items:center;border:1px solid #15803d!important;background:#ecfdf5!important;color:#166534!important;animation:autotaxWebPulse 2.2s ease-in-out infinite}
+@keyframes autotaxWebPulse{50%{box-shadow:0 0 0 5px rgba(34,197,94,.18),0 0 15px rgba(34,197,94,.3)}}
+@media(prefers-reduced-motion:reduce){.web-search-blink{animation:none}}
+@media(max-width:640px){.portal-head-tools{width:100%;justify-content:flex-end}.portal-head-tools .autotax-primary-nav button{font-size:10px;padding:7px 6px}.portal-header-actions{flex-wrap:wrap}.portal-header-actions a{white-space:normal;font-size:11px}}
+
+.mst-quick-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+.mst-quick-row form{margin:0;flex:0 0 auto}.mst-quick-row #mstAllowControls{margin:0;flex:1;min-width:260px}.mst-quick-row .actions{align-items:center;gap:5px;flex-wrap:wrap}
+.mst-quick-row button{min-height:34px;padding:7px 10px}
+#mstProfilesWeb summary{justify-content:space-between;flex-wrap:wrap}
+#mstSummaryModeSlot{margin-left:auto}#mstSummaryModeSlot #modeSection{display:inline-flex;gap:5px;align-items:center;margin:0;padding:0;min-width:0}
+#mstSummaryModeSlot #modeSection select{max-width:185px;min-width:0;font-size:12px;padding:5px 7px}
+#mstSummaryModeSlot #modeSection label{font-size:11px}
+#mstSummaryModeSlot #modeSection[hidden]{display:none!important}
+.portal-mode-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.portal-mode-toolbar #licenseTitle{font-size:12px;line-height:1.3;min-width:0;margin:0}
+@media(max-width:480px){#mstSummaryModeSlot{width:100%}#mstSummaryModeSlot #modeSection{width:100%}.mst-quick-row #mstAllowControls{min-width:0}}
+#accountProfileEmail{background:#e5e7eb!important;color:#64748b!important;opacity:.75;cursor:not-allowed}
+#mstGrantAllow[hidden],#mstGrantUnlock[hidden]{display:none!important}
+#headerLogoutBtn[hidden]{display:none!important}
+.portal-header-logout{cursor:pointer;white-space:nowrap;min-width:0}
+#invoicePlanCard,#mstPlanCard{transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
+.plan.stat.is-selected-mode{background:#e7f8ed!important;border:2px solid #27ae63!important;color:#11512f!important;box-shadow:0 1px 10px #2ea86919}
+.plan.stat.is-selected-mode strong,.plan.stat.is-selected-mode small{color:#11512f!important}
+.plan.stat.is-other-mode{background:#f1f2f4!important;border:1px solid #cbd0d6!important;color:#606670!important;opacity:.86;box-shadow:none}
+.plan.stat.is-other-mode strong,.plan.stat.is-other-mode small{color:#606670!important}
+@media(max-width:520px){#headerLogoutBtn{font-size:10px!important;padding:6px 7px!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+  <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.20</span></div>
+  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/1q0WZKcGx62EjYJl9dUvpVR_DvzEuDGPH/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a id="webSearchLink" class="portal-admin-link portal-header-download web-search-blink" href="/">VÀO TRA CỨU PHIÊN BẢN WEB</a><a href="/admin" id="adminLink" class="portal-admin-link" hidden>Quản trị</a><button id="headerLogoutBtn" type="button" class="portal-admin-link portal-header-logout" hidden>Đăng xuất</button></nav>
+</header>
+
+
+<section id="authSection" class="panel">
+ <form id="loginForm">
+ <h2>Đăng nhập / tạo tài khoản</h2>
+ <label for="email">Email</label><input id="email" type="email" autocomplete="username" placeholder="email@example.com">
+ <label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
+ <div class="actions"><button id="loginBtn" type="submit">Đăng nhập</button><button id="signupBtn" class="secondary" type="button">Tạo tài khoản</button><button id="resetBtn" class="secondary" type="button">Quên mật khẩu</button><a class="account-link-btn" href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer">Liên hệ Admin cấp lại mật khẩu · Zalo</a></div>
+ <div id="authMessage" class="notice" hidden></div>
+
+ </form>
+</section>
+<dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
+ <form id="signupForm" autocomplete="on">
+  <div class="autotax-signup-head"><h2 id="signupDialogTitle">Tạo tài khoản AutoTax</h2><button id="signupCloseBtn" type="button" class="secondary" aria-label="Đóng đăng ký">✕</button></div>
+  <p class="muted">Điền đầy đủ thông tin để đăng ký tài khoản mới. Tài khoản dùng chung trên Web và Extension.</p>
+  <label for="signupName">Tên người dùng</label>
+  <input id="signupName" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Họ tên hoặc tên hiển thị">
+  <label for="signupEmail">Email</label>
+  <input id="signupEmail" type="email" required autocomplete="email" placeholder="ten@gmail.com hoặc ten@hotmail.com">
+  <small>Hỗ trợ Gmail, Hotmail và Yahoo Mail.</small>
+  <label for="signupPassword">Mật khẩu</label>
+  <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
+  <label for="signupPasswordConfirm">Nhập lại mật khẩu</label>
+  <input id="signupPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo">
+  <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây. Email xác minh hiện có thể mang tiêu đề <strong>Supabase Auth</strong>; hãy kiểm tra cả thư mục Spam.</p>
+  <div id="signupStatus" class="notice" role="status" aria-live="polite" hidden></div>
+  <div class="actions"><button id="signupSubmitBtn" type="submit">Tạo tài khoản</button><button id="signupCancelBtn" class="secondary" type="button">Đóng</button></div>
+ </form>
+</dialog>
+<dialog id="accountProfileDialog" class="autotax-signup-dialog autotax-profile-dialog" aria-labelledby="accountProfileTitle">
+ <form id="accountProfileForm" autocomplete="on">
+  <h2 id="accountProfileTitle">Cập nhật thông tin tài khoản</h2>
+  <div class="autotax-avatar-picker"><img id="accountAvatarPreview" src="./favicon.svg?v=20261102b" width="72" height="72" alt="Ảnh đại diện"><div><label for="accountAvatarUpload" class="account-avatar-label">Thay đổi ảnh đại diện</label><input id="accountAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp"><small>Để trống để giữ avatar hiện tại. Mặc định: logo AutoTax.</small></div></div>
+  <label for="accountProfileEmail">Email tài khoản (không thể thay đổi)</label><input id="accountProfileEmail" type="email" readonly disabled aria-readonly="true" autocomplete="email" title="Email đăng ký không thể sửa" class="account-readonly-email">
+  <label for="accountDisplayName">Tên người dùng</label><input id="accountDisplayName" type="text" minlength="2" maxlength="100" required autocomplete="name">
+  <label for="accountOldPassword">Mật khẩu cũ (chỉ nhập khi muốn đổi)</label><input id="accountOldPassword" type="password" autocomplete="current-password" placeholder="Để trống nếu không đổi mật khẩu">
+  <label for="accountNewPassword">Mật khẩu mới</label><input id="accountNewPassword" type="password" autocomplete="new-password" minlength="10" placeholder="Để trống nếu không đổi mật khẩu">
+  <p id="accountProfileStatus" class="notice" role="status" hidden></p>
+  <div class="actions"><button id="accountProfileSave" type="submit">Lưu</button><button id="accountProfileClose" class="secondary" type="button">Đóng</button></div>
+ </form>
+</dialog>
+<dialog id="forcedPasswordDialog" aria-labelledby="forcedPasswordTitle" aria-modal="true">
+ <form id="forcedPasswordForm" autocomplete="off">
+  <h2 id="forcedPasswordTitle">Đổi mật khẩu bắt buộc</h2>
+  <p>Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.</p>
+  <label for="forcedPasswordNew">Mật khẩu mới</label>
+  <input id="forcedPasswordNew" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập mật khẩu mới">
+  <label for="forcedPasswordConfirm">Nhập lại mật khẩu mới</label>
+  <input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập lại mật khẩu">
+  <p id="forcedPasswordError" class="notice error" role="alert" hidden></p>
+  <button id="forcedPasswordSave" type="submit">Lưu mật khẩu mới</button>
+ </form>
+</dialog>
+<section id="dashboard" hidden>
+ <div class="panel" id="autotaxAccountSummary">
+  <div class="row portal-account-head">
+   <div class="autotax-welcome">
+    <img id="accountAvatar" src="./favicon.svg?v=20261102b" alt="Ảnh đại diện" width="52" height="52">
+    <div class="autotax-welcome-copy"><strong id="accountGreeting">Xin chào bạn !!!</strong><span>Chúc bạn có một ngày mới tốt lành.</span><span id="userEmail" hidden></span></div>
+   </div>
+   <div class="portal-head-tools">
+    <nav class="autotax-account-tabs autotax-primary-nav" aria-label="Trang tài khoản">
+      <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Trang chủ</button>
+      <button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button>
+    </nav>
+    <div class="autotax-settings-wrap">
+    <button id="accountSettingsToggle" type="button" class="autotax-settings-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="accountSettingsMenu" aria-label="Cài đặt tài khoản" title="Cài đặt tài khoản">⚙</button>
+    <div id="accountSettingsMenu" class="autotax-settings-menu" hidden>
+     <button type="button" id="accountEditProfile">Cập nhật thông tin</button>
+     <button type="button" id="accountFeedbackMenu">Phản hồi</button>
+     <button type="button" id="accountGiftMenu">🎁 Quà tặng</button>
+     <button type="button" id="accountLogoutMenu">Đăng xuất</button>
+    </div>
+    </div>
+   </div>
+  </div>
+  <div class="autotax-hidden-actions" hidden>
+   <a id="extensionDownloadBtn" href="https://drive.google.com/file/d/1q0WZKcGx62EjYJl9dUvpVR_DvzEuDGPH/view?usp=drivesdk">Tải Extension Chrome</a>
+   <button id="feedbackOpen" type="button">Phản hồi</button>
+   <button id="logoutBtn" type="button">Đăng xuất</button>
+   <button id="giftWebBtn" type="button">Quà tặng</button>
+   <button id="passwordOpenBtn" type="button">Đổi mật khẩu</button>
+  </div>
+   <details id="mstProfilesWeb" class="panel mst-accordion">
+  <summary><strong>Bấm để thiết lập MST được cấp phép</strong> <span id="mstWebCount">0</span><span id="mstSummaryModeSlot"><span id="modeSection" hidden><label for="usageMode">Chế độ sử dụng</label><select id="usageMode"><option value="mst">Chỉ sử dụng MST</option><option value="invoice">Chỉ sử dụng số tờ</option></select></span></span></summary>
+  
+   
+  <div class="mst-quick-row"><form id="webAddMstForm" class="actions">
+   <input id="webAddMst" hidden>
+   <button type="submit">+ Thêm MST</button>
+  </form>
+  <div id="mstAllowControls" hidden>
+
+   <p class="muted mst-allow-help" hidden>Chọn MST được phép, không vượt số gói đã mua.</p>
+   <div class="actions">
+    <button id="mstGrantUnlock" type="button" class="secondary">Thiết lập lại quyền sử dụng</button>
+    <button id="mstGrantAllow" type="button" hidden>Lưu cấu hình</button>
+    <button id="mstGrantCancel" type="button" class="secondary" hidden>Hủy chỉnh sửa</button>
+    <span id="mstAllowedSummary" class="muted" role="status"></span>
+   </div>
+  </div></div>
+  <div id="mstList"></div>
+ </details>
+  <div class="portal-mode-toolbar"><h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2></div>
+  <div class="grid">
+   <div class="plan stat" id="invoicePlanCard" data-plan-family="invoice"><small>Hóa đơn còn lại / tổng đã mua</small><strong id="invoiceBalance">—</strong><small id="rereadNote" hidden>Hết lượt mới vẫn được đọc lại hóa đơn đã khấu trừ.</small></div>
+   <div class="plan stat" id="mstPlanCard" data-plan-family="mst"><small>Số MST đang được quản lý</small><strong id="mstCapacity">—</strong><small id="mstExpiry">—</small></div>
+  </div>
+  <p id="trialStatus" class="muted"></p><div id="accountMessage" class="notice" hidden></div>
+ </div>
+ <section class="panel autotax-team-panel" id="autotaxTeamPanel" hidden>
+  <div class="row"><h2>Chế độ làm việc nhóm</h2><button type="button" id="autotaxTeamRefresh" class="secondary">Làm mới</button></div>
+  <p class="muted">Mỗi tài khoản có thể tạo tối đa 50 nhóm. Trưởng nhóm quản lý thành viên và quyền sử dụng; thành viên có thể xem thông tin nhóm và rời nhóm.</p>
+  <div id="autotaxTeamMessage" class="notice" role="status" hidden></div>
+  <div class="actions"><button id="autotaxTeamNew" type="button">+ Tạo thêm nhóm</button><span id="autotaxTeamCount" class="muted"></span></div>
+  <form id="autotaxTeamCreateForm" class="actions" hidden><label>Tên nhóm <input id="autotaxTeamName" maxlength="100" required placeholder="Ví dụ: Kế toán chi nhánh A"></label><button type="submit">Lưu nhóm</button><button type="button" class="secondary" id="autotaxTeamCancel">Hủy</button></form>
+  <div id="autotaxTeamInvitations"></div>
+  <div id="autotaxTeamList" class="autotax-team-list"></div>
+  <section id="autotaxTeamDetail" hidden>
+   <h3 id="autotaxTeamDetailTitle"></h3>
+   <nav class="autotax-team-subtabs" aria-label="Quản lý nhóm"><button type="button" id="autotaxTeamMembersTab" class="secondary">Quản lý thành viên nhóm</button><button type="button" id="autotaxTeamUsageTab" class="secondary">Lịch sử tiêu dùng thành viên</button></nav>
+   <dialog id="autotaxTeamPermissionDialog" class="autotax-signup-dialog autotax-team-permissions-dialog" aria-labelledby="autotaxTeamPermissionTitle">
+ <form id="autotaxTeamPermissionForm">
+  <h2 id="autotaxTeamPermissionTitle">Phân quyền thành viên</h2>
+  <p id="autotaxTeamPermissionHelp" class="muted"></p>
+  <div class="autotax-permission-field"><strong>Hình thức sử dụng</strong><div id="autotaxTeamPermissionModes"></div></div>
+  <div class="autotax-permission-field"><strong>MST được phép dùng</strong><div id="autotaxTeamPermissionMsts"></div></div>
+  <p id="autotaxTeamPermissionStatus" class="notice" hidden></p>
+  <div class="actions"><button type="submit" id="autotaxTeamPermissionSave">Lưu</button><button type="button" class="secondary" id="autotaxTeamPermissionClose">Đóng</button></div>
+ </form>
+</dialog>
+<div id="autotaxTeamMembersPanel">
+    <form id="autotaxTeamInviteForm" class="actions" hidden><label>Email thành viên <input type="email" id="autotaxTeamInviteEmail" required placeholder="email@gmail.com"></label><button type="submit">+ Thêm thành viên</button></form>
+    <div class="table-wrap"><table><thead><tr><th>Tên người dùng</th><th>Gmail</th><th>Hình thức sử dụng</th><th>MST được phép dùng</th><th>Thao tác</th></tr></thead><tbody id="autotaxTeamMembersBody"></tbody></table></div>
+   </div>
+   <div id="autotaxTeamUsagePanel" hidden><p class="muted">Lịch sử hiển thị số hóa đơn và MST thành viên đã tra cứu bằng quyền của nhóm. Lượt nhóm được ưu tiên trước gói cá nhân; các lượt đã cấp riêng vẫn được giữ nguyên.</p><div class="table-wrap"><table><thead><tr><th>Tên</th><th>Email</th><th>Đã sử dụng bao nhiêu tờ hóa đơn</th><th>Đã sử dụng bao nhiêu MST</th></tr></thead><tbody id="autotaxTeamUsageBody"></tbody></table></div></div>
+   <div class="actions"><button id="autotaxTeamLeave" type="button" class="secondary" hidden>Rời nhóm</button></div>
+  </section>
+ </section>
+ <div class="activation-grid">
+ <div id="trialArea" class="panel" hidden>
+  <h2>Dùng thử 7 ngày · 1 MST + 100 hóa đơn</h2>
+  <p class="muted">Kích hoạt mà không cần nhập MST. Bạn có thể tra cứu ngay theo số tờ hoặc thêm 1 hồ sơ MST sau khi chuyển chế độ. Mỗi email chỉ có một lượt dùng thử.</p>
+  <input id="trialMst" hidden aria-hidden="true">
+  <div class="actions"><button id="trialBtn">Kích hoạt dùng thử</button></div>
+ </div>
+
+ </div>
+
+
+
+ <div class="panel" id="paymentArea" hidden>
+  <h2>Thanh toán chuyển khoản</h2>
+  <p id="paymentInfo" class="notice"></p>
+  <div class="autotax-coupon-box">
+   <label for="paymentCouponCode">Mã giảm giá (nếu có)</label>
+   <div class="actions"><input id="paymentCouponCode" type="text" maxlength="32" autocomplete="off" placeholder="Nhập mã giảm tiền hoặc %" autocapitalize="characters">
+   <button id="applyPaymentCoupon" type="button" class="secondary">Áp dụng / bỏ mã</button></div>
+   <small>Áp dụng mã sẽ tạo QR mới theo số tiền được máy chủ xác nhận. QR cũ sẽ hết hiệu lực.</small>
+   <p id="paymentCouponStatus" class="muted" role="status" aria-live="polite"></p>
+  </div>
+  <p class="muted" role="timer" aria-live="off">Thời gian hiển thị QR còn lại: <strong id="paymentCountdown">05:00</strong></p>
+  <img id="paymentQr" alt="QR thanh toán gói AutoTax">
+  <div class="actions"><button id="checkPaymentBtn" class="secondary">Kiểm tra thanh toán</button><button id="closePaymentBtn" class="secondary">Đóng QR</button></div>
+  <small>QR tự ẩn sau 5 phút. Chỉ chuyển đúng số tiền và nội dung. Nếu ngân hàng xử lý chậm, hệ thống vẫn tiếp tục theo dõi và ghi nhận giao dịch thật.</small>
+ </div>
+ <div class="panel" id="planSection">
+  <div class="row"><h2>Mua gói mới</h2></div>
+  <div id="packageList" class="grid package-grid"></div>
+ </div>
+
+ <div class="panel" id="passwordPanel" hidden>
+  <div class="row"><h2>Đổi mật khẩu</h2><button id="passwordCloseBtn" type="button" class="secondary">Đóng</button></div><label for="newPassword">Mật khẩu mới</label>
+  <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+  <div class="actions"><button id="changePasswordBtn" class="secondary">Cập nhật mật khẩu</button></div>
+ </div>
+ <section id="customerInbox" class="panel">
+  <div class="row"><h2>Tin nhắn từ quản trị</h2>
+   <button id="feedbackInboxRefresh" type="button" class="secondary">Làm mới hộp thư</button></div>
+  <p class="muted">Tin trả lời từ quản trị sẽ tự biến mất sau 7 ngày. Bạn có thể xóa tin ngay sau khi đọc.</p>
+  <div id="feedbackInboxList" aria-live="polite">Đang tải hộp thư…</div>
+ </section>
+</section>
+<dialog id="mstProfileDialog" class="payment-success-modal" aria-labelledby="mstProfileTitle">
+ <h2 id="mstProfileTitle">Thêm hồ sơ MST</h2>
+ <form id="mstProfileEditorForm">
+  <label for="mstProfileName">Tên người nộp thuế</label>
+  <input id="mstProfileName" type="text" maxlength="120" autocomplete="organization" placeholder="Tên NNT (sẽ xác nhận lại sau lần đăng nhập Thuế)">
+  <label for="mstProfileNumber">Mã số thuế</label>
+  <input id="mstProfileNumber" type="text" inputmode="numeric" maxlength="14" required placeholder="MST 10 / 12 / 13 số">
+  <label for="mstProfilePassword">Mật khẩu cổng hóa đơn điện tử</label>
+  <input id="mstProfilePassword" type="password" maxlength="256" autocomplete="off" placeholder="Mật khẩu (chỉ lưu mã hóa trên thiết bị này)">
+  <label for="mstProfilePasswordDate">Ngày nhập / sửa mật khẩu</label>
+  <input id="mstProfilePasswordDate" type="text" readonly placeholder="Tự cập nhật khi lưu mật khẩu">
+  <small>Nhắc đổi mật khẩu sau 80 ngày. Không thay đổi ngày khi chỉ sửa tên NNT. Nếu cổng Thuế không cung cấp ngày đổi gần nhất, hệ thống tính từ ngày bạn lưu mật khẩu.</small>
+  <div class="actions">
+   <button id="mstProfileSave" type="submit">Lưu hồ sơ</button>
+   <button id="mstProfileCancel" type="button" class="secondary">Hủy</button>
+  </div>
+ </form>
+ </dialog>
+ <dialog id="mstProfileLimitDialog" class="payment-success-modal">
+  <h2>Đã đạt giới hạn MST</h2>
+  <p>Bạn đã hết hạn mức. Vui lòng chọn gói phù hợp</p>
+  <div class="actions"><button id="mstProfileLimitClose" type="button">Đóng</button></div>
+ </dialog>
+ <dialog id="mstPassword80Dialog" class="payment-success-modal">
+  <h2>Nhắc đổi mật khẩu cổng Thuế</h2>
+  <p id="mstPassword80Text"></p>
+  <p class="muted">Mốc 80 ngày được tính từ lần lưu/sửa mật khẩu gần nhất, không khẳng định mật khẩu đã hết hạn theo quy định của cơ quan thuế.</p>
+  <div class="actions">
+   <a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Đổi mật khẩu cổng Thuế</a>
+   <button id="mstPassword80Close" type="button" class="secondary">Để sau</button>
+  </div>
+ </dialog>
+<dialog id="feedbackDialog" class="payment-success-modal" aria-labelledby="feedbackTitle">
+ <h2 id="feedbackTitle">Gửi phản hồi AutoTax</h2>
+ <form id="feedbackForm">
+  <label for="feedbackBody">Nội dung phản hồi (tối đa 1.000 từ)</label>
+  <textarea id="feedbackBody" rows="7" maxlength="7000" required
+   placeholder="Mô tả tính năng cần hỗ trợ, lỗi xảy ra và các bước thực hiện…"></textarea>
+  <label for="feedbackImages">Ảnh đính kèm (tối đa 5 ảnh, mỗi ảnh không quá 2 MB)</label>
+  <input id="feedbackImages" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+  <small id="feedbackWordCount">0 / 1000 từ · 0 / 5 ảnh</small>
+  <p id="feedbackStatus" class="notice" role="status"></p>
+  <div class="actions">
+   <button id="feedbackSubmit" type="submit">Gửi phản hồi</button>
+   <button id="feedbackClose" type="button" class="secondary">Đóng</button>
+   <a href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer"
+    class="extension-download-link">Liên hệ Zalo 0868838242</a>
+  </div>
+ </form>
+</dialog>
+<dialog id="giftWebDialog" class="payment-success-modal" aria-labelledby="giftWebTitle">
+ <h2 id="giftWebTitle">🎁 Kích hoạt mã quà tặng</h2>
+ <p class="muted">Mã quà tặng chỉ sử dụng một lần.</p>
+ <label for="unlockCode">Mã quà tặng</label><input id="unlockCode" autocomplete="off" placeholder="UNLOCK-...">
+ <div class="actions"><button id="redeemBtn" type="button">Kích hoạt</button><button id="closeGiftWebBtn" type="button" class="secondary">Đóng</button></div>
+</dialog>
+<dialog id="paymentSuccessDialog" class="payment-success-modal" aria-labelledby="paymentSuccessTitle">
+ <div class="payment-success-head"><span aria-hidden="true">✓</span><h2 id="paymentSuccessTitle">Thanh toán thành công!</h2></div>
+ <p id="paymentSuccessInfo"></p>
+ <p id="paymentSuccessBalance" class="notice"></p>
+ <div class="actions"><button id="closePaymentSuccessBtn" type="button">Đã hiểu</button></div>
+</dialog>
+<section id="passwordRecovery" class="panel" hidden><h2>Đặt mật khẩu mới</h2><p class="muted">Nếu bạn vừa mở liên kết khôi phục, đăng nhập bằng liên kết và đổi mật khẩu ở phía trên.</p></section>
+<footer>Dữ liệu quyền sử dụng lấy từ Supabase; hóa đơn tải qua extension vẫn lưu trên thiết bị. <a id="adminFooterLink" href="/admin" hidden>Trang quản trị</a></footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./mst-sync.js?v=118"></script>
+<script src="./profile-credential.js?v=118"></script>
+<script src="./customer.js?v=128active1"></script>
+<script src="./account-settings-v120.js?v=126email1"></script>
+<script src="./combo-portal-v118.js?v=1118combo3"></script>
+<script src="./team-v118.js?v=125mode1"></script>
+<script src="./extension-link-v118.js?v=1119header1"></script>
+<script src="./customer-feedback.js?v=116"></script>
+<script src="./password-toggle.js?v=116"></script>
+<script src="./site-footer.js?v=121routes"></script>
+<script src="./user/route-panels.js?v=121routes"></script>
+</body>
+</html>

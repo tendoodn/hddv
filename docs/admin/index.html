@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="vi"><head><base href="/"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
+<title>AutoTax V1.1.20 — Quản trị</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#172033;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1150px;margin:auto;padding:28px 16px}header,.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-weight:850;font-size:20px}.brand span{color:#2563eb}.panel,.card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:18px;margin:14px 0;box-shadow:0 6px 22px #1e293b08}h1{font-size:26px}button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;background:#2563eb;color:white;cursor:pointer}button.secondary{background:#eaf0f9;color:#172033}button.danger{background:#dc2626}button:disabled{opacity:.5}input,select{padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;min-width:230px}.muted,small{color:#64748b}.hidden{display:none!important}.notice{padding:12px;border-radius:9px;background:#eff6ff;color:#1e40af;white-space:pre-wrap;margin-top:12px}.error{background:#fef2f2;color:#991b1b}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab.active{background:#172033;color:#fff}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:left;padding:11px;border-bottom:1px solid #e2e8f0;font-size:13px;vertical-align:top}th{background:#f8fafc}.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#dcfce7;color:#166534;font-size:12px}.pill.off{background:#fee2e2;color:#991b1b}.actions{display:flex;gap:7px;flex-wrap:wrap}.sub{font-size:12px;color:#64748b;margin-top:5px}.history-modal{width:min(1280px,98vw);max-width:98vw;max-height:88vh;overflow:auto;border:1px solid #cbd5e1;border-radius:16px;padding:22px;background:#fff;color:#172033;box-shadow:0 18px 65px #0f172a33}.history-modal::backdrop{background:#0f172a99}.history-modal .tablewrap table{min-width:1330px}
+.history-modal code{font-size:11px;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+.history-modal .action-compact{display:flex;flex-direction:column;gap:5px}
+.history-modal .action-compact button{padding:6px 8px;font-size:12px}
+.adjust-modal{width:min(480px,94vw);max-width:94vw;padding:24px;border:1px solid #e2e8f0;border-radius:15px;color:#172033;background:#fff}
+.adjust-modal::backdrop{background:#0f172a99}
+.adjust-modal textarea{width:100%;min-width:0;min-height:90px;resize:vertical;border:1px solid #cbd5e1;border-radius:9px;padding:10px;font:inherit}
+.history-modal h2{margin:0 0 8px}.history-modal .tablewrap{margin:12px 0}.history-modal .history-pages{padding-top:6px}.history-modal select{min-width:180px}@media(max-width:650px){.history-modal{padding:12px}.history-modal .row{gap:8px}}
+
+/* Unified Tendoo red theme for admin, account portal and Chrome addon. */
+:root{--tendoo:#e60012;--tendoo-dark:#b80010;--tendoo-line:#fecdd3;--tendoo-soft:#fff1f2;color:#291b1f;background:#fff8f8;font-family:Roboto,Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:#fff8f8;color:#291b1f}
+header{position:sticky;top:0;z-index:6;background:#fff;border:1px solid var(--tendoo-line);border-radius:12px;padding:11px 15px;box-shadow:0 2px 12px #ae000f0d}
+.brand span{color:var(--tendoo)}
+.panel,.card{border-color:#f1c7cc;box-shadow:0 3px 15px #8000120b}
+button{background:var(--tendoo);font:inherit;font-weight:700}
+button.secondary{background:var(--tendoo-soft);color:#991b1b;border:1px solid var(--tendoo-line)}
+button.danger{background:#dc2626}
+button.tab.active{background:var(--tendoo-dark)}
+.notice{background:var(--tendoo-soft);color:#9f1239}
+.notice.error{background:#fef2f2;color:#991b1b}
+a{color:var(--tendoo-dark)}
+input:focus,select:focus,textarea:focus{outline:2px solid #e6001240;border-color:var(--tendoo)}
+.new-package-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin-top:12px}
+.new-package-form label{font-size:12px;color:#591d27;font-weight:750;display:flex;flex-direction:column;gap:5px}
+.new-package-form input,.new-package-form select{width:100%;min-width:0;max-width:100%}
+.new-package-form input:invalid{box-shadow:none}
+.new-package-form .package-form-footer{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.new-package-form button{white-space:nowrap}
+#createPackageMessage{margin:11px 0 3px}
+.admin-filter-row{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:9px 0 12px}
+.admin-filter-row>input{flex:1;min-width:180px}
+.admin-filter-row select{min-width:165px;max-width:100%}
+.admin-filter-row label{font-size:12px;display:flex;flex-direction:column;gap:5px}
+.admin-filter-row .muted{margin-left:auto;font-size:12px}
+@media(max-width:520px){.wrap{padding:14px 10px}input,select{min-width:0}}.admin-feedback-item{margin:13px 0;padding:15px;border:1px solid var(--tendoo-line);border-radius:12px;background:#fff}
+.admin-feedback-item p{overflow-wrap:anywhere}
+.admin-feedback-item textarea{font:inherit}
+.admin-feedback-images img{cursor:zoom-in}
+
+/* v120: all Admin navigation actions use the existing rounded button system. */
+header .admin-nav-pill{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 12px;border:1px solid #d7dce7;border-radius:9px;background:#fff;color:#1e293b;font-size:13px;text-decoration:none;font-weight:700}
+header .admin-nav-pill:hover{background:#f1f5f9}
+#reload[hidden],#newInvoiceQtyWrap[hidden],#newInvoiceValidityWrap[hidden]{display:none!important}
+
+/* Compact admin desktop and mobile controls */
+.wrap{padding:13px 10px}.panel,.card{padding:11px;margin:9px 0;border-radius:10px}
+button{padding:6px 9px;font-size:12px;line-height:1.25;border-radius:7px;min-height:29px}
+input,select{padding:7px 8px;font-size:12px;min-width:130px;border-radius:7px}
+th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:7px 0}
+.actions{gap:4px;flex-wrap:wrap}.admin-filter-row{gap:6px;margin:6px 0 8px}
+.admin-pagination{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:9px;font-size:12px}
+.admin-pagination button{min-width:36px}
+.admin-filter-row>input{min-width:140px}
+@media(max-width:620px){.wrap{padding:9px 6px}.panel{padding:8px}.tablewrap{overflow:auto}button{font-size:11px;padding:6px 7px}}
+
+/* Compact Admin accordions: six data-management panels start CLOSED. */
+.admin-fold{width:100%;margin:0}
+.admin-fold>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;min-height:39px;font-weight:800;font-size:16px;padding:2px 4px}
+.admin-fold>summary::-webkit-details-marker{display:none}
+.admin-fold>summary:after{content:"▸";font-size:20px;color:#b80010;flex:0 0 auto}
+.admin-fold[open]>summary:after{content:"▾"}
+.admin-fold>summary:focus-visible{outline:2px solid #e60012;outline-offset:3px;border-radius:6px}
+.admin-fold-content{border-top:1px solid #f1c7cc;margin-top:7px;padding-top:8px}
+#app>.panel:has(>.admin-fold){padding:8px 12px}
+#app>.panel:has(>.admin-fold:not([open])){box-shadow:0 1px 6px #80001209}
+@media(max-width:600px){.admin-fold>summary{font-size:14px;min-height:36px}}
+
+/* V1.1.20: editable mode, native modal above folded admin panels */
+.mode-change-trigger{border:0;background:transparent;color:#1d4ed8;font-size:12px;font-weight:750;padding:2px 4px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.mode-change-trigger:hover,.mode-change-trigger:focus-visible{background:#eff6ff;color:#1e40af}
+#adminUsageModeDialog{width:min(430px,calc(100vw - 24px));max-width:96vw;border:1px solid #cbd5e1;border-radius:15px;background:#fff;color:#172033;padding:20px;box-shadow:0 24px 60px #0f172a44}
+#adminUsageModeDialog::backdrop{background:#0f172a99}
+#adminUsageModeDialog h2{margin:0 0 12px;font-size:20px}
+#adminUsageModeDialog label{display:block;font-weight:700;margin:12px 0}
+#adminUsageModeDialog select{display:block;width:100%;min-width:0;margin-top:8px}
+#adminUsageModeDialog .actions{margin-top:16px;justify-content:flex-end}
+#adminUsageModeDialog [hidden]{display:none!important}
+
+/* V1.1.20 admin table layout: two resets, three actions, then mode editor. */
+#customerPanel #users>tr>td:last-child{min-width:174px;width:185px}
+#customerPanel .customer-action-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;align-items:stretch;width:100%;max-width:190px}
+.customer-action-grid>button{min-width:0!important;max-width:100%;padding:5px 3px;font-size:11px;white-space:nowrap}
+.customer-action-grid>button:nth-child(-n+2){grid-column:span 3}
+.customer-action-grid>button:nth-child(n+3):nth-child(-n+5){grid-column:span 2}
+.customer-action-grid>.mode-change-trigger{grid-column:1/-1;white-space:normal;text-align:center;border:1px solid #b8cce8;border-radius:6px;background:#f1f7ff}
+#adminMstTable{table-layout:fixed;width:100%;min-width:690px}
+#adminMstTable th:nth-child(1){width:23%}
+#adminMstTable th:nth-child(2){width:16%}
+#adminMstTable th:nth-child(3){width:22%}
+#adminMstTable th:nth-child(4){width:14%}
+#adminMstTable th:nth-child(5){width:13%}
+#adminMstTable th:nth-child(6){width:12%}
+#adminMstTable td{word-break:break-word;vertical-align:middle}
+#adminMstTable td:last-child{padding:4px 3px}
+.admin-mst-row-actions{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:3px;flex-wrap:nowrap;white-space:nowrap}
+.admin-mst-row-actions>button{padding:4px 5px!important;min-height:26px!important;font-size:10px!important;min-width:0!important;flex:0 0 auto}
+</style></head><body><main class="wrap">
+<header><div class="brand">AUTOTAX <span>V1.1.20 · ADMIN</span></div><div class="actions"><a href="/user" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
+<section id="auth" class="panel"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
+<section id="app" class="hidden">
+<div class="panel" id="customerPanel"><div class="row"><h2>Quản lý khách hàng</h2><button id="reload" hidden aria-hidden="true">Làm mới</button></div><div class="row admin-filter-row">
+<input id="search" placeholder="Tìm theo email..." type="search" aria-label="Tìm email khách hàng">
+<input id="customerMstSearch" placeholder="Tìm MST khách hàng..." type="search" aria-label="Tìm MST khách hàng" inputmode="numeric">
+<select id="customerPackageFilter" aria-label="Lọc quyền gói khách hàng">
+<option value="all">Mọi trạng thái gói</option><option value="invoice">Còn lượt hóa đơn</option>
+<option value="mst">Còn quyền MST</option><option value="trial">Đang dùng thử</option>
+<option value="expired">Không còn quyền hoạt động</option></select><div id="count" class="muted"></div></div><div id="msg" class="notice hidden"></div><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Gói hóa đơn</th><th>Gói MST</th><th>Dùng thử / liên kết</th><th>Thao tác</th></tr></thead><tbody id="users"></tbody></table></div><nav class="admin-pagination" aria-label="Phân trang tài khoản"><button id="customerPrev" class="secondary" type="button">‹</button><span id="customerPageInfo">Trang 1/1</span><button id="customerNext" class="secondary" type="button">›</button></nav></div>
+<div class="panel"><div class="row"><h2>Quản lý MST liên kết</h2><button id="reloadMst" class="secondary">Làm mới</button></div><div class="row admin-filter-row"><input id="mstAssignmentSearch" type="search" placeholder="Tìm MST, tên hồ sơ hoặc email..." aria-label="Tìm MST liên kết"><span id="mstAssignmentCount" class="muted"></span></div><div class="tablewrap"><table id="adminMstTable"><thead><tr><th>Email</th><th>MST</th><th>Tên hồ sơ</th><th>Quyền gói MST</th><th>Ngày liên kết</th><th>Thao tác</th></tr></thead><tbody id="mstAssignments"></tbody></table></div><nav class="admin-pagination" aria-label="Phân trang MST"><button id="mstAssignmentPrev" class="secondary" type="button">‹</button><span id="mstAssignmentPageInfo">Trang 1/1</span><button id="mstAssignmentNext" class="secondary" type="button">›</button></nav></div><div class="panel" id="packageCatalog"><h2>Giá và cấu hình gói AutoTax</h2>
+<div class="row admin-filter-row"><label for="packageStatusFilter">Lọc trạng thái gói <select id="packageStatusFilter"><option value="all">Tất cả trạng thái</option><option value="active">Đang mở</option><option value="inactive">Tạm dừng</option><option value="invoice">Gói số tờ</option><option value="mst">Gói MST</option><option value="combo">Combo MST + số tờ</option><option value="storage">Gói lưu trữ data</option></select></label><button id="clearAdminFilters" type="button" class="secondary">Xóa bộ lọc</button></div>
+<h3 id="defaultPackageTitle">Gói mặc định</h3>
+<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói (ngày)</th><th>Tờ combo / hạn tờ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packagePrices"></tbody></table></div>
+<h3 id="customPackageTitle">Gói tự tạo</h3>
+<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Số lượng</th><th>Giá VND</th><th>Hạn gói (ngày)</th><th>Tờ combo / hạn tờ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="packageCustomPrices"></tbody></table></div><nav class="admin-pagination" aria-label="Phân trang gói"><button id="packagePrev" class="secondary" type="button">‹</button><span id="packagePageInfo">Trang 1/1</span><button id="packageNext" class="secondary" type="button">›</button></nav>
+<p class="sub">Admin được tùy chỉnh hạn từng gói MST, số tờ và Combo; thay đổi mới không hồi tố đơn đã mua.</p><h3>Thêm gói mới</h3>
+<p class="sub">Mã gói gồm 2–24 ký tự A–Z, 0–9 hoặc dấu gạch dưới (_). Ví dụ <b>T300</b>, <b>MST_100</b>. Khoảng trắng và dấu gạch nối được tự đổi thành dấu _.</p>
+<form id="createPackageForm" class="new-package-form" autocomplete="off">
+  <label>Mã gói *<input id="newCode" type="text" maxlength="64" placeholder="Ví dụ T300" required autocapitalize="characters" spellcheck="false"></label>
+  <label>Loại gói *<select id="newFamily"><option value="invoice">Số tờ hóa đơn</option><option value="mst">MST</option><option value="combo">Combo MST + số tờ</option></select></label>
+  <label>Tên gói *<input id="newName" type="text" maxlength="120" placeholder="Ví dụ 300 tờ hóa đơn" required></label>
+  <label>Số lượng *<input id="newQty" type="number" min="1" step="1" placeholder="Ví dụ 300" required></label>
+  <label>Giá VND *<input id="newPrice" type="number" min="0" step="1" placeholder="Ví dụ 200000" required></label>
+  <label>Mô tả (không bắt buộc)<input id="newDesc" maxlength="400" placeholder="Quyền lợi của gói"></label>
+  <label id="newValidityWrap">Thời hạn gói (ngày; số tờ để trống = không giới hạn)<input id="newValidity" type="number" min="1" max="3650" step="1" placeholder="Ví dụ 365"></label>
+  <label id="newInvoiceQtyWrap" hidden>Số tờ hóa đơn trong Combo *<input id="newInvoiceQty" type="number" min="1" max="10000000" step="1" placeholder="Ví dụ 500"></label>
+  <label id="newInvoiceValidityWrap" hidden>Hạn số tờ trong Combo (ngày; trống = hạn MST)<input id="newInvoiceValidity" type="number" min="1" max="3650" step="1" placeholder="Ví dụ 180"></label>
+  <div class="package-form-footer"><span class="sub">Thời hạn linh hoạt; Combo có hạn MST và hạn số tờ độc lập.</span><button id="createPackage" type="submit">Thêm gói</button></div>
+</form>
+<div id="createPackageMessage" class="notice hidden" role="status" aria-live="polite"></div></div>
+<section id="adminDiscountCodes" class="panel">
+ <h2>Mã giảm giá thanh toán QR</h2>
+ <p class="sub">Mã giảm giá áp dụng khi khách thanh toán gói mới. Số tiền được Supabase tính lại trước khi tạo QR; giảm theo số tiền hoặc %. Mã không giảm xuống dưới 1.000đ.</p>
+ <form id="couponCreateForm" class="new-package-form" autocomplete="off">
+  <label>Mã giảm giá *<input id="couponCode" type="text" maxlength="32" required placeholder="Ví dụ AUTOTAX20" autocapitalize="characters"></label>
+  <label>Hình thức giảm *<select id="couponType"><option value="fixed">Giảm số tiền (VND)</option><option value="percent">Giảm theo %</option></select></label>
+  <label>Giá trị giảm *<input id="couponValue" type="number" min="1" step="1" required placeholder="Ví dụ 20000 hoặc 20"></label>
+  <label>Giới hạn lượt dùng (để trống = không hạn)<input id="couponLimit" type="number" min="1" step="1" placeholder="Ví dụ 100"></label>
+  <label>Hết hạn (để trống = không hạn)<input id="couponExpiry" type="datetime-local"></label>
+  <div class="package-form-footer"><span class="sub">Chỉ Admin có quyền tạo/tạm dừng mã. Giá trị giảm được chốt cùng đơn hàng.</span><button id="couponCreate" type="submit">Tạo mã giảm giá</button></div>
+ </form>
+ <div id="couponMessage" class="notice hidden" role="status" aria-live="polite"></div>
+ <div class="actions"><button id="couponReload" class="secondary" type="button">Làm mới danh sách mã</button></div>
+ <div class="tablewrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Giá trị giảm</th><th>Sử dụng / Giới hạn</th><th>Hết hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="couponRows"><tr><td colspan="7">Đang tải mã…</td></tr></tbody></table></div>
+</section>
+<section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong các gói sản phẩm đang mở để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label>Khách hàng <select id="grantCustomer" aria-label="Khách hàng cần cấp gói"><option value="">Chọn khách hàng</option></select></label><label>Gói cần cấp <select id="grantPackage" aria-label="Gói cần cấp"><option value="">Chọn gói</option></select></label><button id="grantNow" type="button">Cấp gói cho khách hàng</button></div><div id="grantMessage" class="notice hidden" role="status"></div></section>
+<section class="panel" id="packageHistorySection"><div class="row"><div><h2>Lịch sử mua và cấp gói</h2><p class="sub">Mua gói và cấp gói bởi quản trị · mỗi trang tối đa 10 giao dịch.</p></div><button id="togglePackageHistory" class="secondary" type="button">Xem lịch sử gói</button></div></section>
+<dialog id="packageHistoryDialog" class="history-modal" aria-labelledby="packageHistoryTitle">
+ <div class="row"><div><h2 id="packageHistoryTitle">Lịch sử mua và cấp gói</h2><p id="packageHistoryCount" class="muted"></p></div><button id="closePackageHistory" type="button" class="secondary" aria-label="Đóng lịch sử gói">Đóng ✕</button></div>
+ <div class="row"><label>Loại giao dịch <select id="packageHistoryFilter"><option value="all">Tất cả giao dịch</option><option value="purchase">Khách mua gói</option><option value="admin_grant">Admin cấp gói</option></select></label><button id="refreshPackageHistory" type="button" class="secondary">Làm mới</button></div>
+ <form id="packageOrderSearchForm" class="row" role="search">
+ <label for="packageOrderSearch">Tìm mã đơn hoặc mã giao dịch
+ <input id="packageOrderSearch" type="search" placeholder="UUID đơn hàng / ADDON... / mã SePay" maxlength="128" autocomplete="off"></label>
+ <div class="actions"><button id="packageOrderSearchBtn" type="submit">Tìm kiếm</button><button id="packageOrderClearBtn" type="button" class="secondary">Xóa lọc</button></div>
+ </form>
+ <div id="packageHistoryMessage" class="notice hidden" role="status"></div>
+ <div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Khách hàng</th><th>Loại giao dịch</th><th>Gói</th><th>Số lượng</th><th>Trạng thái</th><th>Hết hạn</th><th>Số tiền</th><th>Mã đơn</th><th>Mã giao dịch</th><th>Thao tác</th></tr></thead><tbody id="packageHistoryRows"></tbody></table></div>
+ <div class="row history-pages"><span id="packageHistoryPageInfo" class="muted">Trang 1/1</span><div class="actions"><button id="historyPrev" type="button" class="secondary">Trang trước</button><button id="historyNext" type="button" class="secondary">Trang sau</button></div></div>
+</dialog>
+<dialog id="packageAdjustmentDialog" class="adjust-modal" aria-labelledby="packageAdjustmentTitle">
+ <h2 id="packageAdjustmentTitle">Điều chỉnh gói</h2>
+ <p id="packageAdjustmentDescription" class="muted"></p>
+ <label for="packageAdjustmentReason">Lý do điều chỉnh (bắt buộc)</label>
+ <textarea id="packageAdjustmentReason" maxlength="500" minlength="6" placeholder="Ví dụ: Đã hoàn tiền, lỗi thanh toán hoặc cần cấp lại quyền..."></textarea>
+ <p id="packageAdjustmentMessage" class="notice hidden" role="alert"></p>
+ <div class="actions"><button id="packageAdjustmentConfirm" type="button">Xác nhận</button><button id="packageAdjustmentCancel" type="button" class="secondary">Hủy</button></div>
+</dialog>
+<dialog id="adminUsageModeDialog" aria-labelledby="adminUsageModeTitle">
+<h2 id="adminUsageModeTitle">Thay đổi chế độ sử dụng</h2>
+<p class="muted">Nếu chỉ còn một loại gói có hạn mức, ứng dụng tự chuyển sang loại gói còn dùng được.</p>
+<label for="adminUsageModeSelect">Chế độ sử dụng<select id="adminUsageModeSelect"><option value="mst">MST</option><option value="invoice">Số tờ</option></select></label>
+<p id="adminUsageModeMessage" class="notice error" role="alert" hidden></p>
+<div class="actions"><button id="adminUsageModeSave" type="button">Lưu</button><button id="adminUsageModeClose" class="secondary" type="button">Đóng</button></div>
+</dialog><div class="panel"><h2>Tạo mã unlock theo gói</h2><p class="sub">Mỗi mã chỉ mở khóa đúng một gói đã chọn, sử dụng một lần cho một tài khoản. Số lượng và thời hạn MST được chốt tại lúc tạo mã.</p><div class="actions"><label>Chọn gói <select id="unlockPackage"></select></label><label>Hạn sử dụng mã <input id="unlockExpiry" type="datetime-local"></label><button id="createUnlock">Tạo mã unlock</button></div><div id="unlockCreated" class="notice hidden"></div><h3>Danh sách mã unlock</h3><div class="tablewrap"><table><thead><tr><th>Mã unlock</th><th>Gói được mở</th><th>Hạn mã</th><th>Trạng thái</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead><tbody id="unlocks"></tbody></table></div></div><section id="siteLinkAdmin" class="panel">
+ <div class="row"><h2>Quản lý liên kết chân trang</h2><button id="reloadSiteLinks" type="button" class="secondary">Làm mới liên kết</button></div>
+ <p class="sub">Quản lý nội dung hiển thị và đường link của các nút ở chân trang AutoTax (Web, Admin, Add-on và công cụ). Chỉ Admin được thêm, sửa hoặc xóa; khách truy cập chỉ đọc các liên kết đã bật.</p>
+ <form id="siteLinkAdd" class="actions">
+  <label>Nội dung hiển thị <input id="siteLinkText" type="text" required maxlength="100" placeholder="Ví dụ Motel Nam Mỹ"></label>
+  <label>Đường link <input id="siteLinkUrl" type="text" required maxlength="600" placeholder="https://nammy.tendoo.net/vi/home"></label>
+  <button id="siteLinkAddBtn" type="submit">Thêm liên kết</button>
+ </form>
+ <p class="muted" id="siteLinksCount"></p>
+ <div class="tablewrap"><table><thead><tr><th>Nội dung hiển thị</th><th>Đường link</th><th>Thứ tự</th><th>Hiển thị</th><th>Thao tác</th></tr></thead><tbody id="siteLinksBody"></tbody></table></div>
+ <p id="siteLinksMessage" class="notice" role="status"></p>
+</section><div class="tabs">
+ <button class="tab active" data-tab="customers">Khách hàng</button>
+ <button class="tab secondary" data-tab="logs">Nhật ký quản trị</button>
+ <button class="tab secondary" data-tab="feedback">Quản lý phản ánh</button>
+</div>
+<section id="feedbackPanel" class="panel hidden">
+ <div class="row"><h2>Phản ánh khách hàng</h2>
+  <button id="reloadAdminFeedback" type="button" class="secondary">Làm mới phản ánh</button></div>
+ <p class="sub">Có thể xem tối đa 5 ảnh phản ánh, trả lời khách hàng hoặc xóa phản ánh. Tin trả lời tự xóa sau 7 ngày.</p>
+ <div id="feedbackAdminMessage" class="notice" role="status"></div>
+ <p id="adminFeedbackCount" class="muted"></p>
+ <div id="adminFeedbackList"></div>
+</section>
+<div id="logsPanel" class="panel hidden"><h2>Nhật ký thao tác</h2><div class="tablewrap"><table><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Khách hàng</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody id="logs"></tbody></table></div></div>
+</section></main>
+<script>
+/* Wrap existing controls in native <details> without replacing form/input nodes. */
+(()=>{
+ const sections=[
+  'Quản lý khách hàng','Quản lý MST liên kết',
+  'Giá và cấu hình gói AutoTax','Mã giảm giá thanh toán QR',
+  'Tạo mã unlock theo gói','Quản lý liên kết chân trang'
+ ];
+ for(const name of sections){
+  const panel=Array.from(document.querySelectorAll('#app > .panel')).find(parent=>{
+   const title=parent.querySelector(':scope > h2, :scope > .row > h2');
+   return title?.textContent.trim()===name;
+  });
+  if(!panel){console.warn('Không tìm thấy bảng Admin:',name);continue}
+  const title=panel.querySelector(':scope > h2, :scope > .row > h2');
+  const accordion=document.createElement('details'),summary=document.createElement('summary');
+  const content=document.createElement('div');
+  accordion.className='admin-fold';accordion.open=false;
+  summary.textContent=name;summary.setAttribute('aria-label','Mở hoặc thu gọn '+name);
+  content.className='admin-fold-content';
+  title.remove();
+  while(panel.firstChild)content.append(panel.firstChild);
+  accordion.append(summary,content);panel.append(accordion);
+ }
+ document.querySelectorAll('a[href$="admin-combo.html"]').forEach(link=>link.remove());
+ const discountLink=document.querySelector('header a[href="#adminDiscountCodes"]');
+ discountLink?.addEventListener('click',()=>{
+  document.querySelector('#adminDiscountCodes > .admin-fold')?.setAttribute('open','');
+ });
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./admin-mst.js?v=120nov2"></script><script>
+const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
+const $=id=>document.getElementById(id);let allUsers=[],allPackages=[],customerPage=1,packagePage=1;
+function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
+function fmt(v){return v?new Date(v).toLocaleString("vi-VN"):"—"}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function boot(){const {data:{session}}=await client.auth.getSession();$("auth").classList.toggle("hidden",!!session);$("app").classList.add("hidden");if(!session)return;
+const {data:ok,error}=await client.rpc("addon_is_admin");if(error||!ok){await client.auth.signOut();msg("authMsg","Tài khoản này không có quyền quản trị.",true);$("auth").classList.remove("hidden");return}
+$("app").classList.remove("hidden");void window.AdminSiteLinks?.load?.();await loadUsers();if(allUsers.some(u=>u.legacy_pending)){msg('msg','Supabase đang dùng schema cấp phép cũ. Danh sách email bên dưới chỉ để tham khảo; giá gói, lượt hóa đơn và MST V3.2 sẽ khả dụng sau khi chạy SQL nâng cấp.',true);return;}await Promise.all([loadPlans(),loadUnlocks(),loadMstAssignments()]);}
+
+const DEFAULT_CODES=['T100','T200','T500','T1000','T5000','MST1','MST5','MST10','MST20','MST50','DATA365'];
+async function loadPlans(){
+ const [{data,error},{data:comboRows,error:comboError}]=await Promise.all([
+  client.rpc("addon_admin_list_packages"),
+  client.from("autotax_combo_catalog_v118").select("package_code,invoice_quantity,invoice_validity_days")
+ ]);
+ if(error||comboError)return msg("msg","Không tải được danh mục gói: "+(error||comboError).message,true);
+ const combos=new Map((comboRows||[]).map(row=>[row.package_code,row]));
+ allPackages=(Array.isArray(data)?data:[]).map(p=>({...p,combo:combos.get(p.code)||null}));
+ const filter=$("packageStatusFilter").value;
+ const match=p=>filter==="all"||(filter==="active"&&p.active)||(filter==="inactive"&&!p.active)||p.family===filter||(filter==="combo"&&!!p.combo);
+ const defaults=DEFAULT_CODES.map(code=>allPackages.find(p=>p.code===code)).filter(p=>p&&match(p));
+ const custom=allPackages.filter(p=>!DEFAULT_CODES.includes(p.code)&&match(p));
+ const allVisible=[...defaults,...custom],pages=Math.max(1,Math.ceil(allVisible.length/5));
+ packagePage=Math.max(1,Math.min(packagePage,pages));
+ $('packagePageInfo').textContent='Trang '+packagePage+'/'+pages;
+ $('packagePrev').disabled=packagePage<=1;$('packageNext').disabled=packagePage>=pages;
+ const visible=allVisible.slice((packagePage-1)*5,packagePage*5);
+ const defaultVisible=visible.filter(p=>DEFAULT_CODES.includes(p.code));
+ const customVisible=visible.filter(p=>!DEFAULT_CODES.includes(p.code));
+ $('defaultPackageTitle').hidden=!defaultVisible.length;
+ $('customPackageTitle').hidden=!customVisible.length;
+ $('packagePrices').closest('.tablewrap').hidden=!defaultVisible.length;
+ $('packageCustomPrices').closest('.tablewrap').hidden=!customVisible.length;
+ const renderRow=(p,canDelete)=>'<tr><td><b>'+esc(p.code)+'</b></td>'+
+  '<td>'+(p.combo?"Combo MST + số tờ":p.family==="invoice"?"Số tờ":p.family==="storage"?"Lưu trữ data":"MST")+'</td><td>'+Number(p.quantity).toLocaleString('vi-VN')+'</td>'+
+  '<td><input type="number" min="0" value="'+Number(p.price_vnd)+'" data-price="'+esc(p.code)+'" style="width:105px;min-width:0"></td>'+
+  '<td><input type="number" min="1" max="3650" value="'+(p.validity_days??'')+'" data-validity="'+esc(p.code)+'" style="width:85px;min-width:0" placeholder="Không hạn"> ngày</td>'+
+  '<td>'+(p.combo?'<input type="number" min="1" max="10000000" value="'+Number(p.combo.invoice_quantity)+'" data-combo-qty="'+esc(p.code)+'" title="Số tờ combo" style="width:105px;min-width:0"><input type="number" min="1" max="3650" value="'+(p.combo.invoice_validity_days??'')+'" data-combo-days="'+esc(p.code)+'" title="Hạn số tờ combo (trống = theo MST)" placeholder="Hạn theo MST" style="width:110px;min-width:0">':'—')+'</td>'+
+  '<td>'+(p.active?'<span class="pill">Mở</span>':'<span class="pill off">Tạm dừng</span>')+'</td>'+
+  '<td><div class="actions"><button data-save="'+esc(p.code)+'">Lưu</button>'+
+  '<button class="secondary" data-active="'+esc(p.code)+'" data-value="'+(!p.active)+'">'+(p.active?"Tạm dừng":"Mở lại")+'</button>'+
+  (canDelete?'<button class="danger" data-delete-package="'+esc(p.code)+'" title="Xóa/ẩn gói tự tạo, giữ nguyên dữ liệu lịch sử">Xóa</button>':'')+
+  '</div></td></tr>';
+ $("packagePrices").innerHTML=defaultVisible.map(p=>renderRow(p,false)).join("")||
+   '<tr><td colspan="8">Không tải được danh sách gói mặc định.</td></tr>';
+ $("packageCustomPrices").innerHTML=customVisible.map(p=>renderRow(p,true)).join("")||
+   '<tr><td colspan="8">Chưa có gói tự tạo.</td></tr>';
+ $("unlockPackage").innerHTML=allPackages.filter(p=>p.active).map(p=>
+  '<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' ('+p.quantity+')</option>').join('');
+ const grant=$("grantPackage"),selected=grant.value;
+ grant.innerHTML='<option value="">Chọn gói cấp</option>'+allPackages.filter(p=>p.active).map(p=>
+  '<option value="'+esc(p.code)+'">'+esc(p.code)+' · '+esc(p.name)+' · '+
+   (p.family==="storage"?'Lưu trữ · '+(p.validity_days||365)+' ngày':p.combo?p.quantity+' MST + '+p.combo.invoice_quantity+' tờ · '+p.validity_days+' ngày':p.family==="mst"?p.validity_days+" ngày":p.quantity+" lượt")+'</option>').join('');
+ if(allPackages.some(p=>p.code===selected&&p.active))grant.value=selected;
+}
+async function updateCatalogRow(e){
+ const b=e.target.closest("button");if(!b)return;
+ const target=b.closest("tbody");
+ const code=b.dataset.save||b.dataset.active||b.dataset.deletePackage;
+ if(!code)return;
+ b.disabled=true;
+ try{
+  if(b.dataset.deletePackage){
+   if(DEFAULT_CODES.includes(code))throw Error('Không thể xóa gói mặc định.');
+   if(!confirm('Xóa gói tự tạo '+code+'? Nếu gói đã phát sinh giao dịch, chỉ ẩn gói khỏi danh mục và giữ nguyên quyền/lịch sử.'))return;
+   const {data,error}=await client.rpc('addon_admin_delete_custom_package',{p_code:code});
+   if(error)throw error;
+   msg('msg',data?.mode==='archived'?
+     'Đã ẩn gói '+code+'. Quyền đã cấp và lịch sử giao dịch vẫn được giữ.':
+     'Đã xóa gói tự tạo '+code+'.');
+  }else if(b.dataset.save){
+   const el=target.querySelector('[data-price="'+CSS.escape(code)+'"]');
+   const price=Number(el?.value);
+   if(!Number.isSafeInteger(price)||price<0)throw Error('Giá bán phải là số nguyên không âm.');
+   const validity=target.querySelector('[data-validity="'+CSS.escape(code)+'"]');
+   const comboQty=target.querySelector('[data-combo-qty="'+CSS.escape(code)+'"]');
+   const comboDays=target.querySelector('[data-combo-days="'+CSS.escape(code)+'"]');
+   const days=validity&&validity.value.trim()?Number(validity.value):null;
+   const invoiceQty=comboQty?Number(comboQty.value):null;
+   const invoiceDays=comboDays&&comboDays.value.trim()?Number(comboDays.value):null;
+   if(days!==null&&(!Number.isSafeInteger(days)||days<1||days>3650))throw Error('Hạn gói phải từ 1 đến 3.650 ngày.');
+   if(comboQty&&(!Number.isSafeInteger(invoiceQty)||invoiceQty<1||invoiceQty>10000000))throw Error('Số tờ combo không hợp lệ.');
+   if(invoiceDays!==null&&(!Number.isSafeInteger(invoiceDays)||invoiceDays<1||invoiceDays>3650))throw Error('Hạn số tờ combo không hợp lệ.');
+   const {error}=await client.rpc('autotax_admin_update_package_v118',{
+    p_code:code,p_price_vnd:price,p_validity_days:days,
+    p_invoice_quantity:invoiceQty,p_invoice_validity_days:invoiceDays
+   });
+   if(error)throw error;
+   msg('msg','Đã lưu giá và thời hạn gói '+code+' (áp dụng cho giao dịch mới).');
+  }else{
+   const {error}=await client.rpc('addon_admin_set_package_active',{p_code:code,p_active:b.dataset.value==='true'});
+   if(error)throw error;
+   msg('msg','Đã cập nhật trạng thái gói '+code+'.');
+  }
+  await loadPlans();
+ }catch(error){msg('msg','Không thể thay đổi gói '+code+': '+(error.message||error),true)}
+ finally{b.disabled=false}
+}
+$("packagePrices").addEventListener("click",updateCatalogRow);
+$("packageCustomPrices").addEventListener("click",updateCatalogRow);
+// New package creation remains bound below with server-side input validation.
+const normalizePackageCode=value=>String(value||"").trim().normalize("NFD")
+ .replace(/[\u0300-\u036f]/g,"").replace(/[đĐ]/g,"D").toUpperCase()
+ .replace(/[^A-Z0-9_]+/g,"_").replace(/^_+|_+$/g,"");
+const packageNotice=(text,error=false)=>msg("createPackageMessage",text,error);
+$("newCode").addEventListener("blur",()=>{$("newCode").value=normalizePackageCode($("newCode").value)});
+$("createPackageForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ const button=$("createPackage");
+ if(button.disabled)return;
+ const code=normalizePackageCode($("newCode").value),
+   family=$("newFamily").value,name=$("newName").value.trim(),
+   quantity=Number($("newQty").value),price=Number($("newPrice").value),
+   days=$("newValidity").value.trim()?Number($("newValidity").value):null,
+   invoiceQty=family==="combo"?Number($("newInvoiceQty").value):0,
+   invoiceDays=family==="combo"&&$("newInvoiceValidity").value.trim()?Number($("newInvoiceValidity").value):null;
+ $("newCode").value=code;
+ if(!/^[A-Z0-9_]{2,24}$/.test(code))
+   return packageNotice("Mã gói phải dài 2–24 ký tự và chỉ gồm A–Z, 0–9, dấu gạch dưới (_).",true);
+ if(!name)return packageNotice("Vui lòng nhập tên gói.",true);
+ if(!Number.isSafeInteger(quantity)||quantity<1)
+   return packageNotice("Số lượng phải là số nguyên lớn hơn 0.",true);
+ if(!Number.isSafeInteger(price)||price<0)
+   return packageNotice("Giá bán phải là số nguyên không âm.",true);
+ if(family!=="invoice"&&(!Number.isSafeInteger(days)||days<1||days>3650))
+   return packageNotice("Thời hạn phải từ 1 đến 3.650 ngày.",true);
+ if(family==="combo"&&(!Number.isSafeInteger(invoiceQty)||invoiceQty<1||invoiceQty>10000000))
+   return packageNotice("Số tờ combo không hợp lệ.",true);
+ if(invoiceDays!==null&&(!Number.isSafeInteger(invoiceDays)||invoiceDays<1||invoiceDays>3650))
+   return packageNotice("Hạn số tờ combo không hợp lệ.",true);
+ if(allPackages.some(p=>p.code===code))
+   return packageNotice("Mã "+code+" đã tồn tại. Hãy sử dụng một mã gói khác.",true);
+ button.disabled=true;button.textContent="Đang tạo gói…";
+ packageNotice("Đang lưu gói "+code+" lên hệ thống…");
+ try{
+  const {error}=await client.rpc("autotax_admin_create_package_v118",{
+   p_code:code,p_family:family,p_name:name,p_quantity:quantity,
+   p_price_vnd:price,p_description:$("newDesc").value.trim(),p_validity_days:days,
+   p_invoice_quantity:invoiceQty,p_invoice_validity_days:invoiceDays
+  });
+  if(error){
+   const reason=String(error.message||"");
+   const human=error.code==="23505"||/duplicate key|unique constraint/i.test(reason)
+     ?"Mã "+code+" đã tồn tại."
+     :/invalid_package/.test(reason)
+       ?"Dữ liệu gói không hợp lệ. Kiểm tra mã gói, số lượng và giá bán."
+       :/admin_required|permission denied/.test(reason)
+         ?"Phiên quản trị không đủ quyền. Hãy đăng nhập lại bằng tài khoản admin."
+         :reason;
+   return packageNotice("Không tạo được gói: "+human,true);
+  }
+  await loadPlans();
+  if(!allPackages.some(p=>p.code===code))
+   return packageNotice("Máy chủ đã nhận yêu cầu nhưng chưa xác minh được gói trong danh sách. Hãy bấm Làm mới dữ liệu.",true);
+  packageNotice("Đã tạo thành công gói "+code+" ("+name+"). Gói đã xuất hiện trong danh mục.",false);
+  for(const id of ["newCode","newName","newQty","newPrice","newDesc","newInvoiceQty","newInvoiceValidity"])$(id).value="";
+  $("newCode").focus();
+ }catch(err){
+  packageNotice("Không kết nối được để tạo gói: "+(err.message||String(err)),true);
+ }finally{button.disabled=false;button.textContent="Thêm gói";}
+});
+// Sensitive purchase and direct-admin-grant history is fetched only inside a modal.
+// Supabase enforces the page size (10) and admin-only access.
+function updateNewPackageFamily(){
+ const family=$("newFamily").value,isCombo=family==="combo",hasDays=family!=="invoice";
+ $("newValidityWrap").hidden=false;
+ $("newValidity").required=hasDays;
+ if(hasDays&&!$("newValidity").value.trim())$("newValidity").value="365";
+ $("newInvoiceQtyWrap").hidden=!isCombo;
+ $("newInvoiceQty").required=isCombo;
+ $("newInvoiceValidityWrap").hidden=!isCombo;
+}
+$("newFamily").addEventListener("change",updateNewPackageFamily);
+updateNewPackageFamily();
+let packageHistoryPage=1,packageHistoryPages=1,packageHistoryCustomer=null;
+function historyStatus(h){
+ const labels={pending:"Chờ thanh toán",paid:"Đã thanh toán",
+   granted:"Đã cấp",canceled:"Đã hủy",cancelled:"Đã hủy",
+   failed:"Thất bại",refunded:"Đã hoàn tiền",revoked:"Đã thu hồi"};
+ return labels[h.status]||h.status||"—";
+}
+function historyType(h){
+ if(h.event_type==="admin_grant")return "Admin cấp"+(h.admin_email?" · "+h.admin_email:"");
+ return h.legacy?"Mua gói trước V3.2":"Khách mua gói";
+}
+async function loadPackageHistory(page=1){
+ const dialog=$("packageHistoryDialog");if(!dialog.open)return;
+ const prev=$("historyPrev"),next=$("historyNext"),refresh=$("refreshPackageHistory"),searchBtn=$("packageOrderSearchBtn");
+ const requestPage=Math.max(1,Math.trunc(Number(page)||1));
+ prev.disabled=true;next.disabled=true;refresh.disabled=true;searchBtn.disabled=true;
+ $("packageHistoryCount").textContent="Đang tải giao dịch...";
+ $("packageHistoryMessage").classList.add("hidden");
+ $("packageHistoryRows").innerHTML='<tr><td colspan="11">Đang tải...</td></tr>';
+ try{
+  const {data,error}=await client.rpc("addon_admin_search_package_transactions_v32",{
+   p_page:requestPage,p_kind:$("packageHistoryFilter").value,
+   p_user_id:packageHistoryCustomer,
+   p_order_query:$("packageOrderSearch").value.trim()
+  });
+  if(error)throw error;
+  const rows=Array.isArray(data?.items)?data.items:[];
+  if(!rows.length && requestPage>Number(data?.pages||1)){
+   await loadPackageHistory(Number(data?.pages||1));return;
+  }
+  packageHistoryPage=Number(data?.page)||1;
+  packageHistoryPages=Number(data?.pages)||1;
+  $("packageHistoryCount").textContent=Number(data?.total||0).toLocaleString("vi-VN")+" giao dịch · tối đa 10 giao dịch/trang";
+  $("packageHistoryPageInfo").textContent="Trang "+packageHistoryPage+"/"+packageHistoryPages;
+  $("packageHistoryRows").innerHTML=rows.map(h=>{
+   const quantity=h.quantity==null?"—":Number(h.quantity).toLocaleString("vi-VN");
+   const price=h.amount_vnd==null?"—":Number(h.amount_vnd).toLocaleString("vi-VN")+"đ";
+   const orderCode=h.order_id||"—";
+   const transferCode=h.transaction_code||h.payment_reference||"—";
+   const extra=h.bank_event_code&&h.payment_reference&&h.bank_event_code!==h.payment_reference
+    ?'<div class="sub">Nội dung CK: '+esc(h.payment_reference)+'</div>':'';
+   const canRevoke=!h.legacy&&!!h.lot_id&&!h.revoked;
+   const canRestore=!h.legacy&&!!h.lot_id&&!!h.revoked;
+   const canCompensate=!h.legacy&&h.event_type==="purchase"&&!h.lot_id&&
+    ["failed","refunded","cancelled"].includes(h.status);
+   let controls="—";
+   if(canRevoke)controls='<button class="danger" data-adjust="revoke" data-lot="'+esc(h.lot_id)+'" data-code="'+esc(h.package_code)+'">Thu hồi gói</button>';
+   if(canRestore)controls='<button data-adjust="restore" data-lot="'+esc(h.lot_id)+'" data-code="'+esc(h.package_code)+'">Khôi phục gói</button>';
+   if(canCompensate)controls='<button data-adjust="compensate" data-order="'+esc(h.order_id)+'" data-code="'+esc(h.package_code)+'">Cấp bù gói</button>';
+   if(h.can_hide){
+    const deleteButton='<button type="button" class="secondary" data-adjust="hide" data-event-id="'+
+      esc(h.event_id)+'" data-event-type="'+esc(h.event_type)+
+      '" data-legacy="'+String(!!h.legacy)+'" data-code="'+esc(h.package_code||"—")+'">Xóa lịch sử</button>';
+    controls=(controls==="—"?"":controls)+deleteButton;
+   }
+   return '<tr><td>'+fmt(h.occurred_at)+'</td><td>'+esc(h.customer_email||"—")+'</td><td>'+esc(historyType(h))+'</td><td><b>'+esc(h.package_code||"—")+'</b></td><td>'+esc(quantity)+'</td><td>'+esc(historyStatus(h))+'</td><td>'+fmt(h.expires_at)+'</td><td>'+esc(price)+'</td><td><code>'+esc(orderCode)+'</code></td><td><code>'+esc(transferCode)+'</code>'+extra+'</td><td><div class="action-compact">'+controls+'</div></td></tr>';
+  }).join("")||'<tr><td colspan="11">Không có giao dịch nào.</td></tr>';
+  prev.disabled=packageHistoryPage<=1;
+  next.disabled=packageHistoryPage>=packageHistoryPages;
+ }catch(error){
+  $("packageHistoryCount").textContent="Không tải được lịch sử giao dịch";
+  $("packageHistoryRows").innerHTML="";
+  $("packageHistoryPageInfo").textContent="—";
+  msg("packageHistoryMessage","Lỗi tải lịch sử: "+(error.message||error),true);
+ }finally{refresh.disabled=false;searchBtn.disabled=false}
+}
+function openPackageHistory(userId=null){
+ packageHistoryCustomer=userId;
+ packageHistoryPage=1;packageHistoryPages=1;
+ $("packageHistoryFilter").value="all";
+ $("packageOrderSearch").value="";
+ const customer=allUsers.find(u=>u.user_id===userId);
+ $("packageHistoryTitle").textContent=customer?
+  "Lịch sử gói · "+(customer.email||customer.user_id):
+  "Lịch sử mua và cấp gói";
+ const modal=$("packageHistoryDialog");
+ if(!modal.open)modal.showModal();
+ void loadPackageHistory(1);
+}
+$("togglePackageHistory").onclick=()=>openPackageHistory();
+$("closePackageHistory").onclick=()=>$("packageHistoryDialog").close();
+$("refreshPackageHistory").onclick=()=>loadPackageHistory(packageHistoryPage);
+$("packageHistoryFilter").onchange=()=>loadPackageHistory(1);
+$("packageOrderSearchForm").onsubmit=event=>{event.preventDefault();void loadPackageHistory(1)};
+$("packageOrderClearBtn").onclick=()=>{$("packageOrderSearch").value="";void loadPackageHistory(1)};
+$("historyPrev").onclick=()=>{if(packageHistoryPage>1)void loadPackageHistory(packageHistoryPage-1)};
+$("historyNext").onclick=()=>{if(packageHistoryPage<packageHistoryPages)void loadPackageHistory(packageHistoryPage+1)};
+
+let pendingPackageAdjustment=null;
+$("packageHistoryRows").addEventListener("click",event=>{
+ const button=event.target.closest("button[data-adjust]");
+ if(!button)return;
+ const action=button.dataset.adjust,code=button.dataset.code||"";
+ if(!["revoke","restore","compensate","hide"].includes(action))return;
+ pendingPackageAdjustment={action,lotId:button.dataset.lot||null,
+  orderId:button.dataset.order||null,code,
+  eventId:button.dataset.eventId||null,
+  eventType:button.dataset.eventType||null,
+  legacy:button.dataset.legacy==="true"};
+ const heading={revoke:"Thu hồi gói "+code,restore:"Khôi phục gói "+code,
+  compensate:"Cấp bù gói "+code,hide:"Xóa lịch sử gói "+code}[action];
+ $("packageAdjustmentTitle").textContent=heading;
+ $("packageAdjustmentDescription").textContent=action==="revoke"?
+  "Thu hồi toàn bộ quyền CHƯA sử dụng của lượt cấp này. Đơn thanh toán và mã giao dịch vẫn lưu để đối soát.":
+  action==="restore"?
+  "Khôi phục đúng số lượt còn lại và hạn sử dụng ban đầu. Không gia hạn thêm và không tạo thanh toán.":
+  action==="compensate"?
+  "Chỉ dùng khi đã xác minh đơn lỗi, đã hủy hoặc đã hoàn tiền cần cấp bù. Tạo gói mới, giữ nguyên trạng thái tài chính của đơn gốc. Mỗi đơn chỉ được cấp bù một lần.":
+  "Chỉ ẩn giao dịch đã hủy hoặc đã thu hồi khỏi lịch sử quản trị. KHÔNG xóa đơn hàng, chứng từ SePay hay nhật ký kiểm toán. Gói đang hoạt động không thể xóa.";
+ $("packageAdjustmentReason").value="";
+ $("packageAdjustmentMessage").classList.add("hidden");
+ $("packageAdjustmentDialog").showModal();
+ $("packageAdjustmentReason").focus();
+});
+$("packageAdjustmentCancel").onclick=()=>$("packageAdjustmentDialog").close();
+$("packageAdjustmentDialog").addEventListener("close",()=>{pendingPackageAdjustment=null});
+$("packageAdjustmentConfirm").onclick=async()=>{
+ const a=pendingPackageAdjustment,reason=$("packageAdjustmentReason").value.trim();
+ if(!a)return;
+ if(reason.length<6){msg("packageAdjustmentMessage","Vui lòng nhập lý do ít nhất 6 ký tự.",true);return}
+ const confirmText=a.action==="revoke"?
+  "Xác nhận THU HỒI gói "+a.code+"? Quyền sử dụng sẽ bị giảm ngay lập tức.":
+  a.action==="restore"?
+  "Xác nhận KHÔI PHỤC gói "+a.code+" theo số dư và hạn gốc?":
+  a.action==="compensate"?
+  "Xác nhận CẤP BÙ gói "+a.code+"? Hãy kiểm tra tình trạng thanh toán thực tế trước khi cấp.":
+  "Xác nhận XÓA gói "+a.code+" KHỎI DANH SÁCH LỊCH SỬ? Dữ liệu tài chính và nhật ký vẫn được lưu.";
+ if(!confirm(confirmText))return;
+ const submit=$("packageAdjustmentConfirm");submit.disabled=true;
+ try{
+  const fn=a.action==="compensate"?"autotax_admin_compensate_failed_order_v118":
+   a.action==="hide"?"addon_admin_hide_package_history_v32":
+   "addon_admin_adjust_package_lot_v32";
+  const args=a.action==="compensate"?
+   {p_order_id:a.orderId,p_reason:reason}:
+   a.action==="hide"?
+   {p_event_type:a.eventType,p_event_id:a.eventId,
+    p_legacy:a.legacy,p_reason:reason}:
+   {p_lot_id:a.lotId,p_action:a.action,p_reason:reason};
+  const {error}=await client.rpc(fn,args);
+  if(error)throw error;
+  $("packageAdjustmentDialog").close();
+  await loadPackageHistory(packageHistoryPage);
+  await loadUsers();
+  msg("packageHistoryMessage","Đã "+({revoke:"thu hồi",restore:"khôi phục",compensate:"cấp bù",hide:"ẩn khỏi lịch sử"}[a.action])+
+    " gói "+a.code+". Đã ghi nhật ký quản trị.");
+ }catch(e){
+  msg("packageAdjustmentMessage","Không thể điều chỉnh gói: "+(e.message||e),true);
+ }finally{submit.disabled=false}
+};
+
+
+$("grantNow").onclick=async()=>{
+ const id=$("grantCustomer").value,code=$("grantPackage").value;
+ const user=allUsers.find(u=>u.user_id===id),pkg=allPackages.find(p=>p.code===code);
+ if(!user||!pkg||!pkg.active)return msg("grantMessage","Hãy chọn một khách hàng và gói đang mở.",true);
+ if(!confirm("Xác nhận cấp "+pkg.name+" ("+pkg.code+") cho "+user.email+"?\n"+
+    (pkg.combo?"Cấp "+pkg.quantity+" MST và "+pkg.combo.invoice_quantity+" tờ. Hạn MST "+pkg.validity_days+" ngày.":pkg.family==="mst"?"Hạn "+pkg.validity_days+" ngày kể từ lúc cấp.":"Số lượt sẽ cộng vào tài khoản.")+
+    "\nThao tác này được lưu nhật ký quản trị."))return;
+ const btn=$("grantNow");btn.disabled=true;
+ try{
+  const {data,error}=await client.rpc("addon_admin_grant_package_v32",{p_user_id:id,p_package_code:code});
+  if(error)throw error;
+  msg("grantMessage","Đã cấp thành công "+pkg.name+" cho "+user.email+
+    (data?.expires_at?" · Hết hạn: "+fmt(data.expires_at):" · Lượt được cộng dồn."));
+  await loadUsers();
+  if($("packageHistoryDialog").open)await loadPackageHistory(packageHistoryPage);
+ }catch(e){msg("grantMessage","Không cấp được gói: "+(e.message||e),true)}
+ finally{btn.disabled=false}
+};
+async function loadUnlocks(){const {data,error}=await client.rpc("addon_admin_list_package_unlocks");if(error)return msg("msg","Không tải được mã unlock: "+error.message,true);$("unlocks").innerHTML=(data||[]).map(u=>'<tr><td><b>'+esc(u.code)+'</b></td><td>'+esc(u.package_code)+' · '+u.quantity+(u.validity_days?' · '+u.validity_days+' ngày':'')+'</td><td>'+fmt(u.expires_at)+'</td><td>'+(u.redeemed_at?'<span class="pill off">Đã sử dụng</span>':u.active?'<span class="pill">Đang mở</span>':'<span class="pill off">Đã khóa</span>')+(u.redeemed_at?'<div class="sub">'+fmt(u.redeemed_at)+'</div>':'')+'</td><td>'+fmt(u.created_at)+'</td><td>'+(!u.redeemed_at?'<button class="secondary" data-unlock-toggle="'+u.id+'" data-active="'+(!u.active)+'">'+(u.active?'Khóa mã':'Mở lại')+'</button>':'—')+'</td></tr>').join("")||'<tr><td colspan="6">Chưa có mã unlock.</td></tr>'}
+$("createUnlock").onclick=async()=>{const code=$("unlockPackage").value;if(!code)return msg("msg","Chọn gói cần mở khóa.",true);const expiry=$("unlockExpiry").value?new Date($("unlockExpiry").value).toISOString():null;const {data,error}=await client.rpc("addon_admin_create_package_unlock",{p_package_code:code,p_expires_at:expiry});if(error)return msg("msg","Không tạo được mã unlock: "+error.message,true);$("unlockCreated").textContent="Mã unlock: "+data.code+" · Gói "+data.package_code+" · "+data.quantity+(data.family==="mst"?" MST":" lượt hóa đơn");$("unlockCreated").classList.remove("hidden");await loadUnlocks()};
+$("unlocks").onclick=async e=>{const b=e.target.closest("button[data-unlock-toggle]");if(!b)return;b.disabled=true;const {error}=await client.rpc("addon_admin_set_package_unlock_active",{p_id:b.dataset.unlockToggle,p_active:b.dataset.active==="true"});b.disabled=false;if(error)msg("msg","Không cập nhật được mã: "+error.message,true);else msg("msg","Đã cập nhật trạng thái mã unlock.");await loadUnlocks()};
+async function loadUsers(){
+ const args={p_search:$("search").value.trim()};
+ let {data,error}=await client.rpc("addon_admin_list_users_v32",args);
+ if(error && (error.code==="PGRST202"||/could not find the function/i.test(error.message||""))){
+  const fallback=await client.rpc("addon_admin_list_users",args);
+  if(!fallback.error){
+   allUsers=(fallback.data||[]).map(u=>({...u,legacy_pending:true}));
+   renderUsers();return;
+  }
+  error=fallback.error;
+ }
+ if(error)return msg("msg","Không tải được danh sách: "+error.message,true);
+ allUsers=data||[];
+ try{
+  const {data:names,error:nameError}=await client.rpc('autotax_admin_user_names_v120');
+  if(!nameError){
+   const byId=new Map((names||[]).map(item=>[item.user_id,item.display_name||'']));
+   allUsers=allUsers.map(item=>({...item,display_name:byId.get(item.user_id)||''}));
+  }
+ }catch(e){console.warn('Chưa tải được tên hồ sơ:',e.message)}
+ renderUsers();
+}
+function renderUsers(){
+ const customer=$("grantCustomer"),prev=customer.value;
+ customer.innerHTML='<option value="">Chọn khách hàng</option>'+allUsers.filter(u=>!u.legacy_pending).map(u=>'<option value="'+esc(u.user_id)+'">'+esc(u.email||u.user_id)+'</option>').join("");
+ if(allUsers.some(u=>u.user_id===prev&&!u.legacy_pending))customer.value=prev;
+ const mstFilter=$("customerMstSearch").value.trim().replace(/[^0-9]/g,"");
+ const filter=$("customerPackageFilter").value;
+ const now=Date.now();
+ const filtered=allUsers.filter(u=>{
+  const msts=(u.mst_assignments||[]).map(a=>String(a.mst||"").replace(/\D/g,""));
+  if(mstFilter&&!msts.some(m=>m.includes(mstFilter)))return false;
+  const trialActive=!!u.trial_expires_at&&new Date(u.trial_expires_at).getTime()>now;
+  const invoiceActive=Number(u.invoice_remaining||0)>0||!!u.can_reread_charged_invoices;
+  const mstActive=Number(u.mst_capacity||0)>0&&(!u.mst_farthest_expiry||new Date(u.mst_farthest_expiry).getTime()>now);
+  return filter==="all"||(filter==="invoice"&&invoiceActive)||
+   (filter==="mst"&&mstActive)||(filter==="trial"&&trialActive)||
+   (filter==="expired"&&!invoiceActive&&!mstActive&&!trialActive);
+ });
+ const pages=Math.max(1,Math.ceil(filtered.length/5));customerPage=Math.max(1,Math.min(customerPage,pages));
+ $('customerPageInfo').textContent='Trang '+customerPage+'/'+pages;
+ $('customerPrev').disabled=customerPage<=1;$('customerNext').disabled=customerPage>=pages;
+ const rows=filtered.slice((customerPage-1)*5,customerPage*5).map(u=>{
+  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button></td></tr>';
+  const invoices='<b>'+Number(u.invoice_remaining||0).toLocaleString('vi-VN')+' / '+Number(u.invoice_purchased||0).toLocaleString('vi-VN')+'</b><div class="sub">Lượt còn lại / đã mua</div>'+(u.can_reread_charged_invoices?'<div class="sub">Được đọc lại hóa đơn đã trừ</div>':'');
+  const mstQty=Number(u.mst_capacity||0);
+  const mst='<b>'+mstQty+' MST</b><div class="sub">Hạn gần nhất: '+fmt(u.mst_nearest_expiry)+'</div><div class="sub">Hạn xa nhất: '+fmt(u.mst_farthest_expiry)+'</div>';
+  const linked=(u.mst_assignments||[]).map(a=>esc(a.mst)).join(', ');
+  const trial='<div>'+(u.trial_used?'<span class="pill off">Đã dùng thử</span>':'<span class="pill">Chưa dùng thử</span>')+'</div>'+
+   (u.trial_expires_at?'<div class="sub">Hạn thử: '+fmt(u.trial_expires_at)+'</div>':'')+
+   '<div class="sub">Liên kết: '+(linked||'Chưa có')+'</div>';
+  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="customer-action-grid"><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button data-grant="'+esc(u.user_id)+'">Cấp</button><button class="secondary" data-history="'+esc(u.user_id)+'">LS</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button><button type="button" class="mode-change-trigger" data-mode-user="'+esc(u.user_id)+'" aria-label="Đổi chế độ sử dụng">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+' ✎</button></div></td></tr>';
+ }).join('');
+ $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
+ $("count").textContent=filtered.length+" tài khoản";
+}
+async function loadLogs(){const {data,error}=await client.rpc("addon_admin_list_logs",{p_limit:200});if(error)return msg("msg","Không tải được nhật ký: "+error.message,true);$("logs").innerHTML=(data||[]).map(l=>'<tr><td>'+fmt(l.created_at)+'</td><td>'+esc(l.actor_email)+'</td><td>'+esc(l.target_email)+'</td><td>'+esc(l.action)+'</td><td><code>'+esc(JSON.stringify(l.details||{}))+'</code></td></tr>').join("")||'<tr><td colspan="5">Chưa có nhật ký.</td></tr>'}
+$("login").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)msg("authMsg",error.message,true);else await boot()};
+$("logout").onclick=async()=>{await client.auth.signOut();location.reload()};
+$("reload").onclick=loadUsers;
+// Debounce remote queries and prevent stale keystrokes from issuing hundreds of RPCs.
+let emailSearchTimer=null;
+$("search").oninput=()=>{customerPage=1;clearTimeout(emailSearchTimer);emailSearchTimer=setTimeout(()=>void loadUsers(),350)};
+$("customerMstSearch").oninput=()=>{customerPage=1;renderUsers()};
+$("customerPackageFilter").onchange=()=>{customerPage=1;renderUsers()};
+$("packageStatusFilter").onchange=()=>{packagePage=1;void loadPlans()};
+$("clearAdminFilters").onclick=()=>{
+ $("customerMstSearch").value="";
+ $("customerPackageFilter").value="all";
+ $("packageStatusFilter").value="all";
+ $("mstAssignmentSearch").value="";
+ $("search").value="";
+ void Promise.all([loadUsers(),loadPlans(),loadMstAssignments()]);
+};
+$('customerPrev').onclick=()=>{customerPage=Math.max(1,customerPage-1);renderUsers()};
+$('customerNext').onclick=()=>{customerPage++;renderUsers()};
+$('packagePrev').onclick=()=>{packagePage=Math.max(1,packagePage-1);void loadPlans()};
+$('packageNext').onclick=()=>{packagePage++;void loadPlans()};
+$("users").onclick=async e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.removeUser){
+  const target=allUsers.find(u=>u.user_id===b.dataset.removeUser);
+  if(!target)return;
+  if(!confirm('Xóa tài khoản '+target.email+' khỏi danh sách và khóa đăng nhập?\\n\\nLịch sử giao dịch, cấp gói và nhật ký quản trị sẽ được bảo lưu để đối soát.'))return;
+  b.disabled=true;
+  try{
+   const {data:{session}}=await client.auth.getSession();
+   if(!session?.access_token)throw Error('Phiên quản trị đã hết hạn.');
+   const response=await fetch('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-admin-delete-account',{
+    method:'POST',headers:{Authorization:'Bearer '+session.access_token,
+     apikey:'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ','Content-Type':'application/json'},
+    body:JSON.stringify({user_id:target.user_id,expected_email:target.email})
+   });
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||!result.ok)throw Error(result.detail||result.error||'Không xóa được tài khoản');
+   customerPage=1;await loadUsers();await loadMstAssignments();
+   msg('msg','Đã xóa quyền đăng nhập '+target.email+' khỏi danh sách. Giao dịch trước đây vẫn được bảo lưu.');
+  }catch(error){msg('msg','Xóa tài khoản thất bại: '+error.message,true)}
+  finally{b.disabled=false}
+  return;
+ }
+ if(b.dataset.history){openPackageHistory(b.dataset.history);return;}if(b.dataset.grant){$("grantCustomer").value=b.dataset.grant;$("adminPackageGrant").scrollIntoView({behavior:"smooth",block:"center"});$("grantPackage").focus();return;}if(b.dataset.temp){
+  const user=allUsers.find(u=>u.user_id===b.dataset.temp);
+  if(!user||!confirm('Đổi ngay mật khẩu tài khoản '+(user.email||user.user_id)+
+   ' thành 000000 và yêu cầu khách đổi mật khẩu ngay khi đăng nhập?'))return;
+  b.disabled=true;
+  try{
+   const {data:{session}}=await client.auth.getSession();
+   if(!session?.access_token)throw Error('Phiên quản trị đã hết hạn.');
+   const res=await fetch('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-admin-password-reset',{
+    method:'POST',headers:{Authorization:'Bearer '+session.access_token,
+     apikey:'sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ',
+     'Content-Type':'application/json'},
+    body:JSON.stringify({action:'temporary',user_id:user.user_id})
+   });
+   const data=await res.json().catch(()=>({}));
+   if(!res.ok||!data.ok)throw Error(data.error||'Không đặt lại được mật khẩu.');
+   msg('msg','Đã đặt mật khẩu tạm 000000 cho '+(user.email||user.user_id)+
+    '. Hãy thông báo riêng cho khách. Khách bắt buộc đổi mật khẩu mới khi đăng nhập.');
+  }catch(error){msg('msg','Reset tạm thất bại: '+error.message,true)}
+  finally{b.disabled=false}
+  return;
+ }
+ if(b.dataset.reset){if(!confirm("Gửi email đặt lại mật khẩu tới "+b.dataset.reset+"?"))return;b.disabled=true;const {error}=await client.auth.resetPasswordForEmail(b.dataset.reset,{redirectTo:"https://tracuuhoadon.top/"});b.disabled=false;if(error)msg("msg","Không gửi được email: "+error.message,true);else msg("msg","Đã gửi yêu cầu đặt lại mật khẩu tới "+b.dataset.reset+".");return;}
+};
+document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");
+ const logs=b.dataset.tab==="logs",feedback=b.dataset.tab==="feedback";
+ $("logsPanel").classList.toggle("hidden",!logs);
+ $("feedbackPanel").classList.toggle("hidden",!feedback);
+ $("search").parentElement.parentElement.classList.toggle("hidden",logs||feedback);
+ if(logs)await loadLogs();
+ if(feedback)await window.AdminFeedback?.load?.();
+});
+client.auth.onAuthStateChange(()=>setTimeout(boot,0));boot();
+</script>
+<script src="./admin-discounts-v119.js?v=1"></script>
+<script src="./admin-mode-v120.js?v=1120fix3"></script>
+<script src="./admin-feedback.js?v=116"></script>
+<script src="./admin-site-links.js?v=118combo1"></script>
+<script src="./password-toggle.js?v=116"></script>
+<script src="./site-footer.js?v=118"></script>
+</body></html>

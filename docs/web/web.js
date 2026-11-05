@@ -282,12 +282,14 @@ async function refreshAccount(){
  try{
   const {data:{session}}=await client.auth.getSession();
   account=session?.user||null;
+  window.AutoTaxWebAccount?.sync(account);
   if(!account){
+   $('webModeControls').hidden=true;
    $('accountEmailLabel').textContent='Chưa đăng nhập';
    profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
    window.GdtVault?.setUser(null,[]);
-   $('authStatus').textContent='Chưa đăng nhập — đăng nhập ở trang tài khoản trước.';
-   show('Phiên bản Web dùng chung tài khoản AutoTax. Hãy đăng nhập và đăng ký hồ sơ MST ở trang Tài khoản rồi quay lại trang này.');
+   $('authStatus').textContent='Chưa đăng nhập — bấm Đăng nhập tại đây.';
+   show('Hãy bấm Đăng nhập ở phía trên để sử dụng AutoTax Web.');
    return;
   }
   $('authStatus').textContent=account.email+' · Đã kết nối';
@@ -462,7 +464,8 @@ async function search(e){
  e.preventDefault();if(busy)return;
  const mst=currentSearchMst();
  const start=readVnDate('fromDate'),end=readVnDate('toDate');
- if(!account)return show('Đăng nhập tài khoản AutoTax trước khi tra cứu.');
+ if(!account)return show('Bấm Đăng nhập tại ô Chế độ sử dụng để bắt đầu.');
+ if(account.app_metadata?.autotax_force_password_change)return show('Bạn cần đổi mật khẩu do Admin cấp lại trước khi tra cứu.');
  if(!/^(?:\d{10}|\d{12}|\d{13})$/.test(mst))
   return show('MST phải có 10, 12 hoặc 13 chữ số hợp lệ.');
  if(!start||!end||start>end)return show('Khoảng ngày chưa hợp lệ. Nhập ngày/tháng/năm (dd/mm/yyyy).');
@@ -770,7 +773,7 @@ function init(){
   if(ok)show('Đã lấy CAPTCHA thành công. Nhấn Tìm kiếm hóa đơn để tiếp tục.',true);
  });
  $('clearGdt').addEventListener('click',()=>{clearGov();show('Đã xóa phiên cổng Thuế khỏi bộ nhớ.',true)});
- $('mstFree').addEventListener('change',()=>{
+ $('mstFree').addEventListener('input',()=>{
   if(govtToken&&currentSearchMst()!==govtMst)clearGov();
  });
  $('mstLimitClose').addEventListener('click',()=>$('mstLimitDialog').close());
@@ -788,5 +791,6 @@ function init(){
  window.addEventListener('pagehide',()=>{govtToken='';govtMst='';$('gdtPassword').value='';window.GdtVault?.lock()});
  refreshAccount();
 }
+window.AutoTaxRefreshWebAccount=refreshAccount;
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

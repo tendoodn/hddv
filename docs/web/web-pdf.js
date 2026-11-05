@@ -82,7 +82,8 @@ async function pdfForInvoice(row,index,total,mode){
  const dateForFilename=window.Report.dateVN(signature||detail?.head?.nlap||row.tdlap).split('/').join('');
  const sellerMst=String(row.nbmst||detail?.head?.seller?.mst||'KhongRoMST').replace(/\D/g,'')||'KhongRoMST';
  const invoiceCode=safe(String(row.mhdon||row.mccqt||[row.khhdon,row.shdon].filter(Boolean).join('_')||'KhongRoMa'));
- const name=safe(sellerMst+'_'+invoiceCode+'_'+(dateForFilename||'KhongRoNgay'));
+ const direction=row.kind==='purchase'?'MuaVao':'BanRa';
+ const name=safe(direction+'_'+sellerMst+'_'+invoiceCode+'_'+(dateForFilename||'KhongRoNgay'));
  const lookup=window.HDDT.originalLookup(row,detail.head);
  // Use genuine PDF bytes only if included in a ZIP exported by GDT;
  // a reconstructed representation is NEVER mislabelled as source-original.
@@ -98,11 +99,20 @@ async function pdfForInvoice(row,index,total,mode){
    providerName:lookup.name||'',providerLink:lookup.link||'',lookupCode:lookup.code||''};
  }
  let bytes=null,failure='';
- if(lookup.link){
+ // Viettel's actual endpoint is an authenticated POST (not the lookup page).
+ // Use an original already captured in the user's authorized Add-on session.
+ // This cannot bypass the official slider CAPTCHA or the browser same-origin rule.
+ if(window.AutoTaxVinvoiceBridge?.matches(lookup,row,detail)){
+  try{
+   bytes=await window.AutoTaxVinvoiceBridge.retrieve(row,app);
+   if(!bytes)failure='VInvoice: chưa có PDF gốc được Add-on nhận sau xác thực tại cổng Viettel.';
+  }catch(e){failure='VInvoice: '+(e.message||String(e))}
+ }
+ if(!bytes&&lookup.link){
   try{bytes=await readPdf(lookup.link);
-   if(!bytes)failure='Liên kết tra cứu chưa phải URL tải PDF trực tiếp.'}
-  catch(e){failure='Không tải được PDF gốc: '+(e.message||String(e))}
- }else{
+   if(!bytes&&!failure)failure='Liên kết tra cứu chưa phải URL tải PDF trực tiếp.'}
+  catch(e){if(!failure)failure='Không tải được PDF gốc: '+(e.message||String(e))}
+ }else if(!bytes&&!failure){
   failure='Không có link nhà phát hành trong dữ liệu hóa đơn.';
  }
  if(bytes&&validPdf(bytes)){

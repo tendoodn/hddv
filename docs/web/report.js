@@ -32,7 +32,8 @@
     return { cthue: r.tgtcthue, thue: r.tgtthue, phi, tong: r.tgtttbso, khongThue: false };
   }
   // Phụ lục giảm thuế cộng theo VND: hóa đơn ngoại tệ nhân tỷ giá
-  const foreign = (r) => !!(r.dvtte && r.dvtte !== 'VND' && r.tgia);
+  const currencyOf = (r) => String(r.dvtte || 'VND').trim().toUpperCase() || 'VND';
+  const foreign = (r) => currencyOf(r) !== 'VND' && Number.isFinite(Number(r.tgia)) && Number(r.tgia) > 0;
   const vnd = (r, v) => (v === null ? null : foreign(r) ? Math.round(v * r.tgia) : v);
   // Không đưa vào phụ lục giảm thuế: hóa đơn đã bị thay thế / đã bị hủy (tthai 4, 6) và chứng từ không có tiền
   // (vd phiếu xuất kho kiêm vận chuyển nội bộ, mẫu số 6)
@@ -74,9 +75,9 @@
 
   function invoiceSheet(name, rows, details, withPdf, mstCheck, illegal) {
     const list = sorted(rows).map((r) => ({ r, m: money(r) }));
-    const currencies = list.length ? [...new Set(list.map(({ r }) => String(r.dvtte || 'VND').trim().toUpperCase() || 'VND'))].sort() : ['VND'];
+    const currencies = list.length ? [...new Set(list.map(({ r }) => currencyOf(r)))].sort() : ['VND'];
     const totals = currencies.map((currency) => {
-      const group = list.filter(({ r }) => (String(r.dvtte || 'VND').trim().toUpperCase() || 'VND') === currency);
+      const group = list.filter(({ r }) => (currencyOf(r)) === currency);
       const sum = (k) => total(group, (x) => x.m[k]);
       const row = ['', currencies.length > 1 ? `Tổng (${currency})` : 'Tổng', '', '', '', '', '', '', '', '', '', '', '',
         sum('cthue'), sum('thue'), sum('phi'), sum('tong'), currency];
@@ -87,8 +88,8 @@
       boldRows: new Set(totals.map((_, i) => list.length + i)),
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
-          String(r.shdon), productCodes(details, r), dateVN(headOf(details,r)?.nlap||r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, String(r.dvtte || 'VND').trim().toUpperCase() || 'VND',
-          r.dvtte && r.dvtte !== 'VND' ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
+          String(r.shdon), productCodes(details, r), dateVN(headOf(details,r)?.nlap||r.tdlap), r.nbmst, r.nbten, r.nmmst, r.nmten, m.cthue, m.thue, m.phi || null, m.tong, currencyOf(r),
+          foreign(r) ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
           ...((o) => [o.name, o.code, ...(withPdf ? [linkCell(o)] : [])])(HDDT.originalLookup(r, headOf(details, r))),
           ...(mstCheck ? mstRisk(r, illegal) : [])]),
@@ -152,7 +153,7 @@
     for (const r of sorted(rows)) {
       const d = withLinesOf(details, r);
       if (!d) continue;
-      const [mst, ten] = partner(r), currency = String(r.dvtte || 'VND').trim().toUpperCase() || 'VND';
+      const [mst, ten] = partner(r), currency = currencyOf(r);
       if (!sums.has(currency)) sums.set(currency, { amount: 0, tax: 0 });
       const sum = sums.get(currency);
       for (const l of invoiceLines(r, d)) {

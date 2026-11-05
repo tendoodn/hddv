@@ -221,7 +221,7 @@ async function refresh(){
   const invTotal=Number(invoice.purchased||0)+Number(license.team_invoice_purchased||0);
   const mstCapacity=Number(mst.active_quantity||0)+teamMst;
   const selected=license.mode||"mst";
-  $("licenseTitle").textContent=selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"":"Chưa có gói hiệu lực";
+  $("licenseTitle").textContent=selected==="invoice"&&(Number(invoice.remaining||0)+teamInvoiceUsable)===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"":(teamInvoice>0||teamMst>0)?"Đã nhận gói nhóm · chờ trưởng nhóm chia sẻ MST":"Chưa có gói hiệu lực";
   $("licenseTitle").hidden=!!license.allowed&&!(selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices);
   $("invoiceBalance").textContent=invRemaining.toLocaleString("vi-VN")+" / "+invTotal.toLocaleString("vi-VN");
   $("invoiceTeamLimit").textContent="Cá nhân: "+Number(invoice.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamInvoice.toLocaleString("vi-VN")+

@@ -1,5 +1,6 @@
 /* AutoTax shared team MST contract (Web + Chrome Add-on).
- * Only MST metadata is accessible; team tax passwords are never transferred.
+ * Shared MST passwords are returned only for active, explicitly authorized members.
+ * Server encrypts each shared credential and verifies team permissions on every read.
  * Every request is authorized by the currently signed-in account on Supabase.
  */
 (()=>{
@@ -46,5 +47,17 @@
   const rows=await rpc('autotax_team_shared_mst_profiles_v119');
   return Array.isArray(rows)?rows:[];
  }
- window.AutoTaxTeamShared=Object.freeze({setAuthProvider,context,list});
+ async function getPassword(mst){
+  const id=NORMAL(mst);
+  if(!VALID(id))throw Error('Mã số thuế không hợp lệ.');
+  const result=await rpc('autotax_team_get_shared_mst_password_v119',{p_mst:id});
+  return result?.available===true&&typeof result.password==='string'?result.password:null;
+ }
+ async function sharePassword(teamId,mst,password){
+  const id=NORMAL(mst);
+  if(!VALID(id)||!teamId||typeof password!=='string'||!password||password.length>256)
+   throw Error('Thông tin chia sẻ mật khẩu MST không hợp lệ.');
+  return rpc('autotax_team_share_mst_password_v119',{p_team:teamId,p_mst:id,p_password:password});
+ }
+ window.AutoTaxTeamShared=Object.freeze({setAuthProvider,context,list,getPassword,sharePassword});
 })();

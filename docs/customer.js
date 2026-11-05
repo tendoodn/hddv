@@ -197,7 +197,7 @@ async function refresh(){
   const hasInvoice=Number(initialInvoice.purchased||0)>0||Number(license.team_invoice_remaining||0)>0||
     !!license.team_invoice_available||!!license.can_reread_charged_invoices;
   // Only spendable invoice sheets count as an available mode; reread rights are retained separately.
-  const canInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_remaining||0)>0;
+  const canInvoice=Number(initialInvoice.remaining||0)>0||Number(license.team_invoice_spendable_remaining||0)>0;
   const canMst=Number(initialMst.active_quantity||0)>0||Number(license.team_mst_count||0)>0;
   const hasMst=canMst;
   if(canInvoice!==canMst){
@@ -212,7 +212,11 @@ async function refresh(){
   state=license;
   const invoice=license.packages?.invoice||{};
   const mst=license.packages?.mst||{};
-  const teamInvoice=Number(license.team_invoice_remaining||0),teamMst=Number(license.team_mst_count||0);
+  const teamInvoice=Number(license.team_invoice_remaining||0);
+  const teamInvoiceUsable=Number(license.team_invoice_spendable_remaining||0);
+  const teamMst=Number(license.team_mst_package_capacity||0);
+  const teamMstShared=Number(license.team_mst_count||0);
+  const teamInvoiceShared=Number(license.team_invoice_shared_mst_count||0);
   const invRemaining=Number(invoice.remaining||0)+teamInvoice;
   const invTotal=Number(invoice.purchased||0)+Number(license.team_invoice_purchased||0);
   const mstCapacity=Number(mst.active_quantity||0)+teamMst;
@@ -220,12 +224,13 @@ async function refresh(){
   $("licenseTitle").textContent=selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices?"Hết lượt mới · được đọc lại hóa đơn cũ":license.allowed?"":"Chưa có gói hiệu lực";
   $("licenseTitle").hidden=!!license.allowed&&!(selected==="invoice"&&invRemaining===0&&license.can_reread_charged_invoices);
   $("invoiceBalance").textContent=invRemaining.toLocaleString("vi-VN")+" / "+invTotal.toLocaleString("vi-VN");
-  $("invoiceTeamLimit").textContent="Cá nhân: "+Number(invoice.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamInvoice.toLocaleString("vi-VN");
+  $("invoiceTeamLimit").textContent="Cá nhân: "+Number(invoice.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamInvoice.toLocaleString("vi-VN")+
+   (teamInvoice>0&&teamInvoiceShared===0?" (chưa có MST được chia sẻ)":"");
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
-  $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMst.toLocaleString("vi-VN")+" MST";
+  $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMst.toLocaleString("vi-VN")+" MST (đã chia sẻ "+teamMstShared+" MST)";
   $("mstExpiry").textContent="Hạn gói cá nhân: gần nhất "+vnDate(mst.nearest_expiry)+" · xa nhất "+vnDate(mst.farthest_expiry);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
-  const modeCounts={invoice:Number(invoice.remaining||0)+teamInvoice,mst:Number(mst.active_quantity||0)+teamMst};
+  const modeCounts={invoice:Number(invoice.remaining||0)+teamInvoiceUsable,mst:Number(mst.active_quantity||0)+teamMstShared};
   const spendableInvoice=modeCounts.invoice>0,spendableMst=modeCounts.mst>0;
   $("modeSection").hidden=!(hasInvoice&&hasMst);
   const selectedCard=$(selected==='invoice'?'invoicePlanCard':'mstPlanCard');
@@ -505,15 +510,18 @@ async function finishPaidOrder(order){
   state=licenses;
   const inv=licenses.packages?.invoice||{},mst=licenses.packages?.mst||{};
   const teamSheets=Number(licenses.team_invoice_remaining||0);
+  const teamInvoiceShared=Number(licenses.team_invoice_shared_mst_count||0);
   const teamPurchased=Number(licenses.team_invoice_purchased||0);
-  const teamMsts=Number(licenses.team_mst_count||0);
+  const teamMsts=Number(licenses.team_mst_package_capacity||0);
+  const teamMstShared=Number(licenses.team_mst_count||0);
   const remaining=Number(inv.remaining||0)+teamSheets,purchased=Number(inv.purchased||0)+teamPurchased;
   const capacity=Number(mst.active_quantity||0)+teamMsts;
   // Update the visible counters from the same authoritative response.
   $("invoiceBalance").textContent=remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN");
   $("mstCapacity").textContent=capacity.toLocaleString("vi-VN")+" MST";
-  $("invoiceTeamLimit").textContent="Cá nhân: "+Number(inv.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamSheets.toLocaleString("vi-VN");
-  $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMsts.toLocaleString("vi-VN")+" MST";
+  $("invoiceTeamLimit").textContent="Cá nhân: "+Number(inv.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamSheets.toLocaleString("vi-VN")+
+   (teamSheets>0&&teamInvoiceShared===0?" (chưa có MST được chia sẻ)":"");
+  $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMsts.toLocaleString("vi-VN")+" MST (đã chia sẻ "+teamMstShared+" MST)";
   $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   balancesText="Hóa đơn: "+remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN")+
    " lượt\nMST hiện có: "+capacity.toLocaleString("vi-VN")+

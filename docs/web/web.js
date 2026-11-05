@@ -555,6 +555,8 @@ async function search(e){
   return;
  }
  stopped=false;quotaExceededDuringSearch=false;busyState(true);
+ // Invalidate the previous background XML scan before starting a new search.
+ detailEpoch++;pendingDetails.clear();details.clear();
  scanQuotaCounter=window.AutoTaxAccountFlow.createScanQuotaCounter();
  let scanCompleted=false;
  $('results').hidden=true;// Redundant top-of-search totals were removed; results use #results only.
@@ -626,6 +628,18 @@ async function search(e){
   searchedBothKinds=selected('kind').includes('purchase')&&selected('kind').includes('sold');
   if(window.WebResults?.finish)window.WebResults.finish(rows,result.skipped||[]);
   else renderResults(rows,result.skipped||[]);
+  // XML and product metadata are read even when XML export was not selected.
+  // Limit to three portal requests at a time, and never delay showing results.
+  const xmlSession=detailEpoch;
+  void loadDetails([...rows],{quiet:true}).then(map=>{
+   if(xmlSession!==detailEpoch)return;
+   const xmlCount=[...map.values()].filter(d=>d.source==='xml').length;
+   const skuCount=[...map.values()].filter(d=>(d.lines||[]).some(line=>String(line.ma||'').trim())).length;
+   const links=[...map.values()].filter(d=>d.head?.lookup?.link||d.head?.lookup?.code).length;
+   progress('Đã phân tích XML nền: '+xmlCount+'/'+rows.length+
+     ' hóa đơn có XML gốc; '+skuCount+' hóa đơn có mã hàng; '+
+     links+' hóa đơn có thông tin tra cứu. Chỉ xuất tệp XML khi chọn tải XML.');
+  }).catch(error=>console.warn('Đọc XML nền chưa hoàn tất:',error.message));
   if(quotaExceededDuringSearch)show(QUOTA_MESSAGE);
   else show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
    (result.skipped?.length?' Nguồn chưa hoàn tất: '+result.skipped.join(', '):''),true);
@@ -644,13 +658,15 @@ async function search(e){
  }
 }
 const pendingDetails=new Map();
-async function loadDetails(scopeRows=rows){
+let detailEpoch=0;
+async function loadDetails(scopeRows=rows,{quiet=false}={}){
+ const epoch=detailEpoch;
  if(!scopeRows.length)throw Error('Chưa có hóa đơn để xuất.');
  const queue=scopeRows.filter(r=>!details.has(idOf(r))||details.get(idOf(r))?.error);
  let next=0,completed=0;
  const worker=async()=>{
   for(;;){
-   if(stopped)return;
+   if(stopped||epoch!==detailEpoch)return;
    const index=next++;
    if(index>=queue.length)return;
    const row=queue[index],id=idOf(row);
@@ -661,19 +677,19 @@ async function loadDetails(scopeRows=rows){
      const request=(async()=>{
       const cached=await cache?.get(scope,row);
       if(cached)return cached;
-      const fresh=await HDDT.fetchInvoice(row,()=>stopped);
-      if(!stopped)void cache?.put(scope,row,fresh).catch(()=>{});
+      const fresh=await HDDT.fetchInvoice(row,()=>stopped||epoch!==detailEpoch);
+      if(!stopped&&epoch===detailEpoch)void cache?.put(scope,row,fresh).catch(()=>{});
       return fresh;
      })().then(
-      result=>{details.set(id,result);return result},
-      error=>{details.set(id,{error:error.message});return null}
-     ).finally(()=>pendingDetails.delete(id));
+      result=>{if(epoch===detailEpoch)details.set(id,result);return result},
+      error=>{if(epoch===detailEpoch)details.set(id,{error:error.message});return null}
+     ).finally(()=>{if(pendingDetails.get(id)===request)pendingDetails.delete(id)});
      pendingDetails.set(id,request);
     }
     await pendingDetails.get(id);
-   }catch(error){details.set(id,{error:error.message})}
+   }catch(error){if(epoch===detailEpoch)details.set(id,{error:error.message})}
    completed++;
-   progress('Đã đọc '+completed+'/'+queue.length+' chi tiết hóa đơn (tối đa 3 yêu cầu song song)');
+   if(!quiet&&epoch===detailEpoch)progress('Đã đọc '+completed+'/'+queue.length+' chi tiết hóa đơn (tối đa 3 yêu cầu song song)');
   }
  };
  await Promise.all(Array.from({length:Math.min(3,queue.length)},()=>worker()));

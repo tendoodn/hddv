@@ -417,6 +417,11 @@ td.audit-info{color:#c6c6db}
 /* Credential suggestions belong to the AutoTax login form, not the tax-ID search. */
 #mstFree::-webkit-credentials-auto-fill-button{visibility:hidden;display:none!important}
 
-/* Keep permissions vivid despite the more specific small-text rule. */
-.mst-picker-choice small.mst-picker-allowed{color:#22c55e!important;font-weight:850}
-.mst-picker-choice small.mst-picker-not-allowed{color:#f87171!important;font-weight:800}
+/* Permission description stays readable; only the tick/cross is strongly colored. */
+.mst-picker-choice small.mst-picker-permission{color:#d1d5db;font-weight:700}
+.mst-picker-choice small.mst-picker-permission strong.mst-permission-tick{
+ display:inline;color:#22c55e!important;font-size:17px;font-weight:900;vertical-align:baseline
+}
+.mst-picker-choice small.mst-picker-permission strong.mst-permission-cross{
+ display:inline;color:#f87171!important;font-size:17px;font-weight:900;vertical-align:baseline
+}

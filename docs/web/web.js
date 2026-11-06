@@ -636,9 +636,11 @@ async function search(e){
    const xmlCount=[...map.values()].filter(d=>d.source==='xml').length;
    const skuCount=[...map.values()].filter(d=>(d.lines||[]).some(line=>String(line.ma||'').trim())).length;
    const links=[...map.values()].filter(d=>d.head?.lookup?.link||d.head?.lookup?.code).length;
+   const xmlColumns=new Set([...map.values()].flatMap(d=>Object.keys(d.xmlFields||{}))).size;
    progress('Đã phân tích XML nền: '+xmlCount+'/'+rows.length+
      ' hóa đơn có XML gốc; '+skuCount+' hóa đơn có mã hàng; '+
-     links+' hóa đơn có thông tin tra cứu. Chỉ xuất tệp XML khi chọn tải XML.');
+     links+' hóa đơn có thông tin tra cứu; '+xmlColumns+
+     ' tên cột XML (bao gồm trường trống). Chỉ xuất tệp XML khi chọn tải XML.');
    // Store only one sample per publisher, complementing its missing values.
    // This runs after server authorization and never blocks invoice results.
    const collector=window.AutoTaxIssuerReference,byIssuer=new Map();

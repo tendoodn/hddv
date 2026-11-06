@@ -13,7 +13,7 @@ const $=id=>document.getElementById(id);
 const normalize=v=>String(v||'').replace(/\D/g,'');
 const MAX_PASS=256;
 const DB_NAME='autotax_gdt_device_credentials_v2';
-let owner='',profiles=[],dbPromise=null,deviceKey=null,deviceKeyPromise=null,keyEpoch=0,requestSeq=0,profileSetEpoch=0,invoiceMode=false;
+let owner='',profiles=[],dbPromise=null,deviceKey=null,deviceKeyPromise=null,keyEpoch=0,requestSeq=0,profileSetEpoch=0,invoiceMode=false,lastRenderedPickerFingerprint='';
 const lastKey=()=> 'autotax_last_mst_'+owner;
 const searchedKey=()=> 'autotax_last_searched_mst_'+owner;
 const validMst=m=>/^(?:\d{10}|\d{12}|\d{13})$/.test(m);
@@ -342,8 +342,14 @@ async function setUser(userId,rows,mode='mst'){
    .map(old=>deleteStore('credentials',entryKey(old.mst))));
  }
  if(epoch!==profileSetEpoch)return;
- const profilesChanged=wasOwner!==owner||wasInvoiceMode!==invoiceMode||previousProfilesJson!==JSON.stringify(profiles);
- if(profilesChanged)renderPicker();
+ const renderedFingerprint=JSON.stringify([owner,invoiceMode,profiles]);
+ const profilesChanged=wasOwner!==owner||wasInvoiceMode!==invoiceMode||
+  previousProfilesJson!==JSON.stringify(profiles)||
+  lastRenderedPickerFingerprint!==renderedFingerprint;
+ if(profilesChanged){
+  renderPicker();
+  lastRenderedPickerFingerprint=renderedFingerprint;
+ }
  if(profilesChanged&&owner&&($('mstFree').value||$('mst').value))
   // Credential retrieval is async; never block the account dashboard on it.
   void select(normalize($('mstFree').value||$('mst').value))

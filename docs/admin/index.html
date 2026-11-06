@@ -206,7 +206,47 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
  <p class="muted" id="siteLinksCount"></p>
  <div class="tablewrap"><table><thead><tr><th>Nội dung hiển thị</th><th>Đường link</th><th>Thứ tự</th><th>Hiển thị</th><th>Thao tác</th></tr></thead><tbody id="siteLinksBody"></tbody></table></div>
  <p id="siteLinksMessage" class="notice" role="status"></p>
-</section><div class="tabs">
+</section><section class="panel" id="issuerRegistryPanel">
+ <details id="issuerRegistryFold" class="admin-fold">
+  <summary>Danh sách nhà phát hành · Tham chiếu PDF gốc</summary>
+  <div class="admin-fold-content">
+   <div class="row"><h2>Danh sách nhà phát hành</h2>
+    <button type="button" class="secondary" id="issuerRegistryRefresh">Làm mới</button></div>
+   <p class="muted">Một dòng mỗi MST nhà cung cấp. AutoTax chỉ điền giá trị còn trống từ hóa đơn đã đọc. Các giá trị đã có không tự ghi đè; chỉ Admin được sửa.</p>
+   <p id="issuerRegistryStatus" role="status"></p>
+   <div class="tablewrap"><table>
+    <thead><tr><th>MST nhà cung cấp HĐ</th><th>Link tra cứu</th><th>MST bên bán</th><th>MST bên mua</th><th>Mã bảo mật</th><th>Thao tác</th></tr></thead>
+    <tbody id="issuerRegistryRows"></tbody>
+   </table></div>
+  </div>
+ </details>
+</section>
+<dialog id="issuerRegistryDialog" aria-label="Sửa thông tin nhà phát hành" style="max-width:min(540px,96vw);width:100%;border:1px solid #e7b6c0;border-radius:12px;padding:20px">
+ <form id="issuerRegistryForm">
+  <h2>Sửa tham chiếu nhà phát hành</h2>
+  <label style="display:block;margin:8px 0">MST nhà cung cấp HĐĐT
+ <input id="issuerEdit_issuer_mst" type="text" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+ </label>
+<label style="display:block;margin:8px 0">Link tra cứu
+ <input id="issuerEdit_lookup_url" type="url" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+ </label>
+<label style="display:block;margin:8px 0">MST bên bán
+ <input id="issuerEdit_seller_mst" type="text" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+ </label>
+<label style="display:block;margin:8px 0">MST bên mua
+ <input id="issuerEdit_buyer_mst" type="text" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+ </label>
+<label style="display:block;margin:8px 0">Mã bảo mật tra cứu
+ <input id="issuerEdit_secret_code" type="text" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+ </label>
+  <p id="issuerEditStatus" role="status" style="font-size:12px"></p>
+  <div class="actions" style="display:flex;gap:8px;justify-content:flex-end">
+   <button id="issuerRegistrySave" type="submit">Lưu 5 trường</button>
+   <button id="issuerRegistryCancel" type="button" class="secondary">Đóng</button>
+  </div>
+ </form>
+</dialog>
+<div class="tabs">
  <button class="tab active" data-tab="customers">Khách hàng</button>
  <button class="tab secondary" data-tab="logs">Nhật ký quản trị</button>
  <button class="tab secondary" data-tab="feedback">Quản lý phản ánh</button>
@@ -853,6 +893,7 @@ void bootOnce();
 <script src="./admin-mode-v120.js?v=1120fix3"></script>
 <script src="./admin-feedback.js?v=116"></script>
 <script src="./admin-site-links.js?v=1123nocombo1"></script>
+<script src="./admin-issuers-v1.js?v=20261106registry1"></script>
 <script src="./password-toggle.js?v=116"></script>
 <script src="./site-footer.js?v=118"></script>
 </body></html>

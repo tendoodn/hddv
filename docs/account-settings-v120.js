@@ -6,6 +6,7 @@ const logo='./favicon.svg?v=20261102b';
 const status=(message,error=false)=>{const el=$('accountProfileStatus');el.textContent=message;el.hidden=!message;el.classList.toggle('error',error)};
 const menu=$('accountSettingsMenu'),toggle=$('accountSettingsToggle'),dialog=$('accountProfileDialog');
 let avatarData=logo;
+let lastRenderedAccountId='';
 const safeAvatar=value=>typeof value==='string'&&value.startsWith('data:image/jpeg;base64,')&&value.length<65000?value:logo;
 const nameFrom=user=>String(user?.user_metadata?.full_name||user?.user_metadata?.display_name||'').trim().slice(0,100);
 // Login username is a stable server-owned identity, not editable profile metadata.
@@ -32,6 +33,7 @@ async function render(){
  const {data:{session}}=await client.auth.getSession();
  if(!session?.user)return;
  const user=session.user;
+ lastRenderedAccountId=user.id;
  $('accountGreeting').textContent='Xin chào '+(nameFrom(user)||'bạn')+' !!!';
  avatarData=safeAvatar(user.user_metadata?.avatar_data_url);
  $('accountAvatar').src=avatarData;
@@ -109,8 +111,13 @@ $('accountProfileForm').addEventListener('submit',async event=>{
  }catch(error){status('Không lưu được: '+(window.AutoTaxAuthErrorVi?.(error)||(/[À-ỹ]/.test(error.message||'')?error.message:'Vui lòng kiểm tra thông tin và thử lại.')),true)}
  finally{btn.disabled=false}
 });
-client.auth.onAuthStateChange(event=>{
- if(['INITIAL_SESSION','SIGNED_IN','USER_UPDATED'].includes(event))queueMicrotask(()=>void render().catch(()=>{}));
+client.auth.onAuthStateChange((event,session)=>{
+ // Supabase fires SIGNED_IN again on focus. Re-rendering here would overwrite
+ // unsaved avatar/name edits in an open profile dialog.
+ if(event==='USER_UPDATED'||(event==='SIGNED_IN'&&session?.user?.id!==lastRenderedAccountId)){
+  if(dialog.open&&event!=='USER_UPDATED')return;
+  queueMicrotask(()=>void render().catch(()=>{}));
+ }
 });
 void render().catch(()=>{});
 })();

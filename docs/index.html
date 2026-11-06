@@ -171,10 +171,10 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   <section id="results" class="result-card" hidden>
     <div class="result-head"><div><h2>Kết quả tra cứu</h2><p id="resultSummary"></p></div></div>
     <p class="k-description">K = Tổng bán ra / (Tổng mua vào + Tồn đầu kỳ). Nếu thiếu số liệu tồn đầu, mua vào hoặc bán ra, giá trị thiếu được tính là 1. Đây là chỉ số tham khảo theo công thức đã chọn, không phải kết luận của cơ quan Thuế.</p>
-    <div class="invoice-stats">
-      <div><span>Tổng tiền thanh toán</span><strong id="totalPayments">0 ₫</strong></div>
-      <div><span>Tổng tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
-      <div><span>Mua vào / Bán ra</span><strong id="purchaseSaleTotals">—</strong></div>
+    <div class="invoice-stats" aria-label="Tổng hợp hóa đơn theo loại">
+      <div><span>Mua vào</span><strong id="purchaseTotal">0 ₫</strong></div>
+      <div><span>Tiền thuế</span><strong id="totalVat">0 ₫</strong></div>
+      <div><span>Bán ra</span><strong id="salesTotal">0 ₫</strong></div>
       <div><span>Hệ số K (tham khảo)</span><strong id="kRatio">—</strong><small id="kRatioSource" class="k-ratio-source"></small></div>
     </div>
     <div class="export-toolbar">

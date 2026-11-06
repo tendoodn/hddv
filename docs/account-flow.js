@@ -29,7 +29,7 @@
  }
  const validUsername=value=>/^[a-z][a-z0-9._]{3,31}$/.test(String(value||'').trim().toLowerCase());
  async function usernameSession(username,password){
-  const response=await fetch('/auth-username-login',{
+  const response=await fetch('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-username-login',{
    method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({identifier:String(username||'').toLowerCase().trim(),password})
   });

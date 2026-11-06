@@ -646,9 +646,10 @@ function init(){
   }catch(error){stockStatus('Không cập nhật được: '+error.message,true)}
   finally{event.target.value=''}
  });
- document.addEventListener('autotax-web-user-ready',()=>void updateStock());
+ document.addEventListener('autotax-web-user-ready',()=>{if(!window.AutoTaxLite)void updateStock()});
  $('stockPlatform').addEventListener('change',updateStock);
  const changedMst=()=>{
+  if(window.AutoTaxLite)return;
   clearTimeout(mstChangeTimer);
   mstChangeTimer=setTimeout(()=>{
    const mst=currentMst();
@@ -661,15 +662,15 @@ function init(){
  $('stockDownloadBtn').addEventListener('click',()=>void exportStock(false));
  $('stockSingleBtn').addEventListener('click',()=>void exportStock(true));
  syncOpeningStock();
- document.querySelectorAll('input[name="kind"]').forEach(el=>el.addEventListener('change',()=>{syncOpeningStock();if(lastStats)kAlert(lastStats,false)}));
- $('fromDate').addEventListener('change',()=>{$('openingStockInput').value='';syncOpeningStock();if(lastStats)kAlert(lastStats,false)});
+ document.querySelectorAll('input[name="kind"]').forEach(el=>el.addEventListener('change',()=>{syncOpeningStock();if(lastStats&&!window.AutoTaxLite)kAlert(lastStats,false)}));
+ $('fromDate').addEventListener('change',()=>{$('openingStockInput').value='';syncOpeningStock();if(lastStats&&!window.AutoTaxLite)kAlert(lastStats,false)});
  $('openingStockToggle').addEventListener('click',()=>{
   const input=$('openingStockEditor'),now=input.hidden;
   input.hidden=!now;$('openingStockToggle').setAttribute('aria-expanded',String(now));
   if(now)$('openingStockInput').focus();
  });
- $('openingStockInput').addEventListener('input',()=>{if(lastStats)kAlert(lastStats,false)});
- $('kIndustry').addEventListener('change',()=>{if(lastStats)kAlert(lastStats,true)});
+ $('openingStockInput').addEventListener('input',()=>{if(lastStats&&!window.AutoTaxLite)kAlert(lastStats,false)});
+ $('kIndustry').addEventListener('change',()=>{if(lastStats&&!window.AutoTaxLite)kAlert(lastStats,true)});
   $('disableKPopup').checked=getPopupDisabled();
  $('closeKWarning').addEventListener('click',()=>{
   setPopupDisabled($('disableKPopup').checked);

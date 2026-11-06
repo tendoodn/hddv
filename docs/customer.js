@@ -220,18 +220,11 @@ async function refresh(){
   void refreshAdminVisibility(session.user.id);
   void refreshExtensionDownloadLink();
   $("userEmail").textContent=session.user.email||"";
-  let license=await rpc("autotax_my_entitlements_v118");
-  // Một nguồn quy tắc cho user/web/addon, không căn cứ vào gói đã hết hạn.
-  let modeChoice=accountFlow.quotaModes(license);
-  if(modeChoice.autoSelect){
-   try{
-    // Persist even when the server already returned the effective mode: the
-    // previous selected mode might still be stored and must survive a team kick.
-    await rpc('autotax_set_usage_mode_v118',{p_mode:modeChoice.selected});
-    license=await rpc("autotax_my_entitlements_v118");
-    modeChoice=accountFlow.quotaModes(license);
-   }catch(modeError){showMessage('Không lưu được chế độ tự động: '+prettyError(modeError),true)}
-  }
+  // The server-side entitlements RPC already persists an automatic mode
+  // switch in addon_usage_modes. Calling set_usage_mode and re-fetching here
+  // added two sequential network round trips on EVERY login or account refresh.
+  const license=await rpc("autotax_my_entitlements_v118");
+  const modeChoice=accountFlow.quotaModes(license);
   const hasInvoice=Number(license.packages?.invoice?.purchased||0)>0||
     Number(license.team_invoice_purchased||0)>0||modeChoice.invoiceUsable||
     !!license.can_reread_charged_invoices;

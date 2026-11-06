@@ -43,20 +43,41 @@ function attachUserPdf(row,bytes,filename=''){
 }
 const hasUserPdf=row=>suppliedPdf.has(invoiceKey(row));
 
+// Do not fetch arbitrary URLs from invoice metadata. A PDF is source-origin
+// eligible only on one of the issuer domains explicitly listed in our catalog.
 const readPdf=async url=>{
  const source=new URL(url);
- if(source.protocol!=='https:'||!(/\.(?:pdf|zip)$/i.test(source.pathname)||/\/(?:download|export)[^/]*|\/pdf(?:\/|$)|format=(?:pdf|zip)/i.test(source.pathname+source.search)))return null;
+ if(source.protocol!=='https:'||source.username||source.password||
+    (source.port&&source.port!=='443')||
+    !window.IssuerPortals?.describe(source.href)||
+    !(/\.(?:pdf|zip)$/i.test(source.pathname)||/\/(?:download|export)[^/]*|\/pdf(?:\/|$)|format=(?:pdf|zip)/i.test(source.pathname+source.search)))return null;
  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),12000);
  try{
-  const res=await fetch(source.toString(),{credentials:'omit',mode:'cors',signal:abort.signal,cache:'no-store'});
+  const res=await fetch(source.href,{credentials:'omit',mode:'cors',redirect:'error',
+   signal:abort.signal,cache:'no-store'});
   if(!res.ok)throw Error('HTTP '+res.status);
-  if(Number(res.headers.get('content-length')||0)>24*1024*1024)
-   throw Error('PDF/ZIP vượt 24 MB.');
-  const b=new Uint8Array(await res.arrayBuffer());
-  if(b.byteLength>24*1024*1024||b.byteLength<5)throw Error('PDF/ZIP không hợp lệ.');
+  const max=24*1024*1024;
+  if(Number(res.headers.get('content-length')||0)>max)throw Error('PDF/ZIP vượt 24 MB.');
+  // Enforce the limit while streaming, not after allocating an unbounded body.
+  const chunks=[];let size=0;
+  if(res.body){
+   const reader=res.body.getReader();
+   for(;;){
+    const {value,done}=await reader.read();if(done)break;
+    size+=value.byteLength;
+    if(size>max){await reader.cancel();throw Error('PDF/ZIP vượt 24 MB.')}
+    chunks.push(value);
+   }
+  }else{
+   const data=new Uint8Array(await res.arrayBuffer());
+   size=data.byteLength;chunks.push(data);
+  }
+  if(size>max||size<5)throw Error('PDF/ZIP không hợp lệ.');
+  const b=new Uint8Array(size);let at=0;
+  for(const chunk of chunks){b.set(chunk,at);at+=chunk.byteLength}
   if(b[0]===80&&b[1]===75&&b[2]===3&&b[3]===4)
    return (await window.AutoTaxIssuerArchive.extractPdf(b)).pdf;
-  if(b.byteLength>12*1024*1024||b[0]!==37||b[1]!==80||
+  if(b.byteLength>MAX_PDF_BYTES||b[0]!==37||b[1]!==80||
      b[2]!==68||b[3]!==70||b[4]!==45)throw Error('Nguồn không phải PDF hợp lệ.');
   return b;
  }finally{clearTimeout(timer)}
@@ -67,7 +88,7 @@ function fromSourceFiles(inv){
  for(const [name,data] of Object.entries(inv?.files||{})){
   if(!/\.pdf$/i.test(name))continue;
   const u=data instanceof Uint8Array?data:data instanceof ArrayBuffer?new Uint8Array(data):null;
-  if(u&&validPdf(u))return u;
+  if(u&&u.byteLength<=MAX_PDF_BYTES&&validPdf(u))return u;
  }
  return null;
 }
@@ -114,7 +135,9 @@ async function pdfForInvoice(row,index,total,mode){
  }
  if(!bytes&&lookup.link){
   try{bytes=await readPdf(lookup.link);
-   if(!bytes&&!failure)failure='Liên kết tra cứu chưa phải URL tải PDF trực tiếp.'}
+   if(!bytes&&!failure)failure=window.IssuerPortals?.describe(lookup.link)?
+    'Liên kết tra cứu chưa phải URL tải PDF trực tiếp.':
+    'Miền nhà phát hành chưa nằm trong danh sách hỗ trợ tự động. Hãy tải thủ công từ cổng chính thức.'}
   catch(e){if(!failure)failure='Không tải được PDF gốc: '+(e.message||String(e))}
  }else if(!bytes&&!failure){
   failure='Không có link nhà phát hành trong dữ liệu hóa đơn.';

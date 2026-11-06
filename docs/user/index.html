@@ -240,7 +240,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 .portal-mode-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
 .portal-mode-toolbar #licenseTitle{font-size:12px;line-height:1.3;min-width:0;margin:0}
 @media(max-width:480px){#mstSummaryModeSlot{width:100%}#mstSummaryModeSlot #modeSection{width:100%}.mst-quick-row #mstAllowControls{min-width:0}}
-#accountProfileEmail{background:#e5e7eb!important;color:#64748b!important;opacity:.75;cursor:not-allowed}
+#accountProfileEmail,#accountProfileUsername{background:#e5e7eb!important;color:#64748b!important;opacity:.85;cursor:not-allowed}
 #mstGrantAllow[hidden],#mstGrantUnlock[hidden]{display:none!important}
 /* Permissions editor: keep the control clickable; hide only inactive actions. */
 #mstGrantCancel[hidden],#mstGrantAllow[hidden],#mstGrantUnlock[hidden],#mstAllowHelp[hidden]{display:none!important}
@@ -299,6 +299,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  <form id="accountProfileForm" autocomplete="on">
   <h2 id="accountProfileTitle">Cập nhật thông tin tài khoản</h2>
   <div class="autotax-avatar-picker"><img id="accountAvatarPreview" src="./favicon.svg?v=20261102b" width="72" height="72" alt="Ảnh đại diện"><div><label for="accountAvatarUpload" class="account-avatar-label">Thay đổi ảnh đại diện</label><input id="accountAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp"><small>Để trống để giữ avatar hiện tại. Mặc định: logo AutoTax.</small></div></div>
+  <label for="accountProfileUsername">User đăng nhập (không thể thay đổi)</label><input id="accountProfileUsername" type="text" readonly disabled aria-readonly="true" autocomplete="off" spellcheck="false" title="User đăng nhập được cố định từ khi đăng ký" class="account-readonly-email">
   <label for="accountProfileEmail">Email tài khoản (không thể thay đổi)</label><input id="accountProfileEmail" type="email" readonly disabled aria-readonly="true" autocomplete="email" title="Email đăng ký không thể sửa" class="account-readonly-email">
   <label for="accountDisplayName">Tên người dùng</label><input id="accountDisplayName" type="text" minlength="2" maxlength="100" required autocomplete="name">
   <label for="accountOldPassword">Mật khẩu cũ (chỉ nhập khi muốn đổi)</label><input id="accountOldPassword" type="password" autocomplete="current-password" placeholder="Để trống nếu không đổi mật khẩu">
@@ -527,7 +528,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <script src="./data365-payment.js?v=20261106qrspeed"></script>
 <script src="./account-flow.js?v=20261106u130"></script>
 <script src="./customer.js?v=20261106refresh135"></script>
-<script src="./account-settings-v120.js?v=126email1"></script>
+<script src="./account-settings-v120.js?v=20261106username136"></script>
 <script src="./combo-portal-v118.js?v=1118combo3"></script>
 <style>
 .autotax-team-shared-passwords{margin-top:14px}

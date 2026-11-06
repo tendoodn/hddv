@@ -110,10 +110,6 @@
   }
   function invoiceSheet(name, rows, details, withPdf, mstCheck, illegal) {
     const list = sorted(rows).map((r) => ({ r, m: money(r) }));
-    const xmlKeys=invoiceXmlKeys(list,details);
-    const baseSize=INVOICE_COLS.length+LOOKUP_COLS.length+(mstCheck?MST_COLS.length:0);
-    const keptXmlKeys=xmlKeys.slice(0,XML_EXCEL_MAX_COLUMNS-baseSize);
-    const extraXmlKeys=xmlKeys.slice(keptXmlKeys.length);
     const currencies = list.length ? [...new Set(list.map(({ r }) => currencyOf(r)))].sort() : ['VND'];
     const totals = currencies.map((currency) => {
       const group = list.filter(({ r }) => (currencyOf(r)) === currency);
@@ -123,10 +119,7 @@
       return row;
     });
     return {
-      name, columns: [...INVOICE_COLS, ...LOOKUP_COLS, ...(mstCheck ? MST_COLS : []),
-        ...keptXmlKeys.map(k=>({header:'XML / '+k,width:32,type:'text'}))],
-      xmlContinuation:extraXmlKeys.length?
-        xmlContinuationSheets(name,list,details,extraXmlKeys):[],
+      name, columns: [...INVOICE_COLS, ...LOOKUP_COLS, ...(mstCheck ? MST_COLS : [])],
       boldRows: new Set(totals.map((_, i) => list.length + i)),
       rows: [
         ...list.map(({ r, m }, i) => [i + 1, HDDT.KINDS[r.kind].label, HDDT.FORMS[r.form].label, HDDT.TTXLY[r.ttxly] || '', r.khmshdon, r.khhdon,
@@ -134,8 +127,7 @@
           foreign(r) ? r.tgia : null, HDDT.TTHAI[r.tthai] || '', r.goc,
           signDate(headOf(details, r)), headOf(details, r)?.httt || r.httt || '', xmlState(details, r),
           ...((o) => [o.name, o.code, headOf(details,r)?.lookup?.secretCode||'', linkCell(o)])(HDDT.originalLookup(r, headOf(details, r))),
-          ...(mstCheck ? mstRisk(r, illegal) : []),
-          ...keptXmlKeys.map(k=>details.get(r.key)?.xmlFields?.[k]??'')]),
+          ...(mstCheck ? mstRisk(r, illegal) : [])]),
         ...totals,
       ],
     };
@@ -193,18 +185,20 @@
 
   function linesSheet(rows, details, name = 'Chi tiết sản phẩm') {
     const out = [], sums = new Map();
+    const chosenXml=window.AutoTaxXmlColumns?.getSelected?.()||[];
     for (const r of sorted(rows)) {
       const d = withLinesOf(details, r);
       if (!d) continue;
       const [mst, ten] = partner(r), currency = currencyOf(r);
       if (!sums.has(currency)) sums.set(currency, { amount: 0, tax: 0 });
       const sum = sums.get(currency);
-      for (const l of invoiceLines(r, d)) {
+      for (const [lineIndex,l] of invoiceLines(r, d).entries()) {
         // Không cộng gộp giá trị của các loại tiền tệ khác nhau.
         const p = pctOf(l.tsuat), thue = l.tthue === null ? null : roundVND(l.tthue);
         out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), productCodeOf(l), dateVN(headOf(details,r)?.nlap||r.tdlap), mst, ten,
           l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue, currency,
-          productCodeOf(l), signDate(headOf(details,r))]);
+          productCodeOf(l), signDate(headOf(details,r)),
+          ...chosenXml.map(key=>window.AutoTaxXmlColumns.value(d,key,lineIndex))]);
         sum.amount += l.thtien || 0; sum.tax += thue || 0;
       }
     }
@@ -212,7 +206,8 @@
     for (const currency of currencies) {
       const sum = sums.get(currency) || { amount: 0, tax: 0 };
       boldRows.add(out.length);
-      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '', '']);
+      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '', '',
+        ...chosenXml.map(()=>'')]);
     }
     return {
       name, boldRows,
@@ -225,6 +220,7 @@
         { header: 'Tiền thuế', width: 14, type: N }, { header: 'Tiền tệ', width: 9 },
         { header: 'Mã hàng hóa gốc (XML/JSON)', width: 29, type: T },
         { header: 'Ngày ký', width: 12 },
+        ...chosenXml.map(key=>({header:'XML / '+key,width:32,type:T}))
       ],
       rows: out,
     };
@@ -810,10 +806,6 @@
       invoiceSheet('Mua vào', rows.filter((r) => r.kind === 'purchase'), details, opts.withPdf, want.seller, opts.illegal),
       invoiceSheet('Bán ra', rows.filter((r) => r.kind === 'sold'), details, opts.withPdf, want.seller, opts.illegal),
     ];
-    // Append overflow-only XML sheets without removing any existing report
-    // columns. The first 16.384 columns stay on the main invoice worksheets.
-    for(const base of sheets.slice(0,2))if(base.xmlContinuation?.length)
-      sheets.push(...base.xmlContinuation);
     if (opts.withLines) {
       sheets.push(linesSheet(rows.filter(r=>r.kind==='purchase'),details,'Chi tiết mua vào'));
       sheets.push(linesSheet(rows.filter(r=>r.kind==='sold'),details,'Chi tiết bán ra'));

@@ -80,12 +80,17 @@ async function refresh(){
   const {data:{session}}=await db.auth.getSession();
   if(!session?.user){myId='';teams=[];memberships=[];activeTeam='';lastTeamRefreshAt=0;$('autotaxTeamDetail').hidden=true;return}
   myId=session.user.id;
+  const requestedUserId=myId;
   const [tr,mr,pr,er]=await Promise.all([
    db.from('autotax_teams_v118').select('id,name,owner_id,created_at').order('created_at'),
    db.from('autotax_team_members_v118').select('team_id,user_id,status').eq('user_id',myId),
    db.from('addon_mst_assignments').select('mst,display_name').eq('user_id',myId),
    db.rpc('autotax_my_entitlements_v118')
   ]);
+  // Ignore a stale response if sign-out or account switching happened
+  // while group RPCs were in flight. Never paint the previous user's teams.
+  const {data:{session:currentSession}}=await db.auth.getSession();
+  if(myId!==requestedUserId||currentSession?.user?.id!==requestedUserId)return;
   leaderEntitlements=er.error?null:er.data;
   if(tr.error)throw tr.error;if(mr.error)throw mr.error;
   teams=tr.data||[];memberships=mr.data||[];myMsts=pr.error?[]:(pr.data||[]);

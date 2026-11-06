@@ -115,7 +115,7 @@ async function put(scope,row,detail){
  // Merely expiring a 7-day Web history listing does not remove a 10-day cache entry.
 async function clearForAccount(userId,mst=''){
  if(!userId||typeof userId!=='string')return 0;
- const prefix=userId+'|'+(mst?mst+'|':'');
+ const prefix='xmlmeta3|'+userId+'|'+(mst?mst+'|':'');
  for(const key of [...memory.keys()])if(key.startsWith(prefix))memory.delete(key);
  const db=await open();if(!db)return 0;
  return new Promise(resolve=>{

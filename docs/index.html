@@ -33,6 +33,21 @@
 #extensionHeaderDownloadBtn.autotax-extension-cta{display:inline-flex!important;align-items:center;justify-content:center;background:transparent!important;color:#60a5fa!important;border:1px solid #2563eb!important;border-radius:9px!important;padding:7px 9px!important;font-size:12px!important;font-weight:700!important;line-height:1.2!important;box-shadow:0 0 0 0 rgba(59,130,246,.15);text-decoration:none!important;animation:autotaxBlueRing 2s ease-in-out infinite}@keyframes autotaxBlueRing{50%{border-color:#93c5fd;box-shadow:0 0 0 4px rgba(59,130,246,.13)}}@media(prefers-reduced-motion:reduce){#extensionHeaderDownloadBtn.autotax-extension-cta{animation:none}}
 #extensionHeaderDownloadBtn.autotax-extension-cta:focus-visible{outline:3px solid #e0153c;outline-offset:4px}
 @media(max-width:640px){#extensionHeaderDownloadBtn.autotax-extension-cta{padding:6px 8px!important;font-size:11px!important}}
+</style><style id="autotax-account-row-v136">
+/* Account tools and usage mode stay on one row. Small screens scroll the row
+   horizontally instead of stacking or clipping permission/renewal actions. */
+.account-line{min-width:0!important}
+#webAccountModeSlot{display:flex!important;flex-flow:row nowrap!important;align-items:center!important;gap:clamp(3px,.6vw,10px)!important;min-width:0;width:100%;overflow-x:auto;scrollbar-width:thin}
+#webAccountTools,#webUserBlock{display:flex!important;flex-flow:row nowrap!important;align-items:center;gap:clamp(3px,.5vw,8px)!important;flex:none;white-space:nowrap}
+#webUserBlock[hidden]{display:none!important}
+#webAccountModeSlot #webModeControls:not([hidden]){display:flex!important;flex-flow:row nowrap!important;align-items:center!important;min-width:max-content;width:auto!important;gap:4px!important;margin:0!important}
+#webGreeting{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis;overflow-wrap:normal!important;max-width:clamp(60px,14vw,210px);font-size:clamp(9px,1vw,13px)!important}
+#webAccountModeSlot #webModeControls label,#webAccountModeSlot #webModeControls select{font-size:clamp(9px,.92vw,12px)!important}
+#webAccountModeSlot #webModeControls select{min-width:92px!important;max-width:clamp(100px,18vw,215px)!important;padding:6px!important}
+#webRenewNow,#webMstGrantNow,#webLiteNow{white-space:nowrap;flex:none;font-size:clamp(9px,.9vw,12px)!important;padding:clamp(5px,.55vw,9px)!important}
+#webLiteNow{display:inline-flex;align-items:center;justify-content:center;border:1px solid #4b86db;border-radius:9px;background:#123456;color:#e8f3ff;text-decoration:none;font-weight:750;min-height:32px}
+#webLiteNow:hover{background:#18456f}
+@media(max-width:640px){#webAccountModeSlot{gap:4px!important}#webAvatar{width:23px;height:23px}#webSettingsToggle{width:27px;height:27px;font-size:15px}#webAccountModeSlot #webModeControls label{display:none}}
 </style><style>.topbar .logo{font-size:18px!important;font-weight:900;letter-spacing:.04em}.topbar .logo span{font-size:15px!important;font-weight:900}@media(max-width:600px){.topbar .logo{font-size:16px!important}.topbar .logo span{font-size:12px!important}.topbar .logo img{width:36px;height:36px}}</style></head>
 <body>
 <style>
@@ -82,6 +97,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
            </div>
            <a id="webRenewNow" href="/user/#planSection" title="Gia hạn hoặc mua thêm gói AutoTax">Gia hạn</a>
            <a id="webMstGrantNow" href="/user/?panel=mst" title="Mở cấu hình danh sách MST được phép sử dụng">Cấp quyền truy cập cho MST</a>
+           <a id="webLiteNow" href="/lite/" title="Tra cứu hóa đơn bằng giao diện rút gọn cho điện thoại">Xem Rút Gọn</a>
           </div>
           <span id="authStatus" hidden>Đang xác minh đăng nhập…</span>
         </div>

@@ -738,8 +738,8 @@ $("signupForm").addEventListener("submit",event=>{
   const invalid=accountFlow.validateSignup({name,email,password,confirmPassword});
   if(invalid)return signupMessage(invalid,true);
   const username=$("signupUsername").value.trim().toLowerCase();
-  if(!/^[a-z][a-z0-9._]{3,31}$/.test(username))
-   return signupMessage("User đăng nhập phải có 4–32 ký tự, bắt đầu bằng chữ và chỉ gồm chữ thường, số, dấu chấm hoặc gạch dưới.",true);
+  if(!/^[a-z][a-z0-9]{3,31}$/.test(username))
+   return signupMessage("User đăng nhập phải có 4–32 ký tự, bắt đầu bằng chữ và chỉ gồm chữ thường và chữ số, không dấu hoặc ký tự đặc biệt.",true);
   button.disabled=true;
   try{
    const {data:free,error:usernameError}=await client.rpc('autotax_username_available_v130',{p_username:username});

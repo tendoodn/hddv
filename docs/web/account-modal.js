@@ -106,8 +106,8 @@ $('webSignupForm').addEventListener('submit',async e=>{
  const pass=$('webSignupPassword').value,confirm=$('webSignupConfirm').value;
  const invalid=accountFlow.validateSignup({name,email,password:pass,confirmPassword:confirm});
   const username=$('webSignupUsername').value.trim().toLowerCase();
-  if(!/^[a-z][a-z0-9._]{3,31}$/.test(username))
-   return message('webSignupStatus','User đăng nhập phải có 4–32 ký tự, bắt đầu bằng chữ và chỉ chứa chữ thường, số, dấu chấm hoặc gạch dưới.',true);
+  if(!/^[a-z][a-z0-9]{3,31}$/.test(username))
+   return message('webSignupStatus','User đăng nhập phải có 4–32 ký tự, bắt đầu bằng chữ và chỉ chứa chữ thường và chữ số, không dấu hoặc ký tự đặc biệt.',true);
   const {data:free,error:checkError}=await client.rpc('autotax_username_available_v130',{p_username:username});
   if(checkError)return message('webSignupStatus','Chưa kiểm tra được User đăng nhập, hãy thử lại.',true);
   if(!free)return message('webSignupStatus','User đăng nhập đã được sử dụng. Hãy chọn User khác.',true);

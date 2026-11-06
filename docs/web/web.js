@@ -317,9 +317,14 @@ async function refreshAccountCore(epoch){
  try{
   const {data:{session}}=await client.auth.getSession();
   if(epoch!==accountRefreshEpoch)return;
+  const previousAccount=account;
   account=session?.user||null;
   accountRefreshOwner=account?.id||null;
-  window.AutoTaxWebAccount?.sync(account);
+  // Focus refreshes must not collapse a user's open account menu or dialog.
+  if(previousAccount?.id!==account?.id||
+     previousAccount?.email!==account?.email||
+     previousAccount?.updated_at!==account?.updated_at)
+   window.AutoTaxWebAccount?.sync(account);
   if(!account){
    $('webTeamQuotaSummary').hidden=true;
    $('webModeControls').hidden=false;
@@ -327,7 +332,8 @@ async function refreshAccountCore(epoch){
    $('webUsageModeHint').textContent='Đăng nhập AutoTax để xem chế độ sử dụng.';
    $('accountEmailLabel').textContent='Chưa đăng nhập';
    profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
-   window.GdtVault?.setUser(null,[]);
+   void window.GdtVault?.setUser(null,[])?.catch(error=>
+    console.warn('Chưa khóa được bộ chọn MST:',error.message));
    // Clear catalog from the previous user's in-memory UI immediately after sign-out.
    document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:null}}));
    $('authStatus').textContent='Chưa đăng nhập — bấm Đăng nhập tại đây.';
@@ -432,7 +438,9 @@ async function refreshAccountCore(epoch){
   if(selectedMode==='invoice')show('Chế độ số tờ: nhập MST bất kỳ, không cần thêm vào danh sách hồ sơ. Hệ thống sẽ trừ lượt hóa đơn mới.',true);
   else if(!profileAllowedMsts.length)show('Chưa có MST được cấp quyền. Khi tra cứu MST đầu tiên, AutoTax sẽ hỏi bạn có muốn cấp phép hay không.');
   else show('Gói MST: đã cấp quyền '+profileAllowedMsts.length+' MST. Chỉ các MST trong danh sách cấp quyền được tra cứu.',true);
- }catch(e){show('Không đồng bộ được quyền AutoTax: '+e.message)}
+ }catch(e){
+  if(epoch===accountRefreshEpoch)show('Không đồng bộ được quyền AutoTax: '+e.message);
+ }
 }
 async function signIntoTax(mst){
  const username=mst;

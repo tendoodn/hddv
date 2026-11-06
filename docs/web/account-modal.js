@@ -51,7 +51,13 @@ function update(){
  $('webUserBlock').hidden=!signedIn;
  if(signedIn){
   const name=nameOf(account)||account.email?.split('@')[0]||'bạn';
-  $('webGreeting').textContent='Xin chào '+name;
+  const greeting=$('webGreeting'),greetingText=greeting.querySelector('.web-greeting-text')||greeting;
+  greetingText.textContent='Xin chào '+name;
+  requestAnimationFrame(()=>{
+   const overflow=Math.max(0,greetingText.scrollWidth-greeting.clientWidth);
+   greeting.style.setProperty('--greeting-overflow',overflow+'px');
+   greeting.classList.toggle('web-greeting-long',overflow>3);
+  });
   $('webAvatar').src=/^data:image\/jpeg;base64,/.test(account.user_metadata?.avatar_data_url||'')?
    account.user_metadata.avatar_data_url:logo;
   saveEmail(account.email||'');
@@ -190,10 +196,20 @@ function openProfile(){
  $('webProfileAvatar').src=avatar;message('webProfileStatus');
  open('webProfileDialog');
 }
+function positionAccountMenu(){
+ const menu=$('webSettingsMenu'),trigger=$('webSettingsToggle');
+ if(menu.hidden)return;
+ const rect=trigger.getBoundingClientRect();
+ menu.style.top=Math.max(6,rect.bottom+7)+'px';
+ menu.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-212))+'px';
+}
 $('webSettingsToggle').addEventListener('click',()=>{
  const menu=$('webSettingsMenu');menu.hidden=!menu.hidden;
  $('webSettingsToggle').setAttribute('aria-expanded',String(!menu.hidden));
+ positionAccountMenu();
 });
+window.addEventListener('resize',positionAccountMenu,{passive:true});
+window.addEventListener('scroll',positionAccountMenu,{passive:true});
 document.addEventListener('pointerdown',e=>{
  if(!e.target.closest('.web-settings-wrap')){
   $('webSettingsMenu').hidden=true;$('webSettingsToggle').setAttribute('aria-expanded','false');

@@ -268,6 +268,15 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 
  </form>
 </section>
+<dialog id="resetPasswordDialog" class="autotax-signup-dialog" aria-labelledby="resetPasswordTitle">
+ <form id="resetPasswordForm">
+  <div class="autotax-signup-head"><h2 id="resetPasswordTitle">Quên mật khẩu AutoTax</h2><button type="button" id="resetPasswordClose" class="secondary" aria-label="Đóng">✕</button></div>
+  <label for="resetPasswordEmail">Email đã đăng ký (không dùng username)</label>
+  <input id="resetPasswordEmail" type="email" autocomplete="email" required placeholder="email@gmail.com">
+  <p id="resetPasswordStatus" class="notice" role="status" hidden></p>
+  <div class="actions"><button id="resetPasswordSubmit" type="submit">Gửi email reset</button><button id="resetPasswordCancel" class="secondary" type="button">Đóng</button></div>
+ </form>
+</dialog>
 <dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
  <form id="signupForm" autocomplete="on">
   <div class="autotax-signup-head"><h2 id="signupDialogTitle">Tạo tài khoản AutoTax</h2><button id="signupCloseBtn" type="button" class="secondary" aria-label="Đóng đăng ký">✕</button></div>

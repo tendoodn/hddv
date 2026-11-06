@@ -72,7 +72,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 #app>.panel:has(>.admin-fold:not([open])){box-shadow:0 1px 6px #80001209}
 @media(max-width:600px){.admin-fold>summary{font-size:14px;min-height:36px}}
 
-/* V1.1.22: editable mode, native modal above folded admin panels */
+/* V1.1.28: editable mode, native modal above folded admin panels */
 .mode-change-trigger{border:0;background:transparent;color:#1d4ed8;font-size:12px;font-weight:750;padding:2px 4px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .mode-change-trigger:hover,.mode-change-trigger:focus-visible{background:#eff6ff;color:#1e40af}
 #adminUsageModeDialog{width:min(430px,calc(100vw - 24px));max-width:96vw;border:1px solid #cbd5e1;border-radius:15px;background:#fff;color:#172033;padding:20px;box-shadow:0 24px 60px #0f172a44}
@@ -83,7 +83,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 #adminUsageModeDialog .actions{margin-top:16px;justify-content:flex-end}
 #adminUsageModeDialog [hidden]{display:none!important}
 
-/* V1.1.22 admin table layout: two resets, three actions, then mode editor. */
+/* V1.1.28 admin table layout: two resets, three actions, then mode editor. */
 #customerPanel #users>tr>td:last-child{min-width:174px;width:185px}
 #customerPanel .customer-action-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;align-items:stretch;width:100%;max-width:190px}
 .customer-action-grid>button{min-width:0!important;max-width:100%;padding:5px 3px;font-size:11px;white-space:nowrap}
@@ -102,7 +102,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 .admin-mst-row-actions{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:3px;flex-wrap:nowrap;white-space:nowrap}
 .admin-mst-row-actions>button{padding:4px 5px!important;min-height:26px!important;font-size:10px!important;min-width:0!important;flex:0 0 auto}
 </style></head><body><main class="wrap"><h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">Quản trị AutoTax</h1>
-<header><div class="brand">AUTOTAX <span>V1.1.27 · ADMIN</span></div><div class="actions"><a href="/user" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
+<header><div class="brand">AUTOTAX <span>V1.1.28 · ADMIN</span></div><div class="actions"><a href="/user" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <div id="adminSessionPending" class="panel" role="status" aria-live="polite">Đang xác minh phiên AutoTax và quyền Admin…</div>
 <section id="auth" class="panel hidden"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
 <section id="app" class="hidden">
@@ -896,4 +896,4 @@ void bootOnce();
 <script src="./admin-issuers-v1.js?v=20261106registry1"></script>
 <script src="./password-toggle.js?v=116"></script>
 <script src="./site-footer.js?v=118"></script>
-</body></html>
+<script src="../release-notice-v128.js"></script></body></html>

@@ -208,27 +208,54 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
  <p id="siteLinksMessage" class="notice" role="status"></p>
 </section><section class="panel" id="issuerRegistryPanel">
  <details id="issuerRegistryFold" class="admin-fold">
-  <summary>Danh sách nhà phát hành · Chân PDF dựng</summary>
+  <summary>Danh sách nhà phát hành · Thông tin chân PDF dựng</summary>
   <div class="admin-fold-content">
    <div class="row">
-    <h2>Thông tin tra cứu từ chân PDF dựng</h2>
+    <h2>Danh sách nhà phát hành</h2>
     <button type="button" class="secondary" id="issuerRegistryRefresh">Làm mới</button>
    </div>
-   <p class="muted">Tự thu thập 5 thông tin đúng như phần chân PDF dựng của từng hóa đơn đã đọc: tên hoặc MST nhà cung cấp, địa chỉ tra cứu, mã tra cứu, MST người mua và MST người bán. Một mã tra cứu có thể tương ứng một hóa đơn riêng; giá trị đã lưu không tự ghi đè. Những hóa đơn không có thông tin tra cứu ở chân PDF sẽ không tạo dòng trống.</p>
+   <p class="muted">AutoTax lấy đúng các thông tin in ở <strong>chân PDF dựng</strong> từ hóa đơn đã đọc. Mỗi hóa đơn có một dòng; cùng nhà cung cấp nhưng khác mã tra cứu sẽ là những dòng riêng. Chỉ tự bổ sung giá trị còn thiếu, chỉ Admin được sửa.</p>
    <p id="issuerRegistryStatus" role="status"></p>
    <div class="tablewrap"><table>
     <thead><tr>
      <th>Nhà cung cấp HĐĐT</th>
      <th>Tra cứu tại</th>
      <th>Mã tra cứu</th>
-     <th>MST người mua trên PDF dựng</th>
-     <th>MST người bán trên PDF dựng</th>
+     <th>MST người mua</th>
+     <th>MST người bán</th>
     </tr></thead>
     <tbody id="issuerRegistryRows"></tbody>
    </table></div>
+   <p class="muted">Bấm vào tên nhà cung cấp để sửa dòng tương ứng. Không lấy mã của CQT làm mã tra cứu. Những thông tin không có trên dữ liệu đã đọc được để trống.</p>
   </div>
  </details>
 </section>
+<dialog id="issuerRegistryDialog" aria-label="Sửa thông tin chân PDF dựng" style="max-width:min(540px,96vw);width:100%;border:1px solid #e7b6c0;border-radius:12px;padding:20px">
+ <form id="issuerRegistryForm">
+  <h2>Sửa thông tin nhà phát hành</h2>
+  <p id="issuerEditInvoice" class="muted"></p>
+  <label style="display:block;margin:8px 0">Nhà cung cấp HĐĐT (tên hoặc MST)
+   <input id="issuerEdit_provider_name" type="text" maxlength="180" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+  </label>
+  <label style="display:block;margin:8px 0">Tra cứu tại
+   <input id="issuerEdit_lookup_url" type="url" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+  </label>
+  <label style="display:block;margin:8px 0">Mã tra cứu
+   <input id="issuerEdit_lookup_code" type="text" maxlength="200" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+  </label>
+  <label style="display:block;margin:8px 0">MST người mua
+   <input id="issuerEdit_buyer_mst" type="text" maxlength="13" inputmode="numeric" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+  </label>
+  <label style="display:block;margin:8px 0">MST người bán
+   <input id="issuerEdit_seller_mst" type="text" maxlength="13" inputmode="numeric" autocomplete="off" style="display:block;width:100%;margin-top:4px" />
+  </label>
+  <p id="issuerEditStatus" role="status" style="font-size:12px"></p>
+  <div class="actions" style="display:flex;gap:8px;justify-content:flex-end">
+   <button id="issuerRegistrySave" type="submit">Lưu thông tin</button>
+   <button id="issuerRegistryCancel" type="button" class="secondary">Đóng</button>
+  </div>
+ </form>
+</dialog>
 <div class="tabs">
  <button class="tab active" data-tab="customers">Khách hàng</button>
  <button class="tab secondary" data-tab="logs">Nhật ký quản trị</button>

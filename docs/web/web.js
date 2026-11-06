@@ -60,7 +60,7 @@ const dateOnly=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String
 const idOf=r=>JSON.stringify([r.kind,r.form,r.khhdon,r.shdon,r.nbmst,r.nmmst]);
 const money=n=>Number(n||0).toLocaleString('vi-VN')+' ₫';
 const safe=s=>String(s||'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,70);
-const selected=name=>[...document.querySelectorAll('input[name="'+name+'"]:checked')].map(el=>el.value);
+const selected=name=>name==='form'?['hddt','mtt']:[...document.querySelectorAll('input[name="'+name+'"]:checked')].map(el=>el.value);
 const show=(msg,ok=false)=>{const box=$('notice');box.hidden=!msg;box.textContent=msg||'';box.classList.toggle('success',!!ok)};
 const QUOTA_MESSAGE='Hạn mức tài khoản đạt giới hạn. Vui lòng gia hạn thêm';
 const QUOTA_REASONS=new Set(['mst_not_whitelisted','mst_package_expired','mst_capacity_reduced','mst_capacity_reached','invoice_package_required','invoice_quota_exceeded','quota_exceeded','quota_reached','mst_limit_reached']);
@@ -868,8 +868,7 @@ window.WebInvoiceApp={
  }
 };
 function init(){
- // Both invoice forms start selected whenever Web is opened; users may untick later.
- document.querySelectorAll('input[name="form"]').forEach(input=>{input.checked=true});
+ // Both HDDT/MTT are permanently enabled; selection UI removed.
  const today=new Date();configureVnDates();setVnDate('toDate',dateOnly(today));
  setVnDate('fromDate',dateOnly(new Date(today.getFullYear(),today.getMonth(),1)));
  $('searchForm').addEventListener('submit',search);

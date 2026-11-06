@@ -8,6 +8,26 @@ const menu=$('accountSettingsMenu'),toggle=$('accountSettingsToggle'),dialog=$('
 let avatarData=logo;
 const safeAvatar=value=>typeof value==='string'&&value.startsWith('data:image/jpeg;base64,')&&value.length<65000?value:logo;
 const nameFrom=user=>String(user?.user_metadata?.full_name||user?.user_metadata?.display_name||'').trim().slice(0,100);
+// Login username is a stable server-owned identity, not editable profile metadata.
+let usernameOwner='',usernameValue='',usernameRequest=null;
+async function showLoginUsername(user){
+ const input=$('accountProfileUsername');
+ if(!input||!user?.id)return;
+ if(usernameOwner!==user.id){usernameOwner=user.id;usernameValue='';usernameRequest=null}
+ if(usernameValue){input.value=usernameValue;return}
+ input.value='Đang tải…';
+ if(!usernameRequest)usernameRequest=client.rpc('autotax_my_username_v130').then(({data,error})=>{
+  if(error)throw error;
+  return String(data||'').trim()||'Chưa đăng ký';
+ }).finally(()=>{usernameRequest=null});
+ try{
+  const username=await usernameRequest;
+  if(usernameOwner===user.id){usernameValue=username;input.value=username}
+ }catch(error){
+  if(usernameOwner===user.id)input.value='Không tải được';
+  console.warn('Không đọc được User đăng nhập:',error.message||error);
+ }
+}
 async function render(){
  const {data:{session}}=await client.auth.getSession();
  if(!session?.user)return;
@@ -18,6 +38,7 @@ async function render(){
  $('accountAvatarPreview').src=avatarData;
  $('accountDisplayName').value=nameFrom(user);
  $('accountProfileEmail').value=user.email||'';
+ void showLoginUsername(user);
 }
 function hideMenu(){menu.hidden=true;toggle.setAttribute('aria-expanded','false')}
 function showProfile(){

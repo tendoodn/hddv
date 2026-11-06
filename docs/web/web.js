@@ -648,7 +648,7 @@ async function search(e){
      ' hóa đơn có XML gốc; '+skuCount+' hóa đơn có mã hàng; '+
      links+' hóa đơn có thông tin tra cứu; '+xmlColumns+
      ' tên cột XML (bao gồm trường trống). Chỉ xuất tệp XML khi chọn tải XML.');
-   // Store only one sample per publisher, complementing its missing values.
+   // Store one PDF-footer reference per authorized invoice, not one per provider.
    // This runs after server authorization and never blocks invoice results.
    const collector=window.AutoTaxIssuerReference,samples=[];
    if(collector)for(const row of rows){

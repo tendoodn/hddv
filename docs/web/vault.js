@@ -15,6 +15,8 @@ const MAX_PASS=256;
 const DB_NAME='autotax_gdt_device_credentials_v2';
 let owner='',profiles=[],dbPromise=null,deviceKey=null,requestSeq=0,invoiceMode=false;
 const lastKey=()=> 'autotax_last_mst_'+owner;
+const searchedKey=()=> 'autotax_last_searched_mst_'+owner;
+const validMst=m=>/^(?:\d{10}|\d{12}|\d{13})$/.test(m);
 const entryKey=mst=>owner+':'+mst;
 const asArray=v=>v instanceof Uint8Array?v:new Uint8Array(v);
 function notify(message,error=false){
@@ -119,7 +121,13 @@ function openPicker(showAll=false){
 }
 function renderPicker(){
  const select=$('mst'),input=$('mstFree'),typed=input.value.trim(),old=select.value;
- let remembered='';try{remembered=owner?localStorage.getItem(lastKey())||'':''}catch{}
+ let remembered='',lastSearched='';
+ try{
+  if(owner){
+   remembered=normalize(localStorage.getItem(lastKey())||'');
+   lastSearched=normalize(localStorage.getItem(searchedKey())||'');
+  }
+ }catch{}
  select.replaceChildren();
  const empty=document.createElement('option');empty.value='';empty.textContent='MST đã lưu';select.append(empty);
  const menu=$('mstPickerMenu');menu.replaceChildren();
@@ -190,9 +198,13 @@ function renderPicker(){
   menu.append(card);
  }
  const valid=m=>profiles.some(p=>p.mst===m);
- const typedMst=normalize(typed),wanted=valid(typedMst)?typedMst:
-  valid(old)?old:valid(remembered)?remembered:ordered[0]?.mst||'';
- select.value=wanted;
+ const typedMst=normalize(typed);
+ // Restore the last completed lookup, including arbitrary IDs in invoice mode.
+ // Never replace a new ID that the user is actively typing.
+ const recent=validMst(lastSearched)&&(valid(lastSearched)||invoiceMode)?lastSearched:'';
+ const wanted=valid(typedMst)?typedMst:valid(old)?old:
+  recent||valid(remembered)?(recent||remembered):ordered[0]?.mst||'';
+ select.value=valid(wanted)?wanted:'';
  input.hidden=false;
  if(!typed||valid(typedMst))input.value=wanted;
  $('mstProfileCount').textContent=profiles.length+' hồ sơ đã lưu';
@@ -302,7 +314,9 @@ async function setUser(userId,rows,mode='mst'){
  const profilesChanged=wasOwner!==owner||wasInvoiceMode!==invoiceMode||previousProfilesJson!==JSON.stringify(profiles);
  if(profilesChanged)renderPicker();
  if(profilesChanged&&owner&&($('mstFree').value||$('mst').value))
-  await select(normalize($('mstFree').value||$('mst').value));
+  // Credential retrieval is async; never block the account dashboard on it.
+  void select(normalize($('mstFree').value||$('mst').value))
+   .catch(error=>notify('Chưa điền được mật khẩu MST: '+error.message,true));
  if(!owner)notify('Đăng nhập AutoTax để xem hồ sơ MST đã liên kết.');
 }
 async function saveAfterLogin(mst,password){
@@ -338,6 +352,11 @@ async function forget(mst=normalize($('mstFree').value||$('mst').value)){
  $('gdtPassword').value='';notify('Đã xóa mật khẩu MST '+mst+' trên kho đồng bộ và thiết bị.');
 }
 const hasSaved=async mst=>!!owner&&!!await readStore('credentials',entryKey(mst)).catch(()=>null);
+function rememberSearch(mst){
+ const number=normalize(mst);
+ if(!owner||!validMst(number))return false;
+ try{localStorage.setItem(searchedKey(),number);return true}catch{return false}
+}
 function claimPasswordReminder(mst){
  if(!owner||!mst)return false;
  const key='autotax-tax-password-reminder-v115-'+owner+':'+normalize(mst);
@@ -396,6 +415,6 @@ function init(){
    void forget().catch(e=>notify(e.message,true));
  });
 }
-window.GdtVault={setUser,select,saveAfterLogin,forget,lock,hasSaved,claimPasswordReminder};
+window.GdtVault={setUser,select,saveAfterLogin,rememberSearch,forget,lock,hasSaved,claimPasswordReminder};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

@@ -11,7 +11,7 @@
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax – Tra cứu và tải hóa đơn điện tử hàng loạt | Excel, XML, PDF</title>
+<title>AutoTax V1.2.0 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF</title>
 <link rel="canonical" href="https://tracuuhoadon.top/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="author" content="AutoTax">
@@ -19,13 +19,16 @@
 <meta property="og:site_name" content="AutoTax">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:locale" content="vi_VN">
-<meta property="og:title" content="AutoTax – Tra cứu và tải hóa đơn điện tử hàng loạt">
-<meta property="og:description" content="Tra cứu hóa đơn điện tử, xuất Excel, XML, PDF và quản lý hồ sơ MST trên trình duyệt.">
+<meta name="twitter:title" content="AutoTax V1.2.0 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF">
+<meta name="twitter:description" content="Tra cứu hóa đơn điện tử mua vào, bán ra theo MST và khoảng ngày. Xem PDF hóa đơn, tổng hợp thuế, xuất Excel/XML và dùng AutoTax Lite trên điện thoại.">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="AutoTax V1.2.0 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF">
+<meta property="og:description" content="Tra cứu hóa đơn điện tử mua vào, bán ra theo MST và khoảng ngày. Xem PDF hóa đơn, tổng hợp thuế, xuất Excel/XML và dùng AutoTax Lite trên điện thoại.">
 <meta property="og:url" content="https://tracuuhoadon.top/">
 <meta property="og:image" content="https://tracuuhoadon.top/apple-touch-icon.png">
 <meta property="og:image:alt" content="Biểu tượng AutoTax - công cụ tra cứu hóa đơn điện tử độc lập">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"AutoTax","applicationCategory":"BusinessApplication","operatingSystem":"Web, Chrome","url":"https://tracuuhoadon.top/","description":"Phần mềm hỗ trợ tra cứu và tải hóa đơn điện tử, xuất Excel, XML, PDF, quản lý hồ sơ MST.","inLanguage":"vi","offers":{"@type":"Offer","url":"https://tracuuhoadon.top/baogia/"}}</script>
-<meta name="description" content="AutoTax hỗ trợ tra cứu hóa đơn điện tử hàng loạt, xuất Excel, XML, PDF, đồng bộ hồ sơ MST và hạn mức trên Web/Chrome Add-on.">
+<meta name="description" content="Tra cứu hóa đơn điện tử mua vào, bán ra theo MST và khoảng ngày. Xem PDF hóa đơn, tổng hợp thuế, xuất Excel/XML và dùng AutoTax Lite trên điện thoại.">
 <link rel="stylesheet" href="./web/web.css?v=20261106grantcenter136">
 <link rel="preconnect" href="https://img.vietqr.io">
 <link rel="dns-prefetch" href="//img.vietqr.io">
@@ -371,6 +374,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
     <div class="stock-actions"><button id="closeKWarning" type="button">Đã hiểu</button></div>
     <small>Hệ số K chỉ để tham khảo, không phải kết luận vi phạm thuế.</small>
   </dialog>
+  <section class="autotax-guide" aria-labelledby="autotaxSeoHelp"><h2 id="autotaxSeoHelp">Tra cứu hóa đơn điện tử theo MST như thế nào?</h2><p>Đăng nhập AutoTax, chọn MST và nhập thông tin cổng Thuế mà bạn có quyền sử dụng. Chọn thời gian, hóa đơn mua vào hoặc bán ra, sau đó bấm tìm kiếm. Kết quả giúp xem đối tác, tổng tiền và thuế; bạn có thể mở bản thể hiện PDF hoặc xuất bảng kê theo nhu cầu.</p><h3>Tra cứu hóa đơn điện tử trên điện thoại</h3><p><a href="/lite/">AutoTax Lite</a> có giao diện rút gọn dành cho điện thoại: xem PDF, ngày ký, tên đối tác và tổng thanh toán. Lite chỉ dùng để xem nhanh, không xuất tệp.</p><h3>PDF hóa đơn có phải bản gốc?</h3><p>PDF dựng từ dữ liệu Thuế được ghi rõ không phải PDF gốc. Việc tải PDF gốc phụ thuộc hệ thống nhà phát hành và các bước xác thực hợp lệ.</p></section>
   <section class="autotax-guide" aria-labelledby="autotaxGuideTitle">
     <h2 id="autotaxGuideTitle">Tra cứu hóa đơn điện tử mua vào và bán ra trên AutoTax</h2>
     <p>AutoTax hỗ trợ tra cứu theo mã số thuế và khoảng thời gian, tổng hợp mua vào, bán ra, tiền thuế và xuất dữ liệu hóa đơn ra Excel, XML, HTML hoặc PDF dựng lại. Việc tải PDF gốc phụ thuộc dữ liệu và phương thức xác thực của nhà phát hành.</p>

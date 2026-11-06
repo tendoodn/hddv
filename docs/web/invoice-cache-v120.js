@@ -1,4 +1,4 @@
-/* AutoTax 1.1.23 — local, account-scoped invoice detail cache.
+/* AutoTax V1.2.0 — local, account-scoped invoice detail cache.
  * Stores invoice payloads only (never passwords, GDT/AutoTax tokens, CAPTCHA).
  * Live server entitlement and quota checks MUST happen before every search.
  */
@@ -7,7 +7,7 @@
 const DB='autotax_invoice_details_v120', STORE='invoices', VERSION=1;
 const MAX_ITEMS=600, MEMORY_ITEMS=90, MAX_ITEM_BYTES=3*1024*1024;
 // Independent of the Web result/history retention window (e.g. 7 days).
-const DETAIL_RETENTION_DAYS=10, DETAIL_TTL_MS=DETAIL_RETENTION_DAYS*24*60*60*1000;
+const DETAIL_RETENTION_DAYS=30, DETAIL_TTL_MS=DETAIL_RETENTION_DAYS*24*60*60*1000;
 let opening, writes=0, hits=0, misses=0;
 const memory=new Map();
 const validScope=s=>!!s&&typeof s.userId==='string'&&s.userId.length>0&&
@@ -112,7 +112,7 @@ async function put(scope,row,detail){
  }catch{return false}
 }
 // Explicit deletion of local invoice history also removes its cached payloads.
- // Merely expiring a 7-day Web history listing does not remove a 10-day cache entry.
+ // Merely expiring a 7-day Web history listing does not remove a 30-day cache entry.
 async function clearForAccount(userId,mst=''){
  if(!userId||typeof userId!=='string')return 0;
  const prefix='xmlmeta3|'+userId+'|'+(mst?mst+'|':'');

@@ -30,7 +30,7 @@
  'HDon/DLHDon/NDHDon/TToan/TgTTTBSo',
  'HDon/DLHDon/NDHDon/TToan/TgTThue'
  ];
- const normal=k=>String(k||'').replace(/\[\d+\]/g,'').replace(/\s*\/\s*/g,'/');
+ const normal=k=>String(k||'').replace(/\[(?:\d+)?\]/g,'').replace(/\s*\/\s*/g,'/');
  const allow=a=>Array.isArray(a)&&a.length<=300&&a.every(k=>typeof k==='string'&&k.length<300&&/^HDon\//.test(k)&&!/[<>]/.test(k));
  let selection=null;
  function getSelected(){
@@ -39,7 +39,7 @@
   return defaults.slice();
  }
  function importConfig(data){
-  const selected=Array.isArray(data)?data:data?.fields;
+  const selected=Array.isArray(data)?data:(data?.fields||data?.selected);
   if(!allow(selected))throw Error('Cấu hình XML không hợp lệ: cần danh sách tối đa 300 mã trường từ HDon.');
   const unique=[...new Set(selected.map(normal))];selection=unique;
   try{localStorage.setItem(KEY,JSON.stringify(unique))}catch{}

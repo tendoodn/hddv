@@ -165,7 +165,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 </style>
 <section id="adminPackageGrant" class="panel"><h2>Cấp gói trực tiếp bởi quản trị</h2><p class="sub">Admin chọn tài khoản và một trong các gói sản phẩm đang mở để cấp quyền ngay, không cần khách thanh toán hoặc nhập mã unlock. Lượt hóa đơn được cộng dồn; mỗi gói MST có hạn 365 ngày riêng. Mọi lần cấp đều lưu nhật ký quản trị.</p><div class="actions"><label class="grant-customer-field" for="grantCustomerSearch">Khách hàng
  <span class="grant-search">
-  <input id="grantCustomerSearch" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Tìm nhanh email, tên hoặc MST" aria-label="Tìm khách hàng để cấp gói" aria-controls="grantCustomerMatches" aria-expanded="false" aria-autocomplete="list">
+  <input id="grantCustomerSearch" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Tìm email, User đăng nhập, tên hoặc MST" aria-label="Tìm khách hàng để cấp gói" aria-controls="grantCustomerMatches" aria-expanded="false" aria-autocomplete="list">
   <input id="grantCustomer" type="hidden" value="">
   <div id="grantCustomerMatches" class="grant-customer-matches hidden" role="listbox" aria-label="Kết quả tìm khách hàng"></div>
  </span>
@@ -744,8 +744,12 @@ async function loadUsers(){
  try{
   const {data:names,error:nameError}=await client.rpc('autotax_admin_user_names_v120');
   if(!nameError){
-   const byId=new Map((names||[]).map(item=>[item.user_id,item.display_name||'']));
-   allUsers=allUsers.map(item=>({...item,display_name:byId.get(item.user_id)||''}));
+   const byId=new Map((names||[]).map(item=>[item.user_id,item]));
+   allUsers=allUsers.map(item=>{
+    const profile=byId.get(item.user_id);
+    return {...item,display_name:profile?.display_name||'',
+      username:profile?.username||''};
+   });
   }
  }catch(e){console.warn('Chưa tải được tên hồ sơ:',e.message)}
  renderUsers();
@@ -762,7 +766,7 @@ function renderGrantMatches(){
  menu.replaceChildren();
  const allowed=allUsers.filter(u=>!u.legacy_pending);
  const choices=allowed.filter(u=>{
-  const names=[u.email,u.display_name,u.user_id,...(u.mst_assignments||[]).map(v=>v.mst)];
+  const names=[u.email,u.username,u.display_name,u.user_id,...(u.mst_assignments||[]).map(v=>v.mst)];
   return !q||names.some(v=>String(v||"").toLocaleLowerCase("vi-VN").includes(q));
  }).slice(0,20);
  for(const [i,user] of choices.entries()){
@@ -770,8 +774,10 @@ function renderGrantMatches(){
   button.type="button";button.className="grant-customer-choice";button.setAttribute("role","option");
   button.dataset.userId=user.user_id;
   button.textContent=user.email||user.user_id;
-  if(user.display_name){
-   const sub=document.createElement("small");sub.textContent=" · "+user.display_name;button.append(sub);
+  const summary=[user.username?'User: '+user.username:'',user.display_name||''].filter(Boolean);
+  if(summary.length){
+   const sub=document.createElement("small");sub.textContent=" · "+summary.join(' · ');
+   button.append(sub);
   }
   button.addEventListener("click",()=>{displayGrantCustomer(user);$("grantPackage").focus()});
   menu.append(button);
@@ -802,7 +808,7 @@ function renderUsers(){
  $('customerPageInfo').textContent='Trang '+customerPage+'/'+pages;
  $('customerPrev').disabled=customerPage<=1;$('customerNext').disabled=customerPage>=pages;
  const rows=filtered.slice((customerPage-1)*5,customerPage*5).map(u=>{
-  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button></td></tr>';
+  if(u.legacy_pending)return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">User đăng nhập: <b>'+esc(u.username||'Chưa đăng ký')+'</b></div><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td colspan="3"><span class="pill off">Chờ Supabase V3.2</span><div class="sub">Chưa có dữ liệu gói mới để hiển thị.</div></td><td><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button></td></tr>';
   const invoices='<b>'+Number(u.invoice_remaining||0).toLocaleString('vi-VN')+' / '+Number(u.invoice_purchased||0).toLocaleString('vi-VN')+'</b><div class="sub">Lượt còn lại / đã mua</div>'+(u.can_reread_charged_invoices?'<div class="sub">Được đọc lại hóa đơn đã trừ</div>':'');
   const mstQty=Number(u.mst_capacity||0);
   const mst='<b>'+mstQty+' MST</b><div class="sub">Hạn gần nhất: '+fmt(u.mst_nearest_expiry)+'</div><div class="sub">Hạn xa nhất: '+fmt(u.mst_farthest_expiry)+'</div>';
@@ -810,7 +816,7 @@ function renderUsers(){
   const trial='<div>'+(u.trial_used?'<span class="pill off">Đã dùng thử</span>':'<span class="pill">Chưa dùng thử</span>')+'</div>'+
    (u.trial_expires_at?'<div class="sub">Hạn thử: '+fmt(u.trial_expires_at)+'</div>':'')+
    '<div class="sub">Liên kết: '+(linked||'Chưa có')+'</div>';
-  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="customer-action-grid"><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button data-grant="'+esc(u.user_id)+'">Cấp</button><button class="secondary" data-history="'+esc(u.user_id)+'">LS</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button><button type="button" class="mode-change-trigger" data-mode-user="'+esc(u.user_id)+'" aria-label="Đổi chế độ sử dụng">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+' ✎</button></div></td></tr>';
+  return '<tr><td><b>'+esc(u.email)+'</b><div class="sub">User đăng nhập: <b>'+esc(u.username||'Chưa đăng ký')+'</b></div><div class="sub">'+esc(u.display_name||'')+'</div><div class="sub">'+esc(u.user_id)+'</div></td><td>'+invoices+'</td><td>'+mst+'</td><td>'+trial+'</td><td><div class="customer-action-grid"><button class="secondary" data-reset="'+esc(u.email)+'">RS Mail</button><button class="danger" data-temp="'+esc(u.user_id)+'">RS 00</button><button data-grant="'+esc(u.user_id)+'">Cấp</button><button class="secondary" data-history="'+esc(u.user_id)+'">LS</button><button class="danger" data-remove-user="'+esc(u.user_id)+'">Xóa</button><button type="button" class="mode-change-trigger" data-mode-user="'+esc(u.user_id)+'" aria-label="Đổi chế độ sử dụng">Chế độ: '+esc(u.mode==='invoice'?'Số tờ':'MST')+' ✎</button></div></td></tr>';
  }).join('');
  $("users").innerHTML=rows||'<tr><td colspan="5">Không có tài khoản phù hợp.</td></tr>';
  $("count").textContent=filtered.length+" tài khoản";

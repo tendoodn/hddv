@@ -450,8 +450,10 @@ async function signIntoTax(mst){
     }
     $('gdtStatus').textContent='Đã xác thực cổng Thuế cho MST '+mst+' · phiên chỉ ở bộ nhớ tab.';
     $('captchaStatus').textContent='Đã đăng nhập bằng mã xác nhận tự xử lý.';
-    // Instantly refresh both Web and customer-side shared profile metadata.
+    // A first-time grant decision is shared across Web and Chrome Add-on.
+    // Do not automatically grant an MST simply because login succeeded.
     await refreshAccount();
+    await ensureFirstTimeMstConsent(mst);
     return;
    }
    const message=await messageOf(res);
@@ -532,6 +534,22 @@ function askMstGrantConsent(){
   dialog.addEventListener('close',closed,{once:true});dialog.showModal();
  });
 }
+async function ensureFirstTimeMstConsent(mst){
+ const {data:status,error:statusError}=await client.rpc('autotax_mst_consent_status_v128',{p_mst:mst});
+ if(statusError)throw Error('Không kiểm tra được trạng thái cấp quyền MST: '+statusError.message);
+ if(status?.allowed){if(!profileAllowedMsts.includes(mst))profileAllowedMsts.push(mst);return true}
+ if(!status?.should_ask)return false;
+ const dialog=$('mstGrantConsentDialog');
+ const question=dialog?.querySelector('p');
+ if(question)question.textContent='Có muốn cấp quyền sử dụng MST cho MST: '+mst+' không?';
+ const yes=await askMstGrantConsent();
+ const {data:decision,error:decisionError}=await client.rpc('autotax_mst_consent_decide_v128',
+  {p_mst:mst,p_grant:yes});
+ if(decisionError)throw Error('Không lưu được lựa chọn MST: '+decisionError.message);
+ if(decision?.allowed&&!profileAllowedMsts.includes(mst))profileAllowedMsts.push(mst);
+ if(!yes)progress('Bạn đã chọn không cấp quyền MST '+mst+'. Quyết định được ghi nhớ trên tài khoản.');
+ return !!decision?.allowed;
+}
 function renderResults(list,warnings=[]){
  if(window.WebResults?.render)window.WebResults.render(list,warnings);
  else show('Đã có '+list.length+' hóa đơn. Giao diện kết quả chưa tải xong, vui lòng làm mới trang.');
@@ -564,21 +582,9 @@ async function search(e){
  try{
   if(govtMst!==mst||!govtToken)await signIntoTax(mst);
   // Consent must precede the first MST-package lookup. No = no whitelist slot.
-  if(selectedMode==='mst'&&!profileAllowedMsts.includes(mst)){
-   const agreed=await askMstGrantConsent();
-   if(!agreed)throw Error('Bạn đã chọn Không. MST '+mst+' chưa được cấp phép dùng gói MST.');
-   const {data:grant,error:grantError}=await client.rpc('addon_register_gdt_signin_v115',{p_mst:mst});
-   if(grantError)throw grantError;
-   if(!grant?.allowed){
-    if(QUOTA_REASONS.has(String(grant?.warning||''))){
-     showQuotaWarning('mst');
-     throw Error(QUOTA_MESSAGE);
-    }
-    throw Error(grant?.warning==='trial_mst_already_used'?
-     'MST này đã dùng thử với tài khoản khác. Vui lòng mua gói MST hoặc liên hệ quản trị.':
-     'MST chưa được cấp quyền: '+String(grant?.warning||'Không xác định'));
-   }
-   profileAllowedMsts.push(mst);
+  const mstGranted=await ensureFirstTimeMstConsent(mst);
+  if(selectedMode==='mst'&&!mstGranted&&!teamAllowedMsts.includes(mst)){
+   throw Error('MST '+mst+' chưa được cấp quyền. Bạn có thể chỉnh thủ công tại trang TT Tài Khoản.');
   }
   await ensurePermission(mst);
   progress('Đang kiểm tra phiên cổng Thuế…');

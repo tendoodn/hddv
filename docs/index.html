@@ -15,7 +15,11 @@
 <link rel="preconnect" href="https://ucqqjdsoyvvaxswzbhaw.supabase.co" crossorigin>
 <link rel="preconnect" href="https://img.vietqr.io">
 <link rel="dns-prefetch" href="//img.vietqr.io">
-</head>
+<style>
+#extensionHeaderDownloadBtn.autotax-extension-cta{display:inline-flex!important;align-items:center;justify-content:center;background:#d60a2e!important;color:white!important;border:2px solid #ff9aa9!important;border-radius:11px!important;padding:11px 15px!important;font-weight:850!important;box-shadow:0 0 0 3px #ffe0e8,0 6px 16px #bd17313b;text-decoration:none!important}
+#extensionHeaderDownloadBtn.autotax-extension-cta:focus-visible{outline:3px solid #e0153c;outline-offset:4px}
+@media(max-width:640px){#extensionHeaderDownloadBtn.autotax-extension-cta{padding:9px 10px!important;font-size:12px}}
+</style></head>
 <body>
 <style>
 #autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}
@@ -37,7 +41,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 </script>
 <main class="wrap">
   <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="29" height="29" style="vertical-align:middle;border-radius:7px;margin-right:8px">AUTOTAX <span>WEB V1.1.27</span></a>
-    <div class="toplinks"><a id="extensionHeaderDownloadBtn" href="https://drive.google.com/file/d/1-wJIwlvvdU3Pht7maeJAL3velhD2u-_n/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
+    <div class="toplinks"><a id="extensionHeaderDownloadBtn" class="web-search-blink autotax-extension-cta" href="https://drive.google.com/file/d/1-wJIwlvvdU3Pht7maeJAL3velhD2u-_n/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></div></div>
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>
     <p>Tra cứu hóa đơn → Chọn hồ sơ → Xuất Excel, XML và PDF nhà phát hành</p>

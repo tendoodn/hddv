@@ -1,5 +1,11 @@
 <!doctype html>
-<html lang="vi"><head><meta name="robots" content="noindex,nofollow"><base href="/"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
+<html lang="vi"><head><meta name="robots" content="noindex,nofollow"><base href="/">
+<script>
+/* Protected-route fast redirect; actual permissions verified by Supabase. */
+(function(){try{
+ if(!localStorage.getItem('sb-ucqqjdsoyvvaxswzbhaw-auth-token'))location.replace('/');
+}catch(_){location.replace('/')}})();
+</script><noscript><meta http-equiv="refresh" content="0;url=/"></noscript><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
 <title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>
@@ -104,7 +110,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 </style></head><body><main class="wrap"><h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">Quản trị AutoTax</h1>
 <header><div class="brand">AUTOTAX <span>V1.1.32 · ADMIN</span></div><div class="actions"><a href="/user" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <div id="adminSessionPending" class="panel" role="status" aria-live="polite">Đang xác minh phiên AutoTax và quyền Admin…</div>
-<section id="auth" class="panel hidden"><h2>Đăng nhập quản trị</h2><p class="muted">Chỉ tài khoản nằm trong addon_admins mới xem được dữ liệu.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu"><button id="login">Đăng nhập</button><div id="authMsg" class="notice hidden"></div></section>
+<!-- Admin login removed: sign in from the main Web. -->
 <section id="app" class="hidden">
 <div class="panel" id="customerPanel"><div class="row"><h2>Quản lý khách hàng</h2><button id="reload" hidden aria-hidden="true">Làm mới</button></div><div class="row admin-filter-row">
 <input id="search" placeholder="Tìm theo email..." type="search" aria-label="Tìm email khách hàng">
@@ -312,18 +318,21 @@ async function boot(){
  const {data,error:sessionError}=await client.auth.getSession();
  const session=data?.session||null;
  $("app").classList.add("hidden");
- $("auth").classList.add("hidden");
  $("adminSessionPending").hidden=false;
  $("adminSessionPending").textContent="Đang xác minh phiên AutoTax và quyền Admin…";
  if(sessionError){
   $("adminSessionPending").textContent="Không đọc được phiên đăng nhập: "+sessionError.message+" · Kiểm tra kết nối và tải lại.";
   return;
  }
- if(!session){
-  $("adminSessionPending").hidden=true;
-  $("auth").classList.remove("hidden");
-  return;
- }
+ if(!session){location.replace('/');return;}
+  // Session presence is not proof of identity: confirm it with Supabase Auth.
+  const {data:identity,error:identityError}=await client.auth.getUser();
+  if(identityError){
+   if(/invalid|expired|missing|refresh token|jwt/i.test(identityError.message||'')){location.replace('/');return;}
+   $("adminSessionPending").textContent='Chưa kiểm tra được phiên đăng nhập: '+identityError.message+' · Vui lòng tải lại.';
+   return;
+  }
+  if(!identity?.user){location.replace('/');return;}
  // Xác thực quyền thật trên máy chủ. Không tự đăng xuất và KHÔNG đoán quyền theo email.
  const {data:ok,error}=await client.rpc("addon_is_admin");
  if(error){
@@ -335,7 +344,6 @@ async function boot(){
   window.location.replace("/user");
   return;
  }
- $("auth").classList.add("hidden");
  $("adminSessionPending").hidden=true;
  $("app").classList.remove("hidden");
  void window.AdminSiteLinks?.load?.();
@@ -806,8 +814,7 @@ function renderUsers(){
  $("count").textContent=filtered.length+" tài khoản";
 }
 async function loadLogs(){const {data,error}=await client.rpc("addon_admin_list_logs",{p_limit:50});if(error)return msg("msg","Không tải được nhật ký: "+error.message,true);$("logs").innerHTML=(data||[]).map(l=>'<tr><td>'+fmt(l.created_at)+'</td><td>'+esc(l.actor_email)+'</td><td>'+esc(l.target_email)+'</td><td>'+esc(l.action)+'</td><td><code>'+esc(JSON.stringify(l.details||{}))+'</code></td></tr>').join("")||'<tr><td colspan="5">Chưa có nhật ký.</td></tr>'}
-$("login").onclick=async()=>{const {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)msg("authMsg",error.message,true);else await bootOnce()};
-$("logout").onclick=async()=>{await client.auth.signOut();location.reload()};
+$("logout").onclick=async()=>{await client.auth.signOut();location.replace("/")};
 $("reload").onclick=loadUsers;
 // Debounce remote queries and prevent stale keystrokes from issuing hundreds of RPCs.
 let emailSearchTimer=null;

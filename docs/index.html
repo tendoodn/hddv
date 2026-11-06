@@ -48,6 +48,24 @@
 #webLiteNow{display:inline-flex;align-items:center;justify-content:center;border:1px solid #4b86db;border-radius:9px;background:#123456;color:#e8f3ff;text-decoration:none;font-weight:750;min-height:32px}
 #webLiteNow:hover{background:#18456f}
 @media(max-width:640px){#webAccountModeSlot{gap:4px!important}#webAvatar{width:23px;height:23px}#webSettingsToggle{width:27px;height:27px;font-size:15px}#webAccountModeSlot #webModeControls label{display:none}}
+
+/* V1.2.0: mobile account tools use two intentional rows, not horizontal scrolling. */
+@media(max-width:640px){
+ #webAccountModeSlot{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:auto auto!important;gap:6px!important;overflow:visible!important;align-items:center!important;width:100%!important}
+ #webAccountTools,#webUserBlock{display:contents!important}
+ #webUserBlock[hidden]{display:none!important}
+ #webAvatar{grid-column:1;grid-row:1;justify-self:center;width:26px;height:26px}
+ #webGreeting{grid-column:2;grid-row:1;max-width:100%!important;min-width:0;text-overflow:ellipsis;overflow:hidden;font-size:11px!important}
+ #webUserBlock .web-settings-wrap{grid-column:3;grid-row:1;justify-self:center}
+ #webRenewNow{grid-column:4;grid-row:1;justify-self:stretch;text-align:center}
+ #webMstGrantNow{grid-column:1 / span 2;grid-row:2;text-align:center;justify-content:center;min-width:0;white-space:normal!important;line-height:1.15}
+ #webLiteNow{grid-column:3;grid-row:2;min-width:0;text-align:center;white-space:normal!important;line-height:1.15;min-height:35px}
+ #webAccountModeSlot #webModeControls:not([hidden]){grid-column:4;grid-row:2;min-width:0!important;width:100%!important;margin:0!important;justify-content:stretch!important}
+ #webAccountModeSlot #webModeControls select{min-width:0!important;max-width:100%!important;width:100%!important;font-size:10px!important;padding:7px 2px!important}
+ #webAccountModeSlot #webLoginOpen{grid-column:1/span 2;grid-row:1}
+ #webAccountModeSlot #webAccountTools #authStatus{display:none!important}
+ #webAccountModeSlot #webModeControls label{display:none!important}
+}
 </style><style>.topbar .logo{font-size:18px!important;font-weight:900;letter-spacing:.04em}.topbar .logo span{font-size:15px!important;font-weight:900}@media(max-width:600px){.topbar .logo{font-size:16px!important}.topbar .logo span{font-size:12px!important}.topbar .logo img{width:36px;height:36px}}</style></head>
 <body>
 <style>
@@ -69,7 +87,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 });
 </script>
 <main class="wrap">
-  <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="Logo AutoTax" width="43" height="43" style="vertical-align:middle;border-radius:9px;margin-right:9px" decoding="async">AUTOTAX <span>WEB V1.1.35</span></a>
+  <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="Logo AutoTax" width="43" height="43" style="vertical-align:middle;border-radius:9px;margin-right:9px" decoding="async">AUTOTAX <span>WEB V1.2.0</span></a>
     <nav class="toplinks" aria-label="Điều hướng tiện ích"><a id="extensionHeaderDownloadBtn" class="web-search-blink autotax-extension-cta" href="https://drive.google.com/file/d/1pnFGMK_xymxa7OA736PXAD9jQnlWmfAI/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="./mst.html" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></nav></div>
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>
@@ -463,4 +481,4 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/audit.js?v=1"></script>
 <script src="./password-toggle.js?v=116"></script>
 <script src="./site-footer.js?v=20261106independent139"></script>
-<script src="./release-notice-v128.js?v=1136"></script></body></html>
+<script src="./release-notice-v128.js?v=1200"></script></body></html>

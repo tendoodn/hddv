@@ -386,6 +386,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   <div class="web-dialog-head"><h2 id="webProfileTitle">Cập nhật thông tin</h2><button type="button" data-web-close="webProfileDialog" aria-label="Đóng">✕</button></div>
   <div class="web-profile-avatar"><img id="webProfileAvatar" src="./favicon.svg" alt="Ảnh đại diện" width="54" height="54"><label for="webProfileAvatarFile">Thay ảnh đại diện</label><input id="webProfileAvatarFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
   <label for="webProfileName">Tên người dùng</label><input id="webProfileName" type="text" required minlength="2" maxlength="100">
+  <label for="webProfileUsername">User đăng nhập (không thể thay đổi)</label><input id="webProfileUsername" type="text" readonly disabled aria-readonly="true" autocomplete="off" spellcheck="false" title="User đăng nhập cố định từ khi đăng ký" style="background:#e5e7eb;color:#64748b;cursor:not-allowed">
   <label for="webProfileEmail">Email đăng ký (không thay đổi)</label><input id="webProfileEmail" type="email" readonly>
   <label for="webProfileOld">Mật khẩu cũ (để trống nếu không đổi)</label><input id="webProfileOld" type="password" autocomplete="current-password">
   <label for="webProfileNew">Mật khẩu mới</label><input id="webProfileNew" type="password" minlength="10" autocomplete="new-password">
@@ -423,7 +424,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./issuer-reference-v1.js?v=20261106footer134"></script>
 <script src="./web/web.js?v=20261106footer134"></script>
 
-<script src="./web/account-modal.js?v=20261106u130"></script>
+<script src="./web/account-modal.js?v=20261106auth136"></script>
 <script src="./extension-link-v118.js?v=121account2"></script>
 <script src="./data365-payment.js?v=1123data365qr1"></script>
 <script src="./web/web-results.js?v=20261106mobilepdf"></script>

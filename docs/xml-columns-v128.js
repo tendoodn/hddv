@@ -30,7 +30,7 @@
  'HDon/DLHDon/NDHDon/TToan/TgTTTBSo',
  'HDon/DLHDon/NDHDon/TToan/TgTThue'
  ];
- const normal=k=>String(k||'').replace(/\[\d+\]/g,'');
+ const normal=k=>String(k||'').replace(/\[\d+\]/g,'').replace(/\s*\/\s*/g,'/');
  const allow=a=>Array.isArray(a)&&a.length<=300&&a.every(k=>typeof k==='string'&&k.length<300&&/^HDon\//.test(k)&&!/[<>]/.test(k));
  let selection=null;
  function getSelected(){
@@ -52,7 +52,7 @@
   if(!matches.length)return '';
   const item=key.includes('/HHDVu/');
   if(item){
-   const line=matches.find(([k])=>new RegExp('/HHDVu\\['+(rowIndex+1)+'\\]/').test(k));
+   const line=matches.find(([k])=>new RegExp('\\/\\s*HHDVu\\['+(rowIndex+1)+'\\]/').test(k));
    return String((line||[])[1]??'');
   }
   return String(matches[0]?.[1]??'');

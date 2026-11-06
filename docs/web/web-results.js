@@ -148,7 +148,8 @@ function render(list,warnings=[],options={}){
  if(options.partial)$('resultSummary').textContent='Đang nhận kết quả: '+dataset.length+
    ' hóa đơn đã xác nhận quyền; danh sách chưa đầy đủ…';
  renderVisible();
- kAlert(st,!options.partial);
+ document.dispatchEvent(new CustomEvent('autotax-lite-results'));
+ if(!window.AutoTaxLite)kAlert(st,!options.partial);
 }
 function append(batch){
  if(!Array.isArray(batch)||!batch.length)return;

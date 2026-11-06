@@ -113,10 +113,25 @@
    if(books.length!==1)throw Error('Gói tổng thiếu một bảng kê Excel.');
    const all=[{name:output.excel,data:books[0].data}];
    // Files inside each folder are flat; only one TXT summarizes provenance.
-   const folders={pdfTax:'PDF',xml:'XML',html:'HTML'};
+   // Both genuine issuer PDFs and PDFs rebuilt from tax data belong in the
+   // combined archive. One unique source note per PDF category.
+   const folders={pdfTax:'PDF',pdf:'PDF',xml:'XML',html:'HTML'};
+   const used=new Set(all.map(item=>item.name.toLowerCase()));
+   const addUnique=(requested,data)=>{
+    const dot=requested.lastIndexOf('.'),stem=dot<0?requested:requested.slice(0,dot);
+    const ext=dot<0?'':requested.slice(dot);
+    let name=requested,suffix=2;
+    while(used.has(name.toLowerCase()))name=stem+'_'+suffix+++ext;
+    used.add(name.toLowerCase());all.push({name,data});
+   };
    for(const [kind,folder] of Object.entries(folders)){
     try{
-     for(const file of category(files,kind))all.push({name:folder+'/'+file.name,data:file.data});
+     for(const file of category(files,kind)){
+      const fname=file.name==='THONG_TIN_NGUON.txt'&&folder==='PDF'?
+       (kind==='pdfTax'?'THONG_TIN_NGUON_PDF_THUE.txt':'THONG_TIN_NGUON_PDF_GOC.txt'):
+       file.name;
+      addUnique(folder+'/'+fname,file.data);
+     }
     }catch(e){console.warn('AutoTax: '+kind,e.message)}
    }
    all.push({name:'THONG_TIN_NGUON_EXCEL.txt',data:enc.encode(

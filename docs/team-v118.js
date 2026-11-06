@@ -11,7 +11,7 @@ const notice=(msg,error=false)=>{const n=$('autotaxTeamMessage');n.hidden=!msg;n
 const rpc=async(name,args)=>{const {data,error}=await db.rpc(name,args);if(error)throw error;return data};
 const friendly=e=>{const s=String(e?.message||e||'Không rõ lỗi');return ({user_not_registered:'Người dùng chưa tạo tài khoản AutoTax.',team_limit_reached:'Đã đạt giới hạn 50 nhóm.',not_team_owner:'Chỉ trưởng nhóm được thao tác.',team_access_denied:'Bạn không có quyền xem nhóm.',invalid_modes:'Chế độ sử dụng không hợp lệ.'})[s]||s};
 const current=()=>teams.find(t=>t.id===activeTeam);
-let syncingPasswordGrants=false,teamDetailRequest=0;
+let syncingPasswordGrants=false,teamDetailRequest=0,lastTeamRefreshAt=0;
 async function syncPendingTeamPasswords(){
  if(syncingPasswordGrants||!teams.some(t=>t.owner_id===myId))return;
  syncingPasswordGrants=true;
@@ -71,13 +71,14 @@ function showTab(team){
  $('autotaxTeamTab').classList.toggle('is-active',team);
  $('autotaxBasicTab').setAttribute('aria-selected',String(!team));
  $('autotaxTeamTab').setAttribute('aria-selected',String(team));
- if(team)void refresh();
+ // A view switch must not re-fetch and rebuild the member table every time.
+ if(team&&Date.now()-lastTeamRefreshAt>45000)void refresh();
 }
 async function refresh(){
  if(!db)return;
  try{
   const {data:{session}}=await db.auth.getSession();
-  if(!session?.user){myId='';teams=[];memberships=[];activeTeam='';$('autotaxTeamDetail').hidden=true;return}
+  if(!session?.user){myId='';teams=[];memberships=[];activeTeam='';lastTeamRefreshAt=0;$('autotaxTeamDetail').hidden=true;return}
   myId=session.user.id;
   const [tr,mr,pr,er]=await Promise.all([
    db.from('autotax_teams_v118').select('id,name,owner_id,created_at').order('created_at'),
@@ -88,6 +89,7 @@ async function refresh(){
   leaderEntitlements=er.error?null:er.data;
   if(tr.error)throw tr.error;if(mr.error)throw mr.error;
   teams=tr.data||[];memberships=mr.data||[];myMsts=pr.error?[]:(pr.data||[]);
+  lastTeamRefreshAt=Date.now();
   renderTeams();
   // Prioritize the visible member list; optional credential maintenance begins
   // only after the group panel has been drawn.
@@ -340,12 +342,12 @@ $('autotaxTeamUsageTab').addEventListener('click',()=>{$('autotaxTeamMembersPane
 db?.auth.onAuthStateChange((event,nextSession)=>{
  const nextUser=nextSession?.user?.id||'';
  if(event==='SIGNED_OUT'){
-  myId='';teams=[];memberships=[];activeTeam='';
+  myId='';teams=[];memberships=[];activeTeam='';lastTeamRefreshAt=0;
   $('autotaxTeamDetail').hidden=true;
   return;
  }
  if(event==='SIGNED_IN'&&nextUser&&myId&&nextUser!==myId){
-  myId=nextUser;
+  myId=nextUser;lastTeamRefreshAt=0;
   if(!$('autotaxTeamPanel').hidden)queueMicrotask(()=>void refresh());
  }
 });

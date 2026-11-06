@@ -394,6 +394,7 @@ async function loadMstAssignments(){
  const userId=session?.user?.id;
  for(const item of rows||[]){
   const line=document.createElement("div");line.className="mst-row";
+  line.dataset.mst=String(item.mst);
   const allow=document.createElement("label");allow.className="mst-allow-check";
   allow.title="Chọn MST này để được tra cứu trong chế độ gói MST";
   const check=document.createElement("input");check.type="checkbox";check.className="mst-allow-checkbox";
@@ -487,6 +488,7 @@ async function loadMstAssignments(){
  for(const borrowedMst of shared){
   if(ownSet.has(borrowedMst.mst))continue;
   const line=document.createElement("div");line.className="mst-row";
+  line.dataset.mst=String(borrowedMst.mst);
   const flag=document.createElement("span");flag.className="mst-permission-status";
   const sourceAllowed=borrowedMst.can_use_mst_package===true;
   const personalAllowed=borrowedMst.personally_authorized===true;

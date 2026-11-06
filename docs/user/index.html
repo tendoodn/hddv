@@ -152,6 +152,15 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 .portal-header-download{background:#a9071b;color:#fff;border-color:#a9071b;white-space:nowrap}
 .portal-header-download:hover{background:#830213;color:#fff}
 @media(max-width:520px){header{padding:9px 10px;gap:6px;flex-wrap:nowrap}header .brand{font-size:15px;white-space:nowrap}header .brand img{width:25px;height:25px;margin-right:3px!important}header .portal-header-actions{display:flex;grid-template-columns:none;width:auto;min-width:0;gap:5px}header .portal-header-download{font-size:10px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.2;max-width:130px}header #adminLink:not([hidden]){font-size:10px;padding:7px 5px}}
+
+/* MST vault: compact client-side paging (checkbox state remains in all DOM rows). */
+.mst-pager{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:10px 4px 4px;margin-top:8px;border-top:1px solid #f1c7cc;font-size:12px;color:#475569}
+.mst-pager label,.mst-page-buttons{display:inline-flex;align-items:center;gap:7px}
+.mst-pager select{width:auto;min-width:62px;padding:5px 6px;border:1px solid #e4aeb7;border-radius:7px;background:#fff;color:#1f2937}
+.mst-pager button{min-width:59px;padding:6px 9px}
+.mst-pager button:disabled{opacity:.45;cursor:not-allowed}
+#mstList>.mst-row[hidden]{display:none!important}
+@media(max-width:520px){.mst-pager{justify-content:space-between;gap:8px}.mst-pager label{font-size:11px}.mst-page-buttons{margin-left:auto}}
 </style>
 <style>
 .autotax-account-safety{font-size:12px;line-height:1.5;color:#475569;margin:9px 0 13px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc}.autotax-account-safety strong{color:#1f2937}.autotax-account-safety a{font-weight:700}
@@ -363,6 +372,11 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
    </div>
   </div></div>
   <div id="mstList"></div>
+  <nav id="mstPager" class="mst-pager" aria-label="Phân trang hồ sơ MST">
+   <label for="mstPageSize">Số MST mỗi trang <select id="mstPageSize" aria-label="Hiển thị số MST mỗi trang"><option value="3" selected>3</option><option value="5">5</option><option value="10">10</option></select></label>
+   <span id="mstPageInfo" role="status">Trang 1 / 1</span>
+   <div class="mst-page-buttons"><button type="button" class="secondary" id="mstPagePrev" aria-label="Trang trước">‹ Trước</button><button type="button" class="secondary" id="mstPageNext" aria-label="Trang sau">Sau ›</button></div>
+  </nav>
  </details>
   <div class="portal-mode-toolbar"><h2 id="licenseTitle" class="autotax-license-notice" hidden>Đang tải quyền sử dụng…</h2></div>
   <div class="grid">

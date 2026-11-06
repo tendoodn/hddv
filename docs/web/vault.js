@@ -13,7 +13,7 @@ const $=id=>document.getElementById(id);
 const normalize=v=>String(v||'').replace(/\D/g,'');
 const MAX_PASS=256;
 const DB_NAME='autotax_gdt_device_credentials_v2';
-let owner='',profiles=[],dbPromise=null,deviceKey=null,deviceKeyPromise=null,keyEpoch=0,requestSeq=0,invoiceMode=false;
+let owner='',profiles=[],dbPromise=null,deviceKey=null,deviceKeyPromise=null,keyEpoch=0,requestSeq=0,profileSetEpoch=0,invoiceMode=false;
 const lastKey=()=> 'autotax_last_mst_'+owner;
 const searchedKey=()=> 'autotax_last_searched_mst_'+owner;
 const validMst=m=>/^(?:\d{10}|\d{12}|\d{13})$/.test(m);
@@ -262,36 +262,48 @@ async function select(mst){
   if(profile?.source==='team'){
    const sharedPassword=await window.AutoTaxTeamShared?.getPassword?.(mst);
    if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
-   if(sharedPassword){
+   if(sharedPassword&&!input.value){
     input.value=sharedPassword;
     notify('Đã tự điền mật khẩu HĐĐT do trưởng nhóm chia sẻ cho MST '+mst+'.');
    }else notify('MST nhóm chưa được cấp mật khẩu HĐĐT. Hãy đề nghị trưởng nhóm đồng bộ mật khẩu.');
    return;
   }
-  // Personal MSTs continue to use the same encrypted cross-device vault.
-  let cloud=null;
-  try{cloud=await window.AutoTaxSharedMstVault?.get(mst)}
-  catch(e){notify('Kho đồng bộ chưa sẵn sàng: '+e.message,true)}
-  if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
+  // The cloud vault and local encrypted device credential are independent.
+  // Fetch concurrently; a slow network must not delay the local fallback.
+  const [cloudResult,localResult]=await Promise.allSettled([
+   Promise.resolve().then(()=>window.AutoTaxSharedMstVault?.get(mst)),
+   (async()=>{
+    const record=await readStore('credentials',entryKey(mst));
+    return record?decryptPassword(record):null;
+   })()
+  ]);
+  if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst||
+     input.value)return; // Never overwrite a password the user typed meanwhile.
+  const cloud=cloudResult.status==='fulfilled'?cloudResult.value:null;
+  const local=localResult.status==='fulfilled'?localResult.value:null;
   if(cloud){
    input.value=cloud;
    notify('Đã tự điền mật khẩu MST '+mst+' từ kho mã hóa đồng bộ Web/Add-on.');
    return;
   }
-  const record=await readStore('credentials',entryKey(mst));
-  if(!record){
-   notify('MST chưa có mật khẩu đồng bộ. Nhập và đăng nhập cổng Thuế một lần để lưu.');
+  if(local){
+   input.value=local;
+   if(cloudResult.status==='rejected')
+    notify('Đã khôi phục mật khẩu MST trên máy; kho đồng bộ đang chờ mở khóa.');
+   else notify('Đã khôi phục mật khẩu MST '+mst+' trên máy.');
+   void window.AutoTaxSharedMstVault?.importLocal?.(mst,local)?.catch(e=>
+    console.warn('Chưa đồng bộ được mật khẩu cũ:',e.message));
    return;
   }
-  const password=await decryptPassword(record);
-  if(stamp!==requestSeq||normalize($('mstFree').value||$('mst').value)!==mst)return;
-  input.value=password;
-  try{await window.AutoTaxSharedMstVault?.importLocal(mst,password)}
-  catch(e){notify('Đã đọc mật khẩu cũ trên máy, nhưng chờ đồng bộ: '+e.message,true);return}
-  notify('Đã khôi phục mật khẩu MST '+mst+' và đồng bộ lên tài khoản.');
+  if(cloudResult.status==='rejected')
+   notify('Kho đồng bộ chưa sẵn sàng: '+cloudResult.reason?.message,true);
+  else if(localResult.status==='rejected')
+   notify('Không đọc được mật khẩu trên máy: '+localResult.reason?.message,true);
+  else notify('MST chưa có mật khẩu đồng bộ. Nhập và đăng nhập cổng Thuế một lần để lưu.');
  }catch(e){if(stamp===requestSeq)notify('Không đọc được mật khẩu đã lưu. Hãy nhập lại: '+(e.message||e),true)}
 }
 async function setUser(userId,rows,mode='mst'){
+ const epoch=++profileSetEpoch;
  const wasInvoiceMode=invoiceMode,wasOwner=owner,previousProfilesJson=JSON.stringify(profiles);
  invoiceMode=mode==='invoice';
  $('mstPickerToggle').hidden=false;
@@ -327,6 +339,7 @@ async function setUser(userId,rows,mode='mst'){
   await Promise.allSettled(previous.filter(old=>!allowed.has(old.mst))
    .map(old=>deleteStore('credentials',entryKey(old.mst))));
  }
+ if(epoch!==profileSetEpoch)return;
  const profilesChanged=wasOwner!==owner||wasInvoiceMode!==invoiceMode||previousProfilesJson!==JSON.stringify(profiles);
  if(profilesChanged)renderPicker();
  if(profilesChanged&&owner&&($('mstFree').value||$('mst').value))

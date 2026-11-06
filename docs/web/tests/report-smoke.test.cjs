@@ -65,8 +65,8 @@ assert.equal(book[1].rows.find(r=>r[6]==='005')[19],'Thay thế');
 // the report must not silently mix it into the opposite direction.
 const purchaseNumbers=book[0].rows.filter(r=>typeof r[0]==='number').map(r=>r[6]);
 const soldNumbers=book[1].rows.filter(r=>typeof r[0]==='number').map(r=>r[6]);
-assert.deepEqual(purchaseNumbers,['001','002','003']);
-assert.deepEqual(soldNumbers,['004','005']);
+assert.deepEqual(Array.from(purchaseNumbers),['001','002','003']);
+assert.deepEqual(Array.from(soldNumbers),['004','005']);
 assert.equal(book[0].rows.filter(r=>r[1]==='Tổng (USD)').length,1);
 assert.equal(book[0].rows.find(r=>r[1]==='Tổng (VND)')[16],110);
 assert.equal(book[1].rows.find(r=>r[1]==='Tổng')[16],220);

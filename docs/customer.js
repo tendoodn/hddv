@@ -177,9 +177,9 @@ async function refresh(){
     ({data:userResult,error:userError}=await client.auth.getUser());
   }
   if(userError)throw userError;
+  if(!signedIn||!userResult?.user){location.replace('/');return;}
   const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
-  $("authSection").hidden=signedIn;
   $("dashboard").hidden=!signedIn;
   $("headerLogoutBtn").hidden=!signedIn;
   const forceDialog=$('forcedPasswordDialog');
@@ -192,7 +192,6 @@ async function refresh(){
     forceDialog.showModal();
    }
   }else if(forceDialog.open)forceDialog.close();
-  if(!signedIn){state=null;refreshAdminVisibility(null);closePayment();return}
   void refreshAdminVisibility(session.user.id);
   void refreshExtensionDownloadLink();
   $("userEmail").textContent=session.user.email||"";
@@ -271,23 +270,18 @@ async function refresh(){
    showMessage("Hệ thống cấp phép V3.2 chưa được triển khai trên Supabase. Đăng nhập vẫn hoạt động, nhưng mua gói, dùng thử và kích hoạt mã sẽ chỉ mở sau khi quản trị cập nhật SQL.",true);
   }else if(isAuthSessionError(error)||/Phiên đăng nhập AutoTax đã hết hạn/i.test(String(error?.message||''))){
    const current=await client.auth.getSession().catch(()=>({data:{session:null}}));
-   if(!current.data?.session){
-    $('dashboard').hidden=true;$('authSection').hidden=false;closePayment();
-    showMessage('Phiên AutoTax đã hết hạn. Vui lòng đăng nhập lại.',true,'authMessage');
-   }else{
-    showMessage('Không xác thực được phiên AutoTax. Hãy tải lại trang và thử lại.',true);
-   }
+   // No login form is available on /user: authentication belongs to the main Web.
+   location.replace('/');
+   return;
   }else{
    showMessage("Chưa đồng bộ được dữ liệu Supabase V3.2: "+prettyError(error),true);
   }
  }finally{
   checking=false;
   const waiting=$('accountSessionPending');
-  if(waiting)waiting.hidden=true;
-  // If a network error occurs before determining the session, show an actionable form.
-  if($('dashboard').hidden&&$('authSection').hidden){
-   $('authSection').hidden=false;
-   showMessage('Không thể khôi phục phiên. Kiểm tra kết nối hoặc đăng nhập lại.',true,'authMessage');
+  if(waiting){
+   waiting.hidden=!$('dashboard').hidden;
+   if(!waiting.hidden)waiting.textContent='Không xác thực được phiên AutoTax. Kiểm tra mạng và tải lại trang.';
   }
  }
 }
@@ -686,115 +680,12 @@ $("applyPaymentCoupon").addEventListener("click",()=>{
 });
 async function action(id,fn){
  const button=$(id);button.disabled=true;
- try{await fn()}catch(error){showMessage(prettyError(error),true,$("dashboard").hidden?"authMessage":"accountMessage")}
+ try{await fn()}catch(error){showMessage(prettyError(error),true,"accountMessage")}
  finally{button.disabled=false}
 }
-$("loginForm").addEventListener("submit",event=>{
- event.preventDefault();
- if($("loginBtn").disabled)return;
- void action("loginBtn",async()=>{
- const password=$("password").value;
- const identifier=$("email").value.trim().toLowerCase();
- const {data,error}=identifier.includes("@")?await client.auth.signInWithPassword({email:identifier,password}):await (async()=>{const token=await accountFlow.usernameSession(identifier,password);return client.auth.setSession({access_token:token.access_token,refresh_token:token.refresh_token})})();
- if(error)throw Error(accountFlow?.message(error)||"Không đăng nhập được. Vui lòng thử lại.");
- if(!data.user?.app_metadata?.autotax_force_password_change){
-  try{await window.AutoTaxSharedMstVault.unlock(data.user.id,password)}
-  catch(e){showMessage('Đã đăng nhập, nhưng kho MST cần mở khóa: '+e.message,true,'authMessage')}
- }
- $("password").value='';
- await refresh();
- });
-});
-// Registration returns to the login form with credentials held in memory only.
-const signupMessage=(message,error=false)=>{
- const box=$("signupStatus");box.hidden=!message;box.textContent=message||"";
- box.classList.toggle("error",!!error);
-};
-const closeSignup=()=>{
- if($("signupDialog").open)$("signupDialog").close();
- $("signupPassword").value="";$("signupPasswordConfirm").value="";
-};
-$("signupBtn").addEventListener("click",()=>{
- $("signupName").value="";$("signupUsername").value="";
- $("signupEmail").value=$("email").value.includes('@')?$("email").value.trim():'';
- $("signupPassword").value="";$("signupPasswordConfirm").value="";
- signupMessage("");
- $("signupDialog").showModal();
- $("signupName").focus();
-});
-$("signupCancelBtn").addEventListener("click",closeSignup);
-$("signupCloseBtn").addEventListener("click",closeSignup);
-$("signupDialog").addEventListener("close",()=>{
- $("signupPassword").value="";$("signupPasswordConfirm").value="";
-});
-$("signupForm").addEventListener("submit",event=>{
- event.preventDefault();
- const button=$("signupSubmitBtn");
- if(button.disabled)return;
- void (async()=>{
-  const name=accountFlow.normalizeName($("signupName").value);
-  const email=accountFlow.normalizeEmail($("signupEmail").value);
-  const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
-  const invalid=accountFlow.validateSignup({name,email,password,confirmPassword});
-  if(invalid)return signupMessage(invalid,true);
-  const username=$("signupUsername").value.trim().toLowerCase();
-  if(!/^[a-z][a-z0-9]{3,31}$/.test(username))
-   return signupMessage("User đăng nhập phải có 4–32 ký tự, bắt đầu bằng chữ và chỉ gồm chữ thường và chữ số, không dấu hoặc ký tự đặc biệt.",true);
-  button.disabled=true;
-  try{
-   const {data:free,error:usernameError}=await client.rpc('autotax_username_available_v130',{p_username:username});
-   if(usernameError)throw Error('Chưa kiểm tra được User đăng nhập.');
-   if(!free)throw Error('User đăng nhập đã được sử dụng.');
-   const {data,error}=await client.auth.signUp({
-    email,password,options:{data:{full_name:name,display_name:name,username}}
-   });
-   if(error){
-    const value=String(error.code||"")+" "+String(error.message||"");
-    if(/user_already_exists|email_exists|identity_already_exists|already registered|already in use|user already registered/i.test(value)){
-     signupMessage(DUP_EMAIL,true);return;
-    }
-    throw error;
-   }
-   if(accountFlow.duplicateSignup(data)){
-    signupMessage(DUP_EMAIL,true);return;
-   }
-   // SignUp may establish a session when Supabase Confirm Email is disabled.
-   // Customer wants the login form, not an automatic login after registration.
-   if(data?.session){
-    const signedOut=await client.auth.signOut();
-    if(signedOut.error)throw signedOut.error;
-   }
-   $("email").value=email;
-   closeSignup();
-   $("password").value=password;
-     showMessage(data?.session?
-    'Tạo tài khoản thành công. Email và mật khẩu đã điền sẵn, bấm Đăng nhập để tiếp tục.':
-    'Đã gửi đăng ký và điền sẵn thông tin đăng nhập. Máy chủ vẫn yêu cầu xác minh email; quản trị cần tắt Confirm Email trên Supabase để đăng nhập ngay.',false,'authMessage');
-   $("loginBtn").focus();
-  }catch(error){
-   signupMessage(prettyError(error),true);
-  }finally{button.disabled=false}
- })();
-});
-$("resetBtn").addEventListener("click",()=>{
- $("resetPasswordEmail").value=$("email").value.includes("@")?$("email").value.trim():"";
- $("resetPasswordStatus").hidden=true;$("resetPasswordDialog").showModal();
-});
-const closeReset=()=>$("resetPasswordDialog").close();
-$("resetPasswordClose").addEventListener("click",closeReset);
-$("resetPasswordCancel").addEventListener("click",closeReset);
-$("resetPasswordForm").addEventListener("submit",event=>{
- event.preventDefault();
- void action("resetPasswordSubmit",async()=>{
-  const email=$("resetPasswordEmail").value.trim();
-  if(!accountFlow.validEmail(email))throw Error("Vui lòng nhập email đăng ký Gmail, Hotmail hoặc Yahoo.");
-  const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:"https://tracuuhoadon.top/"});
-  if(error)throw error;
-  const el=$("resetPasswordStatus");el.textContent=accountFlow.forgotSuccess;el.hidden=false;
- });
-});
-$("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
-$("headerLogoutBtn").addEventListener("click",()=>action("headerLogoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
+// The customer portal does not accept credentials. Sign in/up/reset on / only.
+$("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();location.replace('/')}));
+$("headerLogoutBtn").addEventListener("click",()=>action("headerLogoutBtn",async()=>{closePayment();await client.auth.signOut();location.replace('/')}));
 
 $("webAddMstForm").addEventListener("submit",e=>{
  e.preventDefault();
@@ -989,5 +880,6 @@ function refreshTeamBalances(){
 window.addEventListener("focus",refreshTeamBalances);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshTeamBalances()});
 setInterval(refreshTeamBalances,60000);
-try{const email=localStorage.getItem('autotax_recent_email');if(email&&!$('email').value)$('email').value=email}catch{}
+// Route only verified browser sessions into this protected account page.
+client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')location.replace('/')});
 refresh();

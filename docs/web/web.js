@@ -842,10 +842,9 @@ async function exportFileCore(kind){
  finally{/* Download Console chỉ hoàn tất sau khi ZIP thực sự được lưu. */}
 }
 async function exportFile(kind){
- if(kind==='pdf'){
-  show('PDF Gốc nhà phát hành: đang chờ phát triển tiếp. Nút PDF dựng từ dữ liệu Thuế vẫn hoạt động bình thường.',true);
-  return;
- }
+ // Original-source mode is best-effort: verified source bytes are preferred,
+ // while unavailable originals are explicitly marked as reconstructed PDFs.
+ // CAPTCHA and issuer authentication are completed on the issuer's own site.
  if(busy)return;
  if(!window.AutoTaxZipExport)return show('Bộ ZIP chưa tải xong; hãy làm mới trang.');
  busyState(true);show('');

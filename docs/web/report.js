@@ -183,47 +183,94 @@
   // Chi tiết của hóa đơn có dòng hàng hóa (details có thể chỉ có head khi không chọn Chi tiết sản phẩm)
   const withLinesOf = (details, r) => { const d = details.get(r.key); return d?.lines ? d : null; };
 
+  // AutoTax v1.1.30: exact 48-column user-supplied mua_chi_tiet workbook schema.
+  // The same columns and order apply to Chi tiết mua vào and Chi tiết bán ra.
+  const DETAIL_TEMPLATE_HEADERS = ["Ký hiệu mẫu số","Ký hiệu hóa đơn","Số hóa đơn","Ngày lập","Ngày người bán ký số","MCCQT","Ngày CQT ký số","Đơn vị tiền tệ","Tỷ giá","Tên người bán/Tên người xuất hàng","Người lập","Điểm bán hàng","MST người bán/MST người xuất hàng","Địa chỉ người bán","Tên người mua/Tên người nhận hàng","Họ tên người mua","MST người mua/MST người nhận hàng","Địa chỉ người mua","Địa chỉ giao hàng","Số phương tiện","Mã khách hàng","Căn cước công dân","Hình thức thanh toán","Tính chất","Mã vật tư","Số lô","Hạn sử dụng","Tên hàng hóa, dịch vụ","Mã bill","Đơn vị tính","Số lượng","Đơn giá","Chiết khấu","Thuế suất","Thành tiền chưa thuế","Tiền thuế","Tổng tiền mặt hàng","Tổng tiền chiết khấu thương mại","Tổng tiền phí","Tổng tiền thanh toán","Trạng thái hóa đơn","Hóa đơn liên quan","Thông tin liên quan","Kết quả kiểm tra hóa đơn","Link tra cứu","Mã tra cứu","Ghi chú XML","Thông tin thêm"];
+  const DETAIL_TEMPLATE_NUMERIC = new Set([8,30,31,32,34,35,36,37,38,39]);
   function linesSheet(rows, details, name = 'Chi tiết sản phẩm') {
-    const out = [], sums = new Map();
-    const chosenXml=window.AutoTaxXmlColumns?.getSelected?.()||[];
-    for (const r of sorted(rows)) {
-      const d = withLinesOf(details, r);
-      if (!d) continue;
-      const [mst, ten] = partner(r), currency = currencyOf(r);
-      if (!sums.has(currency)) sums.set(currency, { amount: 0, tax: 0 });
-      const sum = sums.get(currency);
-      for (const [lineIndex,l] of invoiceLines(r, d).entries()) {
-        // Không cộng gộp giá trị của các loại tiền tệ khác nhau.
-        const p = pctOf(l.tsuat), thue = l.tthue === null ? null : roundVND(l.tthue);
-        out.push([out.length + 1, HDDT.KINDS[r.kind].label, r.khmshdon, r.khhdon, String(r.shdon), productCodeOf(l), dateVN(headOf(details,r)?.nlap||r.tdlap), mst, ten,
-          l.tchat, l.ten, l.dvt, l.sl, l.dgia, l.ck, l.thtien, p === null ? l.tsuat : p / 100, thue, currency,
-          productCodeOf(l), signDate(headOf(details,r)),
-          ...chosenXml.map(key=>window.AutoTaxXmlColumns.value(d,key,lineIndex))]);
-        sum.amount += l.thtien || 0; sum.tax += thue || 0;
+    const out=[],sums=new Map();
+    const xmlVal=(d,section,tags,lineIndex)=>{
+      const fields=d?.xmlFields||{};
+      const wanted=(Array.isArray(tags)?tags:[tags]).map(x=>String(x).toLowerCase());
+      for(const [path,val] of Object.entries(fields)){
+        const normalized=path.replace(/\[\d+\]/g,'').replace(/\s+/g,'');
+        const pieces=normalized.toLowerCase().split('/').filter(Boolean);
+        if(!wanted.includes(pieces.at(-1)))continue;
+        if(section && !pieces.includes(section.toLowerCase()))continue;
+        if(section==='HHDVu'){
+          const mt=path.match(/HHDVu\[(\d+)\]/i);
+          if(!mt || Number(mt[1])!==lineIndex+1)continue;
+        }
+        return val??'';
+      }
+      return '';
+    };
+    const textValue=v=>{
+      const s=String(v??'');
+      return /^[=+@]/.test(s)?"'"+s:s;
+    };
+    for(const r of sorted(rows)){
+      const d=withLinesOf(details,r); if(!d)continue;
+      const h=headOf(details,r)||{};
+      const moneyRow=money(r),currency=String(r.dvtte||h.dvtte||'VND').toUpperCase();
+      const lookup=window.HDDT?.originalLookup?.(r,h)||{};
+      if(!sums.has(currency))sums.set(currency,{amount:0,tax:0});
+      const sum=sums.get(currency);
+      for(const [idx,l] of invoiceLines(r,d).entries()){
+        const tax=l.tthue==null?null:roundVND(l.tthue);
+        const itemCode=String(l.ma??l.mhhdvu??l.maHangHoa??l.maHang??l.sku??'').trim();
+        const value=(section,names)=>xmlVal(d,section,names,idx);
+        const lineTotal=l.thtien==null?null:round2(Number(l.thtien)+(tax||0));
+        const related=h.related||{};
+        const relatedInfo=[related.khhdon,related.shdon,related.nlap].filter(Boolean).join(' / ');
+        const rtotal=moneyRow.tong??h.tgtttbso??null;
+        const values=[
+          r.khmshdon??h.khmshdon??'', r.khhdon||h.khhdon||'', String(r.shdon??h.shdon??''),
+          dateVN(h.nlap||r.tdlap),signDate(h),h.mccqt||value('DLHDon','MCCQT'),
+          value('CQT',['SigningTime','TgKy','NgayKy']),currency,
+          r.tgia??h.tgia??1,h.nbten||r.nbten||'',
+          value('NBan',['NLap','NguoiLap','HTen']),value('NBan',['DDiemBan','DDBHang','DDanh']),
+          String(h.nbmst||r.nbmst||''),h.nbdchi||'',
+          h.nmten||r.nmten||'',value('NMua',['HVTNMHang','HTen']),
+          String(h.nmmst||r.nmmst||''),h.nmdchi||'',
+          value('NMua',['DChiGHang','DCGiaoHang']),value('NMua',['SoPTien','BSoXe']),
+          value('NMua',['MKHang','MaKH']),value('NMua',['CCCD','SoCCCD','SoDinhDanh']),
+          h.httt||r.httt||'',l.tchat||'',
+          itemCode||value('HHDVu',['MHHDVu','MaHangHoa','MaVatTu','SKU']),
+          value('HHDVu',['SLo','SoLo']),value('HHDVu',['HSDung','HanSuDung']),
+          l.ten||'',value('HHDVu',['MBill','MaBill']),l.dvt||'',
+          l.sl??null,l.dgia??null,l.ck??null,l.tsuat||'',
+          l.thtien??null,tax,lineTotal,
+          h.ttcktmai??value('TToan','TTCKTMai')??null,
+          r.tgtphi??value('TToan','TgTPhi')??null,rtotal,
+          window.HDDT?.TTHAI?.[r.tthai]||'',
+          relatedInfo,related.gchu||'',
+          window.HDDT?.TTXLY?.[r.ttxly]||'',
+          lookup.link||h.lookup?.link||'',lookup.code||h.lookup?.code||'',
+          d.source==='xml'?'XML gốc':'Chi tiết từ cổng Thuế (JSON)',
+          [l.tsuatSuy?'Thuế suất suy từ bảng tổng hợp':'',
+            l.tthueTinh?'Tiền thuế được tính từ dòng hàng':''].filter(Boolean).join('; ')
+        ];
+        if(values.length!==DETAIL_TEMPLATE_HEADERS.length)throw Error('Sai ánh xạ mẫu Excel chi tiết');
+        out.push(values.map((v,i)=>DETAIL_TEMPLATE_NUMERIC.has(i)?v:textValue(v)));
+        sum.amount+=Number(l.thtien)||0;sum.tax+=Number(tax)||0;
       }
     }
-    const boldRows = new Set(), currencies = sums.size ? [...sums.keys()].sort() : ['VND'];
-    for (const currency of currencies) {
-      const sum = sums.get(currency) || { amount: 0, tax: 0 };
-      boldRows.add(out.length);
-      out.push(['', `Tổng (${currency})`, '', '', '', '', '', '', '', '', '', '', '', '', '', round2(sum.amount), '', round2(sum.tax), currency, '', '',
-        ...chosenXml.map(()=>'')]);
+    const boldRows=new Set();
+    for(const [currency,sum] of sums){
+      const footer=Array(DETAIL_TEMPLATE_HEADERS.length).fill('');
+      footer[27]='Tổng ('+currency+')';
+      footer[34]=round2(sum.amount);
+      footer[35]=round2(sum.tax);
+      footer[36]=round2(sum.amount+sum.tax);
+      boldRows.add(out.length);out.push(footer);
     }
-    return {
-      name, boldRows,
-      columns: [
-        { header: 'STT', width: 6, type: N }, { header: 'Loại', width: 9 }, { header: 'Mẫu số', width: 8 }, { header: 'Ký hiệu', width: 10 },
-        { header: 'Số hóa đơn', width: 11, type: T }, { header: 'Mã hàng hóa', width: 22, type: T }, { header: 'Ngày lập', width: 11 }, { header: 'MST đối tác', width: 15, type: T },
-        { header: 'Tên đối tác', width: 36 }, { header: 'Tính chất', width: 18 }, { header: 'Tên hàng hóa, dịch vụ', width: 48 },
-        { header: 'ĐVT', width: 9 }, { header: 'Số lượng', width: 11, type: D }, { header: 'Đơn giá', width: 14, type: D },
-        { header: 'Chiết khấu', width: 12, type: N }, { header: 'Thành tiền', width: 16, type: N }, { header: 'Thuế suất', width: 10, type: P },
-        { header: 'Tiền thuế', width: 14, type: N }, { header: 'Tiền tệ', width: 9 },
-        { header: 'Mã hàng hóa gốc (XML/JSON)', width: 29, type: T },
-        { header: 'Ngày ký', width: 12 },
-        ...chosenXml.map(key=>({header:'XML / '+key,width:32,type:T}))
-      ],
-      rows: out,
-    };
+    const cols=DETAIL_TEMPLATE_HEADERS.map((header,i)=>({
+      header,width:Math.min(42,Math.max(12,header.length*0.85)),
+      type:DETAIL_TEMPLATE_NUMERIC.has(i)?(i===30||i===31||i===8?'number':'int'):'text'
+    }));
+    for(const i of [2,12,16,20,21,24,28,45])cols[i].type='text';
+    return {name,boldRows,columns:cols,rows:out};
   }
   const KXD = 'Không xác định';
   // Hóa đơn không có bảng thuế suất (thttltsuat) nhưng có tiền thuế → suy ra thuế suất từ tỷ lệ thuế / chưa thuế

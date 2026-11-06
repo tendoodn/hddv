@@ -1,4 +1,6 @@
 const fmt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
+// User-entered industry names and product names must never become executable HTML.
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const THRESHOLD = 500000000; 
     document.addEventListener('input', function(e) {
         if(e.target.classList.contains('currency-input')) {
@@ -129,7 +131,7 @@ const fmt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
             totalTNCN += t;
             detailHTML += `
                 <div style="margin-bottom: 15px; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 10px;">
-                    <div style="font-weight:bold; font-size:0.85rem; color:var(--primary); margin-bottom:8px;">${index+1}. ${item.name}</div>
+                    <div style="font-weight:bold; font-size:0.85rem; color:var(--primary); margin-bottom:8px;">${index+1}. ${escapeHtml(item.name)}</div>
                     
                     <div class="math-row">
                         <span>• Thuế GTGT:</span>
@@ -373,7 +375,7 @@ function updateCartUI() {
         return `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:10px; background:#f8fafc; border-radius:8px;">
                 <div style="flex:1;">
-                    <div style="font-size:0.85rem; font-weight:600; color:#334155;">${item.name}</div>
+                    <div style="font-size:0.85rem; font-weight:600; color:#334155;">${escapeHtml(item.name)}</div>
                     <div style="font-size:0.8rem; color:var(--primary); font-weight:700;">${fmt(item.price)}</div>
                 </div>
                 <button onclick="removeFromCart(${idx})" style="background:none; border:none; color:#cbd5e1; cursor:pointer; padding:5px;">
@@ -405,7 +407,7 @@ function sendOrderZalo() {
     message += `📞 SĐT: ${phone}\n`;
     message += `📦 Đơn hàng gồm:\n`;
     cart.forEach((item, i) => {
-        message += `  ${i+1}. ${item.name} (${fmt(item.price)})\n`;
+        message += `  ${i+1}. ${escapeHtml(item.name)} (${fmt(item.price)})\n`;
     });
     message += `━━━━━━━━━━━━━━━━━━\n`;
     message += `💰 ${document.getElementById('cart_total').innerText}`;

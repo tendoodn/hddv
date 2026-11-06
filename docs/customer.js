@@ -283,7 +283,7 @@ async function refresh(){
   setMstGrantUnlocked(false);
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
   $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":"";
-  await Promise.all([loadMstAssignments(),loadPackages()]);
+  await Promise.all([loadMstAssignments(session.user.id),loadPackages()]);
   lastQuotaSnapshot=entitlementSnapshot(license);
   if($("accountMessage").textContent.includes("Chưa đồng bộ được dữ liệu Supabase V3.2"))showMessage("");
  }catch(error){
@@ -380,8 +380,8 @@ function openMstEditor(profile=null){
  $('mstProfileDialog').showModal();
  (mstEditing?$('mstProfileName'):$('mstProfileNumber')).focus();
 }
-async function loadMstAssignments(){
- const list=$("mstList");list.replaceChildren();
+async function loadMstAssignments(expectedUserId=''){
+ const list=$("mstList");
  const [rows,deletePermission,borrowed]=await Promise.all([
   rpc("addon_list_my_mst_assignments"),
   rpc("addon_my_mst_deletion_allowed_v115"),
@@ -393,6 +393,10 @@ async function loadMstAssignments(){
  $("mstWebCount").textContent=String(new Set([...(rows||[]).map(x=>x.mst),...shared.map(x=>x.mst)]).size);
  const {data:{session}}=await client.auth.getSession();
  const userId=session?.user?.id;
+ if(!userId||(expectedUserId&&userId!==expectedUserId))return;
+ // Keep the existing MST cards visible until all three RPCs have completed.
+ // Failed/slow refreshes must not blank the list during tab navigation.
+ list.replaceChildren();
  for(const item of rows||[]){
   const line=document.createElement("div");line.className="mst-row";
   line.dataset.mst=String(item.mst);

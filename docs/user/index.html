@@ -2,6 +2,16 @@
 <html lang="vi">
 <head><meta name="robots" content="noindex,nofollow"><meta name="description" content="Đăng nhập và quản lý tài khoản AutoTax, gói sử dụng và phân quyền nhóm.">
 <base href="/">
+<script>
+/* AutoTax account access gate: pages never accept credentials directly.
+   Fast redirect for visitors without a browser session; Supabase still
+   validates session/auth/roles before any protected data is displayed. */
+(function(){
+ try{
+  if(!localStorage.getItem('sb-ucqqjdsoyvvaxswzbhaw-auth-token')) location.replace('/');
+ }catch(_){location.replace('/');}
+})();
+</script><noscript><meta http-equiv="refresh" content="0;url=/"></noscript>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="preconnect" href="https://ucqqjdsoyvvaxswzbhaw.supabase.co" crossorigin>
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
@@ -276,46 +286,9 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 
 
 <div id="accountSessionPending" class="panel" role="status" aria-live="polite">Đang khôi phục phiên đăng nhập AutoTax…</div>
-<section id="authSection" class="panel" hidden>
- <form id="loginForm">
- <h2>Đăng nhập / tạo tài khoản</h2>
-  <p class="autotax-account-safety" role="note"><strong>Đây là tài khoản AutoTax riêng.</strong> Chỉ nhập mật khẩu AutoTax tại <strong>tracuuhoadon.top</strong>; không nhập mật khẩu Gmail, tài khoản ngân hàng hoặc cổng Thuế vào ô này. <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a>.</p>
- <label for="email">User đăng nhập hoặc Email</label><input id="email" type="text" autocomplete="username" placeholder="username hoặc email@gmail.com">
- <label for="password">Mật khẩu AutoTax (không phải mật khẩu Gmail)</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
- <div class="actions"><button id="loginBtn" type="submit">Đăng nhập</button><button id="signupBtn" class="secondary" type="button">Tạo tài khoản</button><button id="resetBtn" class="secondary" type="button">Quên mật khẩu</button><a class="account-link-btn" href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer">Liên hệ Admin cấp lại mật khẩu · Zalo</a></div>
- <div id="authMessage" class="notice" hidden></div>
+<!-- Sign in, sign up and password recovery are exclusively available on /. -->
 
- </form>
-</section>
-<dialog id="resetPasswordDialog" class="autotax-signup-dialog" aria-labelledby="resetPasswordTitle">
- <form id="resetPasswordForm">
-  <div class="autotax-signup-head"><h2 id="resetPasswordTitle">Quên mật khẩu AutoTax</h2><button type="button" id="resetPasswordClose" class="secondary" aria-label="Đóng">✕</button></div>
-  <label for="resetPasswordEmail">Email đã đăng ký (không dùng username)</label>
-  <input id="resetPasswordEmail" type="email" autocomplete="email" required placeholder="email@gmail.com">
-  <p id="resetPasswordStatus" class="notice" role="status" hidden></p>
-  <div class="actions"><button id="resetPasswordSubmit" type="submit">Gửi email reset</button><button id="resetPasswordCancel" class="secondary" type="button">Đóng</button></div>
- </form>
-</dialog>
-<dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
- <form id="signupForm" autocomplete="on">
-  <div class="autotax-signup-head"><h2 id="signupDialogTitle">Tạo tài khoản AutoTax</h2><button id="signupCloseBtn" type="button" class="secondary" aria-label="Đóng đăng ký">✕</button></div>
-  <p class="muted">Điền thông tin để tạo tài khoản riêng cho AutoTax tại <strong>tracuuhoadon.top</strong>. Tài khoản dùng chung trên Web và Extension. <strong>Hãy tự đặt mật khẩu mới, không dùng mật khẩu Gmail hoặc cổng Thuế.</strong></p>
-  <label for="signupName">Tên người dùng</label>
-  <input id="signupName" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Họ tên hoặc tên hiển thị">
-  <label for="signupUsername">User đăng nhập</label>
-  <input id="signupUsername" type="text" required minlength="4" maxlength="32" pattern="[a-z][a-z0-9]{3,31}" autocomplete="off" spellcheck="false" placeholder="Ví dụ: nguyenvana">
-  <label for="signupEmail">Email</label>
-  <input id="signupEmail" type="email" required autocomplete="email" placeholder="ten@gmail.com hoặc ten@hotmail.com">
-  <small>Hỗ trợ Gmail, Hotmail và Yahoo Mail.</small>
-  <label for="signupPassword">Tạo mật khẩu riêng cho AutoTax</label>
-  <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
-  <label for="signupPasswordConfirm">Nhập lại mật khẩu AutoTax</label>
-  <input id="signupPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo">
-  <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây. Email xác minh hiện có thể mang tiêu đề <strong>Supabase Auth</strong>; hãy kiểm tra cả thư mục Spam.</p>
-  <div id="signupStatus" class="notice" role="status" aria-live="polite" hidden></div>
-  <div class="actions"><button id="signupSubmitBtn" type="submit">Tạo tài khoản</button><button id="signupCancelBtn" class="secondary" type="button">Đóng</button></div>
- </form>
-</dialog>
+
 <dialog id="accountProfileDialog" class="autotax-signup-dialog autotax-profile-dialog" aria-labelledby="accountProfileTitle">
  <form id="accountProfileForm" autocomplete="on">
   <h2 id="accountProfileTitle">Cập nhật thông tin tài khoản</h2>

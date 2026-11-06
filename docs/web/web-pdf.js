@@ -88,10 +88,17 @@ async function pdfForInvoice(row,index,total,mode){
  // Use genuine PDF bytes only if included in a ZIP exported by GDT;
  // a reconstructed representation is NEVER mislabelled as source-original.
  if(mode==='tax'){
-  // PDF dựng luôn dùng engine thống nhất với nút Xem PDF trên Web và Add-on.
+  // Preserve byte-for-byte source PDF if it exists inside the authorized GDT ZIP.
+  // Never label a rendered PDF as the publisher's signed original.
+  const sourcePdf=fromSourceFiles(detail);
+  if(sourcePdf){
+   return {name:'PDF_NGUON_TU_CONG_THUE/'+name+'.pdf',
+    data:sourcePdf,kind:'tax_attachment',sourceOriginal:true,
+    providerName:lookup.name||'',providerLink:lookup.link||'',lookupCode:lookup.code||''};
+  }
   const rendered=await window.Pdf.buildInvoicePdf(row,detail,lookup);
   if(!validPdf(rendered))throw Error('Không dựng được PDF Thuế từ dữ liệu hóa đơn.');
-  return {name:'PDF_Dung_Tu_Thue/'+name+'.pdf',
+  return {name:'PDF_THUE_DUNG_TU_DU_LIEU_CQT_KHONG_PHAI_GOC/'+name+'.pdf',
    data:rendered,kind:'representation',reason:'Dựng từ dữ liệu cổng Thuế; KHÔNG PHẢI PDF GỐC',
    providerName:lookup.name||'',providerLink:lookup.link||'',lookupCode:lookup.code||''};
  }

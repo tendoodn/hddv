@@ -9,6 +9,26 @@ const dialogs=['webLoginDialog','webSignupDialog','webForgotDialog','webResetSen
 const logo='/favicon.svg?v=20261102b';
 const allowedEmail=v=>/^[^@\s]+@(gmail\.com|hotmail\.com|yahoo\.com|yahoo\.com\.vn)$/i.test(v);
 let account=null,recovery=false,resetCloseTimer=null,avatar=logo;
+let loginSubmitting=false;
+let usernameOwner='',usernameCache='',usernameRequest=null;
+async function loadProfileUsername(user){
+ const field=$('webProfileUsername');
+ if(!field||!user?.id)return;
+ if(usernameOwner!==user.id){usernameOwner=user.id;usernameCache='';usernameRequest=null}
+ if(usernameCache){field.value=usernameCache;return}
+ field.value='Đang tải…';
+ if(!usernameRequest)usernameRequest=client.rpc('autotax_my_username_v130').then(({data,error})=>{
+  if(error)throw error;
+  return String(data||'').trim()||'Chưa đăng ký';
+ }).finally(()=>{usernameRequest=null});
+ try{
+  const username=await usernameRequest;
+  if(usernameOwner===user.id){usernameCache=username;field.value=username}
+ }catch(error){
+  if(usernameOwner===user.id)field.value='Không tải được';
+  console.warn('Không đọc được User đăng nhập:',error.message||error);
+ }
+}
 const recentEmail=()=>{try{return localStorage.getItem('autotax_recent_email')||''}catch{return ''}};
 const saveEmail=value=>{try{localStorage.setItem('autotax_recent_email',value)}catch{}};
 const nameOf=user=>String(user?.user_metadata?.full_name||user?.user_metadata?.display_name||'').trim().slice(0,100);
@@ -74,7 +94,8 @@ $('webLoginForm').addEventListener('submit',async e=>{
  e.preventDefault();const btn=$('webLoginSubmit'),email=$('webLoginEmail').value.trim().toLowerCase();
  const password=$('webLoginPassword').value;
  if(btn.disabled)return;
- btn.disabled=true;message('webLoginStatus');
+ btn.disabled=true;loginSubmitting=true;
+ message('webLoginStatus','Đang xác thực tài khoản…');
  try{
   const login=email.includes('@')?
     await client.auth.signInWithPassword({email,password}):
@@ -82,22 +103,32 @@ $('webLoginForm').addEventListener('submit',async e=>{
       const session=await accountFlow.usernameSession(email,password);
       return client.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
     })();
-   const {data,error}=login;
+  const {data,error}=login;
   if(error)throw Error(accountFlow.message(error));
-  account=data.user;saveEmail(data.user?.email||email);
-  if(!account?.app_metadata?.autotax_force_password_change){
-   try{await window.AutoTaxSharedMstVault?.unlock(account.id,password)}
-   catch(vaultError){console.warn('Kho MST chưa mở khóa:',vaultError.message);message('webAccountNotice','Kho MST chưa mở khóa: '+vaultError.message,true)}
-  }
+  account=data.user||data.session?.user||null;
+  if(!account?.id)throw Error('Không nhận được phiên đăng nhập hợp lệ.');
+  saveEmail(account.email||email);
+  // The account is authenticated. Close the popup immediately, without waiting
+  // for vault decryption or the larger quota/profile refresh.
   $('webLoginPassword').value='';
   close('webLoginDialog');update();
-  await window.AutoTaxRefreshWebAccount?.();
-  if(account?.app_metadata?.autotax_force_password_change){
+  if(account.app_metadata?.autotax_force_password_change){
    $('webNewPasswordTitle').textContent='Đổi mật khẩu sau khi Admin cấp lại';
    open('webNewPasswordDialog');
   }
+  const signedInUserId=account.id;
+  if(!account.app_metadata?.autotax_force_password_change&&window.AutoTaxSharedMstVault?.unlock){
+   void Promise.resolve().then(()=>window.AutoTaxSharedMstVault.unlock(signedInUserId,password))
+    .catch(error=>{
+      console.warn('Kho MST chưa mở khóa:',error.message||error);
+      if(account?.id===signedInUserId)
+       message('webAccountNotice','Kho MST chưa mở khóa: '+(error.message||error),true);
+    });
+  }
+  void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.())
+    .catch(error=>console.warn('Chưa đồng bộ được hồ sơ sau đăng nhập:',error.message||error));
  }catch(error){message('webLoginStatus',accountFlow.message(error),true)}
- finally{btn.disabled=false}
+ finally{loginSubmitting=false;btn.disabled=false}
 });
 $('webSignupForm').addEventListener('submit',async e=>{
  e.preventDefault();
@@ -151,6 +182,7 @@ function openProfile(){
  $('webSettingsMenu').hidden=true;
  $('webProfileName').value=nameOf(user);
  $('webProfileEmail').value=user.email||'';
+ void loadProfileUsername(user);
  $('webProfileOld').value='';$('webProfileNew').value='';
  $('webProfileAvatarFile').value='';
  avatar=/^data:image\/jpeg;base64,/.test(user.user_metadata?.avatar_data_url||'')?
@@ -241,8 +273,14 @@ $('webNewPasswordForm').addEventListener('submit',async e=>{
  finally{btn.disabled=false}
 });
 client.auth.onAuthStateChange((event,session)=>{
- queueMicrotask(async()=>{
-  account=session?.user||null;update();
+ queueMicrotask(()=>{
+  const previousUserId=account?.id||null;
+  const nextUserId=session?.user?.id||null;
+  account=session?.user||null;
+  // Supabase emits SIGNED_IN for the same account after tab focus. It is not
+  // a fresh login and must not reset controls or refetch the whole account.
+  const unchangedSignIn=event==='SIGNED_IN'&&previousUserId===nextUserId&&!!nextUserId;
+  if(!unchangedSignIn)update();
   if(event==='PASSWORD_RECOVERY'||(window.__autotaxRecoveryFromUrl&&account&&!recovery)){
    recovery=true;$('webNewPasswordTitle').textContent='Đặt mật khẩu mới';
    message('webNewPasswordStatus');open('webNewPasswordDialog');
@@ -250,7 +288,10 @@ client.auth.onAuthStateChange((event,session)=>{
    $('webNewPasswordTitle').textContent='Đổi mật khẩu sau khi Admin cấp lại';
    if(!$('webNewPasswordDialog').open)open('webNewPasswordDialog');
   }
-  if(['SIGNED_IN','SIGNED_OUT','USER_UPDATED'].includes(event))await window.AutoTaxRefreshWebAccount?.();
+  if(['SIGNED_IN','SIGNED_OUT','USER_UPDATED'].includes(event)&&
+     !loginSubmitting&&!unchangedSignIn)
+    void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.())
+     .catch(error=>console.warn('Không đồng bộ được phiên AutoTax:',error.message||error));
  });
 });
 $('webAccountNotice').hidden=true;

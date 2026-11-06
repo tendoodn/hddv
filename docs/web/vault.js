@@ -196,7 +196,7 @@ function renderPicker(){
       const {error}=await client.rpc('autotax_member_authorize_shared_mst_v120',{p_mst:mst});
       if(error)throw error;
       notify('Đã cấp quyền MST '+mst+' bằng hạn mức cá nhân.');
-      await window.AutoTaxRefreshWebAccount?.();
+      await window.AutoTaxRefreshWebAccount?.({force:true});
      }catch(error){notify('Không cấp được quyền MST cá nhân: '+error.message,true)}
      finally{authorize.disabled=false}
     });

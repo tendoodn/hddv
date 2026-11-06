@@ -557,7 +557,7 @@ async function claimRows(all,mst){
   const item={mst,direction:row.kind||'',
    form_code:(row.form||'')+':'+(row.khmshdon||''),
    series:row.khhdon||'',invoice_number:String(row.shdon??'')};
-  const identity=JSON.stringify([account?.id||'',...JSON.parse(key(item))]);
+  const identity=JSON.stringify([account?.id||'',item.mst,item.direction,item.form_code,item.series,item.invoice_number]);
   if(!unique.has(identity))unique.set(identity,{row,item});
  }
  const unseen=[...unique.values()];

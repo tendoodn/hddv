@@ -98,6 +98,15 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
  </div>
  <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
  <dialog id="mstGrantConsentDialog" class="web-consent-dialog" aria-label="Cấp quyền MST"><h2>Cấp quyền MST</h2><p>Bạn có muốn cấp phép cho MST này sử dụng gói MST không ?</p><div class="web-consent-actions"><button type="button" id="mstGrantConsentYes">Có</button><button type="button" id="mstGrantConsentNo">Không</button></div></dialog>
+ <dialog id="mstPermissionRequiredDialog" class="web-consent-dialog" aria-labelledby="mstPermissionRequiredTitle" aria-describedby="mstPermissionRequiredText">
+  <h2 id="mstPermissionRequiredTitle">MST chưa được cấp quyền</h2>
+  <p id="mstPermissionRequiredText">Hồ sơ MST này chưa được cấp quyền sử dụng gói MST.</p>
+  <p class="muted">Bạn có thể thiết lập lại danh sách MST được phép sử dụng trong tài khoản AutoTax, nếu còn hạn mức MST hợp lệ.</p>
+  <div class="web-consent-actions">
+   <a id="mstPermissionManageLink" class="web-grant-cta" href="/user/?panel=mst">Cấp quyền MST</a>
+   <button id="mstPermissionRequiredClose" type="button" class="outline">Đóng</button>
+  </div>
+ </dialog>
     <div id="gdtConnectionHelp" class="gdt-connection-help" role="status" hidden>
       <strong>Máy chủ chưa lấy được CAPTCHA từ cổng Thuế</strong>
       <p>Không có ảnh thì cũng không thể nhập mã xác nhận thủ công. Bạn có thể thử kết nối lại hoặc kiểm tra trực tiếp cổng Thuế. AutoTax không trừ lượt hóa đơn khi chưa tra cứu thành công.</p>

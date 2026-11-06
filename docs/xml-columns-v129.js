@@ -6,6 +6,23 @@ const normalize=k=>String(k||'').replace(/\[\d+\]/g,'').replace(/\s*\/\s*/g,'/')
 const LS='autotax_xml_selected_fields_v129';
 let selected=[],known=new Set(),dialog=null,loaded=false;
 const allow=k=>/^HDon\//.test(k)&&k.length<320;
+function value(detail,key,lineIndex=0){
+  const fields=detail?.xmlFields||{};
+  const wanted=normalize(key);
+  const isLine=wanted.includes('/HHDVu/');
+  const index=Math.max(1,Number(lineIndex)+1);
+  for(const [source,raw] of Object.entries(fields)){
+   if(normalize(source)!==wanted)continue;
+   if(isLine){
+    const match=/\/HHDVu\[(\d+)\]/.exec(source);
+    if(!match||Number(match[1])!==index)continue;
+   }
+   const val=String(raw??'');
+   // Excel formula injection guard for untrusted XML text.
+   return /^[=+@\-\t\r]/.test(val)?"'"+val:val;
+  }
+  return '';
+}
 function getSelected(){return [...selected]}
 function registerFields(keys){
  for(const key of keys||[]){const norm=normalize(key);if(allow(norm))known.add(norm)}
@@ -108,6 +125,6 @@ function init(){
  btn.onclick=open;anchor.append(btn);
  void load();
 }
-window.AutoTaxXmlColumns=Object.freeze({getSelected,registerFields,load,save,open});
+window.AutoTaxXmlColumns=Object.freeze({getSelected,registerFields,load,save,open,value});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

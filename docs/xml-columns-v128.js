@@ -52,7 +52,7 @@
   if(!matches.length)return '';
   const item=key.includes('/HHDVu/');
   if(item){
-   const line=matches.find(([k])=>new RegExp('HHDVu\\\\['+(rowIndex+1)+'\\\\]\\\\s*\\\\/').test(k));
+   const line=matches.find(([k])=>k.replace(/\s+/g,'').includes('/HHDVu['+(rowIndex+1)+']/'));
    return String((line||[])[1]??'');
   }
   return String(matches[0]?.[1]??'');

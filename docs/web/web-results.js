@@ -94,14 +94,16 @@ function updateScope(){
   (selected?'đã tick':'toàn bộ đang hiển thị')+')';
 }
 function totals(list){
- const active=list.filter(isActive);
- return {
-  total:active.reduce((a,r)=>a+num(r.tgtttbso),0),
-  vat:active.reduce((a,r)=>a+num(r.tgtthue),0),
-  buy:active.filter(r=>r.kind==='purchase').reduce((a,r)=>a+num(r.tgtttbso),0),
-  sold:active.filter(r=>r.kind==='sold').reduce((a,r)=>a+num(r.tgtttbso),0),
-  excluded:list.length-active.length
- };
+ // Single pass avoids repeated filter/reduce over long invoice searches.
+ let buy=0,sold=0,vat=0,excluded=0;
+ for(const row of list){
+  if(!isActive(row)){excluded++;continue}
+  const payment=num(row.tgtttbso);
+  vat+=num(row.tgtthue);
+  if(row.kind==='purchase')buy+=payment;
+  else if(row.kind==='sold')sold+=payment;
+ }
+ return {buy,sold,vat,excluded};
 }
 function kAlert(stats,allowPopup=true){
  lastStats=stats;
@@ -135,9 +137,9 @@ function render(list,warnings=[],options={}){
  $('results').hidden=false;
  // Selection mode is automatic: checked visible rows, otherwise all filtered rows.
  const st=totals(dataset);
- $('totalPayments').textContent=money(st.total);
+ $('purchaseTotal').textContent=money(st.buy);
  $('totalVat').textContent=money(st.vat);
- $('purchaseSaleTotals').textContent=money(st.buy)+' / '+money(st.sold);
+ $('salesTotal').textContent=money(st.sold);
  $('resultSummary').textContent='Tìm thấy '+dataset.length+' hóa đơn · mua vào '+
   dataset.filter(r=>r.kind==='purchase').length+' · bán ra '+
   dataset.filter(r=>r.kind==='sold').length+

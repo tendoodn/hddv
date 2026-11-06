@@ -36,7 +36,7 @@ assert.match(admin,/await client\.auth\.getUser\(\)/,
  'Admin must authenticate identity with Supabase Auth');
 assert.match(admin,/client\.rpc\("addon_is_admin"\)/,
  'Admin must authorize with the server-side RPC');
-assert.match(user,/customer\\.js\\?v=[^"']+/, 'User must use a versioned customer JS URL to invalidate old sign-in code');
+assert.match(user,/customer\.js\?v=[^"']+/, 'User must use a versioned customer JS URL to invalidate old sign-in code');
 new vm.Script(customer,{filename:'customer.js'});
 for(const [i,script] of [...admin.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).entries()){
  if(script.trim())new vm.Script(script,{filename:'admin inline script '+i});

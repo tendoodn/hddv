@@ -193,6 +193,11 @@ async function refresh(){
   const {data:{session}}=await client.auth.getSession();
   const signedIn=!!session;
   if(signedIn&&session.user?.email){try{localStorage.setItem('autotax_recent_email',session.user.email)}catch{}}
+  // Start entitlement lookup while Supabase verifies the user identity.
+  // Nothing protected is rendered until getUser() has verified the session.
+  const entitlementPending=signedIn?
+   rpc("autotax_my_entitlements_v118").then(data=>({data}),error=>({error})):
+   Promise.resolve(null);
   let {data:userResult,error:userError}=signedIn?
    await client.auth.getUser():{data:{user:null},error:null};
   if(userError&&isAuthSessionError(userError)){
@@ -223,7 +228,9 @@ async function refresh(){
   // The server-side entitlements RPC already persists an automatic mode
   // switch in addon_usage_modes. Calling set_usage_mode and re-fetching here
   // added two sequential network round trips on EVERY login or account refresh.
-  const license=await rpc("autotax_my_entitlements_v118");
+  const entitlement=await entitlementPending;
+  if(entitlement?.error)throw entitlement.error;
+  const license=entitlement.data;
   const modeChoice=accountFlow.quotaModes(license);
   const hasInvoice=Number(license.packages?.invoice?.purchased||0)>0||
     Number(license.team_invoice_purchased||0)>0||modeChoice.invoiceUsable||

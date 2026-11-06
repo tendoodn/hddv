@@ -13,6 +13,18 @@ const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
 const DUP_EMAIL="Email đã tồn tại.";
 const accountFlow=window.AutoTaxAccountFlow;
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
+let lastQuotaSnapshot='',quotaProbeBusy=false;
+// Compare only entitlement facts, never volatile auth refresh timestamps.
+function entitlementSnapshot(license){
+ if(!license)return '';
+ const keys=['mode','usage_mode','active_mode','selected_mode','allowed',
+  'packages','can_reread_charged_invoices','team_invoice_remaining',
+  'team_invoice_spendable_remaining','team_invoice_purchased',
+  'team_mst_package_capacity','team_mst_count','team_invoice_shared_mst_count',
+  'team_shared_msts','team_memberships','team_mode','team_id',
+  'trial_used','trial_expires_at','ever_had_package'];
+ return JSON.stringify(keys.map(key=>license[key]??null));
+}
 let adminRoleCheckedUser='',adminRoleCheckedAt=0,adminRoleRequest=0;
 async function refreshExtensionDownloadLink(){
  const anchor=$('extensionDownloadBtn');
@@ -190,7 +202,8 @@ async function refresh(){
     ({data:userResult,error:userError}=await client.auth.getUser());
   }
   if(userError)throw userError;
-  if(!signedIn||!userResult?.user){location.replace('/');return;}
+  if(!signedIn){location.replace('/');return;}
+  if(!userResult?.user)throw Error('Chưa xác minh được tài khoản. Vui lòng thử lại.');
   const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
   $("dashboard").hidden=!signedIn;
@@ -270,21 +283,29 @@ async function refresh(){
   $("trialArea").hidden=!!license.ever_had_package||!!license.trial_used||!!license.allowed;
   $("trialStatus").textContent=license.trial_used?"Email đã nhận dùng thử trước đây.":"";
   await Promise.all([loadMstAssignments(),loadPackages()]);
+  lastQuotaSnapshot=entitlementSnapshot(license);
   if($("accountMessage").textContent.includes("Chưa đồng bộ được dữ liệu Supabase V3.2"))showMessage("");
  }catch(error){
-  state=null;
-  $("trialArea").hidden=true;
-  $("modeSection").hidden=true;
-  $("packageList").replaceChildren();
-  $("mstList").replaceChildren();
-  if(isPendingV32Backend(error)){
-   $("licenseTitle").textContent="Đang chuyển đổi sang AutoTax V3.2";
-   showMessage("Hệ thống cấp phép V3.2 chưa được triển khai trên Supabase. Đăng nhập vẫn hoạt động, nhưng mua gói, dùng thử và kích hoạt mã sẽ chỉ mở sau khi quản trị cập nhật SQL.",true);
-  }else if(isAuthSessionError(error)||/Phiên đăng nhập AutoTax đã hết hạn/i.test(String(error?.message||''))){
-   const current=await client.auth.getSession().catch(()=>({data:{session:null}}));
-   // No login form is available on /user: authentication belongs to the main Web.
-   location.replace('/');
+  const authProblem=isAuthSessionError(error)||
+    /Phiên đăng nhập AutoTax đã hết hạn/i.test(String(error?.message||''));
+  if(authProblem){
+   // A temporary RPC/JWT failure does not mean that the user signed out.
+   // Only redirect if Supabase can confirm the session really disappeared.
+   const current=await client.auth.getSession().catch(e=>({data:null,error:e}));
+   if(!current.error&&!current.data?.session){location.replace('/');return;}
+   showMessage('Tạm thời chưa xác minh được phiên đăng nhập. Vui lòng thử lại sau hoặc đăng nhập lại nếu phiên đã hết hạn.',true);
    return;
+  }
+  // Background/transient failures should not blank the existing dashboard.
+  if(!state){
+   $("trialArea").hidden=true;
+   $("modeSection").hidden=true;
+   $("packageList").replaceChildren();
+   $("mstList").replaceChildren();
+  }
+  if(isPendingV32Backend(error)){
+   if(!state)$("licenseTitle").textContent="Đang chuyển đổi sang AutoTax V3.2";
+   showMessage("Hệ thống cấp phép V3.2 chưa được triển khai trên Supabase. Đăng nhập vẫn hoạt động, nhưng mua gói, dùng thử và kích hoạt mã sẽ chỉ mở sau khi quản trị cập nhật SQL.",true);
   }else{
    showMessage("Chưa đồng bộ được dữ liệu Supabase V3.2: "+prettyError(error),true);
   }
@@ -885,16 +906,27 @@ client.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")location.
 // Re-query the server when returning to the page, so removal from a team drops its
 // contributed quota without touching the member's personal quota or history.
 let lastQuotaRefresh=0;
-function refreshTeamBalances(){
- if(document.hidden||$("dashboard").hidden||checking)return;
+async function refreshTeamBalances(){
+ if(document.hidden||$("dashboard").hidden||checking||quotaProbeBusy||
+   mstGrantUnlocked||document.querySelector('dialog[open]')||
+   document.activeElement?.matches('input,select,textarea,[contenteditable="true"]'))return;
  const now=Date.now();
  if(now-lastQuotaRefresh<12000)return;
  lastQuotaRefresh=now;
- void refresh();
+ quotaProbeBusy=true;
+ try{
+  const {data,error}=await client.rpc("autotax_my_entitlements_v118");
+  if(error)throw error;
+  // A tab focus or periodic check must not re-create MST checkboxes, plans,
+  // scroll position and active settings when nothing actually changed.
+  if(entitlementSnapshot(data)!==lastQuotaSnapshot)await refresh();
+ }catch(error){
+  console.warn('AutoTax: chưa cập nhật được quyền sử dụng nền:',error.message||error);
+ }finally{quotaProbeBusy=false}
 }
-window.addEventListener("focus",refreshTeamBalances);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshTeamBalances()});
-setInterval(refreshTeamBalances,60000);
+window.addEventListener("focus",()=>{void refreshTeamBalances()});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refreshTeamBalances()});
+setInterval(()=>{void refreshTeamBalances()},60000);
 // Route only verified browser sessions into this protected account page.
 client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')location.replace('/')});
 refresh();

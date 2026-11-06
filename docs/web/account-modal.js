@@ -67,7 +67,7 @@ $('webLoginToSignup').addEventListener('click',()=>{
  message('webSignupStatus');open('webSignupDialog');
 });
 $('webLoginToForgot').addEventListener('click',()=>{
- $('webForgotEmail').value=$('webLoginEmail').value||recentEmail();
+ $('webForgotEmail').value=$('webLoginEmail').value.includes('@')?$('webLoginEmail').value:recentEmail();
  message('webForgotStatus');open('webForgotDialog');
 });
 $('webLoginForm').addEventListener('submit',async e=>{
@@ -76,9 +76,15 @@ $('webLoginForm').addEventListener('submit',async e=>{
  if(btn.disabled)return;
  btn.disabled=true;message('webLoginStatus');
  try{
-  const {data,error}=await client.auth.signInWithPassword({email,password});
+  const login=email.includes('@')?
+    await client.auth.signInWithPassword({email,password}):
+    await (async()=>{
+      const session=await accountFlow.usernameSession(email,password);
+      return client.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token});
+    })();
+   const {data,error}=login;
   if(error)throw Error(accountFlow.message(error));
-  account=data.user;saveEmail(email);
+  account=data.user;saveEmail(data.user?.email||email);
   if(!account?.app_metadata?.autotax_force_password_change){
    try{await window.AutoTaxSharedMstVault?.unlock(account.id,password)}
    catch(vaultError){console.warn('Kho MST chưa mở khóa:',vaultError.message);message('webAccountNotice','Kho MST chưa mở khóa: '+vaultError.message,true)}

@@ -1,11 +1,7 @@
 <!doctype html>
 <html lang="vi"><head><meta name="robots" content="noindex,nofollow"><base href="/">
-<script>
-/* Protected-route fast redirect; actual permissions verified by Supabase. */
-(function(){try{
- if(!localStorage.getItem('sb-ucqqjdsoyvvaxswzbhaw-auth-token'))location.replace('/');
-}catch(_){location.replace('/')}})();
-</script><noscript><meta http-equiv="refresh" content="0;url=/"></noscript><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
+<!-- Authentication and Admin authorization are verified by Supabase during boot.
+     Do not redirect from synchronous localStorage checks during token rotation. --><noscript><meta http-equiv="refresh" content="0;url=/"></noscript><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
 <title>Admin AutoTax - Tra Cứu &amp; Tải HĐĐT</title>
@@ -344,6 +340,7 @@ async function boot(){
   window.location.replace("/user");
   return;
  }
+ adminVerifiedUserId=session.user.id;
  $("adminSessionPending").hidden=true;
  $("app").classList.remove("hidden");
  void window.AdminSiteLinks?.load?.();
@@ -891,18 +888,34 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{
  if(logs)await loadLogs();
  if(feedback)await window.AdminFeedback?.load?.();
 });
-// Không khởi tạo lại Admin khi Supabase làm mới token hoặc phát lại INITIAL_SESSION.
-let adminBootBusy=false,adminBootQueued=false,adminBootTimer=null;
+// Supabase may emit SIGNED_IN again when a tab regains focus or its token
+// is refreshed. Rebooting Admin on that event hid the app and reloaded every
+// table, visually identical to F5. Boot only for a genuinely different user.
+let adminBootBusy=false,adminBootTimer=null,adminVerifiedUserId=null;
 async function bootOnce(){
- if(adminBootBusy){adminBootQueued=true;return}
+ if(adminBootBusy)return;
  adminBootBusy=true;
- try{do{adminBootQueued=false;await boot()}while(adminBootQueued)}
- catch(error){$("adminSessionPending").hidden=false;$("adminSessionPending").textContent="Không tải được trang quản trị: "+(error.message||error)}
- finally{adminBootBusy=false}
+ try{await boot()}
+ catch(error){
+  if(!adminVerifiedUserId){
+   $("adminSessionPending").hidden=false;
+   $("adminSessionPending").textContent="Không tải được trang quản trị: "+(error.message||error);
+  }else console.warn("Không đồng bộ được quyền Admin:",error);
+ }finally{adminBootBusy=false}
 }
-client.auth.onAuthStateChange((event)=>{
- if(event!=='SIGNED_IN'&&event!=='SIGNED_OUT')return;
- clearTimeout(adminBootTimer);adminBootTimer=setTimeout(()=>void bootOnce(),140);
+client.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'){
+  adminVerifiedUserId=null;
+  location.replace('/');
+  return;
+ }
+ if(event!=='SIGNED_IN')return;
+ const nextUserId=session?.user?.id;
+ if(!nextUserId||adminBootBusy||nextUserId===adminVerifiedUserId)return;
+ clearTimeout(adminBootTimer);
+ adminBootTimer=setTimeout(()=>{
+  if(!adminBootBusy&&nextUserId!==adminVerifiedUserId)void bootOnce();
+ },180);
 });
 void bootOnce();
 </script>

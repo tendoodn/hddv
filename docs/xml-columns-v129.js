@@ -14,7 +14,7 @@ function value(detail,key,lineIndex=0){
   for(const [source,raw] of Object.entries(fields)){
    if(normalize(source)!==wanted)continue;
    if(isLine){
-    const match=/\/HHDVu\[(\d+)\]/.exec(source);
+    const match=/\/HHDVu\[(\d+)\]/.exec(source.replace(/\s*\/\s*/g,'/'));
     if(!match||Number(match[1])!==index)continue;
    }
    const val=String(raw??'');

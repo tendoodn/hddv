@@ -1,4 +1,4 @@
-/* AutoTax V1.1.32: one authorized invoice -> one row of PDF footer fields.
+/* AutoTax V1.1.34: authorized invoice samples feed one best row per provider.
  * Uses exactly the lookup calculation used by PDF.buildInvoicePdf:
  * HDDT.originalLookup(row, detail.head), not arbitrary provider/secret codes.
  * Both Web and Chrome Add-on use this same module.

@@ -34,8 +34,10 @@ assert.match(admin,/if\(!session\)\{location\.replace\('\/'\);return;\}/,
  'Admin page must redirect when Supabase confirms no session');
 assert.doesNotMatch(customer,/\$\("loginForm"\)|\$\("signupForm"\)|\$\("authSection"\)/,
  'Customer script cannot reference removed login controls');
-assert.match(admin,/await client\.auth\.getUser\(\)/,
+assert.match(admin,/client\.auth\.getUser\(\)/,
  'Admin must authenticate identity with Supabase Auth');
+assert.match(admin,/Promise\.all\(\[/,
+ 'Admin verifies identity and role concurrently to reduce login latency');
 assert.match(admin,/client\.rpc\("addon_is_admin"\)/,
  'Admin must authorize with the server-side RPC');
 assert.match(user,/customer\.js\?v=[^"']+/, 'User must use a versioned customer JS URL to invalidate old sign-in code');

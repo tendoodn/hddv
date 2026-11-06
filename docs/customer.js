@@ -194,7 +194,6 @@ async function refresh(){
   const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
   $("dashboard").hidden=!signedIn;
-  $("headerLogoutBtn").hidden=!signedIn;
   const forceDialog=$('forcedPasswordDialog');
   if(signedIn&&forceChange){
    $('passwordPanel').hidden=true;
@@ -699,7 +698,6 @@ async function action(id,fn){
 }
 // The customer portal does not accept credentials. Sign in/up/reset on / only.
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();location.replace('/')}));
-$("headerLogoutBtn").addEventListener("click",()=>action("headerLogoutBtn",async()=>{closePayment();await client.auth.signOut();location.replace('/')}));
 
 // Paging only hides DOM rows: selected MSTs from other pages remain checked
 // and are still sent as the complete authorization list on Save.

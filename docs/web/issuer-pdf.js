@@ -14,7 +14,9 @@ const status=message=>{$('issuerPdfStatus').textContent=message};
 const directPdfLink=link=>{
  try{
   const u=new URL(link);
-  return u.protocol==='https:'&&(/\.(?:pdf|zip)$/i.test(u.pathname)||/\/(?:download|export)[^/]*|\/pdf(?:\/|$)|format=(?:pdf|zip)/i.test(u.pathname+u.search));
+  return u.protocol==='https:'&&!u.username&&!u.password&&(!u.port||u.port==='443')&&
+   !!window.IssuerPortals?.describe(u.href)&&
+   (/\.(?:pdf|zip)$/i.test(u.pathname)||/\/(?:download|export)[^/]*|\/pdf(?:\/|$)|format=(?:pdf|zip)/i.test(u.pathname+u.search));
  }catch{return false}
 };
 function providerInstructions(name,link){
@@ -85,16 +87,28 @@ async function downloadDirect(){
  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),14000);
  try{
   const link=new URL(current.link);
-  if(!/\.(?:pdf|zip)(?:$|\?)|\/(?:download|export)[^/]*|format=(?:pdf|zip)/i.test(link.pathname+link.search))
-   throw Error('Đây là trang tra cứu, không phải đường dẫn tải PDF trực tiếp. Hãy mở trang bên cạnh để xác thực.');
+  if(!directPdfLink(link.href))
+   throw Error('Chỉ tự tải từ miền nhà phát hành đã được duyệt. Hãy mở cổng chính thức và tải thủ công nếu chưa hỗ trợ.');
   const res=await fetch(current.link,{method:'GET',mode:'cors',credentials:'omit',
    redirect:'error',signal:abort.signal,cache:'no-store'});
   if(!res.ok)throw Error('Nhà phát hành phản hồi HTTP '+res.status);
   const n=Number(res.headers.get('content-length')||0);
   if(n>24*1024*1024)throw Error('PDF/ZIP lớn hơn 24 MB.');
-  let bytes=new Uint8Array(await res.arrayBuffer());
-  if(bytes.length>24*1024*1024||bytes.length<5)
-   throw Error('Không nhận được PDF/ZIP thực.');
+  const limit=24*1024*1024,chunks=[];let size=0;
+  if(res.body){
+   const reader=res.body.getReader();
+   for(;;){
+    const {value,done}=await reader.read();if(done)break;
+    size+=value.byteLength;
+    if(size>limit){await reader.cancel();throw Error('PDF/ZIP vượt 24 MB.')}
+    chunks.push(value);
+   }
+  }else{
+   const part=new Uint8Array(await res.arrayBuffer());size=part.byteLength;chunks.push(part);
+  }
+  if(size>limit||size<5)throw Error('Không nhận được PDF/ZIP thực.');
+  let bytes=new Uint8Array(size);let pos=0;
+  for(const part of chunks){bytes.set(part,pos);pos+=part.byteLength}
   if(bytes[0]===80&&bytes[1]===75&&bytes[2]===3&&bytes[3]===4)
    bytes=(await window.AutoTaxIssuerArchive.extractPdf(bytes)).pdf;
   if(bytes.length>12*1024*1024||bytes[0]!==37||bytes[1]!==80||

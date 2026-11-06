@@ -105,7 +105,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
 .admin-mst-row-actions>button{padding:4px 5px!important;min-height:26px!important;font-size:10px!important;min-width:0!important;flex:0 0 auto}
 </style></head><body><main class="wrap"><h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">Quản trị AutoTax</h1>
 <header><div class="brand">AUTOTAX <span>V1.1.33 · ADMIN</span></div><div class="actions"><a href="/user" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
-<div id="adminSessionPending" class="panel" role="status" aria-live="polite">Đang xác minh phiên AutoTax và quyền Admin…</div>
+<div id="adminSessionPending" class="panel" role="status" aria-live="polite" hidden>Đang xác minh phiên AutoTax và quyền Admin…</div>
 <!-- Admin login removed: sign in from the main Web. -->
 <section id="app" class="hidden">
 <div class="panel" id="customerPanel"><div class="row"><h2>Quản lý khách hàng</h2><button id="reload" hidden aria-hidden="true">Làm mới</button></div><div class="row admin-filter-row">
@@ -313,34 +313,39 @@ function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 async function boot(){
  const {data,error:sessionError}=await client.auth.getSession();
  const session=data?.session||null;
- $("app").classList.add("hidden");
- $("adminSessionPending").hidden=false;
- $("adminSessionPending").textContent="Đang xác minh phiên AutoTax và quyền Admin…";
+ // Do not blank a verified Admin workspace for a token refresh / same-user event.
+ if(adminVerifiedUserId&&session?.user?.id===adminVerifiedUserId)return;
+ if(!adminVerifiedUserId)$("app").classList.add("hidden");
  if(sessionError){
-  $("adminSessionPending").textContent="Không đọc được phiên đăng nhập: "+sessionError.message+" · Kiểm tra kết nối và tải lại.";
+  showAdminSessionMessage("Không đọc được phiên đăng nhập: "+sessionError.message+" · Kiểm tra kết nối và thử lại.");
   return;
  }
  if(!session){location.replace('/');return;}
-  // Session presence is not proof of identity: confirm it with Supabase Auth.
-  const {data:identity,error:identityError}=await client.auth.getUser();
-  if(identityError){
-   if(/invalid|expired|missing|refresh token|jwt/i.test(identityError.message||'')){location.replace('/');return;}
-   $("adminSessionPending").textContent='Chưa kiểm tra được phiên đăng nhập: '+identityError.message+' · Vui lòng tải lại.';
-   return;
-  }
-  if(!identity?.user){location.replace('/');return;}
- // Xác thực quyền thật trên máy chủ. Không tự đăng xuất và KHÔNG đoán quyền theo email.
- const {data:ok,error}=await client.rpc("addon_is_admin");
+ // Identity and Admin role verification are independent network requests:
+ // run concurrently, but never expose protected data before BOTH succeed.
+ const [identityResult,roleResult]=await Promise.all([
+  client.auth.getUser(),client.rpc("addon_is_admin")
+ ]);
+ const {data:identity,error:identityError}=identityResult;
+ const {data:ok,error}=roleResult;
+ if(identityError||!identity?.user){
+  showAdminSessionMessage("Chưa xác minh được phiên đăng nhập: "+(identityError?.message||'Thiếu thông tin tài khoản')+" · Kiểm tra mạng và thử lại.");
+  return;
+ }
+ if(identity.user.id!==session.user.id){
+  showAdminSessionMessage("Phiên đăng nhập đã thay đổi. Vui lòng mở lại trang quản trị.");
+  return;
+ }
  if(error){
-  $("adminSessionPending").textContent="Đã có phiên AutoTax nhưng chưa xác minh được quyền Admin: "+error.message+" · Vui lòng thử tải lại.";
+  showAdminSessionMessage("Chưa xác minh được quyền Admin: "+error.message+" · Kiểm tra mạng và thử lại.");
   return;
  }
  if(ok!==true){
-  // Người dùng thường phải về /user với nguyên phiên Supabase, không signOut.
   window.location.replace("/user");
   return;
  }
- adminVerifiedUserId=session.user.id;
+ adminVerifiedUserId=identity.user.id;
+ clearTimeout(adminPendingTimer);
  $("adminSessionPending").hidden=true;
  $("app").classList.remove("hidden");
  void window.AdminSiteLinks?.load?.();
@@ -888,34 +893,49 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{
  if(logs)await loadLogs();
  if(feedback)await window.AdminFeedback?.load?.();
 });
-// Supabase may emit SIGNED_IN again when a tab regains focus or its token
-// is refreshed. Rebooting Admin on that event hid the app and reloaded every
-// table, visually identical to F5. Boot only for a genuinely different user.
-let adminBootBusy=false,adminBootTimer=null,adminVerifiedUserId=null;
+// Supabase emits SIGNED_IN on tab focus even for the SAME user.
+// Never reboot on focus, token refresh or INITIAL_SESSION: they are not navigation.
+let adminBootBusy=false,adminVerifiedUserId=null,adminPendingTimer=null;
+function showAdminSessionMessage(message){
+ clearTimeout(adminPendingTimer);
+ const pending=$("adminSessionPending");
+ pending.textContent=message;
+ pending.hidden=false;
+}
 async function bootOnce(){
- if(adminBootBusy)return;
+ if(adminBootBusy||adminVerifiedUserId)return;
  adminBootBusy=true;
+ adminPendingTimer=setTimeout(()=>{
+  if(!adminVerifiedUserId)showAdminSessionMessage("Đang xác minh phiên AutoTax và quyền Admin…");
+ },1200);
  try{await boot()}
  catch(error){
-  if(!adminVerifiedUserId){
-   $("adminSessionPending").hidden=false;
-   $("adminSessionPending").textContent="Không tải được trang quản trị: "+(error.message||error);
-  }else console.warn("Không đồng bộ được quyền Admin:",error);
- }finally{adminBootBusy=false}
+  if(!adminVerifiedUserId)showAdminSessionMessage("Không tải được trang quản trị: "+(error.message||error));
+  else console.warn("Không đồng bộ được quyền Admin:",error);
+ }finally{
+  clearTimeout(adminPendingTimer);
+  adminBootBusy=false;
+ }
 }
 client.auth.onAuthStateChange((event,session)=>{
- if(event==='SIGNED_OUT'){
+ const nextUserId=session?.user?.id||null;
+ if(event==='SIGNED_IN'&&adminVerifiedUserId&&nextUserId&&nextUserId!==adminVerifiedUserId){
+  // An actual account switch must require fresh server-side Admin verification.
   adminVerifiedUserId=null;
-  location.replace('/');
-  return;
+  $("app").classList.add("hidden");
+  void bootOnce();
+ }else if(event==='SIGNED_OUT'){
+  // Confirm the session has really disappeared (avoid a redirect loop on
+  // intermittent refresh errors). Hide confidential data if signed out.
+  queueMicrotask(async()=>{
+   const {data,error}=await client.auth.getSession().catch(e=>({error:e,data:null}));
+   if(!error&&!data?.session){
+    adminVerifiedUserId=null;
+    $("app").classList.add("hidden");
+    showAdminSessionMessage("Phiên đăng nhập đã kết thúc. Vui lòng quay lại trang tra cứu để đăng nhập.");
+   }
+  });
  }
- if(event!=='SIGNED_IN')return;
- const nextUserId=session?.user?.id;
- if(!nextUserId||adminBootBusy||nextUserId===adminVerifiedUserId)return;
- clearTimeout(adminBootTimer);
- adminBootTimer=setTimeout(()=>{
-  if(!adminBootBusy&&nextUserId!==adminVerifiedUserId)void bootOnce();
- },180);
 });
 void bootOnce();
 </script>

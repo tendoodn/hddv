@@ -14,10 +14,8 @@ const admin=read('admin/index.html');
 const customer=read('customer.js');
 const sdk='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js';
 for(const [name,html] of [['user',user],['admin',admin]]){
-  assert.match(html,/localStorage\.getItem\('sb-ucqqjdsoyvvaxswzbhaw-auth-token'\)/,
-    name+' must redirect before loading page without an existing Web session');
-  assert.match(html,/location\.replace\('\/'\)/,
-    name+' must redirect to the main Web');
+  assert.doesNotMatch(html,/localStorage\.getItem\('sb-ucqqjdsoyvvaxswzbhaw-auth-token'\)/,
+    name+' must not race token refresh with a synchronous localStorage redirect');
   assert.ok(html.includes(sdk),name+' must load a pinned Supabase SDK');
   for(const id of ['loginForm','signupForm','resetPasswordForm','authSection','login']){
     assert.ok(!new RegExp('<(?:form|section|button|input)\\b[^>]*\\bid=["\\\']'+id+'["\\\']').test(html),
@@ -28,8 +26,12 @@ for(const [name,html] of [['user',user],['admin',admin]]){
 }
 assert.ok(publicWeb.includes('id="webLoginForm"'),'Main Web must retain sign-in');
 assert.ok(publicWeb.includes('id="webSignupForm"'),'Main Web must retain sign-up');
-assert.match(customer,/if\(!signedIn\|\|!userResult\?\.user\)\{location\.replace\('\/'\);return;\}/,
- 'User page must reject invalid Supabase sessions');
+assert.match(customer,/if\(!signedIn\)\{location\.replace\('\/'\);return;\}/,
+ 'User page redirects only after Supabase confirms no session');
+assert.match(customer,/if\(!userResult\?\.user\)throw Error/,
+ 'User page must validate the current identity before displaying account data');
+assert.match(admin,/if\(!session\)\{location\.replace\('\/'\);return;\}/,
+ 'Admin page must redirect when Supabase confirms no session');
 assert.doesNotMatch(customer,/\$\("loginForm"\)|\$\("signupForm"\)|\$\("authSection"\)/,
  'Customer script cannot reference removed login controls');
 assert.match(admin,/await client\.auth\.getUser\(\)/,

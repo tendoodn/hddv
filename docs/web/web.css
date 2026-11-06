@@ -597,3 +597,10 @@ td.audit-info{color:#c6c6db}
 @media(max-width:580px){.invoice-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  .invoice-stats>div{padding:11px 10px}
  .invoice-stats strong{font-size:clamp(14px,4vw,18px)}}
+
+/* Topic-focused, readable guidance is visible to people and search engines. */
+.autotax-guide{margin:22px 0 5px;padding:20px clamp(13px,3vw,25px);
+ background:#141418;border:1px solid #303036;border-radius:17px}
+.autotax-guide h2{margin:0 0 10px;font-size:clamp(17px,2.6vw,21px);color:#f8fafc}
+.autotax-guide p{margin:8px 0;line-height:1.7;font-size:13px;color:#c8c8d2}
+.autotax-guide a{color:#93c5fd;text-underline-offset:3px}

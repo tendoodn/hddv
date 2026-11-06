@@ -316,23 +316,27 @@ async function refreshAccount(){
   }
   $('authStatus').textContent=account.email+' · Đã kết nối';
   $('accountEmailLabel').textContent=account.email||'Tài khoản AutoTax';
-  // Invalidate only this member's local invoice details after a server reset.
-  // Historical invoice charge/dedupe records remain untouched.
-  try{
-   const invalidated=await window.AutoTaxMemberCacheReset?.check({
-    userId:account.id,token:session?.access_token
-   });
-   if(invalidated?.cleared&&!busy){
-    details.clear();pendingDetails.clear();rows=[];
-    window.WebResults?.resetForSearch?.();
-    show('Đã xóa bộ nhớ đệm hóa đơn thành viên trên thiết bị này. Bộ đếm nhóm bắt đầu lại từ 0.',true);
-   }
-  }catch(error){console.warn('Không kiểm tra được reset cache thành viên:',error.message)}
-  const [ent,profiles,sharedRows]=await Promise.all([
+  // Run cache invalidation and account RPCs concurrently: returning to a tab
+  // must not pay an extra sequential network round trip before rendering MSTs.
+  const requestedUserId=account.id;
+  const resetPromise=Promise.resolve().then(()=>window.AutoTaxMemberCacheReset?.check?.({
+   userId:requestedUserId,token:session?.access_token
+  })).catch(error=>{
+   console.warn('Không kiểm tra được reset cache thành viên:',error.message);
+   return null;
+  });
+  const [ent,profiles,sharedRows,invalidated]=await Promise.all([
    client.rpc('autotax_my_entitlements_v118'),
    client.rpc('addon_list_my_mst_assignments'),
-   client.rpc('autotax_team_shared_mst_profiles_v119')
+   client.rpc('autotax_team_shared_mst_profiles_v119'),
+   resetPromise
   ]);
+  if(account?.id!==requestedUserId)return;
+  if(invalidated?.cleared&&!busy){
+   details.clear();pendingDetails.clear();rows=[];
+   window.WebResults?.resetForSearch?.();
+   show('Đã xóa bộ nhớ đệm hóa đơn thành viên trên thiết bị này. Bộ đếm nhóm bắt đầu lại từ 0.',true);
+  }
   if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
   if(sharedRows.error)console.warn('Không tải được MST nhóm:',sharedRows.error.message);
   const shared=Array.isArray(sharedRows.data)?sharedRows.data:[];
@@ -915,7 +919,7 @@ function init(){
  // Both Web and Add-on use the same account records; never sync tax passwords.
  let profileRefreshBusy=false,lastProfileRefreshAt=0;
  const refreshVisibleProfiles=async()=>{
-  if(busy||document.hidden||profileRefreshBusy||Date.now()-lastProfileRefreshAt<9000)return;
+  if(busy||document.hidden||profileRefreshBusy||Date.now()-lastProfileRefreshAt<45000)return;
   profileRefreshBusy=true;lastProfileRefreshAt=Date.now();
   try{await refreshAccount()}finally{profileRefreshBusy=false}
  };

@@ -220,7 +220,7 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
     <h2>Danh sách nhà phát hành</h2>
     <button type="button" class="secondary" id="issuerRegistryRefresh">Làm mới</button>
    </div>
-   <p class="muted">AutoTax lấy đúng các thông tin in ở <strong>chân PDF dựng</strong> từ hóa đơn đã đọc. Mỗi hóa đơn có một dòng; cùng nhà cung cấp nhưng khác mã tra cứu sẽ là những dòng riêng. Chỉ tự bổ sung giá trị còn thiếu, chỉ Admin được sửa.</p>
+   <p class="muted">AutoTax thu thập 5 trường từ hóa đơn đã đọc và chỉ giữ <strong>một mẫu tốt nhất cho mỗi nhà cung cấp</strong>. Khi đã đủ 5/5 sẽ dừng cập nhật tự động. Nếu thiếu đường link hoặc thiếu bất kỳ trường nào trong bộ ba (mã tra cứu, MST người mua, MST người bán), hệ thống vẫn tiếp tục thu thập ở các lần tra cứu sau. Mẫu mới chỉ thay thế mẫu cũ nếu không làm mất đường link và không làm giảm số trường đã thu thập trong bộ ba. Không tạo lịch sử các lần quét. Chỉ Admin được chỉnh sửa.</p>
    <p id="issuerRegistryStatus" role="status"></p>
    <div class="tablewrap"><table>
     <thead><tr>

@@ -134,7 +134,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
           <label>Phiên làm việc</label><p id="gdtStatus">Mật khẩu được ghi nhớ dạng mã hóa trên thiết bị sau khi xác thực thành công.</p><p id="captchaStatus" class="captcha-status" aria-live="polite">AutoTax sẽ tự nhận dạng CAPTCHA. Bạn chỉ cần MST và mật khẩu.</p>
           <button id="clearGdt" type="button" class="text-btn">Xóa phiên Thuế</button>
         </div>
-        <fieldset class="field checks"><legend>Loại hóa đơn <em>*</em></legend>
+        <fieldset class="field checks autotax-kind-row"><legend>Loại hóa đơn <em>*</em></legend>
           <label class="check"><input type="checkbox" name="kind" value="purchase" checked><span>Hóa đơn mua vào</span></label>
           <label class="check"><input type="checkbox" name="kind" value="sold"><span>Hóa đơn bán ra</span></label>
           <small class="k-hint">Cảnh báo hệ số K chỉ hoạt động khi chọn cả Mua vào và Bán ra.</small>
@@ -148,10 +148,6 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
             </label>
             <small id="openingStockHint">Nhập giá trị tồn tại ngày đầu tiên của kỳ tra cứu.</small>
           </div>
-        </fieldset>
-        <fieldset class="field checks"><legend>Hình thức</legend>
-          <label class="check"><input type="checkbox" name="form" value="hddt" checked><span>Hóa đơn điện tử</span></label>
-          <label class="check"><input type="checkbox" name="form" value="mtt" checked><span>Hóa đơn máy tính tiền</span></label>
         </fieldset>
       </div>
       <div id="captchaBox" class="captcha-row" hidden>
@@ -402,8 +398,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/period-k.js?v=1118k4"></script>
 <script src="./web/hddt-api.js?v=20261106xmlfull2"></script>
 
-<script src="./xml-columns-v129.js?v=20261106v129"></script>
-<script src="./web/report.js?v=20261106chosen1"></script>
+<script src="./web/report.js?v=20261106detail48"></script>
 <script src="./web/tendoo-import.js?v=1123"></script>
 <script src="./web/stock-cache.js?v=1122g"></script>
 <script src="./web/download-folder.js?v=126flat1"></script>

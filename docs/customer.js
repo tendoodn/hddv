@@ -702,8 +702,8 @@ const closeSignup=()=>{
  $("signupPassword").value="";$("signupPasswordConfirm").value="";
 };
 $("signupBtn").addEventListener("click",()=>{
- $("signupName").value="";
- $("signupEmail").value=$("email").value.trim();
+ $("signupName").value="";$("signupUsername").value="";
+ $("signupEmail").value=$("email").value.includes('@')?$("email").value.trim():'';
  $("signupPassword").value="";$("signupPasswordConfirm").value="";
  signupMessage("");
  $("signupDialog").showModal();
@@ -724,10 +724,16 @@ $("signupForm").addEventListener("submit",event=>{
   const password=$("signupPassword").value,confirmPassword=$("signupPasswordConfirm").value;
   const invalid=accountFlow.validateSignup({name,email,password,confirmPassword});
   if(invalid)return signupMessage(invalid,true);
+  const username=$("signupUsername").value.trim().toLowerCase();
+  if(!/^[a-z][a-z0-9._]{3,31}$/.test(username))
+   return signupMessage("User đăng nhập phải có 4–32 ký tự, bắt đầu bằng chữ và chỉ gồm chữ thường, số, dấu chấm hoặc gạch dưới.",true);
   button.disabled=true;
   try{
+   const {data:free,error:usernameError}=await client.rpc('autotax_username_available_v130',{p_username:username});
+   if(usernameError)throw Error('Chưa kiểm tra được User đăng nhập.');
+   if(!free)throw Error('User đăng nhập đã được sử dụng.');
    const {data,error}=await client.auth.signUp({
-    email,password,options:{data:{full_name:name,display_name:name}}
+    email,password,options:{data:{full_name:name,display_name:name,username}}
    });
    if(error){
     const value=String(error.code||"")+" "+String(error.message||"");
@@ -758,7 +764,9 @@ $("signupForm").addEventListener("submit",event=>{
  })();
 });
 $("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
- const {error}=await client.auth.resetPasswordForEmail($("email").value.trim(),{redirectTo:"https://tracuuhoadon.top/"});
+ const accountEmail=$("email").value.trim();
+ if(!accountEmail.includes('@'))throw Error('Để lấy lại mật khẩu, vui lòng nhập email đăng ký thay vì User đăng nhập.');
+ const {error}=await client.auth.resetPasswordForEmail(accountEmail,{redirectTo:"https://tracuuhoadon.top/"});
  if(error)throw error;
  showMessage(accountFlow.forgotSuccess,false,"authMessage");
 }));

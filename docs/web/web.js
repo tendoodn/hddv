@@ -496,6 +496,7 @@ function openMissingMstPermission(mst){
  const link=$('mstPermissionManageLink');
  link.href='/user/?panel=mst&mst='+encodeURIComponent(number);
  link.setAttribute('aria-label','Mở danh sách MST và cấp quyền cho '+number);
+ link.onclick=()=>{mstGrantReturnPending=true;};
  $('mstPermissionRequiredClose').onclick=()=>dialog.close();
  if(!dialog.open)dialog.showModal();
  return true;
@@ -916,9 +917,12 @@ function init(){
  });
  // Bring MST profiles and mode from Supabase whenever this tab becomes active.
  // Both Web and Add-on use the same account records; never sync tax passwords.
- let profileRefreshBusy=false,lastProfileRefreshAt=0;
+ let profileRefreshBusy=false,lastProfileRefreshAt=0,mstGrantReturnPending=false;
  const refreshVisibleProfiles=async()=>{
-  if(busy||document.hidden||profileRefreshBusy||Date.now()-lastProfileRefreshAt<45000)return;
+  if(busy||document.hidden||profileRefreshBusy||
+     (!mstGrantReturnPending&&Date.now()-lastProfileRefreshAt<45000))return;
+  // Only an explicit grant action bypasses the normal tab-focus throttle.
+  mstGrantReturnPending=false;
   profileRefreshBusy=true;lastProfileRefreshAt=Date.now();
   try{await refreshAccount()}finally{profileRefreshBusy=false}
  };

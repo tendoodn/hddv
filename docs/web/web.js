@@ -692,7 +692,7 @@ async function search(e){
   // XML and product metadata are read even when XML export was not selected.
   // Limit to three portal requests at a time, and never delay showing results.
   const xmlSession=detailEpoch;
-  void loadDetails([...rows],{quiet:true}).then(map=>{
+  if(!window.AutoTaxLite)void loadDetails([...rows],{quiet:true}).then(map=>{
    if(xmlSession!==detailEpoch)return;
    window.AutoTaxXmlColumns?.registerFields?.([...map.values()].flatMap(d=>Object.keys(d.xmlFields||{})));
    const xmlCount=[...map.values()].filter(d=>d.source==='xml').length;

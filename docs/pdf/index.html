@@ -241,13 +241,10 @@ function magicScanCanvas(inputCanvas){
    const paper=clamp(top*(1-ty)+bot*ty,35,255),k=(y*w+x)*4;
    const r=p[k],g=p[k+1],b=p[k+2],lum=.2126*r+.7152*g+.0722*b;
    const max=Math.max(r,g,b),min=Math.min(r,g,b),chroma=max-min;
-   // Very faint pastel inks: cyan/light-blue, pink/light-red, and purple.
-   // Use channel differences instead of a high saturation threshold.
-   const blue=(b>=r+2&&g>=r+1)||(b>r+2&&b>=g-12)||(b>g+3&&b>=r-4);
-   const red=(r>=g+3&&r>=b+2)||(r>=g+2&&b>=g+2&&r>=b-8);
-   const purple=r>=g+3&&b>=g+3;
-   const colorContrast=Math.max(chroma,Math.abs(r-g),Math.abs(b-r));
-   const colored=(blue||red||purple)&&colorContrast>=3&&(paper-lum>1||colorContrast>=7);
+   const blue=(b>r+1&&b>=g-12)||(b>g+2&&b>=r-4);
+   const red=r>g+12&&r>b+8;
+   const purple=r>g+7&&b>g+7;
+   const colored=(blue&&paper-lum>5)||(red&&chroma>17)||(purple&&chroma>17);
    // Relative-to-local-paper contrast protects writing in dark/shadowed regions.
    const delta=paper-lum;
    const darkInk=lum<75||delta>Math.max(25,paper*.17);
@@ -256,16 +253,15 @@ function magicScanCanvas(inputCanvas){
    if(!preserve){p[k]=255;p[k+1]=255;p[k+2]=255;continue}
    // Keep original hue for color ink; make black text sharp and dark.
    if(colored){
-    // Preserve pale colored strokes by amplifying chroma relative to their luminance.
-    // A faint pink/cyan stroke must not be whitened away with the paper.
-    const strength=clamp(colorContrast/24,0,1);
-    const chromaGain=1.35+0.55*(1-strength);
-    const inkLum=clamp(lum-(delta>7?Math.min(12,delta*.12):3),0,245);
-    p[k]=clamp(inkLum+(r-lum)*chromaGain);
-    p[k+1]=clamp(inkLum+(g-lum)*chromaGain);
-    p[k+2]=clamp(inkLum+(b-lum)*chromaGain);
-    if(blue)p[k+2]=Math.max(p[k+2],p[k]+Math.max(3,(b-r)*1.1));
-    if(red)p[k]=Math.max(p[k],p[k+1]+Math.max(3,(r-g)*1.1));
+    if(red||purple){
+     // Preserve the original stamp ink RGB rather than boosting or recoloring it.
+     p[k]=r;p[k+1]=g;p[k+2]=b;
+    }else{
+     const gain=clamp(225/Math.max(75,paper),1,2.5);
+     const boost=clamp((delta-6)*.12,0,12);
+     p[k]=clamp(r*gain-boost);p[k+1]=clamp(g*gain-boost);p[k+2]=clamp(b*gain-boost);
+     if(blue)p[k+2]=Math.max(p[k+2],p[k]+Math.max(2,(b-r)*.8));
+    }
    }else{
     const ink=clamp((lum/Math.max(35,paper))*205-(delta>30?18:0));
     const edge=clamp((delta-12)/14,0,1);

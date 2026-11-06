@@ -218,6 +218,13 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
     <thead><tr><th>MST nhà cung cấp HĐ</th><th>Link tra cứu</th><th>MST bên bán</th><th>MST bên mua</th><th>Mã bảo mật</th><th>Thao tác</th></tr></thead>
     <tbody id="issuerRegistryRows"></tbody>
    </table></div>
+   <div class="row" style="margin-top:18px"><h3>Hóa đơn chưa xác định nhà phát hành</h3></div>
+   <p class="muted">Dữ liệu đã đọc nhưng XML/JSON chưa xác nhận MST đơn vị phát hành. Đây là danh sách chờ, <strong>không phải danh sách nhà phát hành</strong>. Những hóa đơn chỉ có lịch sử đọc cần tra lại để bổ sung XML. Không phát sinh lượt mới khi đọc lại hóa đơn đã ghi nhận.</p>
+   <p id="issuerPendingStatus" role="status"></p>
+   <div class="tablewrap"><table>
+     <thead><tr><th>Hóa đơn đã đọc</th><th>MST hồ sơ</th><th>MST bên bán</th><th>MST bên mua</th><th>Link tra cứu</th><th>Trạng thái</th><th>Thao tác Admin</th></tr></thead>
+     <tbody id="issuerPendingRows"></tbody>
+   </table></div>
   </div>
  </details>
 </section>
@@ -243,6 +250,20 @@ th,td{padding:6px 8px;font-size:12px}h1{font-size:20px}h2{font-size:17px;margin:
   <div class="actions" style="display:flex;gap:8px;justify-content:flex-end">
    <button id="issuerRegistrySave" type="submit">Lưu 5 trường</button>
    <button id="issuerRegistryCancel" type="button" class="secondary">Đóng</button>
+  </div>
+ </form>
+</dialog>
+<dialog id="issuerResolveDialog" aria-label="Xác định MST nhà phát hành" style="max-width:min(500px,96vw);width:100%;border:1px solid #e7b6c0;border-radius:12px;padding:20px">
+ <form id="issuerResolveForm">
+  <h2>Xác nhận nhà phát hành của hóa đơn</h2>
+  <p id="issuerResolveInvoice" class="muted"></p>
+  <label for="issuerResolveMst">MST nhà cung cấp giải pháp HĐĐT đã kiểm chứng</label>
+  <input id="issuerResolveMst" type="text" required pattern="[0-9]{10}|[0-9]{12}|[0-9]{13}" inputmode="numeric" maxlength="13" autocomplete="off" placeholder="10, 12 hoặc 13 chữ số" style="display:block;width:100%;margin:8px 0">
+  <label style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input id="issuerResolveVerified" type="checkbox" required style="margin-top:4px">Tôi đã kiểm tra XML hoặc chứng từ đáng tin cậy và xác định đây là MST nhà cung cấp HĐĐT, không phải MST bên bán.</label>
+  <p id="issuerResolveStatus" role="status" class="muted"></p>
+  <div class="actions" style="display:flex;gap:8px;justify-content:flex-end">
+   <button id="issuerResolveSave" type="submit">Xác nhận &amp; lưu</button>
+   <button id="issuerResolveCancel" type="button" class="secondary">Đóng</button>
   </div>
  </form>
 </dialog>
@@ -893,7 +914,7 @@ void bootOnce();
 <script src="./admin-mode-v120.js?v=1120fix3"></script>
 <script src="./admin-feedback.js?v=116"></script>
 <script src="./admin-site-links.js?v=1123nocombo1"></script>
-<script src="./admin-issuers-v1.js?v=20261106registry1"></script>
+<script src="./admin-issuers-v1.js?v=20261106registry131"></script>
 <script src="./password-toggle.js?v=116"></script>
 <script src="./site-footer.js?v=118"></script>
 <script src="../release-notice-v128.js"></script></body></html>

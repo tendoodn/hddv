@@ -657,8 +657,9 @@ async function search(e){
    }
    if(samples.length)void client.auth.getSession().then(async ({data})=>{
     const stats=await collector.submit(samples,data?.session);
-    progress('Chân PDF dựng: đã nhận '+stats.received+' hóa đơn có thông tin tra cứu; '+
-      stats.updated+' bản ghi mới/bổ sung; '+stats.rejected+' bản ghi không hợp lệ hoặc chưa có quyền.');
+    progress('Chân PDF dựng: '+stats.registered+' hóa đơn đã ghi dữ liệu; '+
+      stats.skipped+' hóa đơn không có thông tin tra cứu; '+
+      stats.rejected+' hóa đơn không khớp quyền đọc.');
    }).catch(error=>{
     console.warn('Chưa cập nhật được mẫu nhà phát hành:',error.message);
     progress('Chưa đồng bộ thống kê nhà phát hành: '+error.message);

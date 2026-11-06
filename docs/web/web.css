@@ -565,3 +565,10 @@ td.audit-info{color:#c6c6db}
 .invoice-pdf-canvas-pages canvas{max-width:100%;display:block;margin:0 auto 12px;box-shadow:0 6px 18px #0004;background:#fff}
 @media(max-width:640px){.invoice-pdf-preview{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0}
 .invoice-pdf-canvas-pages{max-height:calc(100dvh - 88px);padding:6px}}
+
+/* AutoTax 1.1.30: both invoice forms are automatic, keep purchase/sales choices on one line. */
+.autotax-kind-row{grid-column:1/-1!important;display:flex!important;align-items:center;column-gap:18px;row-gap:8px;flex-wrap:wrap}
+.autotax-kind-row legend{float:left;min-width:100%;margin-bottom:2px!important}
+.autotax-kind-row>.check{display:inline-flex!important;align-items:center;white-space:nowrap;margin:0!important;gap:7px}
+.autotax-kind-row>.k-hint,.autotax-kind-row>.opening-stock-control{flex-basis:100%;min-width:0}
+@media(max-width:540px){.autotax-kind-row{column-gap:12px}.autotax-kind-row>.check{font-size:13px}.autotax-kind-row>.check input{width:19px;height:19px}}

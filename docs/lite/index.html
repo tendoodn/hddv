@@ -71,7 +71,41 @@
 }
 </style><style>.topbar .logo{font-size:18px!important;font-weight:900;letter-spacing:.04em}.topbar .logo span{font-size:15px!important;font-weight:900}@media(max-width:600px){.topbar .logo{font-size:16px!important}.topbar .logo span{font-size:12px!important}.topbar .logo img{width:36px;height:36px}}</style><script>window.AutoTaxLite=true;</script>
 <link rel="stylesheet" href="../lite/lite.css?v=20261107lite1">
-</head>
+<style id="autotax-mobile-layout-fix-120">
+/* Keep the settings menu above the other cards, even inside Lite layouts. */
+#webAccountModeSlot,#webAccountTools,#webUserBlock,.account-line{overflow:visible!important}
+#webUserBlock .web-settings-wrap{position:relative!important;z-index:150}
+#webSettingsToggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;opacity:1!important;visibility:visible!important;background:#27272d!important;color:#fff!important;border:1px solid #9ba7b6!important;border-radius:9px!important;box-shadow:0 1px 7px #0005!important}
+#webSettingsMenu:not([hidden]){display:flex!important;position:fixed!important;z-index:9999!important;background:#1c1c24!important;color:#fff!important;min-width:200px;max-width:calc(100vw - 16px)!important;box-shadow:0 10px 30px #0009!important}
+#webGreeting{min-width:0!important;overflow:hidden!important;text-overflow:clip!important;white-space:nowrap!important;display:block!important}
+#webGreeting .web-greeting-text{display:inline-block;white-space:nowrap;will-change:transform}
+#webGreeting.web-greeting-long .web-greeting-text{animation:autotaxGreetingMarquee 11s linear infinite alternate}
+@keyframes autotaxGreetingMarquee{0%,13%{transform:translateX(0)}87%,100%{transform:translateX(calc(-1 * var(--greeting-overflow,0px)))}}
+@media(prefers-reduced-motion:reduce){#webGreeting.web-greeting-long .web-greeting-text{animation:none!important}}
+@media(max-width:640px){
+ #webAccountModeSlot{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;grid-template-rows:auto auto!important;column-gap:4px!important;row-gap:7px!important;align-items:center!important;width:100%!important;min-width:0!important}
+ #webAccountTools,#webUserBlock{display:contents!important}
+ #webUserBlock[hidden]{display:none!important}
+ #webUserBlock .web-settings-wrap{grid-column:1!important;grid-row:1!important;justify-self:start!important}
+ #webAvatar{grid-column:2!important;grid-row:1!important;justify-self:start!important;width:25px!important;height:25px!important}
+ #webGreeting{grid-column:3 / span 3!important;grid-row:1!important;max-width:100%!important;width:100%!important;font-size:11px!important}
+ #webRenewNow{grid-column:6!important;grid-row:1!important;justify-self:stretch!important;min-width:0!important;padding:7px 2px!important}
+ #webMstGrantNow{grid-column:1 / span 2!important;grid-row:2!important;min-width:0!important;justify-content:center!important;font-size:10px!important}
+ #webLiteNow{grid-column:3!important;grid-row:2!important;min-width:0!important;white-space:normal!important;text-align:center!important}
+ #webAccountModeSlot #webModeControls:not([hidden]){grid-column:4 / span 3!important;grid-row:2!important;display:flex!important;min-width:0!important;width:100%!important;max-width:100%!important;justify-content:stretch!important}
+ #webAccountModeSlot #webModeControls select{font-size:10px!important;min-width:0!important;max-width:none!important;width:100%!important;white-space:nowrap!important;text-overflow:clip!important}
+ #webAccountModeSlot #webModeControls label{display:none!important}
+ #webAccountModeSlot #webLoginOpen{grid-column:1 / span 3!important;grid-row:1!important}
+}
+</style><style id="autotax-lite-actions-120">
+@media(max-width:640px){
+ #webAccountModeSlot{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+ #webMstGrantNow{grid-column:1 / span 2!important;grid-row:2!important}
+ #webRenewNow{grid-column:3!important;grid-row:2!important;font-size:10px!important}
+ #webAccountModeSlot #webModeControls:not([hidden]){grid-column:4 / span 3!important;grid-row:2!important}
+ #webLiteNow{display:none!important}
+}
+</style></head>
 <body>
 <style>
 #autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}
@@ -106,8 +140,6 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
         <div id="webAccountTools" class="web-account-tools">
           <button id="webLoginOpen" type="button" class="web-login-open">Đăng nhập</button>
           <div id="webUserBlock" class="web-user-block" hidden>
-           <img id="webAvatar" src="../favicon.svg?v=20261102b" alt="" width="30" height="30">
-           <strong id="webGreeting">Xin chào bạn</strong>
            <div class="web-settings-wrap">
             <button id="webSettingsToggle" type="button" aria-label="Cài đặt tài khoản" aria-expanded="false" aria-controls="webSettingsMenu" title="Cài đặt tài khoản">⚙</button>
             <nav id="webSettingsMenu" class="web-settings-menu" hidden aria-label="Cài đặt tài khoản">
@@ -118,6 +150,8 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
              <button type="button" id="webLogout">Đăng xuất</button>
             </nav>
            </div>
+           <img id="webAvatar" src="../favicon.svg?v=20261102b" alt="" width="30" height="30">
+           <strong id="webGreeting"><span class="web-greeting-text">Xin chào bạn</span></strong>
            <a id="webRenewNow" href="/user/#planSection" title="Gia hạn hoặc mua thêm gói AutoTax">Gia hạn</a>
            <a id="webMstGrantNow" href="/user/?panel=mst" title="Mở cấu hình danh sách MST được phép sử dụng">Cấp quyền truy cập cho MST</a>
            <a id="webLiteNow" href="/lite/" title="Tra cứu hóa đơn bằng giao diện rút gọn cho điện thoại">Xem Rút Gọn</a>

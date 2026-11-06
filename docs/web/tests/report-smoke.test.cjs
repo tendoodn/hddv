@@ -61,4 +61,29 @@ assert.equal(book[0].rows.find(r=>r[6]==='002')[19],'Điều chỉnh');
 assert.equal(book[0].rows.find(r=>r[6]==='003')[19],'Đã hủy');
 assert.equal(book[1].rows.find(r=>r[6]==='004')[19],'Đã thay thế');
 assert.equal(book[1].rows.find(r=>r[6]==='005')[19],'Thay thế');
+// A search result must remain a report row even if its status is cancelled/replaced;
+// the report must not silently mix it into the opposite direction.
+const purchaseNumbers=book[0].rows.filter(r=>typeof r[0]==='number').map(r=>r[6]);
+const soldNumbers=book[1].rows.filter(r=>typeof r[0]==='number').map(r=>r[6]);
+assert.deepEqual(purchaseNumbers,['001','002','003']);
+assert.deepEqual(soldNumbers,['004','005']);
+assert.equal(book[0].rows.filter(r=>r[1]==='Tổng (USD)').length,1);
+assert.equal(book[0].rows.find(r=>r[1]==='Tổng (VND)')[16],110);
+assert.equal(book[1].rows.find(r=>r[1]==='Tổng')[16],220);
+assert.equal(book[0].rows.find(r=>r[6]==='002')[20],'C25TAA-99');
+// Preserve invoice numbers as strings, including leading zeros.
+assert.equal(book[0].columns[6].type,'text');
+assert.equal(book[0].rows.find(r=>r[6]==='001')[9],'1111111111');
+assert.equal(book[0].rows.find(r=>r[6]==='001')[11],'2222222222');
+// The report must not mutate the input array or rewrite the original currency.
+assert.equal(rows[0].dvtte,'usd');
+assert.equal(rows[1].dvtte,' USD ');
+assert.equal(rows[0].shdon,'001');
+// Empty direction still has its own sheet with no invoice rows.
+const onlyBuy=context.window.Report.buildSheets([rows[0]],new Map(),{
+  sheets:{reduction:false,risk:false,seller:false,adjust:false,hdkd:false,gtgt:false}
+});
+assert.equal(onlyBuy[0].rows.filter(r=>typeof r[0]==='number').length,1);
+assert.equal(onlyBuy[1].rows.filter(r=>typeof r[0]==='number').length,0);
+assert.equal(onlyBuy[1].rows.find(r=>r[1]==='Tổng')[16],0);
 console.log('PASS: separated sheets, columns, currency subtotals, adjustment/replacement/cancellation');

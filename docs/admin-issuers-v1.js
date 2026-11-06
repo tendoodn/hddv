@@ -1,4 +1,4 @@
-/* AutoTax V1.1.32: Admin-only ledger of the five fields printed in reconstructed-PDF footers. */
+/* AutoTax V1.1.34: one best five-field PDF-footer sample per provider; Admin-only. */
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
@@ -52,7 +52,7 @@ async function load(){
    btn.type='button';
    btn.className='secondary';
    btn.textContent=String(r.provider_name||'').trim()||'Chưa rõ nhà cung cấp';
-   btn.title='Hóa đơn '+invoiceName(r)+' · Bấm để chỉnh sửa dòng này';
+   btn.title='Đã có '+keys.filter(key=>String(r[key]||'').trim()).length+'/5 trường · Nguồn: hóa đơn '+invoiceName(r)+' · Bấm để chỉnh sửa';
    btn.style.whiteSpace='normal';
    btn.style.textAlign='left';
    btn.addEventListener('click',()=>edit(r));
@@ -66,20 +66,19 @@ async function load(){
   if(!rows.length){
    const tr=document.createElement('tr'),td=document.createElement('td');
    td.colSpan=5;
-   td.textContent='Chưa có dữ liệu chân PDF dựng từ các hóa đơn đã đọc.';
+   td.textContent='Chưa có dữ liệu chân PDF dựng từ các nhà cung cấp đã quét.';
    tr.append(td);tbody.append(tr);
   }
-  const old=rows.filter(r=>r.source_kind==='legacy_reference').length;
-  status('Đang lưu '+rows.length+' dòng theo hóa đơn.'+
-    (old?' Có '+old+' dòng dữ liệu cũ; mã tra cứu còn thiếu sẽ bổ sung khi đọc lại XML/JSON.':'')+
-    ' Chỉ bổ sung trường còn trống, không tự ghi đè.');
+  const complete=rows.filter(r=>keys.every(key=>String(r[key]||'').trim())).length;
+  status('Đang quản lý '+rows.length+' nhà cung cấp: '+complete+' đã đủ 5/5; '+
+    (rows.length-complete)+' còn thiếu link hoặc bộ ba. Bản thiếu sẽ chỉ được thay nếu dữ liệu mới không kém chất lượng.');
  }catch(error){status('Không tải được dữ liệu chân PDF: '+(error.message||error),true)}
  finally{loading=false}
 }
 function edit(record){
  active=record;
  for(const key of keys)$('issuerEdit_'+key).value=String(record[key]||'');
- $('issuerEditInvoice').textContent='Hóa đơn '+invoiceName(record)+
+ $('issuerEditInvoice').textContent='Nguồn tham chiếu: hóa đơn '+invoiceName(record)+
    ' · MST phiên tra cứu '+record.session_mst;
  $('issuerEditStatus').textContent='Chỉ Admin được sửa thông tin.';
  const dialog=$('issuerRegistryDialog');
@@ -102,7 +101,7 @@ async function save(event){
   active=null;
   $('issuerRegistryDialog').close();
   await load();
-  status('Đã lưu chỉnh sửa Admin. Các lần đọc sau chỉ bổ sung giá trị còn trống.');
+  status('Đã lưu chỉnh sửa Admin. Mẫu đủ 5/5 sẽ không bị cập nhật tự động; mẫu thiếu chỉ thay bằng dữ liệu không kém chất lượng.');
  }catch(error){$('issuerEditStatus').textContent='Không lưu được: '+(error.message||error)}
  finally{btn.disabled=false}
 }

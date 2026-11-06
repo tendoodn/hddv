@@ -657,8 +657,8 @@ async function search(e){
    }
    if(samples.length)void client.auth.getSession().then(async ({data})=>{
     const stats=await collector.submit(samples,data?.session);
-    progress('Thống kê nhà phát hành: '+stats.registered+' hóa đơn nhận diện được MST NCC; '+
-      stats.pending+' hóa đơn chờ xác định; '+stats.rejected+' hóa đơn không khớp quyền đọc.');
+    progress('Chân PDF dựng: đã nhận '+stats.received+' hóa đơn có thông tin tra cứu; '+
+      stats.updated+' bản ghi mới/bổ sung; '+stats.rejected+' bản ghi không hợp lệ hoặc chưa có quyền.');
    }).catch(error=>{
     console.warn('Chưa cập nhật được mẫu nhà phát hành:',error.message);
     progress('Chưa đồng bộ thống kê nhà phát hành: '+error.message);

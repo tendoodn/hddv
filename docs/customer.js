@@ -682,7 +682,8 @@ $("loginForm").addEventListener("submit",event=>{
  if($("loginBtn").disabled)return;
  void action("loginBtn",async()=>{
  const password=$("password").value;
- const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password});
+ const identifier=$("email").value.trim().toLowerCase();
+ const {data,error}=identifier.includes("@")?await client.auth.signInWithPassword({email:identifier,password}):await (async()=>{const token=await accountFlow.usernameSession(identifier,password);return client.auth.setSession({access_token:token.access_token,refresh_token:token.refresh_token})})();
  if(error)throw Error(accountFlow?.message(error)||"Không đăng nhập được. Vui lòng thử lại.");
  if(!data.user?.app_metadata?.autotax_force_password_change){
   try{await window.AutoTaxSharedMstVault.unlock(data.user.id,password)}

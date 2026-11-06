@@ -1,0 +1,28 @@
+name: Verify AutoTax Lite mobile route
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/lite/**'
+      - 'docs/index.html'
+      - 'docs/web/web.js'
+      - 'docs/web/web-results.js'
+      - '.github/workflows/verify-lite.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-lite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax and Lite dependency safety
+        run: |
+          node --check docs/lite/lite.js
+          node --check docs/web/web.js
+          node --check docs/web/web-results.js
+          node docs/lite/lite.test.cjs

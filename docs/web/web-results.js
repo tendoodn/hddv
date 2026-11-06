@@ -162,7 +162,7 @@ function finish(list,warnings=[]){
  const allowed=new Set((list||[]).map(keyOf));
  for(const key of checked)if(!allowed.has(key))checked.delete(key);
  render(list,warnings,{preserve:true});
- scheduleMismatchCheck();
+ if(!window.AutoTaxLite)scheduleMismatchCheck();
 }
 function resetForSearch(){
  dataset=[];visible=[];checked.clear();currentResultPage=1;lastStats=null;
@@ -675,7 +675,7 @@ function init(){
   setPopupDisabled($('disableKPopup').checked);
   $('kWarningDialog').close();
  });
- updateStock();
+ if(!window.AutoTaxLite)updateStock();
 }
 window.WebResults={render,append,finish,resetForSearch,exportRows:pickedRows,filteredRows:filterRows,exportSuffix,init};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();

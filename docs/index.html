@@ -339,7 +339,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <dialog id="webLoginDialog" class="web-account-dialog" aria-labelledby="webLoginTitle">
  <form id="webLoginForm">
   <div class="web-dialog-head"><h2 id="webLoginTitle">Đăng nhập AutoTax</h2><button type="button" data-web-close="webLoginDialog" aria-label="Đóng">✕</button></div>
-  <label for="webLoginEmail">Tên đăng nhập (email)</label><input id="webLoginEmail" type="email" autocomplete="username" required>
+  <label for="webLoginEmail">User đăng nhập hoặc Email</label><input id="webLoginEmail" type="text" inputmode="email" autocomplete="username" placeholder="username hoặc email@gmail.com" required>
   <label for="webLoginPassword">Mật khẩu</label><input id="webLoginPassword" type="password" autocomplete="current-password" required>
   <p id="webLoginStatus" class="web-dialog-status" hidden role="status"></p>
   <div class="web-dialog-actions"><button id="webLoginSubmit" type="submit">Đăng nhập</button><button id="webLoginToSignup" type="button" class="outline">Tạo tài khoản</button></div>
@@ -350,6 +350,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
  <form id="webSignupForm">
   <div class="web-dialog-head"><h2 id="webSignupTitle">Tạo tài khoản AutoTax</h2><button type="button" data-web-close="webSignupDialog" aria-label="Đóng">✕</button></div>
   <label for="webSignupName">Tên người dùng</label><input id="webSignupName" required type="text" minlength="2" maxlength="100" autocomplete="name">
+  <label for="webSignupUsername">User đăng nhập</label><input id="webSignupUsername" type="text" required minlength="4" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Ví dụ: nguyenvana" pattern="[a-z][a-z0-9._]{3,31}">
   <label for="webSignupEmail">Email (Gmail / Hotmail / Yahoo)</label><input id="webSignupEmail" required type="email" autocomplete="email" placeholder="ten@gmail.com">
   <label for="webSignupPassword">Mật khẩu</label><input id="webSignupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
   <label for="webSignupConfirm">Nhập lại mật khẩu</label><input id="webSignupConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
@@ -360,7 +361,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <dialog id="webForgotDialog" class="web-account-dialog" aria-labelledby="webForgotTitle">
  <form id="webForgotForm">
   <div class="web-dialog-head"><h2 id="webForgotTitle">Quên mật khẩu</h2><button type="button" data-web-close="webForgotDialog" aria-label="Đóng">✕</button></div>
-  <label for="webForgotEmail">Email đã đăng ký</label><input id="webForgotEmail" type="email" required autocomplete="email">
+  <label for="webForgotEmail">Email đã đăng ký (không dùng username)</label><input id="webForgotEmail" type="email" required autocomplete="email">
   <p id="webForgotStatus" class="web-dialog-status" hidden role="status"></p>
   <div class="web-dialog-actions"><button id="webForgotSubmit" type="submit">Gửi email reset</button><button type="button" data-web-close="webForgotDialog" class="outline">Đóng</button></div>
  </form>

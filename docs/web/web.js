@@ -295,11 +295,30 @@ function maybeRemindTaxPassword(profiles){
   ' ngày kể từ lần ghi nhận mật khẩu. Hãy kiểm tra và đổi mật khẩu nếu cần.';
  popup.showModal();
 }
-async function refreshAccount(){
+// Multiple login, focus and account-change events may arrive together.
+ // Coalesce same-account refreshes, but let a new account or explicit mode
+ // change invalidate an older response before it can touch the UI.
+let accountRefreshEpoch=0,accountRefreshFlight=null,accountRefreshOwner=null;
+function refreshAccount({force=false}={}){
+ const wanted=account?.id||null;
+ if(!force&&accountRefreshFlight&&accountRefreshOwner===wanted)
+  return accountRefreshFlight;
+ const epoch=++accountRefreshEpoch;
+ accountRefreshOwner=wanted;
+ const flight=refreshAccountCore(epoch);
+ accountRefreshFlight=flight;
+ void flight.finally(()=>{
+  if(accountRefreshFlight===flight)accountRefreshFlight=null;
+ }).catch(()=>{});
+ return flight;
+}
+async function refreshAccountCore(epoch){
  if(!client){show('Không tải được thư viện đăng nhập Supabase. Vui lòng tải lại trang.');return}
  try{
   const {data:{session}}=await client.auth.getSession();
+  if(epoch!==accountRefreshEpoch)return;
   account=session?.user||null;
+  accountRefreshOwner=account?.id||null;
   window.AutoTaxWebAccount?.sync(account);
   if(!account){
    $('webTeamQuotaSummary').hidden=true;
@@ -332,7 +351,7 @@ async function refreshAccount(){
    client.rpc('autotax_team_shared_mst_profiles_v119'),
    resetPromise
   ]);
-  if(account?.id!==requestedUserId)return;
+  if(epoch!==accountRefreshEpoch||account?.id!==requestedUserId)return;
   if(invalidated?.cleared&&!busy){
    details.clear();pendingDetails.clear();rows=[];
    window.WebResults?.resetForSearch?.();
@@ -407,6 +426,7 @@ async function refreshAccount(){
    if(item.name_verified_at)profileVerifiedNames.add(normalizedMst(item.mst));
   }
   await window.GdtVault?.setUser(account.id,allProfiles,selectedMode);
+  if(epoch!==accountRefreshEpoch||account?.id!==requestedUserId)return;
   maybeRemindTaxPassword(profiles.data||[]);
   document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
   if(selectedMode==='invoice')show('Chế độ số tờ: nhập MST bất kỳ, không cần thêm vào danh sách hồ sơ. Hệ thống sẽ trừ lượt hóa đơn mới.',true);
@@ -941,7 +961,7 @@ function init(){
    if(error)throw error;
    selectedMode=input.value;
    clearGov();
-   await refreshAccount();
+   await refreshAccount({force:true});
    show('Đã chuyển sang chế độ '+(selectedMode==='mst'?'MST':'số tờ')+
     '. Dữ liệu hồ sơ MST được giữ nguyên và đồng bộ với Add-on.',true);
   }catch(error){input.value=previous;show('Không đổi được chế độ: '+error.message)}

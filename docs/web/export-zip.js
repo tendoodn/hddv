@@ -119,7 +119,7 @@
      for(const file of category(files,kind))all.push({name:folder+'/'+file.name,data:file.data});
     }catch(e){console.warn('AutoTax: '+kind,e.message)}
    }
-   all.push({name:'EXCEL/THONG_TIN_NGUON.txt',data:enc.encode(
+   all.push({name:'THONG_TIN_NGUON_EXCEL.txt',data:enc.encode(
     sourceText('excel',books,'Bang thong ke XLSX nam tai thu muc goc: '+output.excel))});
    await storage.saveRootArchive(output.all,window.Zip.writeZip(all));
    return output.all;

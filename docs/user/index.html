@@ -285,12 +285,17 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 .autotax-signup-dialog button:not(.secondary){background:#c12c43!important;color:#fff!important;border-color:#c12c43!important}
 .autotax-signup-dialog button.secondary{background:#30313b!important;color:#fff!important;border-color:#5c5863!important}
 @media(max-width:480px){.autotax-signup-dialog{padding:15px 14px!important}}
+
+/* V1.1.34: account page has a single return-to-search action and an admin-only link. */
+.portal-return-search{background:#a9071b;color:#fff;border-color:#a9071b;white-space:nowrap}
+.portal-return-search:hover{background:#830213;color:#fff}
+@media(max-width:520px){header .portal-header-actions{flex-wrap:wrap;justify-content:flex-end}header .portal-return-search{font-size:11px;padding:8px 9px;white-space:normal;text-align:center}header #adminLink:not([hidden]){font-size:11px;padding:8px 9px}}
 </style></head>
 <body>
 <main class="wrap"><h1 class="autotax-page-title" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Thông tin tài khoản AutoTax</h1>
 <header>
   <div class="brand"><img src="./favicon.svg?v=20261102b" alt="AutoTax" width="34" height="34" style="vertical-align:middle;border-radius:9px;margin-right:8px">AUTOTAX <span>V1.1.33</span></div>
-  <nav class="actions portal-header-actions" aria-label="Liên kết AutoTax"><a id="extensionHeaderDownloadBtn" class="portal-admin-link portal-header-download" href="https://drive.google.com/file/d/11aOSyglPwnubj5oJSwLhu0mhpxr3Y0M_/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="/admin/" id="adminLink" class="portal-admin-link" hidden>Quản trị</a><button id="headerLogoutBtn" type="button" class="portal-admin-link portal-header-logout" hidden>Đăng xuất</button></nav>
+  <nav class="actions portal-header-actions" aria-label="Điều hướng AutoTax"><a href="/admin/" id="adminLink" class="portal-admin-link" hidden>Quản trị</a><a href="/" id="returnSearchLink" class="portal-admin-link portal-return-search" title="Quay trở lại trang tra cứu hóa đơn">QUAY TRỞ LẠI TRA CỨU</a></nav>
 </header>
 
 
@@ -331,9 +336,9 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
    </div>
    <div class="portal-head-tools">
     <nav class="autotax-account-tabs autotax-primary-nav" aria-label="Trang tài khoản">
-      <a id="webSearchLink" class="autotax-tab autotax-web-tab web-search-blink" href="/" title="Bắt đầu tra cứu hóa đơn"><span class="autotax-web-link-copy">BẮT ĐẦU TRA CỨU</span></a>
+      
       <button type="button" id="autotaxTeamTab" class="autotax-tab" aria-selected="false">Chế độ làm việc nhóm</button>
-      <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">TT Tài Khoản</button>
+      <button type="button" id="autotaxBasicTab" class="autotax-tab is-active" aria-selected="true">Thông tin tài khoản</button>
     </nav>
     <div class="autotax-settings-wrap">
     <button id="accountSettingsToggle" type="button" class="autotax-settings-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="accountSettingsMenu" aria-label="Cài đặt tài khoản" title="Cài đặt tài khoản">⚙</button>

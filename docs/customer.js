@@ -776,13 +776,23 @@ $("signupForm").addEventListener("submit",event=>{
   }finally{button.disabled=false}
  })();
 });
-$("resetBtn").addEventListener("click",()=>action("resetBtn",async()=>{
- const accountEmail=$("email").value.trim();
- if(!accountEmail.includes('@'))throw Error('Để lấy lại mật khẩu, vui lòng nhập email đăng ký thay vì User đăng nhập.');
- const {error}=await client.auth.resetPasswordForEmail(accountEmail,{redirectTo:"https://tracuuhoadon.top/"});
- if(error)throw error;
- showMessage(accountFlow.forgotSuccess,false,"authMessage");
-}));
+$("resetBtn").addEventListener("click",()=>{
+ $("resetPasswordEmail").value=$("email").value.includes("@")?$("email").value.trim():"";
+ $("resetPasswordStatus").hidden=true;$("resetPasswordDialog").showModal();
+});
+const closeReset=()=>$("resetPasswordDialog").close();
+$("resetPasswordClose").addEventListener("click",closeReset);
+$("resetPasswordCancel").addEventListener("click",closeReset);
+$("resetPasswordForm").addEventListener("submit",event=>{
+ event.preventDefault();
+ void action("resetPasswordSubmit",async()=>{
+  const email=$("resetPasswordEmail").value.trim();
+  if(!accountFlow.validEmail(email))throw Error("Vui lòng nhập email đăng ký Gmail, Hotmail hoặc Yahoo.");
+  const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:"https://tracuuhoadon.top/"});
+  if(error)throw error;
+  const el=$("resetPasswordStatus");el.textContent=accountFlow.forgotSuccess;el.hidden=false;
+ });
+});
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
 $("headerLogoutBtn").addEventListener("click",()=>action("headerLogoutBtn",async()=>{closePayment();await client.auth.signOut();await refresh()}));
 

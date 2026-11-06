@@ -105,6 +105,16 @@
  #webAccountModeSlot #webModeControls:not([hidden]){grid-column:4 / span 3!important;grid-row:2!important}
  #webLiteNow{display:none!important}
 }
+</style><style id="autotax-mobile-mode-legibility">
+@media(max-width:640px){
+ #webAccountModeSlot #webModeControls:not([hidden]) select{
+  font-size:clamp(8px,2.05vw,10px)!important;
+  letter-spacing:-.04em!important;
+  padding-inline:0!important;
+  height:35px!important;
+  text-overflow:clip!important
+ }
+}
 </style></head>
 <body>
 <style>
@@ -493,13 +503,13 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="../team-shared-v119.js?v=20261106teamsync"></script>
 <script src="../web/vault.js?v=20261106vaultsafe146"></script>
 <script src="../web/pdf.js?v=1122bPdfAddon"></script>
-<script src="../web/invoice-cache-v120.js?v=20261106xmlfull2"></script>
+<script src="../web/invoice-cache-v120.js?v=20261107cache30"></script>
 <script src="../member-cache-reset-v122.js?v=1127cache"></script>
 <script src="../web/date-slide-picker.js?v=1122b"></script>
 <script src="../account-flow.js?v=20261106u130"></script>
 <script src="../web/web.js?v=20261107lite1"></script>
 
-<script src="../web/account-modal.js?v=20261106fastboot145"></script>
+<script src="../web/account-modal.js?v=20261107mobile120"></script>
 <script src="../web/web-results.js?v=20261107lite1"></script>
 <script src="../web/pdf-preview-v120a.js?v=20261106pdfjs65"></script>
 <script src="../password-toggle.js?v=116"></script>

@@ -335,5 +335,18 @@ $('autotaxTeamInviteForm').addEventListener('submit',e=>{e.preventDefault();void
 $('autotaxTeamLeave').addEventListener('click',()=>{if(!confirm('Rời nhóm này?'))return;void run(async()=>{await rpc('autotax_team_leave_v118',{p_team:activeTeam});activeTeam='';notice('Đã rời nhóm.');await refresh()})});
 $('autotaxTeamMembersTab').addEventListener('click',()=>{$('autotaxTeamMembersPanel').hidden=false;$('autotaxTeamUsagePanel').hidden=true});
 $('autotaxTeamUsageTab').addEventListener('click',()=>{$('autotaxTeamMembersPanel').hidden=true;$('autotaxTeamUsagePanel').hidden=false});
-db?.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT'){if(!$('autotaxTeamPanel').hidden)queueMicrotask(()=>void refresh());}});
+// Repeated SIGNED_IN on tab focus is NOT a new team session. Do not rebuild
+// member tables or lose the currently selected controls on every tab switch.
+db?.auth.onAuthStateChange((event,nextSession)=>{
+ const nextUser=nextSession?.user?.id||'';
+ if(event==='SIGNED_OUT'){
+  myId='';teams=[];memberships=[];activeTeam='';
+  $('autotaxTeamDetail').hidden=true;
+  return;
+ }
+ if(event==='SIGNED_IN'&&nextUser&&myId&&nextUser!==myId){
+  myId=nextUser;
+  if(!$('autotaxTeamPanel').hidden)queueMicrotask(()=>void refresh());
+ }
+});
 })();

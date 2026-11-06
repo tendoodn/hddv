@@ -648,7 +648,7 @@ async function search(e){
      ' hóa đơn có XML gốc; '+skuCount+' hóa đơn có mã hàng; '+
      links+' hóa đơn có thông tin tra cứu; '+xmlColumns+
      ' tên cột XML (bao gồm trường trống). Chỉ xuất tệp XML khi chọn tải XML.');
-   // Store one PDF-footer reference per authorized invoice, not one per provider.
+   // Submit authorized invoice samples; server retains only the best sample per provider.
    // This runs after server authorization and never blocks invoice results.
    const collector=window.AutoTaxIssuerReference,samples=[];
    if(collector)for(const row of rows){
@@ -657,8 +657,8 @@ async function search(e){
    }
    if(samples.length)void client.auth.getSession().then(async ({data})=>{
     const stats=await collector.submit(samples,data?.session);
-    progress('Chân PDF dựng: '+stats.registered+' hóa đơn đã ghi dữ liệu; '+
-      stats.skipped+' hóa đơn không có thông tin tra cứu; '+
+    progress('Chân PDF dựng: '+stats.registered+' mẫu nhà cung cấp được cập nhật; '+
+      stats.skipped+' mẫu giữ nguyên (đã đủ 5/5 hoặc dữ liệu mới không tốt hơn); '+
       stats.rejected+' hóa đơn không khớp quyền đọc.');
    }).catch(error=>{
     console.warn('Chưa cập nhật được mẫu nhà phát hành:',error.message);

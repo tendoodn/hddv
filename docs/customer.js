@@ -924,9 +924,24 @@ async function refreshTeamBalances(){
   console.warn('AutoTax: chưa cập nhật được quyền sử dụng nền:',error.message||error);
  }finally{quotaProbeBusy=false}
 }
-window.addEventListener("focus",()=>{void refreshTeamBalances()});
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refreshTeamBalances()});
+// Focusing another browser tab is NOT a request to reload the User portal.
+// Keep a low-frequency background quota check, skipping hidden pages and edits.
 setInterval(()=>{void refreshTeamBalances()},60000);
-// Route only verified browser sessions into this protected account page.
-client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')location.replace('/')});
+// A cross-tab SIGNED_OUT event must not force a full-page redirect or leave
+// account details exposed. Confirm the session, then hide the workspace only.
+client.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'){
+  queueMicrotask(async()=>{
+   const {data,error}=await client.auth.getSession().catch(e=>({error:e,data:null}));
+   if(error||data?.session)return;
+   state=null;lastQuotaSnapshot='';
+   $("dashboard").hidden=true;
+   const pending=$("accountSessionPending");
+   pending.textContent='Phiên đăng nhập đã kết thúc. Quay trở lại trang tra cứu để đăng nhập.';
+   pending.hidden=false;
+  });
+ }else if(event==='SIGNED_IN'&&session?.user&&!state&&!checking){
+  queueMicrotask(()=>{void refresh()});
+ }
+});
 refresh();

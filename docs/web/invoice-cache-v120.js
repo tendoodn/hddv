@@ -14,7 +14,7 @@ const validScope=s=>!!s&&typeof s.userId==='string'&&s.userId.length>0&&
  typeof s.mst==='string'&&/^\d{10,13}$/.test(s.mst);
 const identity=r=>[r?.kind,r?.form,r?.khmshdon,r?.khhdon,r?.shdon,r?.nbmst,r?.nmmst].map(v=>String(v??'')).join('|');
 const fingerprint=r=>[r?.tdlap,r?.tthai,r?.ttxly,r?.tgtttbso,r?.tgtthue,r?.id].map(v=>String(v??'')).join('|');
-const keyOf=(scope,row)=>'xmlmeta2|'+scope.userId+'|'+scope.mst+'|'+identity(row)+'|'+fingerprint(row);
+const keyOf=(scope,row)=>'xmlmeta3|'+scope.userId+'|'+scope.mst+'|'+identity(row)+'|'+fingerprint(row);
 const ttl=()=>DETAIL_TTL_MS;
 function remember(key,record){
  memory.delete(key);memory.set(key,record);

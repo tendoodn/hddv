@@ -31,7 +31,8 @@
  async function usernameSession(username,password){
   const response=await fetch('https://ucqqjdsoyvvaxswzbhaw.supabase.co/functions/v1/autotax-username-login',{
    method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({identifier:String(username||'').toLowerCase().trim(),password})
+   body:JSON.stringify({identifier:String(username||'').toLowerCase().trim(),password}),
+   signal:AbortSignal.timeout(15000)
   });
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Error(data.error||'Không đăng nhập được bằng User.');

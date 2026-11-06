@@ -76,4 +76,7 @@
  }
  const api=Object.freeze({defaults,getSelected,importConfig,value,bindImport,normal});
  window.AutoTaxXmlColumns=api;
+ const init=()=>bindImport(document.querySelector('#skuQuickSettings')?'#skuQuickSettings':'.exports');
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+ else init();
 })();

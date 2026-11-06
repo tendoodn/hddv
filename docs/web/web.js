@@ -75,8 +75,8 @@ function showQuotaWarning(mode=selectedMode){
 }
 const isQuotaMessage=message=>/(hết hạn mức|hạn mức tài khoản đạt giới hạn|gói MST đã hết hạn|MST vượt số lượng hồ sơ|gói số tờ không còn lượt mới|mst_capacity_reached|mst_package_expired|mst_capacity_reduced|invoice_package_required|quota_exceeded)/i.test(String(message||''));
 let scanQuotaCounter=null;
-const progress=msg=>{const log=$('progressLog'),line=document.createElement('div');line.className='autotax-terminal-line';const severity=/lỗi|thất bại|không thể|gián đoạn/i.test(String(msg))?'error':/cảnh báo|bỏ qua|chưa lấy|thiếu|lưu ý/i.test(String(msg))?'warn':/hoàn tất|thành công|đã tải|đã xuất/i.test(String(msg))?'success':'info';line.classList.add('terminal-'+severity);const clock=new Date().toLocaleTimeString('vi-VN',{hour12:false});line.textContent='['+clock+'] '+String(msg||'Đang xử lý…');log.append(line);while(log.children.length>5)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;};
-const busyState=(value,keepLog=false,success=false)=>{busy=!!value;
+const progress=msg=>{const log=$('progressLog'),line=document.createElement('div');line.className='autotax-terminal-line';const severity=/lỗi|thất bại|không thể|gián đoạn/i.test(String(msg))?'error':/cảnh báo|bỏ qua|chưa lấy|thiếu|lưu ý/i.test(String(msg))?'warn':/hoàn tất|thành công|đã tải|đã xuất/i.test(String(msg))?'success':'info';line.classList.add('terminal-'+severity);const clock=new Date().toLocaleTimeString('vi-VN',{hour12:false});line.textContent='['+clock+'] '+String(msg||'Đang xử lý…');log.append(line);while(log.children.length>5)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;document.dispatchEvent(new CustomEvent('autotax-lite-progress',{detail:{message:String(msg||'Đang xử lý…')}}));};
+const busyState=(value,keepLog=false,success=false)=>{busy=!!value;document.dispatchEvent(new CustomEvent('autotax-lite-busy',{detail:{busy,success}}));
   const indicator=$('downloadConsoleDone'),spinner=$('downloadConsoleSpinner');
   if(indicator)indicator.hidden=!!value||!success;
   if(spinner)spinner.hidden=!value;
@@ -616,13 +616,15 @@ async function search(e){
   return show('MST phải có 10, 12 hoặc 13 chữ số hợp lệ.');
  if(!start||!end||start>end)return show('Khoảng ngày chưa hợp lệ. Nhập ngày/tháng/năm (dd/mm/yyyy).');
  if(!selected('kind').length||!selected('form').length)return show('Chọn ít nhất một loại và một hình thức hóa đơn.');
- // Select the output folder from this Search click before network requests.
- try{
-  const folder=await AutoTaxDownloadFolder.prepare();
-  show('Thư mục lưu: '+folder,true);
- }catch(error){
-  if(error.name!=='AbortError')show('Không chọn được thư mục lưu: '+error.message);
-  return;
+ // Lite only views authorized invoices and must never request output-folder access.
+ if(!window.AutoTaxLite){
+  try{
+   const folder=await AutoTaxDownloadFolder.prepare();
+   show('Thư mục lưu: '+folder,true);
+  }catch(error){
+   if(error.name!=='AbortError')show('Không chọn được thư mục lưu: '+error.message);
+   return;
+  }
  }
  stopped=false;quotaExceededDuringSearch=false;busyState(true);
  // Invalidate the previous background XML scan before starting a new search.
@@ -697,6 +699,7 @@ async function search(e){
    const skuCount=[...map.values()].filter(d=>(d.lines||[]).some(line=>String(line.ma||'').trim())).length;
    const links=[...map.values()].filter(d=>d.head?.lookup?.link||d.head?.lookup?.code).length;
    const xmlColumns=new Set([...map.values()].flatMap(d=>Object.keys(d.xmlFields||{}))).size;
+   document.dispatchEvent(new CustomEvent('autotax-lite-details-ready'));
    progress('Đã phân tích XML nền: '+xmlCount+'/'+rows.length+
      ' hóa đơn có XML gốc; '+skuCount+' hóa đơn có mã hàng; '+
      links+' hóa đơn có thông tin tra cứu; '+xmlColumns+
@@ -911,6 +914,7 @@ window.WebInvoiceApp={
  getPeriod:()=>({from:readVnDate('fromDate'),to:readVnDate('toDate')}),
  getAccount:()=>account,
  getClient:()=>client,
+ peekDetail:row=>row?details.get(idOf(row)):null,
  refreshAccount,
  searchedBothKinds:()=>searchedBothKinds,
  busy:()=>busy,

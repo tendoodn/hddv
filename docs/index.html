@@ -350,7 +350,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
  <form id="webSignupForm">
   <div class="web-dialog-head"><h2 id="webSignupTitle">Tạo tài khoản AutoTax</h2><button type="button" data-web-close="webSignupDialog" aria-label="Đóng">✕</button></div>
   <label for="webSignupName">Tên người dùng</label><input id="webSignupName" required type="text" minlength="2" maxlength="100" autocomplete="name">
-  <label for="webSignupUsername">User đăng nhập</label><input id="webSignupUsername" type="text" required minlength="4" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Ví dụ: nguyenvana" pattern="[a-z][a-z0-9._]{3,31}">
+  <label for="webSignupUsername">User đăng nhập</label><input id="webSignupUsername" type="text" required minlength="4" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Ví dụ: nguyenvana" pattern="[a-z][a-z0-9]{3,31}">
   <label for="webSignupEmail">Email (Gmail / Hotmail / Yahoo)</label><input id="webSignupEmail" required type="email" autocomplete="email" placeholder="ten@gmail.com">
   <label for="webSignupPassword">Mật khẩu</label><input id="webSignupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password">
   <label for="webSignupConfirm">Nhập lại mật khẩu</label><input id="webSignupConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password">

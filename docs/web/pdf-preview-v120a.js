@@ -50,8 +50,10 @@
     const locations=[
       ['https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs',
        'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs'],
-      ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs',
-       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs']
+      ['https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/legacy/build/pdf.mjs',
+       'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/legacy/build/pdf.worker.mjs'],
+      ['https://unpkg.com/pdfjs-dist@6.5.438/legacy/build/pdf.mjs',
+       'https://unpkg.com/pdfjs-dist@6.5.438/legacy/build/pdf.worker.mjs']
     ];
     let doc=null,lastError=null;
     for(const [script,worker] of locations){
@@ -70,7 +72,9 @@
       const width=Math.max(220,Math.min(canvasHost.clientWidth||window.innerWidth-30,1100));
       const renderScale=width/viewport.width;
       const scaled=page.getViewport({scale:renderScale});
-      const pixelRatio=Math.min(window.devicePixelRatio||1,2);
+      // Limit mobile memory: cap total pixels to 6 million per page.
+      const pixelRatio=Math.max(1,Math.min(window.devicePixelRatio||1,2,
+        Math.sqrt(6000000/Math.max(1,scaled.width*scaled.height))));
       const canvas=document.createElement('canvas');
       canvas.width=Math.ceil(scaled.width*pixelRatio);
       canvas.height=Math.ceil(scaled.height*pixelRatio);
@@ -80,6 +84,7 @@
       const ctx=canvas.getContext('2d',{alpha:false});
       await page.render({canvasContext:ctx,viewport:scaled,transform:
         [pixelRatio,0,0,pixelRatio,0,0]}).promise;
+      page.cleanup();
     }
     if(request===generation)status.hidden=true;
    }catch(pdfError){

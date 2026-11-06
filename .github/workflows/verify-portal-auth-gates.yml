@@ -1,0 +1,22 @@
+name: Verify AutoTax protected account routes
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/user/index.html'
+      - 'docs/admin/index.html'
+      - 'docs/customer.js'
+      - 'docs/index.html'
+      - 'docs/web/tests/auth-portal-gate.test.cjs'
+      - '.github/workflows/verify-portal-auth-gates.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  auth-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Admin and User require existing Web session
+        run: node docs/web/tests/auth-portal-gate.test.cjs

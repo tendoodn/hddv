@@ -62,7 +62,7 @@ $('webLoginOpen').addEventListener('click',()=>{
  message('webLoginStatus');open('webLoginDialog');
 });
 $('webLoginToSignup').addEventListener('click',()=>{
- $('webSignupName').value='';$('webSignupEmail').value=$('webLoginEmail').value;
+ $('webSignupName').value='';$('webSignupUsername').value='';$('webSignupEmail').value=$('webLoginEmail').value.includes('@')?$('webLoginEmail').value:'';
  $('webSignupPassword').value='';$('webSignupConfirm').value='';
  message('webSignupStatus');open('webSignupDialog');
 });
@@ -99,10 +99,16 @@ $('webSignupForm').addEventListener('submit',async e=>{
  const email=accountFlow.normalizeEmail($('webSignupEmail').value);
  const pass=$('webSignupPassword').value,confirm=$('webSignupConfirm').value;
  const invalid=accountFlow.validateSignup({name,email,password:pass,confirmPassword:confirm});
+  const username=$('webSignupUsername').value.trim().toLowerCase();
+  if(!/^[a-z][a-z0-9._]{3,31}$/.test(username))
+   return message('webSignupStatus','User đăng nhập phải có 4–32 ký tự, bắt đầu bằng chữ và chỉ chứa chữ thường, số, dấu chấm hoặc gạch dưới.',true);
+  const {data:free,error:checkError}=await client.rpc('autotax_username_available_v130',{p_username:username});
+  if(checkError)return message('webSignupStatus','Chưa kiểm tra được User đăng nhập, hãy thử lại.',true);
+  if(!free)return message('webSignupStatus','User đăng nhập đã được sử dụng. Hãy chọn User khác.',true);
  if(invalid)return message('webSignupStatus',invalid,true);
  btn.disabled=true;message('webSignupStatus');
  try{
-  const {data,error}=await client.auth.signUp({email,password:pass,options:{data:{full_name:name,display_name:name}}});
+  const {data,error}=await client.auth.signUp({email,password:pass,options:{data:{full_name:name,display_name:name,username}}});
   if(error){
    if(/already|exists|registered|identity/i.test(String(error.code||'')+' '+String(error.message||'')))
     throw Error('Email đã tồn tại.');

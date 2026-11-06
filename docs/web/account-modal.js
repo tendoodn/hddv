@@ -125,7 +125,7 @@ $('webLoginForm').addEventListener('submit',async e=>{
        message('webAccountNotice','Kho MST chưa mở khóa: '+(error.message||error),true);
     });
   }
-  void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.())
+  void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.({force:true}))
     .catch(error=>console.warn('Chưa đồng bộ được hồ sơ sau đăng nhập:',error.message||error));
  }catch(error){message('webLoginStatus',accountFlow.message(error),true)}
  finally{loginSubmitting=false;btn.disabled=false}
@@ -228,7 +228,7 @@ $('webProfileForm').addEventListener('submit',async e=>{
   if(error)throw error;
   if(newPass)try{await window.AutoTaxSharedMstVault?.rekey(newPass)}catch(err){message('webProfileStatus','Đã đổi mật khẩu, nhưng cần mở lại kho MST: '+err.message,true);return;}
   account=data.user;update();close('webProfileDialog');
-  await window.AutoTaxRefreshWebAccount?.();
+  await window.AutoTaxRefreshWebAccount?.({force:true});
  }catch(error){message('webProfileStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
@@ -236,7 +236,7 @@ $('webLogout').addEventListener('click',async()=>{
  $('webSettingsMenu').hidden=true;closeAll();
  const {error}=await client.auth.signOut();
  if(error)return message('webAccountNotice',accountFlow.message(error),true);
- account=null;update();await window.AutoTaxRefreshWebAccount?.();
+ account=null;update();await window.AutoTaxRefreshWebAccount?.({force:true});
 });
 $('webNewPasswordForm').addEventListener('submit',async e=>{
  e.preventDefault();
@@ -268,7 +268,7 @@ $('webNewPasswordForm').addEventListener('submit',async e=>{
   account=data.user;saveEmail(email);
   try{await window.AutoTaxSharedMstVault?.unlock(data.user.id,pass)}catch(err){console.warn('Kho MST chưa mở khóa:',err.message)}
   recovery=false;window.__autotaxRecoveryFromUrl=false;$('webNewPassword').value='';$('webNewPasswordConfirm').value='';
-  closeAll();update();await window.AutoTaxRefreshWebAccount?.();
+  closeAll();update();await window.AutoTaxRefreshWebAccount?.({force:true});
  }catch(error){message('webNewPasswordStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
@@ -290,7 +290,7 @@ client.auth.onAuthStateChange((event,session)=>{
   }
   if(['SIGNED_IN','SIGNED_OUT','USER_UPDATED'].includes(event)&&
      !loginSubmitting&&!unchangedSignIn)
-    void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.())
+    void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.({force:true}))
      .catch(error=>console.warn('Không đồng bộ được phiên AutoTax:',error.message||error));
  });
 });

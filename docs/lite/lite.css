@@ -70,3 +70,7 @@ body{background:#090b10!important}
  #webRenewNow,#webMstGrantNow{font-size:9px!important}
  .topbar .logo img{width:29px!important;height:29px!important}
 }
+
+/* Lite has PDF viewing only; no ZIP, Excel, or PDF download controls. */
+#downloadInvoicePdfPreview{display:none!important}
+#invoicePdfPreviewDialog .invoice-pdf-toolbar{padding:9px}

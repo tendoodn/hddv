@@ -219,40 +219,50 @@ function makeImage(src){if(!src){const e=document.createElement('div');e.classNa
 
 /* Bộ lọc scan cục bộ: cân sáng vùng giấy và giữ màu mực/con dấu. */
 function magicScanCanvas(inputCanvas){
- // Adaptive illumination correction: brighten paper without flattening dark regions into gray.
+ // Document scan: locally whiten paper, preserve dark letters and blue/red/purple ink.
  const maxEdge=2800;let canvas=inputCanvas;
  const factor=Math.min(1,maxEdge/Math.max(canvas.width,canvas.height));
  if(factor<1){const c=document.createElement('canvas');c.width=Math.max(1,Math.round(canvas.width*factor));c.height=Math.max(1,Math.round(canvas.height*factor));const ct=c.getContext('2d');ct.imageSmoothingQuality='high';ct.drawImage(canvas,0,0,c.width,c.height);canvas=c}
- const w=canvas.width,h=canvas.height,ctx=canvas.getContext('2d',{willReadFrequently:true});
- const frame=ctx.getImageData(0,0,w,h),p=frame.data;
+ const w=canvas.width,h=canvas.height,ctx=canvas.getContext('2d',{willReadFrequently:true}),frame=ctx.getImageData(0,0,w,h),p=frame.data;
  const clamp=(v,a=0,b=255)=>Math.max(a,Math.min(b,v));
- const cell=Math.max(48,Math.ceil(Math.max(w,h)/24)),nx=Math.ceil(w/cell),ny=Math.ceil(h/cell),bg=new Float32Array(nx*ny);
+ const cell=Math.max(40,Math.ceil(Math.max(w,h)/35)),nx=Math.ceil(w/cell),ny=Math.ceil(h/cell),bg=new Float32Array(nx*ny);
+ // Bright percentile estimates paper even when one region is shadowed.
  for(let cy=0;cy<ny;cy++)for(let cx=0;cx<nx;cx++){
   const vals=[],x0=cx*cell,y0=cy*cell,x1=Math.min(w,x0+cell),y1=Math.min(h,y0+cell);
   const sx=Math.max(1,Math.floor((x1-x0)/12)),sy=Math.max(1,Math.floor((y1-y0)/12));
   for(let y=y0;y<y1;y+=sy)for(let x=x0;x<x1;x+=sx){const k=(y*w+x)*4;vals.push(.2126*p[k]+.7152*p[k+1]+.0722*p[k+2])}
-  vals.sort((a,b)=>a-b);let sum=0,n=0;for(let i=Math.floor(vals.length*.75);i<vals.length;i++){sum+=vals[i];n++}bg[cy*nx+cx]=sum/Math.max(1,n);
+  vals.sort((a,b)=>a-b);let sum=0,n=0;for(let i=Math.floor(vals.length*.72);i<vals.length;i++){sum+=vals[i];n++}bg[cy*nx+cx]=sum/Math.max(1,n);
  }
  for(let y=0;y<h;y++){
   const fy=clamp(y/cell-.5,0,ny-1),iy=Math.floor(fy),jy=Math.min(ny-1,iy+1),ty=fy-iy;
   for(let x=0;x<w;x++){
    const fx=clamp(x/cell-.5,0,nx-1),ix=Math.floor(fx),jx=Math.min(nx-1,ix+1),tx=fx-ix;
    const top=bg[iy*nx+ix]*(1-tx)+bg[iy*nx+jx]*tx,bot=bg[jy*nx+ix]*(1-tx)+bg[jy*nx+jx]*tx;
-   const paper=clamp(top*(1-ty)+bot*ty,45,255),k=(y*w+x)*4;
+   const paper=clamp(top*(1-ty)+bot*ty,35,255),k=(y*w+x)*4;
    const r=p[k],g=p[k+1],b=p[k+2],lum=.2126*r+.7152*g+.0722*b;
-   const chroma=Math.max(r,g,b)-Math.min(r,g,b);
-   const blue=(b>r&&b>=g-10)||(b>g&&b>=r-3);
-   const red=r>g+10&&r>b+8, purple=r>g+8&&b>g+8;
-   const ink=(paper-lum>17&&lum<215)||(blue&&paper-lum>5)||(red||purple)&&chroma>14;
-   // Apply a bounded luminance lift only to paper-like pixels. Ink retains original RGB ratios.
-   const paperWeight=clamp((lum-105)/105,0,1)*clamp((paper-lum+28)/75,0,1);
-   const lift=clamp((245-paper)*.78,0,70)*paperWeight*(ink?.16:1);
-   const shadow=clamp((115-lum)/75,0,1);
-   const gain=1+Math.min(.18,Math.max(0,(220-paper)/600))*(1-shadow)*(ink?.18:1);
-   const contrast=ink&&lum<145?.94:1;
-   p[k]=clamp(r*gain*contrast+lift);p[k+1]=clamp(g*gain*contrast+lift);p[k+2]=clamp(b*gain*contrast+lift);
-   // Preserve any trace of blue ballpoint ink; never desaturate into gray.
-   if(blue&&paper-lum>4){p[k+2]=Math.max(p[k+2],p[k]+Math.max(1,(b-r)*.9))}
+   const max=Math.max(r,g,b),min=Math.min(r,g,b),chroma=max-min;
+   const blue=(b>r+1&&b>=g-12)||(b>g+2&&b>=r-4);
+   const red=r>g+12&&r>b+8;
+   const purple=r>g+7&&b>g+7;
+   const colored=(blue&&paper-lum>5)||(red&&chroma>17)||(purple&&chroma>17);
+   // Relative-to-local-paper contrast protects writing in dark/shadowed regions.
+   const delta=paper-lum;
+   const darkInk=lum<75||delta>Math.max(25,paper*.17);
+   const faintInk=delta>Math.max(12,paper*.085)&&lum<paper-9;
+   const preserve=colored||darkInk||faintInk;
+   if(!preserve){p[k]=255;p[k+1]=255;p[k+2]=255;continue}
+   // Keep original hue for color ink; make black text sharp and dark.
+   if(colored){
+    const gain=clamp(225/Math.max(75,paper),1,2.5);
+    const boost=clamp((delta-6)*.12,0,12);
+    p[k]=clamp(r*gain-boost);p[k+1]=clamp(g*gain-boost);p[k+2]=clamp(b*gain-boost);
+    if(blue)p[k+2]=Math.max(p[k+2],p[k]+Math.max(2,(b-r)*.8));
+   }else{
+    const ink=clamp((lum/Math.max(35,paper))*205-(delta>30?18:0));
+    const edge=clamp((delta-12)/14,0,1);
+    const value=clamp(255*(1-edge)+ink*edge);
+    p[k]=value;p[k+1]=value;p[k+2]=value;
+   }
   }
  }
  ctx.putImageData(frame,0,0);return canvas;

@@ -650,18 +650,19 @@ async function search(e){
      ' tên cột XML (bao gồm trường trống). Chỉ xuất tệp XML khi chọn tải XML.');
    // Store only one sample per publisher, complementing its missing values.
    // This runs after server authorization and never blocks invoice results.
-   const collector=window.AutoTaxIssuerReference,byIssuer=new Map();
+   const collector=window.AutoTaxIssuerReference,samples=[];
    if(collector)for(const row of rows){
     const item=collector.sample(row,map.get(row.key),mst);
-    if(!item)continue;
-    const old=byIssuer.get(item.issuer_mst);
-    if(!old)byIssuer.set(item.issuer_mst,item);
-    else for(const key of ['lookup_url','seller_mst','buyer_mst','secret_code'])
-      if(!old[key]&&item[key])old[key]=item[key];
+    if(item)samples.push(item);
    }
-   if(byIssuer.size)void client.auth.getSession().then(({data})=>
-     collector.submit([...byIssuer.values()],data?.session)
-   ).catch(err=>console.warn('Chưa cập nhật được mẫu nhà phát hành:',err.message));
+   if(samples.length)void client.auth.getSession().then(async ({data})=>{
+    const stats=await collector.submit(samples,data?.session);
+    progress('Thống kê nhà phát hành: '+stats.registered+' hóa đơn nhận diện được MST NCC; '+
+      stats.pending+' hóa đơn chờ xác định; '+stats.rejected+' hóa đơn không khớp quyền đọc.');
+   }).catch(error=>{
+    console.warn('Chưa cập nhật được mẫu nhà phát hành:',error.message);
+    progress('Chưa đồng bộ thống kê nhà phát hành: '+error.message);
+   });
   }).catch(error=>console.warn('Đọc XML nền chưa hoàn tất:',error.message));
   if(quotaExceededDuringSearch)show(QUOTA_MESSAGE);
   else show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+

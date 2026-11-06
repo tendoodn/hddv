@@ -53,5 +53,6 @@ assert.match(home,/mã xác nhận ở chân hóa đơn/);
 assert.match(accountModal,/positionAccountMenu\(/,'Settings menu should be positioned above overlays');
 assert.match(accountModal,/web-greeting-long/,'Long greeting should scroll');
 assert.match(cache,/DETAIL_RETENTION_DAYS=30/,'Local invoice detail cache must last 30 days');
-assert.match(web,/form_code:\(r\.form\|\|''\)\+':'\+\(r\.khmshdon\|\|''\)/,'Keep safe invoice identity');
+assert.match(web,/form_code:\(row\.form\|\|''\)\+':'\+\(row\.khmshdon\|\|''\)/,'Keep safe invoice identity');
+assert.match(web,/const unique=new Map\(\)/,'Deduplicate network quota claims');
 console.log('AutoTax Lite static checks PASSED: shared auth, PDF, pagination and lean bundle.');

@@ -203,7 +203,7 @@ function renderPicker(){
  // Never replace a new ID that the user is actively typing.
  const recent=validMst(lastSearched)&&(valid(lastSearched)||invoiceMode)?lastSearched:'';
  const wanted=valid(typedMst)?typedMst:valid(old)?old:
-  recent||valid(remembered)?(recent||remembered):ordered[0]?.mst||'';
+  (recent||(valid(remembered)?remembered:ordered[0]?.mst||''));
  select.value=valid(wanted)?wanted:'';
  input.hidden=false;
  if(!typed||valid(typedMst))input.value=wanted;

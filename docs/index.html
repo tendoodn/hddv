@@ -202,10 +202,11 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
         <button id="exportXml" type="button">Tải XML</button>
         <button id="exportHtml" type="button">Tải HTML</button>
         <button id="exportPdfTax" type="button" title="PDF dựng từ dữ liệu Thuế, không phải PDF gốc.">Tải PDF dựng lại</button>
-        <button id="exportPdf" type="button" title="Chờ phát triển chức năng PDF gốc hàng loạt.">PDF Gốc (chờ phát triển)</button>
+        <button id="exportPdf" type="button" title="Thử lấy PDF thực từ nhà phát hành. Nếu không thể truy cập do CAPTCHA hoặc phiên đăng nhập, AutoTax xuất bản dựng có nhãn KHÔNG PHẢI GỐC và hướng dẫn lấy tệp chính thức.">Thử lấy PDF gốc</button>
       </div>
     </div>
     <p class="result-help">Phạm vi tải được xác định tự động: nếu có hóa đơn đã tick trong danh sách đang hiển thị thì chỉ tải các hóa đơn đó; nếu không tick, tải tất cả hóa đơn thuộc bộ lọc hiện tại. Không cần chọn thêm chế độ xuất. Việc lấy PDF gốc phụ thuộc nhà phát hành và bước xác thực hợp lệ.</p>
+    <p class="result-help" id="originalPdfPolicy"><strong>Thử lấy PDF gốc:</strong> chỉ tệp PDF nhận trực tiếp từ nhà phát hành mới được xếp vào thư mục PDF gốc. Tệp dựng từ dữ liệu Thuế hoặc do người dùng gắn được tách riêng và ghi rõ <strong>KHÔNG PHẢI PDF GỐC</strong>. AutoTax không tự vượt CAPTCHA hoặc xác minh chữ ký số.</p>
     <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Thao tác hóa đơn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <nav id="resultPageNav" class="result-page-nav" aria-label="Phân trang kết quả hóa đơn">
       <label for="resultPageSize" class="result-page-size-label">Số tờ/trang
@@ -434,7 +435,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/date-slide-picker.js?v=1122b"></script>
 <script src="./account-flow.js?v=20261106u130"></script>
 <script src="./issuer-reference-v1.js?v=20261106footer134"></script>
-<script src="./web/web.js?v=20261106grantcenter136"></script>
+<script src="./web/web.js?v=20261106pdfsource137"></script>
 
 <script src="./web/account-modal.js?v=20261106auth136"></script>
 <script src="./extension-link-v118.js?v=121account2"></script>

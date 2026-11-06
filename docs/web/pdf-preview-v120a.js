@@ -45,9 +45,24 @@
    frame.hidden=true;
    status.textContent='Đang hiển thị PDF trực tiếp…';
    try{
-    const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
-    pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-    const doc=await pdfjs.getDocument({data:new Uint8Array(bytes)}).promise;
+    // Do not rely on Android's missing built-in PDF plug-in. Render PDF
+    // pixels with Mozilla PDF.js as canvas inside the current page.
+    const locations=[
+      ['https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs',
+       'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs'],
+      ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs',
+       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs']
+    ];
+    let doc=null,lastError=null;
+    for(const [script,worker] of locations){
+      try{
+        const pdfjs=await import(script);
+        pdfjs.GlobalWorkerOptions.workerSrc=worker;
+        doc=await pdfjs.getDocument({data:new Uint8Array(bytes),useSystemFonts:true}).promise;
+        break;
+      }catch(error){lastError=error;console.warn('Đổi nguồn hiển thị PDF:',error.message)}
+    }
+    if(!doc)throw lastError||Error('Không tải được PDF.js.');
     for(let n=1;n<=doc.numPages;n++){
       if(request!==generation||!dialog.open)break;
       const page=await doc.getPage(n);
@@ -68,11 +83,17 @@
     }
     if(request===generation)status.hidden=true;
    }catch(pdfError){
-    // Fall back to native iframe for desktop, and retain download on mobile.
+    // On mobile do NOT show a native PDF iframe: it asks users to install a
+    // plugin even though a PDF blob is already available for download.
     canvasHost.hidden=true;
-    frame.src=url+'#view=FitH';frame.hidden=false;
+    const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)||
+      window.matchMedia('(pointer:coarse)').matches;
+    if(!mobile){frame.src=url+'#view=FitH';frame.hidden=false;}
+    else{frame.removeAttribute('src');frame.hidden=true;}
     status.hidden=false;
-    status.textContent='Trình duyệt chưa tải được bộ xem PDF trực tiếp. Có thể tải PDF bằng nút phía trên.';
+    status.textContent=mobile?
+      'Chế độ xem PDF chưa tải được. Bạn có thể bấm “Tải PDF” để xem bằng trình đọc tệp trên điện thoại, không cần cài plugin.' :
+      'Bộ xem PDF trực tiếp chưa tải được; đang thử bộ xem tích hợp hoặc tải PDF phía trên.';
     console.warn('PDF.js preview unavailable:',pdfError);
    }
    download.disabled=false;

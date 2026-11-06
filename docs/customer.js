@@ -209,6 +209,7 @@ async function refresh(){
   if(userError)throw userError;
   if(!signedIn){location.replace('/');return;}
   if(!userResult?.user)throw Error('Chưa xác minh được tài khoản. Vui lòng thử lại.');
+  if(userResult.user.id!==session.user.id)throw Error('Tài khoản đã thay đổi trong lúc đồng bộ. Vui lòng tải lại thông tin.');
   const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;
   $('dashboard').classList.toggle('autotax-force-password',forceChange);
   $("dashboard").hidden=!signedIn;

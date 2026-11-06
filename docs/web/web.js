@@ -545,18 +545,29 @@ async function ensurePermission(mst){
  selectedMode=data.mode||selectedMode;
 }
 async function claimRows(all,mst){
- if(!all.length)return all; // V1.1.7: record every invoice read in both account modes.
+ if(!all.length)return all;
  const accepted=[],max=250;
+ // Stable canonical key: authenticated account + queried MST + invoice form,
+ // template/series and invoice number. Display name is mutable; using it
+ // as the sole quota identifier would re-charge invoices after a rename.
+ // The server remains authoritative and keeps its existing unique indexes.
  const key=r=>JSON.stringify([r.mst,r.direction,r.form_code,r.series,r.invoice_number]);
- for(let from=0;from<all.length;from+=max){
-  const batch=all.slice(from,from+max);
-  const items=batch.map(r=>({mst,direction:r.kind||'',
-   form_code:(r.form||'')+':'+(r.khmshdon||''),
-   series:r.khhdon||'',invoice_number:String(r.shdon??'')}));
+ const unique=new Map();
+ for(const row of all){
+  const item={mst,direction:row.kind||'',
+   form_code:(row.form||'')+':'+(row.khmshdon||''),
+   series:row.khhdon||'',invoice_number:String(row.shdon??'')};
+  const identity=JSON.stringify([account?.id||'',...JSON.parse(key(item))]);
+  if(!unique.has(identity))unique.set(identity,{row,item});
+ }
+ const unseen=[...unique.values()];
+ for(let from=0;from<unseen.length;from+=max){
+  const batch=unseen.slice(from,from+max);
+  const items=batch.map(x=>x.item);
   const {data,error}=await client.rpc('autotax_claim_invoice_quota_v118',{p_items:items});
   if(error)throw Error('Không kiểm tra được lượt hóa đơn: '+error.message);
   const allowed=new Set((data.allowed_items||[]).map(key));
-  for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i]);
+  for(let i=0;i<items.length;i++)if(allowed.has(key(items[i])))accepted.push(batch[i].row);
   scanQuotaCounter?.add(data);
   progress('Lô xác minh: trừ '+Number(data.deducted||0)+' lượt số tờ (nhóm: '+
    Number(data.team_deducted||0)+', cá nhân: '+Number(data.personal_deducted||0)+'); '+

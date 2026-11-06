@@ -573,9 +573,27 @@ td.audit-info{color:#c6c6db}
 .autotax-kind-row>.k-hint,.autotax-kind-row>.opening-stock-control{flex-basis:100%;min-width:0}
 @media(max-width:540px){.autotax-kind-row{column-gap:12px}.autotax-kind-row>.check{font-size:13px}.autotax-kind-row>.check input{width:19px;height:19px}}
 
-.autotax-independence{font-size:12px!important;opacity:.8;line-height:1.5;max-width:760px}
+.autotax-independence{font-size:12px!important;opacity:.85;line-height:1.6;max-width:760px;width:min(100%,760px);margin:10px auto 0!important;text-align:center!important;display:block;float:none;clear:both;overflow-wrap:break-word}
 
 /* Account actions share exactly the same renewal-button skin on Web. */
 #webUserBlock #webMstGrantNow{display:inline-flex;align-items:center;justify-content:center;flex:none;background:#dc2626;color:#fff;border:1px solid #ef4444;border-radius:8px;padding:8px 11px;font-size:12px;font-weight:850;line-height:1.1;text-decoration:none;white-space:normal;text-align:center;min-height:34px}
 #webUserBlock #webMstGrantNow:hover,#webUserBlock #webMstGrantNow:focus-visible{background:#b91c1c;color:#fff}
 @media(max-width:490px){#webUserBlock #webMstGrantNow{padding:7px 8px;font-size:10px;max-width:175px}}
+
+/* Accessible MST-grant next step. Authority and quotas remain server controlled. */
+#mstPermissionRequiredDialog{width:min(450px,calc(100vw - 28px));max-width:calc(100vw - 28px);
+ border:1px solid #f87171;border-radius:16px;background:#1b1b20;color:#f8fafc;
+ padding:21px;box-shadow:0 20px 60px #0009}
+#mstPermissionRequiredDialog::backdrop{background:#000b}
+#mstPermissionRequiredDialog h2{font-size:20px;margin:0 0 10px;color:#fda4af}
+#mstPermissionRequiredDialog p{font-size:13px;line-height:1.6;color:#e2e8f0}
+#mstPermissionRequiredDialog .web-consent-actions{display:flex;align-items:stretch;gap:9px;flex-wrap:wrap}
+#mstPermissionManageLink.web-grant-cta{display:inline-flex;align-items:center;justify-content:center;flex:1 1 170px;
+ background:#dc2626;color:#fff;text-decoration:none;font-weight:850;font-size:13px;
+ border:1px solid #f87171;border-radius:9px;padding:10px 13px}
+#mstPermissionRequiredDialog #mstPermissionRequiredClose{flex:1 1 90px;
+ background:#34343b;color:#fff;border:1px solid #64646d;border-radius:9px;padding:10px 13px}
+#mstPermissionManageLink:focus-visible,#mstPermissionRequiredClose:focus-visible{outline:3px solid #fda4af;outline-offset:2px}
+@media(max-width:580px){.invoice-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .invoice-stats>div{padding:11px 10px}
+ .invoice-stats strong{font-size:clamp(14px,4vw,18px)}}

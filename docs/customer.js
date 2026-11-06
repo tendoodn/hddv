@@ -52,6 +52,19 @@ let paymentCountdownTimer=null,paymentChannel=null,paymentOrder=null;
 let paymentCreating=false,paymentRequestEpoch=0;
 let paymentStatusPromise=null,postExpiryTimer=null;
 let mstEditing='',mstEditOriginalName='',mstGrantUnlocked=false,canDeleteMstProfiles=false;
+let mstPage=1;
+function applyMstPagination(){
+ const list=$('mstList');if(!list)return;
+ const perPage=Number($('mstPageSize')?.value)||3;
+ const rows=Array.from(list.querySelectorAll(':scope > .mst-row'));
+ const pages=Math.max(1,Math.ceil(rows.length/perPage));
+ mstPage=Math.min(Math.max(1,mstPage),pages);
+ rows.forEach((row,i)=>{row.hidden=i<(mstPage-1)*perPage||i>=mstPage*perPage});
+ $('mstPageInfo').textContent='Trang '+mstPage+' / '+pages+' · '+rows.length+' MST';
+ $('mstPagePrev').disabled=mstPage<=1;
+ $('mstPageNext').disabled=mstPage>=pages;
+}
+
 // Limit old MST migration to 2 concurrent background reads to keep the UI responsive.
 const legacyMstQueue=[],legacyMstQueued=new Set();
 let legacyMstActive=0;
@@ -488,6 +501,7 @@ async function loadMstAssignments(){
   line.append(info,actions);list.append(line);
  }
  if(!list.children.length)addText(list,"p","Chưa có hồ sơ. Bấm Thêm MST để quản lý.","muted");
+ applyMstPagination();
  updateMstGrantPreview();
 }
 
@@ -687,6 +701,11 @@ async function action(id,fn){
 $("logoutBtn").addEventListener("click",()=>action("logoutBtn",async()=>{closePayment();await client.auth.signOut();location.replace('/')}));
 $("headerLogoutBtn").addEventListener("click",()=>action("headerLogoutBtn",async()=>{closePayment();await client.auth.signOut();location.replace('/')}));
 
+// Paging only hides DOM rows: selected MSTs from other pages remain checked
+// and are still sent as the complete authorization list on Save.
+$('mstPageSize').addEventListener('change',()=>{mstPage=1;applyMstPagination()});
+$('mstPagePrev').addEventListener('click',()=>{mstPage--;applyMstPagination()});
+$('mstPageNext').addEventListener('click',()=>{mstPage++;applyMstPagination()});
 $("webAddMstForm").addEventListener("submit",e=>{
  e.preventDefault();
  openMstEditor();

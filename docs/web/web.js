@@ -694,6 +694,7 @@ async function search(e){
   else show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+
    (result.skipped?.length?' Nguồn chưa hoàn tất: '+result.skipped.join(', '):''),true);
   scanCompleted=true;
+  window.GdtVault?.rememberSearch?.(mst); // Account-scoped, ID only; no passwords or tokens.
  }catch(error){
   const msg=error?.message||'Tra cứu không thành công.';
   if(isQuotaMessage(msg)&&!quotaExceededDuringSearch)showQuotaWarning(selectedMode);

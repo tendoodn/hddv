@@ -27,6 +27,16 @@
   if(/[À-ỹ]/.test(raw))return String(error?.message||error||fallback);
   return fallback;
  }
+ const validUsername=value=>/^[a-z][a-z0-9._]{3,31}$/.test(String(value||'').trim().toLowerCase());
+ async function usernameSession(username,password){
+  const response=await fetch('/auth-username-login',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({identifier:String(username||'').toLowerCase().trim(),password})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error||'Không đăng nhập được bằng User.');
+  return data;
+ }
  const duplicateSignup=data=>!!(data?.user&&Array.isArray(data.user.identities)&&!data.user.identities.length);
  function validateSignup({name,email,password,confirmPassword}){
   if(normalizeName(name).length<2||normalizeName(name).length>100)return 'Tên người dùng phải từ 2 đến 100 ký tự.';
@@ -79,7 +89,7 @@
  }
  const forgotSuccess='Nếu email đã đăng ký, hướng dẫn đặt lại mật khẩu sẽ được gửi tới hộp thư.';
  Object.defineProperty(globalThis,'AutoTaxAccountFlow',{
-  value:Object.freeze({normalizeEmail,normalizeName,validEmail,validateSignup,message,duplicateSignup,forgotSuccess,quotaModes,createScanQuotaCounter}),
+  value:Object.freeze({normalizeEmail,normalizeName,validEmail,validateSignup,message,duplicateSignup,forgotSuccess,quotaModes,createScanQuotaCounter,validUsername,usernameSession}),
   writable:false,configurable:true
  });
 })();

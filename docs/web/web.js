@@ -480,12 +480,21 @@ async function signIntoTax(mst){
  }
 }
 function openMissingMstPermission(mst){
+ // A missing MST grant is an actionable decision, not a transient toast.
+ // The account page opens its permissions editor via the validated deep link;
+ // only an explicit user save can change Supabase authorization.
+ const number=String(mst||'').replace(/\D/g,'');
+ if(!/^(?:\d{10}|\d{12}|\d{13})$/.test(number))return false;
  const dialog=$('mstPermissionRequiredDialog');
- if(!dialog)return;
- $('mstPermissionRequiredText').textContent='MST '+mst+' chưa được cấp quyền sử dụng gói MST.';
- $('mstPermissionManageLink').href='/user/?panel=mst&mst='+encodeURIComponent(mst);
+ if(!dialog)return false;
+ $('mstPermissionRequiredText').textContent='MST '+number+
+  ' chưa được cấp quyền sử dụng gói MST. Mở Thông tin tài khoản để cấp quyền nếu còn hạn mức.';
+ const link=$('mstPermissionManageLink');
+ link.href='/user/?panel=mst&mst='+encodeURIComponent(number);
+ link.setAttribute('aria-label','Mở danh sách MST và cấp quyền cho '+number);
  $('mstPermissionRequiredClose').onclick=()=>dialog.close();
  if(!dialog.open)dialog.showModal();
+ return true;
 }
 async function ensurePermission(mst){
  const {data,error}=await client.rpc('autotax_verify_session_mst_v118',{p_mst:mst});
@@ -682,7 +691,11 @@ async function search(e){
  }catch(error){
   const msg=error?.message||'Tra cứu không thành công.';
   if(isQuotaMessage(msg)&&!quotaExceededDuringSearch)showQuotaWarning(selectedMode);
-  else show(quotaExceededDuringSearch?QUOTA_MESSAGE:msg);
+  else if(selectedMode==='mst'&&/chưa được cấp quyền|chưa cấp quyền/i.test(msg)&&
+    openMissingMstPermission(mst)){
+   // Dialog with the grant action replaces the passive error banner.
+   progress('MST '+mst+' cần được cấp quyền trước khi tra cứu.');
+  }else show(quotaExceededDuringSearch?QUOTA_MESSAGE:msg);
  }
  finally{
   // Even on Stop/Error, successfully authorized batches may have consumed

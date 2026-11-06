@@ -252,6 +252,19 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 /* AutoTax 1.1.30: contain the entire search label inside its green button */
 #webSearchLink{box-sizing:border-box!important;min-height:40px!important;max-width:100%;padding:9px 13px!important;line-height:1.25!important;white-space:normal!important;text-align:center!important;overflow-wrap:break-word!important}
 #webSearchLink .autotax-web-link-copy{display:block;transform:none!important;font-size:clamp(10px,1.1vw,13px)!important;line-height:1.35!important;white-space:normal!important;max-width:100%}
+
+/* V1.1.30 unified account popup skin: matches dark Web login/signup. */
+.autotax-signup-dialog{box-sizing:border-box!important;width:min(450px,calc(100vw - 20px))!important;max-height:calc(100dvh - 22px)!important;overflow:auto;background:#191a21!important;color:#f7f7f9!important;border:1px solid #51515b!important;border-radius:17px!important;box-shadow:0 30px 80px #0009!important;padding:17px 20px!important}
+.autotax-signup-dialog::backdrop{background:#050509c9!important}
+.autotax-signup-dialog label,.autotax-signup-dialog h2{color:#f7f7f9!important}
+.autotax-signup-dialog p,.autotax-signup-dialog .muted,.autotax-signup-dialog small{color:#d1d5db!important}
+.autotax-signup-dialog input:not([type="file"]){box-sizing:border-box;background:#272831!important;color:#fff!important;border:1px solid #50505b!important;border-radius:9px!important;min-height:41px!important;padding:9px 11px!important}
+.autotax-signup-dialog input:focus{outline:2px solid #e1697e!important;outline-offset:1px}
+.autotax-signup-dialog .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+.autotax-signup-dialog .actions button{white-space:normal!important;min-height:41px!important;border-radius:9px!important}
+.autotax-signup-dialog button:not(.secondary){background:#c12c43!important;color:#fff!important;border-color:#c12c43!important}
+.autotax-signup-dialog button.secondary{background:#30313b!important;color:#fff!important;border-color:#5c5863!important}
+@media(max-width:480px){.autotax-signup-dialog{padding:15px 14px!important}}
 </style></head>
 <body>
 <main class="wrap"><h1 class="autotax-page-title" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Thông tin tài khoản AutoTax</h1>

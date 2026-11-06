@@ -7,6 +7,7 @@
   generation++;
   const frame=$('invoicePdfPreviewFrame');
   if(frame){frame.removeAttribute('src');frame.hidden=true}
+  const canvasHost=$('invoicePdfCanvasPages');if(canvasHost){canvasHost.replaceChildren();canvasHost.hidden=true}
   if(url)URL.revokeObjectURL(url);
   url='';bytes=null;filename='';
   const download=$('downloadInvoicePdfPreview');if(download)download.disabled=true;
@@ -36,8 +37,45 @@
    filename=[row.nbmst||'MST',row.khhdon||'',row.shdon||'']
     .filter(Boolean).join('_').replace(/[^\w.-]/g,'_')+'_BAN_DUNG.pdf';
    url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-   frame.src=url+'#view=FitH';frame.hidden=false;
-   status.hidden=true;download.disabled=false;
+   // Mobile Chromium frequently has no PDF iframe plugin. Render every page
+   // with PDF.js onto HTML canvas so it also works in Android browsers.
+   const canvasHost=$('invoicePdfCanvasPages');
+   if(!canvasHost)throw Error('Chưa tải được bộ xem PDF.');
+   canvasHost.replaceChildren();canvasHost.hidden=false;
+   frame.hidden=true;
+   status.textContent='Đang hiển thị PDF trực tiếp…';
+   try{
+    const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
+    pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+    const doc=await pdfjs.getDocument({data:new Uint8Array(bytes)}).promise;
+    for(let n=1;n<=doc.numPages;n++){
+      if(request!==generation||!dialog.open)break;
+      const page=await doc.getPage(n);
+      const viewport=page.getViewport({scale:1});
+      const width=Math.max(220,Math.min(canvasHost.clientWidth||window.innerWidth-30,1100));
+      const renderScale=width/viewport.width;
+      const scaled=page.getViewport({scale:renderScale});
+      const pixelRatio=Math.min(window.devicePixelRatio||1,2);
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.ceil(scaled.width*pixelRatio);
+      canvas.height=Math.ceil(scaled.height*pixelRatio);
+      canvas.style.width='100%';canvas.style.height='auto';
+      canvas.setAttribute('aria-label','Trang PDF '+n);
+      canvasHost.append(canvas);
+      const ctx=canvas.getContext('2d',{alpha:false});
+      await page.render({canvasContext:ctx,viewport:scaled,transform:
+        [pixelRatio,0,0,pixelRatio,0,0]}).promise;
+    }
+    if(request===generation)status.hidden=true;
+   }catch(pdfError){
+    // Fall back to native iframe for desktop, and retain download on mobile.
+    canvasHost.hidden=true;
+    frame.src=url+'#view=FitH';frame.hidden=false;
+    status.hidden=false;
+    status.textContent='Trình duyệt chưa tải được bộ xem PDF trực tiếp. Có thể tải PDF bằng nút phía trên.';
+    console.warn('PDF.js preview unavailable:',pdfError);
+   }
+   download.disabled=false;
    meta.textContent=[row.khhdon,row.shdon].filter(Boolean).join(' / ')+' · Bản dựng, không phải PDF gốc';
   }catch(error){
    if(request===generation&&dialog.open){

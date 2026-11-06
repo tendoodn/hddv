@@ -7,6 +7,7 @@ const $=id=>document.getElementById(id);
 const takeKind=()=>[...document.querySelectorAll('input[name="kind"]:checked')].map(x=>x.value);
 const keyPrefix='autotax_lite_recent_v1:';
 let owner='',page=1,pageSize=10,kind='purchase',visible=[],pending=0,lastSummary='';
+let detailEpoch=0,requestedDetails=new Set();
 function getPreference(){
  if(!owner)return null;
  try{return JSON.parse(localStorage.getItem(keyPrefix+owner)||'null')}catch{return null}
@@ -64,6 +65,21 @@ function render(){
  const max=Math.max(1,Math.ceil(count/pageSize));
  page=Math.max(1,Math.min(page,max));
  const display=visible.slice((page-1)*pageSize,page*pageSize);
+ // Read details only for the displayed page; use canonical authenticated cache.
+ const app=window.WebInvoiceApp;
+ if(!app?.busy?.()&&display.length){
+  const needed=display.filter(row=>{
+   const id=JSON.stringify([row.kind,row.form,row.khhdon,row.shdon,row.nbmst,row.nmmst]);
+   if(requestedDetails.has(id)||app.peekDetail?.(row))return false;
+   requestedDetails.add(id);return true;
+  });
+  if(needed.length){
+   const current=detailEpoch;
+   void app.loadDetails(needed,{quiet:true}).then(()=>{
+    if(current===detailEpoch)queueRender();
+   }).catch(error=>console.warn('Không tải được ngày ký:',error.message));
+  }
+ }
  const frag=document.createDocumentFragment();
  for(let i=0;i<display.length;i++){
   const item=display[i],tr=document.createElement('tr');
@@ -140,7 +156,7 @@ function build(){
  });
  document.addEventListener('autotax-lite-busy',e=>{
   btn.textContent=e.detail?.busy?'Dừng':'Tra Cứu';
-  if(e.detail?.busy){page=1;lastSummary='';$('liteStatus').textContent='Đang bắt đầu tra cứu…'}
+  if(e.detail?.busy){page=1;detailEpoch++;requestedDetails.clear();lastSummary='';$('liteStatus').textContent='Đang bắt đầu tra cứu…'}
   else queueRender();
  });
  document.addEventListener('autotax-lite-results',queueRender);
@@ -148,7 +164,7 @@ function build(){
  document.addEventListener('autotax-web-user-ready',e=>{
   const next=String(e.detail?.userId||'');
   if(next===owner)return;
-  owner=next;
+  owner=next;detailEpoch++;requestedDetails.clear();
   const remembered=getPreference();
   if(remembered){
    if(Array.isArray(remembered.kinds)&&remembered.kinds.length)

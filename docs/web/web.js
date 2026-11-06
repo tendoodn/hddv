@@ -479,6 +479,14 @@ async function signIntoTax(mst){
   $('gdtPassword').value='';
  }
 }
+function openMissingMstPermission(mst){
+ const dialog=$('mstPermissionRequiredDialog');
+ if(!dialog)return;
+ $('mstPermissionRequiredText').textContent='MST '+mst+' chưa được cấp quyền sử dụng gói MST.';
+ $('mstPermissionManageLink').href='/user/?panel=mst&mst='+encodeURIComponent(mst);
+ $('mstPermissionRequiredClose').onclick=()=>dialog.close();
+ if(!dialog.open)dialog.showModal();
+}
 async function ensurePermission(mst){
  const {data,error}=await client.rpc('autotax_verify_session_mst_v118',{p_mst:mst});
  if(error)throw Error(error.message);
@@ -488,7 +496,8 @@ async function ensurePermission(mst){
    showQuotaWarning(data?.mode==='invoice'?'invoice':'mst');
    throw Error(QUOTA_MESSAGE);
   }
-  throw Error('MST này chưa được cấp quyền hoặc gói đã hết hạn: '+reason);
+  if(data?.mode==='mst'||selectedMode==='mst')openMissingMstPermission(mst);
+  throw Error('MST '+mst+' chưa được cấp quyền sử dụng. Mở hộp cấp quyền để chỉnh sửa danh sách MST.');
  }
  selectedMode=data.mode||selectedMode;
 }
@@ -584,7 +593,8 @@ async function search(e){
   // Consent must precede the first MST-package lookup. No = no whitelist slot.
   const mstGranted=await ensureFirstTimeMstConsent(mst);
   if(selectedMode==='mst'&&!mstGranted&&!teamAllowedMsts.includes(mst)){
-   throw Error('MST '+mst+' chưa được cấp quyền. Bạn có thể chỉnh thủ công tại trang TT Tài Khoản.');
+   openMissingMstPermission(mst);
+   throw Error('MST '+mst+' chưa được cấp quyền. Bấm Cấp quyền MST trong hộp thoại.');
   }
   await ensurePermission(mst);
   progress('Đang kiểm tra phiên cổng Thuế…');

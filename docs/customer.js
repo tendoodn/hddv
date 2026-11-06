@@ -392,6 +392,9 @@ async function loadMstAssignments(){
   }else if(borrowedMeta?.personally_authorized){
    caption.textContent="✓ Hạn mức MST cá nhân";
    caption.classList.add('is-granted');caption.classList.remove('is-denied');
+  }else if(borrowedMeta?.can_use_invoice_package){
+   caption.textContent="✓ Được tra cứu bằng số tờ của nhóm";
+   caption.classList.add('is-granted');caption.classList.remove('is-denied');
   }
   allow.append(check,caption);line.append(allow);
   const name=document.createElement("div");name.className="mst-name";
@@ -412,7 +415,7 @@ async function loadMstAssignments(){
    if(userId)enqueueLegacyMstMigration(userId,item.mst);
   }else{
    addText(actions,"span","MST trưởng nhóm chia sẻ · chỉ xem","muted");
-   if(!borrowedMeta.can_use_mst_package&&!item.mst_allowed&&!borrowedMeta.personally_authorized){
+   if(!borrowedMeta.can_use_mst_package&&!item.mst_allowed&&!borrowedMeta.personally_authorized&&personalMstCapacity()>0){
     const grant=addText(actions,"button","Cấp quyền MST cá nhân");grant.className="secondary";grant.type="button";
     grant.addEventListener("click",async()=>{
      grant.disabled=true;
@@ -422,6 +425,10 @@ async function loadMstAssignments(){
       await loadMstAssignments();
      }catch(error){showMessage(prettyError(error),true);grant.disabled=false}
     });
+   }else if(!borrowedMeta.can_use_mst_package&&!borrowedMeta.personally_authorized&&!item.mst_allowed){
+    addText(actions,"small",borrowedMeta.can_use_invoice_package?
+     "Được dùng gói số tờ của nhóm. Chưa được cấp gói MST của nhóm.":
+     "Trưởng nhóm chưa cấp quyền gói MST; tài khoản không có lượt MST cá nhân.", "muted");
    }
   }
   const button=addText(actions,"button","Xóa MST");button.className="secondary";
@@ -457,16 +464,17 @@ async function loadMstAssignments(){
   const sourceAllowed=borrowedMst.can_use_mst_package===true;
   const personalAllowed=borrowedMst.personally_authorized===true;
   flag.textContent=sourceAllowed?"✓ Hạn mức MST trưởng nhóm":
-   personalAllowed?"✓ Hạn mức MST cá nhân":"✕ Chưa cấp quyền MST";
-  flag.classList.toggle('is-granted',sourceAllowed||personalAllowed);
-  flag.classList.toggle('is-denied',!sourceAllowed&&!personalAllowed);
+   personalAllowed?"✓ Hạn mức MST cá nhân":
+   borrowedMst.can_use_invoice_package?"✓ Được dùng số tờ của nhóm":"✕ Chưa cấp quyền MST";
+  flag.classList.toggle('is-granted',sourceAllowed||personalAllowed||borrowedMst.can_use_invoice_package);
+  flag.classList.toggle('is-denied',!sourceAllowed&&!personalAllowed&&!borrowedMst.can_use_invoice_package);
   line.append(flag);
   const info=document.createElement("div");info.className="mst-name";
   addText(info,"strong",borrowedMst.mst);
   addText(info,"div",borrowedMst.display_name||"MST được chia sẻ","mst-name");
   addText(info,"small","Trưởng nhóm chia sẻ · chỉ xem; không được sửa hoặc xóa mật khẩu","muted");
   const actions=document.createElement("div");actions.className="mst-row-actions";
-  if(!sourceAllowed){
+  if(!sourceAllowed&&(personalAllowed||personalMstCapacity()>0)){
    const toggle=addText(actions,"button",personalAllowed?"Thu hồi quyền cá nhân":"Cấp quyền MST cá nhân");
    toggle.className="secondary";toggle.type="button";
    toggle.addEventListener("click",async()=>{
@@ -478,6 +486,10 @@ async function loadMstAssignments(){
      await loadMstAssignments();
     }catch(e){showMessage(prettyError(e),true);toggle.disabled=false}
    });
+  }else if(!sourceAllowed){
+   addText(actions,"small",borrowedMst.can_use_invoice_package?
+    "Có thể dùng lượt số tờ của trưởng nhóm. Không có hạn mức MST cá nhân để cấp.":
+    "Chưa được trưởng nhóm cấp gói MST. Không có hạn mức MST cá nhân.","muted");
   }
   line.append(info,actions);list.append(line);
  }

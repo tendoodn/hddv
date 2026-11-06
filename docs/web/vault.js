@@ -75,32 +75,34 @@ async function getDeviceKey(){
   return deviceKeyPromise.promise;
  const task=(async()=>{
   const keyName='account:'+requestedOwner;
-  const existing=await readStore('keys',keyName);
-  if(existing)return existing;
-  // A concurrent tab may also create the key. The read-write transaction
-  // rechecks before writing so all tabs keep the original encryption key.
-  const proposed=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-  const db=await openDB();
-  return new Promise((resolve,reject)=>{
-   const tx=db.transaction('keys','readwrite'),store=tx.objectStore('keys');
-   const req=store.get(keyName);
-   let result;
-   req.onsuccess=()=>{
-    if(req.result)result=req.result;
-    else{result=proposed;store.put(proposed,keyName)}
-   };
-   tx.oncomplete=()=>resolve(result);
-   tx.onerror=()=>reject(tx.error);
-  });
- })();
- deviceKeyPromise={owner:requestedOwner,epoch,promise:task};
- try{
-  const key=await task;
+  let key=await readStore('keys',keyName);
+  if(!key){
+   // Another tab may create the key while we generate a candidate. The
+   // read-write transaction rechecks, preserving the original encrypted data.
+   const proposed=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+   const db=await openDB();
+   key=await new Promise((resolve,reject)=>{
+    const tx=db.transaction('keys','readwrite'),store=tx.objectStore('keys');
+    const req=store.get(keyName);
+    let result;
+    req.onsuccess=()=>{
+     if(req.result)result=req.result;
+     else{result=proposed;store.put(proposed,keyName)}
+    };
+    tx.oncomplete=()=>resolve(result);
+    tx.onerror=()=>reject(tx.error);
+   });
+  }
+  // Validation belongs INSIDE the shared promise: every concurrent caller
+  // must reject a key resolved after account change or pagehide lock.
   if(requestedOwner!==owner||epoch!==keyEpoch)
    throw Error('Tài khoản hoặc kho MST đã thay đổi trong khi mở khóa thiết bị.');
   deviceKey=key;
   return key;
- }finally{
+ })();
+ deviceKeyPromise={owner:requestedOwner,epoch,promise:task};
+ try{return await task}
+ finally{
   if(deviceKeyPromise?.promise===task)deviceKeyPromise=null;
  }
 }

@@ -692,6 +692,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const close=document.createElement('button');close.id='closeInvoicePdfPreview';close.type='button';close.className='outline';close.textContent='✕';close.setAttribute('aria-label','Đóng');
  actions.append(download,close);toolbar.append(actions);d.append(toolbar);
  const status=document.createElement('p');status.id='invoicePdfPreviewStatus';status.setAttribute('role','status');status.textContent='Đang dựng PDF…';d.append(status);
+ const pages=document.createElement('div');pages.id='invoicePdfCanvasPages';pages.className='invoice-pdf-canvas-pages';pages.hidden=true;d.append(pages);
  const viewer=document.createElement('iframe');viewer.id='invoicePdfPreviewFrame';viewer.title='Thông tin hóa đơn PDF';viewer.referrerPolicy='no-referrer';viewer.hidden=true;d.append(viewer);
  document.body.append(d);
 })();

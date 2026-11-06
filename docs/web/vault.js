@@ -13,7 +13,7 @@ const $=id=>document.getElementById(id);
 const normalize=v=>String(v||'').replace(/\D/g,'');
 const MAX_PASS=256;
 const DB_NAME='autotax_gdt_device_credentials_v2';
-let owner='',profiles=[],dbPromise=null,deviceKey=null,requestSeq=0,invoiceMode=false;
+let owner='',profiles=[],dbPromise=null,deviceKey=null,deviceKeyPromise=null,keyEpoch=0,requestSeq=0,invoiceMode=false;
 const lastKey=()=> 'autotax_last_mst_'+owner;
 const searchedKey=()=> 'autotax_last_searched_mst_'+owner;
 const validMst=m=>/^(?:\d{10}|\d{12}|\d{13})$/.test(m);
@@ -68,25 +68,41 @@ async function deleteStore(store,key){
 async function getDeviceKey(){
  if(!owner)throw Error('Chưa đăng nhập AutoTax.');
  if(deviceKey)return deviceKey;
- const requestedOwner=owner;
- // Generate before opening transaction so it stays active, then serialize
- // competing tabs on the same database key with a read-write transaction.
- const proposed=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
- const db=await openDB(),keyName='account:'+requestedOwner;
- const result=await new Promise((resolve,reject)=>{
-  const tx=db.transaction('keys','readwrite'),store=tx.objectStore('keys');
-  const req=store.get(keyName);
-  let stored;
-  req.onsuccess=()=>{
-   if(req.result)stored=req.result;
-   else {stored=proposed;store.put(proposed,keyName)}
-  };
-  tx.oncomplete=()=>resolve(stored);
-  tx.onerror=()=>reject(tx.error);
- });
- if(requestedOwner!==owner)throw Error('Tài khoản đã thay đổi trong khi mở khóa thiết bị.');
- deviceKey=result;
- return result;
+ const requestedOwner=owner,epoch=keyEpoch;
+ // Coalesce concurrent reads from the same MST picker. Reusing the stored
+ // non-extractable key avoids a costly AES key generation on every page load.
+ if(deviceKeyPromise?.owner===requestedOwner&&deviceKeyPromise.epoch===epoch)
+  return deviceKeyPromise.promise;
+ const task=(async()=>{
+  const keyName='account:'+requestedOwner;
+  const existing=await readStore('keys',keyName);
+  if(existing)return existing;
+  // A concurrent tab may also create the key. The read-write transaction
+  // rechecks before writing so all tabs keep the original encryption key.
+  const proposed=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+   const tx=db.transaction('keys','readwrite'),store=tx.objectStore('keys');
+   const req=store.get(keyName);
+   let result;
+   req.onsuccess=()=>{
+    if(req.result)result=req.result;
+    else{result=proposed;store.put(proposed,keyName)}
+   };
+   tx.oncomplete=()=>resolve(result);
+   tx.onerror=()=>reject(tx.error);
+  });
+ })();
+ deviceKeyPromise={owner:requestedOwner,epoch,promise:task};
+ try{
+  const key=await task;
+  if(requestedOwner!==owner||epoch!==keyEpoch)
+   throw Error('Tài khoản hoặc kho MST đã thay đổi trong khi mở khóa thiết bị.');
+  deviceKey=key;
+  return key;
+ }finally{
+  if(deviceKeyPromise?.promise===task)deviceKeyPromise=null;
+ }
 }
 async function encryptPassword(pass){
  const key=await getDeviceKey(),iv=crypto.getRandomValues(new Uint8Array(12));
@@ -283,7 +299,7 @@ async function setUser(userId,rows,mode='mst'){
  const changed=(userId||'')!==owner;
  if(changed){
   $('mstPickerToggle').dataset.userPicked='';
-  owner=userId||'';deviceKey=null;requestSeq++;$('gdtPassword').value='';$('mstFree').value='';
+  owner=userId||'';deviceKey=null;deviceKeyPromise=null;keyEpoch++;requestSeq++;$('gdtPassword').value='';$('mstFree').value='';
   $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
  }
  const previous=changed?[]:[...profiles];
@@ -308,8 +324,8 @@ async function setUser(userId,rows,mode='mst'){
  }
  if(owner&&!invoiceMode){
   const allowed=new Set(profiles.map(p=>p.mst));
-  for(const old of previous)if(!allowed.has(old.mst))
-   await deleteStore('credentials',entryKey(old.mst)).catch(()=>{});
+  await Promise.allSettled(previous.filter(old=>!allowed.has(old.mst))
+   .map(old=>deleteStore('credentials',entryKey(old.mst))));
  }
  const profilesChanged=wasOwner!==owner||wasInvoiceMode!==invoiceMode||previousProfilesJson!==JSON.stringify(profiles);
  if(profilesChanged)renderPicker();
@@ -367,7 +383,7 @@ function claimPasswordReminder(mst){
  }catch{/* Storage disabled: still show a reminder for this session. */}
  return true;
 }
-function lock(){requestSeq++;deviceKey=null;$('gdtPassword').value=''}
+function lock(){requestSeq++;keyEpoch++;deviceKey=null;deviceKeyPromise=null;$('gdtPassword').value=''}
 function init(){
  const input=$('mstFree'),selector=$('mst'),toggle=$('mstPickerToggle');
  toggle.addEventListener('click',()=>{$('mstPickerMenu').hidden?openPicker(true):closePicker();});

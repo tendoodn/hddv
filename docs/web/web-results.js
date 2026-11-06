@@ -151,13 +151,28 @@ function render(list,warnings=[],options={}){
  document.dispatchEvent(new CustomEvent('autotax-lite-results'));
  if(!window.AutoTaxLite)kAlert(st,!options.partial);
 }
+// Batch authorized result updates into one DOM render per animation frame.
+// Canonical quota authorization still happens in the shared Web search engine.
+let pendingInvoiceRows=new Map(), pendingInvoiceFrame=0;
+function cancelPendingInvoiceRender(){
+ if(pendingInvoiceFrame)cancelAnimationFrame(pendingInvoiceFrame);
+ pendingInvoiceFrame=0;pendingInvoiceRows.clear();
+}
 function append(batch){
  if(!Array.isArray(batch)||!batch.length)return;
- const merged=new Map(dataset.map(row=>[keyOf(row),row]));
- for(const row of batch)merged.set(keyOf(row),row);
- render([...merged.values()],[],{preserve:true,partial:true});
+ for(const row of batch)pendingInvoiceRows.set(keyOf(row),row);
+ if(pendingInvoiceFrame)return;
+ pendingInvoiceFrame=requestAnimationFrame(()=>{
+  pendingInvoiceFrame=0;
+  if(!pendingInvoiceRows.size)return;
+  const merged=new Map(dataset.map(row=>[keyOf(row),row]));
+  for(const [key,row] of pendingInvoiceRows)merged.set(key,row);
+  pendingInvoiceRows.clear();
+  render([...merged.values()],[],{preserve:true,partial:true});
+ });
 }
 function finish(list,warnings=[]){
+ cancelPendingInvoiceRender();
  // Do not lose the checked rows while the next pages were arriving.
  const allowed=new Set((list||[]).map(keyOf));
  for(const key of checked)if(!allowed.has(key))checked.delete(key);
@@ -165,6 +180,7 @@ function finish(list,warnings=[]){
  if(!window.AutoTaxLite)scheduleMismatchCheck();
 }
 function resetForSearch(){
+ cancelPendingInvoiceRender();
  dataset=[];visible=[];checked.clear();currentResultPage=1;lastStats=null;
  ++mismatchCheckSeq;clearTimeout(mismatchCheckTimer);$('stockMapBtn').hidden=true;
  $('visibleKind').value='all';$('visibleMonth').value='';

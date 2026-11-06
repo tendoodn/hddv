@@ -144,6 +144,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 @media(max-width:520px){header{padding:9px 10px;gap:6px;flex-wrap:nowrap}header .brand{font-size:15px;white-space:nowrap}header .brand img{width:25px;height:25px;margin-right:3px!important}header .portal-header-actions{display:flex;grid-template-columns:none;width:auto;min-width:0;gap:5px}header .portal-header-download{font-size:10px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.2;max-width:130px}header #adminLink:not([hidden]){font-size:10px;padding:7px 5px}}
 </style>
 <style>
+.autotax-account-safety{font-size:12px;line-height:1.5;color:#475569;margin:9px 0 13px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc}.autotax-account-safety strong{color:#1f2937}.autotax-account-safety a{font-weight:700}
 
 /* Same-row account heading and team switch, without displacing quick actions. */
 .portal-account-head{display:grid;grid-template-columns:minmax(180px,1fr) auto;align-items:center;gap:10px 14px}
@@ -278,8 +279,9 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <section id="authSection" class="panel" hidden>
  <form id="loginForm">
  <h2>Đăng nhập / tạo tài khoản</h2>
+  <p class="autotax-account-safety" role="note"><strong>Đây là tài khoản AutoTax riêng.</strong> Chỉ nhập mật khẩu AutoTax tại <strong>tracuuhoadon.top</strong>; không nhập mật khẩu Gmail, tài khoản ngân hàng hoặc cổng Thuế vào ô này. <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a>.</p>
  <label for="email">User đăng nhập hoặc Email</label><input id="email" type="text" autocomplete="username" placeholder="username hoặc email@gmail.com">
- <label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
+ <label for="password">Mật khẩu AutoTax (không phải mật khẩu Gmail)</label><input id="password" type="password" autocomplete="current-password" placeholder="Mật khẩu đăng nhập">
  <div class="actions"><button id="loginBtn" type="submit">Đăng nhập</button><button id="signupBtn" class="secondary" type="button">Tạo tài khoản</button><button id="resetBtn" class="secondary" type="button">Quên mật khẩu</button><a class="account-link-btn" href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer">Liên hệ Admin cấp lại mật khẩu · Zalo</a></div>
  <div id="authMessage" class="notice" hidden></div>
 
@@ -297,7 +299,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
 <dialog id="signupDialog" class="autotax-signup-dialog" aria-labelledby="signupDialogTitle">
  <form id="signupForm" autocomplete="on">
   <div class="autotax-signup-head"><h2 id="signupDialogTitle">Tạo tài khoản AutoTax</h2><button id="signupCloseBtn" type="button" class="secondary" aria-label="Đóng đăng ký">✕</button></div>
-  <p class="muted">Điền đầy đủ thông tin để đăng ký tài khoản mới. Tài khoản dùng chung trên Web và Extension.</p>
+  <p class="muted">Điền thông tin để tạo tài khoản riêng cho AutoTax tại <strong>tracuuhoadon.top</strong>. Tài khoản dùng chung trên Web và Extension. <strong>Hãy tự đặt mật khẩu mới, không dùng mật khẩu Gmail hoặc cổng Thuế.</strong></p>
   <label for="signupName">Tên người dùng</label>
   <input id="signupName" type="text" required minlength="2" maxlength="100" autocomplete="name" placeholder="Họ tên hoặc tên hiển thị">
   <label for="signupUsername">User đăng nhập</label>
@@ -305,9 +307,9 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
   <label for="signupEmail">Email</label>
   <input id="signupEmail" type="email" required autocomplete="email" placeholder="ten@gmail.com hoặc ten@hotmail.com">
   <small>Hỗ trợ Gmail, Hotmail và Yahoo Mail.</small>
-  <label for="signupPassword">Mật khẩu</label>
+  <label for="signupPassword">Tạo mật khẩu riêng cho AutoTax</label>
   <input id="signupPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Tối thiểu 10 ký tự">
-  <label for="signupPasswordConfirm">Nhập lại mật khẩu</label>
+  <label for="signupPasswordConfirm">Nhập lại mật khẩu AutoTax</label>
   <input id="signupPasswordConfirm" type="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo">
   <p class="muted">Mật khẩu cần có tối thiểu 10 ký tự. Không nhập mật khẩu cổng Thuế vào đây. Email xác minh hiện có thể mang tiêu đề <strong>Supabase Auth</strong>; hãy kiểm tra cả thư mục Spam.</p>
   <div id="signupStatus" class="notice" role="status" aria-live="polite" hidden></div>

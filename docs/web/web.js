@@ -15,6 +15,7 @@ window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
 });
 let account=null,govtToken='',govtMst='',captchaKey='',captchaValue='',captchaUrl='',captchaMode='pending',captchaIssuedAt=0,rows=[],details=new Map();
 let busy=false,stopped=false,selectedMode='mst',profileMsts=[],profileAllowedMsts=[],teamAllowedMsts=[],searchedBothKinds=false;
+let mstGrantReturnPending=false;
 const vn=iso=>iso?iso.split('-').reverse().join('/'):'';
 const parseVnDate=text=>{
  const raw=String(text||'').trim();
@@ -917,7 +918,7 @@ function init(){
  });
  // Bring MST profiles and mode from Supabase whenever this tab becomes active.
  // Both Web and Add-on use the same account records; never sync tax passwords.
- let profileRefreshBusy=false,lastProfileRefreshAt=0,mstGrantReturnPending=false;
+ let profileRefreshBusy=false,lastProfileRefreshAt=0;
  const refreshVisibleProfiles=async()=>{
   if(busy||document.hidden||profileRefreshBusy||
      (!mstGrantReturnPending&&Date.now()-lastProfileRefreshAt<45000))return;

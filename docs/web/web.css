@@ -572,3 +572,5 @@ td.audit-info{color:#c6c6db}
 .autotax-kind-row>.check{display:inline-flex!important;align-items:center;white-space:nowrap;margin:0!important;gap:7px}
 .autotax-kind-row>.k-hint,.autotax-kind-row>.opening-stock-control{flex-basis:100%;min-width:0}
 @media(max-width:540px){.autotax-kind-row{column-gap:12px}.autotax-kind-row>.check{font-size:13px}.autotax-kind-row>.check input{width:19px;height:19px}}
+
+.autotax-independence{font-size:12px!important;opacity:.8;line-height:1.5;max-width:760px}

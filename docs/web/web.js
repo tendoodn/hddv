@@ -639,6 +639,7 @@ async function search(e){
   const xmlSession=detailEpoch;
   void loadDetails([...rows],{quiet:true}).then(map=>{
    if(xmlSession!==detailEpoch)return;
+   window.AutoTaxXmlColumns?.registerFields?.([...map.values()].flatMap(d=>Object.keys(d.xmlFields||{})));
    const xmlCount=[...map.values()].filter(d=>d.source==='xml').length;
    const skuCount=[...map.values()].filter(d=>(d.lines||[]).some(line=>String(line.ma||'').trim())).length;
    const links=[...map.values()].filter(d=>d.head?.lookup?.link||d.head?.lookup?.code).length;

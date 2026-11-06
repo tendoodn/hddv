@@ -828,8 +828,7 @@ $('forcedPasswordForm').addEventListener('submit',async e=>{
   await client.auth.signOut();
   $('forcedPasswordNew').value='';
   $('forcedPasswordConfirm').value='';
-  await refresh();
-  showMessage('Đã lưu mật khẩu mới. Hãy đăng nhập bằng mật khẩu vừa đặt.',false,'authMessage');
+  location.replace('/');
  }catch(err){fail('Không lưu được mật khẩu: '+(err.message||String(err)))}
  finally{button.disabled=false}
 });
@@ -852,8 +851,7 @@ $("changePasswordBtn").addEventListener("click",()=>action("changePasswordBtn",a
   catch(e){showMessage('Cần cập nhật lại khóa dữ liệu MST: '+e.message,true)}
   await client.auth.signOut();
   $('newPassword').value='';
-  await refresh();
-  showMessage('Đã đổi mật khẩu tạm. Hãy đăng nhập lại bằng mật khẩu mới.',false,'authMessage');
+  location.replace('/');
   return;
  }else{
   const {error}=await client.auth.updateUser({password});

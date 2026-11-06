@@ -38,4 +38,20 @@ assert.match(results,/if\(!window\.AutoTaxLite\)updateStock\(\)/);
 for(const absent of ['../web/report.js','../web/xlsx.js','../web/tendoo-import.js','../web/export-zip.js','../web/download-folder.js']){
  assert(!html.includes('<script src="'+absent), 'Heavy export script must not load in Lite: '+absent);
 }
+const accountModal=read('web/account-modal.js');
+const cache=read('web/invoice-cache-v120.js');
+for(const [name,markup] of [['Web',home],['Lite',html]]){
+ assert(markup.indexOf('<div class="web-settings-wrap">')<markup.indexOf('<img id="webAvatar"'),
+  name+' settings gear must appear before avatar');
+ assert.match(markup,/web-greeting-text/,'Long greeting text needs marquee span');
+ assert.match(markup,/autotax-mobile-layout-fix-120/,'Responsive mobile account layout required');
+ assert.match(markup,/release-notice-v128\.js\?v=1200/,'Existing V1.2.0 notice must be preserved');
+}
+assert.match(html,/autotax-lite-actions-120/,'Lite must show grant, renew and usage on row two');
+assert.match(home,/PDF hóa đơn có phải bản gốc\?/);
+assert.match(home,/mã xác nhận ở chân hóa đơn/);
+assert.match(accountModal,/positionAccountMenu\(/,'Settings menu should be positioned above overlays');
+assert.match(accountModal,/web-greeting-long/,'Long greeting should scroll');
+assert.match(cache,/DETAIL_RETENTION_DAYS=30/,'Local invoice detail cache must last 30 days');
+assert.match(web,/form_code:\(r\.form\|\|''\)\+':'\+\(r\.khmshdon\|\|''\)/,'Keep safe invoice identity');
 console.log('AutoTax Lite static checks PASSED: shared auth, PDF, pagination and lean bundle.');

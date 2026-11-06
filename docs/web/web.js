@@ -639,6 +639,20 @@ async function search(e){
    progress('Đã phân tích XML nền: '+xmlCount+'/'+rows.length+
      ' hóa đơn có XML gốc; '+skuCount+' hóa đơn có mã hàng; '+
      links+' hóa đơn có thông tin tra cứu. Chỉ xuất tệp XML khi chọn tải XML.');
+   // Store only one sample per publisher, complementing its missing values.
+   // This runs after server authorization and never blocks invoice results.
+   const collector=window.AutoTaxIssuerReference,byIssuer=new Map();
+   if(collector)for(const row of rows){
+    const item=collector.sample(row,map.get(row.key),mst);
+    if(!item)continue;
+    const old=byIssuer.get(item.issuer_mst);
+    if(!old)byIssuer.set(item.issuer_mst,item);
+    else for(const key of ['lookup_url','seller_mst','buyer_mst','secret_code'])
+      if(!old[key]&&item[key])old[key]=item[key];
+   }
+   if(byIssuer.size)void client.auth.getSession().then(({data})=>
+     collector.submit([...byIssuer.values()],data?.session)
+   ).catch(err=>console.warn('Chưa cập nhật được mẫu nhà phát hành:',err.message));
   }).catch(error=>console.warn('Đọc XML nền chưa hoàn tất:',error.message));
   if(quotaExceededDuringSearch)show(QUOTA_MESSAGE);
   else show('Đã tra cứu '+rows.length+' hóa đơn được phép sử dụng.'+

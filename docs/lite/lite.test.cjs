@@ -12,6 +12,8 @@ const web=read('web/web.js');
 const results=read('web/web-results.js');
 const home=read('index.html');
 assert.match(html,/window\.AutoTaxLite=true/);
+assert.match(html,/<script src="\.\.\/lite\/lite\.js\?/,'Lite bootstrap script is mandatory');
+assert.match(html,/<\/body><\/html>\s*$/,'Lite HTML must end with closing tags');
 assert.match(html,/href="https:\/\/tracuuhoadon\.top\/lite\/"/);
 assert.match(home,/id="webLiteNow"[^>]*href="\/lite\/"/);
 assert.match(home,/#webAccountModeSlot\{[^}]*flex-flow:row nowrap/);

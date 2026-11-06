@@ -604,3 +604,16 @@ td.audit-info{color:#c6c6db}
 .autotax-guide h2{margin:0 0 10px;font-size:clamp(17px,2.6vw,21px);color:#f8fafc}
 .autotax-guide p{margin:8px 0;line-height:1.7;font-size:13px;color:#c8c8d2}
 .autotax-guide a{color:#93c5fd;text-underline-offset:3px}
+
+/* AutoTax UX: center the independent-service notice across viewport sizes. */
+.wrap > header.hero{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;text-align:center}
+.wrap > header.hero .autotax-independence{
+ display:block!important;position:static!important;float:none!important;
+ width:min(100%,760px)!important;max-width:760px!important;
+ margin:10px auto 0!important;padding:0 8px!important;
+ text-align:center!important;align-self:center!important;
+ text-wrap:pretty;line-height:1.65!important
+}
+.wrap > footer{text-align:center!important}
+.wrap > footer p{max-width:920px;margin:8px auto!important;text-align:center!important}
+@media(max-width:480px){.wrap > header.hero .autotax-independence{font-size:11px!important;padding:0 3px!important}}

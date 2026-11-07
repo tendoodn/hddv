@@ -159,7 +159,7 @@ $('webSignupForm').addEventListener('submit',async e=>{
   saveEmail(email);
   open('webLoginDialog');
   $('webLoginEmail').value=email;$('webLoginPassword').value=pass;
-  message('webLoginStatus',data?.session?'Đăng ký thành công. Bấm Đăng nhập để tiếp tục.':
+  message('webLoginStatus',data?.session?'Đăng ký thành công.':
    'Đã tạo yêu cầu đăng ký. Nếu hệ thống yêu cầu xác minh email, hãy xác minh rồi đăng nhập.');
   $('webLoginSubmit').focus();
  }catch(error){message('webSignupStatus',accountFlow.message(error),true)}

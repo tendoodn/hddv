@@ -179,7 +179,7 @@ html.crop-editor-open,body.crop-editor-open{overflow:hidden!important;overscroll
 .crop-overlay .crop-side-controls{flex:0 0 min(350px,32vw)!important;align-self:stretch!important;max-height:100%!important;overflow-y:auto!important}
 @media(max-width:700px){.crop-overlay .crop-workspace{flex-direction:column!important}.crop-overlay .crop-image-pane{height:auto!important;min-height:0!important;flex:1 1 0!important}.crop-overlay .crop-side-controls{flex:0 0 auto!important;width:100%!important;max-height:min(42dvh,320px)!important}}
 .page-order-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.page-order-actions .page-orientation-select{min-width:86px;max-width:120px;padding:7px 5px;font-size:13px}
-/* Image-to-PDF preview uses the image's native ratio, without A4 backing. */
+/* A4 preview fits source images proportionally on white A4 paper. */
 .native-pdf-page{box-sizing:border-box!important;margin-left:auto!important;margin-right:auto!important;overflow:hidden!important}
 .native-pdf-page .doc-image{display:block!important;max-width:none!important;max-height:none!important;border:0!important;border-radius:0!important}
 .native-size-hint{display:block;margin:3px 0 6px;color:#49607a;font-size:12px}
@@ -197,8 +197,8 @@ function a4OrientationFor(obj){
 }
 function a4Contain(sw,sh,tw,th){
  if(!(sw>0&&sh>0&&tw>0&&th>0))return {x:0,y:0,w:tw,h:th,scale:1};
- const scale=Math.min(tw/sw,th/sh),w=sw*scale,h=sh*scale;
- return {x:(tw-w)/2,y:(th-h)/2,w,h,scale};
+ const scale=Math.min(tw/sw,th/sh),w=Math.min(tw,sw*scale),h=Math.min(th,sh*scale);
+ return {x:Math.max(0,(tw-w)/2),y:Math.max(0,(th-h)/2),w,h,scale};
 }
 
 const PDFLIB_URL='./pdf-lib.min.js';
@@ -1142,12 +1142,6 @@ async function originalPixelImageForPdf(source,obj=null){
  }
  // Legacy browsers: same dimensions, highest supported JPEG quality.
  return {jpeg:canvas.toDataURL('image/jpeg',1),w,h};
-}
-function originalUnchangedPdf(r){
- if(mode!=='makepdf'||!r.images.length)return null;
- const src=r.images[0]?.sourcePdfFile;
- if(!src||r.images.length!==r.images[0].sourcePageCount)return null;
- return r.images.every((obj,i)=>obj.sourcePdfFile===src&&obj.sourcePageIndex===i&&obj.sourceUnmodified===true&&(!obj.pageOrientationOverride||obj.pageOrientationOverride==='auto'))?src:null;
 }
 async function makePages(r,scale,quality){
  const landscape=mode==='makepdf'&&pdfOrientation==='landscape';

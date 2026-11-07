@@ -329,16 +329,20 @@ function chooseMstPurchaseMode(packageCode){
  const active=Number(state?.packages?.mst?.active_quantity||0);
  const quantity=Number(mstPackageMeta.get(packageCode)?.quantity||0);
  const days=Number(mstPackageMeta.get(packageCode)?.validity_days||365);
+ const combo=Boolean(mstPackageMeta.get(packageCode)?.is_combo);
  const renew=Math.min(active,quantity),newSlots=Math.max(0,quantity-renew);
  $('mstPurchaseModeDescription').textContent='Gói '+packageCode+' · '+quantity+' MST · '+days+' ngày.';
- $('mstPurchaseModePreview').textContent=active>0?
+ $('mstPurchaseModePreview').textContent=combo?
+   ('Đây là gói Combo kết hợp MST và lượt hóa đơn. Gói Combo giữ quy tắc tăng số lượng như cũ.'):
+   active>0?
    ('Hiện có '+active+' MST cá nhân. Nếu tăng thời gian: tối đa '+renew+
     ' MST đang dùng được gia hạn thêm '+days+' ngày từ ngày hết hạn cũ; '+
     newSlots+' MST mới (nếu có) nhận '+days+' ngày từ lúc thanh toán.'):
    ('Chưa có MST cá nhân còn hạn. Chọn Tăng số lượng dùng để thêm '+quantity+' MST.');
  const duration=$('mstPurchaseDuration');
- duration.disabled=active<1;
- duration.title=active<1?'Chưa có MST đang còn hạn để gia hạn':'Ưu tiên cộng ngày cho MST hiện có';
+ duration.disabled=active<1||combo;
+ duration.title=combo?'Gói Combo không áp dụng gia hạn MST theo thời gian':
+   active<1?'Chưa có MST đang còn hạn để gia hạn':'Ưu tiên cộng ngày cho MST hiện có';
  return new Promise(resolve=>{
   let settled=false;
   const finish=mode=>{if(settled)return;settled=true;dialog.close();cleanup();resolve(mode)};
@@ -373,7 +377,8 @@ async function loadPackages(){
    heading.style.cssText='grid-column:1/-1;margin:12px 0 0;color:#9f1239';
    list.append(heading);customHeadingAdded=true;
   }
-  if(item.family==='mst')mstPackageMeta.set(item.code,{quantity:item.quantity,validity_days:item.validity_days});
+  if(item.family==='mst')mstPackageMeta.set(item.code,{quantity:item.quantity,validity_days:item.validity_days,
+   is_combo:!!item.is_combo});
   const card=document.createElement("div");card.className="plan";
   addText(card,"h3",item.name);
   addText(card,"p",item.family==="storage"

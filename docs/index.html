@@ -138,6 +138,11 @@
  #webLiteNow{grid-column:4!important;grid-row:2!important}
  #webAccountModeSlot #webModeControls:not([hidden]){grid-column:5/span 2!important;grid-row:2!important}
 }
+</style><style id="autotax-guest-mode-guard-v120">
+/* Explicit hidden wins over layout rules on unsigned Web and Lite. */
+#webModeControls[hidden],#webAccountModeSlot #webModeControls[hidden],
+.web-mode-controls[hidden]{display:none!important;visibility:hidden!important}
+#webUsageModeHint:empty{display:none!important}
 </style></head>
 <body>
 <style>

@@ -21,7 +21,12 @@ for(const asset of [...html.matchAll(/<(?:script|link)[^>]+(?:src|href)="(\.\.\/
  const filename=asset[1].split('?')[0];
  assert(fs.existsSync(path.resolve(root,'lite',filename)), 'Missing Lite asset: '+filename);
 }
-for(const label of ['Trở lại trang chủ','Tra Cứu','Dừng','Xem PDF','Ngày ký','Tên đối tác','Tổng thanh toán','Mua vào','Bán ra']){
+assert.match(html,/id="liteHome"[^>]*>Trở lại trang chủ<\/a>/,'Red home shortcut must be next to Lite logo');
+assert.match(css,/#mstPickerMenu:not\(\[hidden\]\)/,'MST drawer must span the mobile viewport');
+assert.match(css,/#liteHome\{[^}]*background:#9a1730!important/,'Back-home button must be red');
+assert.match(home,/#webLiteNow\{background:#126b36!important/,'Lite shortcut on Home must be green');
+assert.match(home,/#extensionHeaderDownloadBtn\.autotax-extension-cta\{border-color:#27cf72!important/,'Extension CTA must be green');
+for(const label of ['Tra Cứu','Dừng','Xem PDF','Ngày ký','Tên đối tác','Tổng thanh toán','Mua vào','Bán ra']){
  assert(ui.includes(label), 'Missing Lite action or label: '+label);
 }
 assert.match(ui,/pageSize=10/);

@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'docs/lite/**'
+      - 'docs/demo-addon-6/**'
+      - 'docs/customer.js'
+      - 'docs/user/index.html'
       - 'docs/index.html'
       - 'docs/web/web.js'
       - 'docs/web/web-results.js'
@@ -25,4 +28,6 @@ jobs:
           node --check docs/lite/lite.js
           node --check docs/web/web.js
           node --check docs/web/web-results.js
+          node --check docs/customer.js
           node docs/lite/lite.test.cjs
+          node docs/lite/mst-checkout-v120.test.cjs

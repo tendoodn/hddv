@@ -625,3 +625,12 @@ td.audit-info{color:#c6c6db}
  .autotax-footer-sep{display:none!important}
 }
 /* end AutoTax 1.2.2 mobile footer split */
+
+
+/* AutoTax V1.2.2 PDF canvas: sharp zoomable preview with native mouse/touch panning. */
+#invoicePdfCanvasPages{flex:1 1 auto;min-height:0;overflow:auto!important;overscroll-behavior:contain;background:#56575d;padding:12px;box-sizing:border-box;touch-action:pan-x pan-y}
+#invoicePdfCanvasPages canvas{display:block;max-width:none!important;margin:0 auto 14px;background:#fff;box-shadow:0 2px 12px #0005}
+.invoice-pdf-zoom{display:inline-flex;align-items:center;gap:4px}
+.invoice-pdf-zoom button{min-width:34px;padding:5px 8px}
+#invoicePdfZoomValue{min-width:48px;text-align:center;font:700 11px/1.2 system-ui;color:#f8fafc}
+@media(max-width:640px){#invoicePdfCanvasPages{padding:8px}.invoice-pdf-zoom{order:-1;width:100%;justify-content:center}.invoice-pdf-actions{flex-wrap:wrap;justify-content:flex-end}}

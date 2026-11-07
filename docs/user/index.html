@@ -351,7 +351,7 @@ body .topbar a.logo span,body header .brand span{font-size:50%!important;line-he
   <label for="accountProfileEmail">Email tài khoản (không thể thay đổi)</label><input id="accountProfileEmail" type="email" readonly disabled aria-readonly="true" autocomplete="email" title="Email đăng ký không thể sửa" class="account-readonly-email">
   <label for="accountDisplayName">Tên người dùng</label><input id="accountDisplayName" type="text" minlength="2" maxlength="100" required autocomplete="name">
   <label for="accountOldPassword">Mật khẩu cũ (chỉ nhập khi muốn đổi)</label><input id="accountOldPassword" type="password" autocomplete="current-password" placeholder="Để trống nếu không đổi mật khẩu">
-  <label for="accountNewPassword">Mật khẩu mới</label><input id="accountNewPassword" type="password" autocomplete="new-password" minlength="10" placeholder="Để trống nếu không đổi mật khẩu">
+  <label for="accountNewPassword">Mật khẩu mới</label><input id="accountNewPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Để trống nếu không đổi mật khẩu">
   <p id="accountProfileStatus" class="notice" role="status" hidden></p>
   <div class="actions"><button id="accountProfileSave" type="submit">Lưu</button><button id="accountProfileClose" class="secondary" type="button">Đóng</button></div>
  </form>
@@ -359,11 +359,11 @@ body .topbar a.logo span,body header .brand span{font-size:50%!important;line-he
 <dialog id="forcedPasswordDialog" aria-labelledby="forcedPasswordTitle" aria-modal="true">
  <form id="forcedPasswordForm" autocomplete="off">
   <h2 id="forcedPasswordTitle">Đổi mật khẩu bắt buộc</h2>
-  <p>Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 10 ký tự) trước khi sử dụng AutoTax.</p>
+  <p>Mật khẩu tài khoản vừa được Admin đặt lại. Bạn phải đổi sang mật khẩu mới (tối thiểu 8 ký tự) trước khi sử dụng AutoTax.</p>
   <label for="forcedPasswordNew">Mật khẩu mới</label>
-  <input id="forcedPasswordNew" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập mật khẩu mới">
+  <input id="forcedPasswordNew" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="Nhập mật khẩu mới">
   <label for="forcedPasswordConfirm">Nhập lại mật khẩu mới</label>
-  <input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Nhập lại mật khẩu">
+  <input id="forcedPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="Nhập lại mật khẩu">
   <p id="forcedPasswordError" class="notice error" role="alert" hidden></p>
   <button id="forcedPasswordSave" type="submit">Lưu mật khẩu mới</button>
  </form>

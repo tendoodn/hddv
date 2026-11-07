@@ -10,6 +10,10 @@ window.AutoTaxSharedMstVault?.setAuthProvider(async()=>{
 const $=id=>document.getElementById(id);
 const vnDate=value=>value?new Date(value).toLocaleDateString("vi-VN"):"—";
 const vnMoney=value=>Number(value||0).toLocaleString("vi-VN")+" đ";
+const mstExpiryText=mst=>mst?.nearest_expiry?
+  ("MST cá nhân: "+Number(mst.expiring_quantity||0)+" MST hết hạn gần nhất vào "+vnDate(mst.nearest_expiry)+
+   " · Hạn xa nhất: "+vnDate(mst.farthest_expiry)):
+  "MST cá nhân: hiện chưa có gói MST còn hiệu lực.";
 const DUP_EMAIL="Email đã tồn tại.";
 const accountFlow=window.AutoTaxAccountFlow;
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
@@ -258,8 +262,7 @@ async function refresh(){
    (teamInvoice>0&&teamInvoiceShared===0?" (chưa có MST được chia sẻ)":"");
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
   $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMst.toLocaleString("vi-VN")+" MST (đã chia sẻ "+teamMstShared+" MST)";
-  $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+
-   " ("+Number(mst.expiring_quantity||0)+" MST hết hạn ở mốc này) · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
+  $("mstExpiry").textContent=mstExpiryText(mst);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
   const modeCounts={invoice:Number(invoice.remaining||0)+teamInvoiceUsable,mst:Number(mst.active_quantity||0)+teamMstShared};
   const spendableInvoice=modeCounts.invoice>0,spendableMst=modeCounts.mst>0;
@@ -616,8 +619,7 @@ async function finishPaidOrder(order){
   $("invoiceTeamLimit").textContent="Cá nhân: "+Number(inv.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamSheets.toLocaleString("vi-VN")+
    (teamSheets>0&&teamInvoiceShared===0?" (chưa có MST được chia sẻ)":"");
   $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMsts.toLocaleString("vi-VN")+" MST (đã chia sẻ "+teamMstShared+" MST)";
-  $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+
-   " ("+Number(mst.expiring_quantity||0)+" MST hết hạn ở mốc này) · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
+  $("mstExpiry").textContent=mstExpiryText(mst);
   balancesText="Hóa đơn: "+remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN")+
    " lượt\nMST hiện có: "+capacity.toLocaleString("vi-VN")+
    (mst.nearest_expiry?"\nHạn gần nhất: "+vnDate(mst.nearest_expiry):"");

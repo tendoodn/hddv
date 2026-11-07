@@ -1,0 +1,20 @@
+{
+  "id": "/admin/",
+  "name": "AutoTax – Quản trị",
+  "short_name": "AutoTax ADMIN",
+  "description": "Quản trị AutoTax",
+  "start_url": "/admin/",
+  "scope": "/admin/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09090b",
+  "theme_color": "#09131d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

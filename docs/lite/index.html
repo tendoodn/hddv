@@ -297,6 +297,12 @@ html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a.web-dialog
 @media(max-width:700px){
   #searchBtn{margin-top:22px!important}
 }
+</style><style id="autotax-footer-mobile-break-v122">
+@media(max-width:600px){
+ .autotax-footer-nav .autotax-footer-primary,.autotax-footer-nav .autotax-footer-secondary{display:block}
+ .autotax-footer-nav .autotax-footer-secondary{margin-top:4px}
+ .autotax-footer-nav .autotax-footer-secondary::first-letter{font-size:0}
+}
 </style></head>
 <body>
 <style>
@@ -304,7 +310,7 @@ html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a.web-dialog
 #autotaxZaloDock.collapsed{transform:translateX(calc(100% - 47px))}
 #autotaxZaloDock>a{background:#0564dc;border:1px solid #c0e7ff;color:white;text-decoration:none;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 2px 14px #0002}
 #autotaxZaloSlide{background:#0564dc;color:#fff;border:1px solid #fff6;border-radius:12px;padding:9px;cursor:pointer;min-width:47px}
-@media(max-width:600px){#autotaxZaloDock{top:58px;right:4px}}
+@media(max-width:600px){#autotaxZaloDock{top:calc(env(safe-area-inset-top,0px) + 112px);right:4px}}
 </style>
 <div id="autotaxZaloDock" class="collapsed">
  <button type="button" id="autotaxZaloSlide" aria-expanded="false" aria-label="Trượt mở liên hệ Zalo">Zalo ◀</button>
@@ -318,7 +324,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 });
 </script>
 <main class="wrap">
-  <div class="topbar"><a class="logo" href="/"><img src="../favicon.svg?v=20261102b" alt="Logo AutoTax" width="43" height="43" style="vertical-align:middle;border-radius:9px;margin-right:9px" decoding="async">AUTOTAX <span>LITE V1.2.1</span></a>
+  <div class="topbar"><a class="logo" href="/"><img src="../favicon.svg?v=20261102b" alt="Logo AutoTax" width="43" height="43" style="vertical-align:middle;border-radius:9px;margin-right:9px" decoding="async">AUTOTAX <span>LITE V1.2.2</span></a>
     <a id="liteHome" href="/" title="Quay lại trang chủ AutoTax">Trở lại trang chủ</a>
     <nav class="toplinks" aria-label="Điều hướng tiện ích"><a id="extensionHeaderDownloadBtn" class="web-search-blink autotax-extension-cta" href="https://drive.google.com/file/d/1pnFGMK_xymxa7OA736PXAD9jQnlWmfAI/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="/tracuumst/" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></nav></div>
   <header class="hero">
@@ -620,7 +626,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   </section>
   <footer>
     <p><strong>AutoTax là công cụ độc lập hỗ trợ tra cứu, không phải website hay ứng dụng chính thức của cơ quan Thuế.</strong> Tài khoản AutoTax và tài khoản cổng Thuế là hai tài khoản khác nhau. Chúng tôi không yêu cầu cung cấp mật khẩu AutoTax qua Zalo, tin nhắn hoặc trang web bên ngoài.</p>
-    <p><a href="/gioi-thieu/">Giới thiệu</a> · <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a> · <a href="/baogia/">Thiết bị &amp; HĐĐT Viettel</a> · <a href="/user/#planSection">Gói AutoTax</a> · Hỗ trợ: 0868838242</p>
+    <p class="autotax-footer-nav"><span class="autotax-footer-primary"><a href="/gioi-thieu/">Giới thiệu</a> · <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a> · <a href="/baogia/">Thiết bị &amp; HĐĐT Viettel</a></span><span class="autotax-footer-secondary"> · <a href="/user/#planSection">Gói AutoTax</a> · Hỗ trợ: 0868838242</span></p>
   </footer>
 </main>
 <script>window.__autotaxRecoveryFromUrl=/type=recovery/.test(location.hash+location.search);</script>
@@ -698,7 +704,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="../web/pdf-preview-v120a.js?v=20261106pdfjs65"></script>
 <script src="../password-toggle.js?v=116"></script>
 <script src="../lite/lite.js?v=20261107lite1"></script>
-<script src="../release-notice-v128.js?v=1200"></script><dialog id="invoicePdfPreviewDialog" aria-labelledby="invoicePdfPreviewTitle">
+<script src="../release-notice-v128.js?v=1220"></script><dialog id="invoicePdfPreviewDialog" aria-labelledby="invoicePdfPreviewTitle">
  <div class="invoice-pdf-toolbar"><h2 id="invoicePdfPreviewTitle">Xem PDF hóa đơn</h2><div class="invoice-pdf-actions"><button id="downloadInvoicePdfPreview" type="button" disabled>Tải PDF</button><button id="closeInvoicePdfPreview" type="button">Đóng</button></div></div>
  <p id="invoicePdfPreviewMeta">PDF dựng từ dữ liệu Thuế, không phải PDF gốc</p>
  <p id="invoicePdfPreviewStatus" role="status" aria-live="polite">Đang chuẩn bị xem PDF…</p>

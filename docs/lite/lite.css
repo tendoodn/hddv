@@ -29,8 +29,7 @@ body{background:#090b10!important}
 #searchForm .field{min-width:0}
 #searchForm .field>label{font-size:clamp(10px,2.7vw,13px);margin:0 0 5px}
 #searchForm .mst-combobox input,#searchForm .password-wrap,#searchForm #gdtPassword{height:41px;min-height:41px;font-size:clamp(11px,3vw,14px);border-radius:10px}
-#searchForm .mst-combobox #mstFree{padding:7px 30px 7px 8px}
-#searchForm .mst-combobox #mstPickerToggle{width:27px!important;font-size:18px;right:4px}
+#searchForm .mst-combobox #mstFree{padding:7px 8px}
 #searchForm .password-wrap{padding:0}
 #searchForm .password-wrap input{padding:7px!important;min-width:0}
 #searchForm .password-wrap button{font-size:16px;padding:4px}
@@ -90,30 +89,38 @@ body{background:#090b10!important}
 
 @media (hover:hover) and (pointer:fine){#searchBtn:hover:not(:disabled){background:#16a34a!important;border-color:#22c55e!important;color:#fff!important;box-shadow:0 8px 20px rgba(22,163,74,.28)!important;transform:translateY(-2px)!important}}
 
-
-
-/* AutoTax V1.2.2 compact Lite */
-body{font-size:90%}
-.wrap{padding:10px 7px 32px}
-.search-card,.result-card{padding:11px!important;border-radius:14px!important}
-#searchForm .field>label{font-size:11.5px}
-#searchForm .mst-combobox input,#searchForm .password-wrap,#searchForm #gdtPassword{height:37px;min-height:37px;font-size:12.5px}
-#searchForm .autotax-kind-row{margin-top:3px;margin-bottom:1px}
-#searchForm .autotax-kind-row .check{padding:7px 6px;font-size:12px}
-#searchBtn{min-height:42px!important;height:42px!important;border-radius:22px!important;font-size:23.4px!important;margin-top:14px!important;gap:10px!important}
-#searchBtn span{font-size:30px!important;line-height:1}
-#searchStatusBox{margin-top:9px;padding:8px 10px;border:1px solid #244d71;border-radius:10px;background:#0d2233;color:#fff}
-#webTeamQuotaSummary{display:block;margin:0!important;color:#fff!important;font:800 11px/1.45 system-ui,sans-serif!important;white-space:normal}
+/* AutoTax V1.2.2 true 80% Lite scale */
+@supports (zoom:.8){
+  body{zoom:.8}
+}
+@supports not (zoom:.8){
+  body{transform:scale(.8);transform-origin:top left;width:125%}
+}
+#searchForm .mst-combobox,#searchForm .password-wrap{
+  height:41px!important;min-height:41px!important;
+}
+#searchForm .mst-combobox #mstFree,#searchForm .password-wrap #gdtPassword{
+  height:100%!important;min-height:0!important;
+}
+#searchForm .mst-combobox #mstFree{padding:7px 8px!important}
+#searchForm .password-wrap #gdtPassword{padding:7px!important}
+#searchBtn{
+  min-height:60px!important;height:auto!important;border-radius:30px!important;
+  font-size:16.4px!important;margin-top:30px!important;gap:10px!important;
+}
+#searchBtn span{font-size:20px!important;line-height:1!important}
+#webTeamQuotaSummary{
+  display:block;margin:8px 0 10px!important;padding:8px 10px!important;
+  border:1px solid #244d71;border-radius:10px;background:#0d2233;
+  color:#fff!important;font:800 11px/1.45 system-ui,sans-serif!important;white-space:normal;
+}
 #webTeamQuotaSummary[hidden]{display:none!important}
 #webTeamQuotaSummary .quota-line{display:block}
 #webTeamQuotaSummary .quota-mst-line::before{content:""}
 #webTeamQuotaSummary .quota-warning{display:block;margin-top:2px;color:#d2ecff;font-size:9.5px}
-#liteStatus{margin:4px 0 0!important;padding:0!important;border:0!important;background:transparent!important;min-height:18px!important;color:#d7efff!important;white-space:normal!important;font:700 10.5px/1.4 ui-monospace,monospace!important}
-#liteStatus:empty:before{content:"Sẵn sàng tra cứu";color:#b9dff8;font-weight:700}
-#liteResults th,#liteResults td{vertical-align:middle!important}
-#liteResults .lite-pdf{display:inline-flex;align-items:center;justify-content:center;margin:0!important;transform:translateY(-1px);min-height:26px;padding:4px 6px!important;font-size:9.5px!important}
-#liteResults .lite-pages button{padding:6px 8px;font-size:10.5px}
-@media(max-width:460px){
- #searchBtn{margin-top:12px!important;font-size:23.4px!important}
- #liteResults .lite-pdf{transform:translateY(-2px)}
+#liteStatus{
+  margin:5px 0 0!important;padding:0!important;border:0!important;background:transparent!important;
+  min-height:0!important;color:#d7efff!important;white-space:normal!important;
+  font:700 10.5px/1.4 ui-monospace,monospace!important;
 }
+#liteStatus:empty:before{content:""}

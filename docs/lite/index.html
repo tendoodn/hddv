@@ -3,6 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script id="autotax-lite-standalone-zoom-lock">
+(()=>{'use strict';
+ const standalone=window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
+ if(!standalone)return;
+ const viewport=document.querySelector('meta[name="viewport"]');
+ if(viewport)viewport.setAttribute('content','width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
+ document.documentElement.classList.add('autotax-lite-no-pinch');
+ const block=e=>{if((e.touches&&e.touches.length>1)||/^gesture/.test(e.type))e.preventDefault()};
+ document.addEventListener('touchmove',block,{passive:false});
+ document.addEventListener('gesturestart',block,{passive:false});
+ document.addEventListener('gesturechange',block,{passive:false});
+ document.addEventListener('gestureend',block,{passive:false});
+})();
+</script>
+<style id="autotax-lite-standalone-zoom-style">html.autotax-lite-no-pinch,html.autotax-lite-no-pinch body{touch-action:pan-x pan-y}</style>
 <meta name="theme-color" content="#09090b">
 <meta name="referrer" content="no-referrer">
 <style>.autotax-identity-hint{font-size:12px;line-height:1.5;color:#d1d5db;margin:8px 0 12px}.autotax-identity-hint strong{color:inherit}.autotax-identity-hint a{color:#fb7185;font-weight:700}</style>

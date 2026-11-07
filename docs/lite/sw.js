@@ -1,7 +1,7 @@
 /* AutoTax Lite PWA static accelerator v1.2.3.
    Cache only public static runtime assets. Never cache invoice/API responses,
    credentials, Supabase requests, GDT requests, or HTML navigation responses. */
-const STATIC_CACHE='autotax-lite-static-v125-mst1';
+const STATIC_CACHE='autotax-lite-static-v125-mst2';
 const STATIC_ASSETS=[
  '/web/web.css?v=125',
  '/lite/lite.css?v=125',
@@ -13,7 +13,7 @@ const STATIC_ASSETS=[
  '/web/hddt-api.js?v=20261106xmlfull2',
  '/mst-sync.js?v=118',
  '/team-shared-v119.js?v=20261106teamsync',
- '/web/vault.js?v=20261107mstlist125a',
+ '/web/vault.js?v=20261107mstlist125b',
  '/web/invoice-cache-v120.js?v=20261107cache30',
  '/web/date-slide-picker.js?v=1122b',
  '/web/web.js?v=20261107mstlist125a',

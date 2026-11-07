@@ -169,6 +169,12 @@ body .topbar a.logo span,body header .brand span{font-size:7.5px!important;line-
 body .topbar a.logo img,body header .brand img{width:43px!important;height:43px!important;max-width:none!important;max-height:none!important;object-fit:contain!important}
 body .topbar a.logo span,body header .brand span{font-size:50%!important;line-height:1.15!important;font-weight:800!important}
 @media(max-width:600px){body .topbar a.logo img,body header .brand img{width:36px!important;height:36px!important}}
+</style><style id="autotax-login-layout-v121">
+html.autotax-auth-gated #webLoginDialog{display:block!important;position:static!important;inset:auto!important;transform:none!important;margin:18px 0 24px!important;width:100%!important;max-width:none!important;max-height:none!important;box-sizing:border-box!important;overflow:visible!important}
+html.autotax-auth-gated #webLoginDialog #webLoginForm{width:100%!important;max-width:none!important;box-sizing:border-box!important}
+html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>button,html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a{min-width:0!important;width:100%!important;box-sizing:border-box!important;display:flex;align-items:center;justify-content:center;text-align:center}
+@media(max-width:650px){html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head>
 <body>
 <style>
@@ -198,6 +204,17 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
     <p class="autotax-independence">AutoTax là công cụ độc lập hỗ trợ tra cứu; không phải website hay ứng dụng chính thức của cơ quan Thuế.</p>
     
   </header>
+<dialog id="webLoginDialog" class="web-account-dialog" aria-labelledby="webLoginTitle">
+ <form id="webLoginForm">
+  <div class="web-dialog-head"><h2 id="webLoginTitle">Đăng nhập AutoTax</h2><button type="button" data-web-close="webLoginDialog" aria-label="Đóng">✕</button></div>
+  <p class="autotax-identity-hint" role="note">Tài khoản này thuộc <strong>AutoTax – tracuuhoadon.top</strong>, không phải tài khoản Gmail hay cổng Thuế. <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a>.</p>
+  <label for="webLoginEmail">User đăng nhập hoặc Email</label><input id="webLoginEmail" type="text" inputmode="email" autocomplete="username" placeholder="username hoặc email@gmail.com" required>
+  <label for="webLoginPassword">Mật khẩu AutoTax (không phải mật khẩu Gmail)</label><input id="webLoginPassword" type="password" autocomplete="current-password" required>
+  <p id="webLoginStatus" class="web-dialog-status" hidden role="status"></p>
+  <div class="autotax-login-actions-grid"><button id="webLoginSubmit" type="submit">Đăng nhập</button><button id="webLoginToSignup" type="button" class="outline">Tạo tài khoản</button>
+  <button id="webLoginToForgot" type="button" class="outline">Quên mật khẩu</button><a href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer" class="web-dialog-button">Admin cấp lại mật khẩu</a></div>
+ </form>
+</dialog>
   <section class="search-card" aria-label="Tra cứu hóa đơn điện tử">
     <div class="account-line">
       <div id="webAccountModeSlot">
@@ -488,17 +505,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script>window.__autotaxRecoveryFromUrl=/type=recovery/.test(location.hash+location.search);</script>
 
 <!-- Account flows are accessible without leaving AutoTax Web. -->
-<dialog id="webLoginDialog" class="web-account-dialog" aria-labelledby="webLoginTitle">
- <form id="webLoginForm">
-  <div class="web-dialog-head"><h2 id="webLoginTitle">Đăng nhập AutoTax</h2><button type="button" data-web-close="webLoginDialog" aria-label="Đóng">✕</button></div>
-  <p class="autotax-identity-hint" role="note">Tài khoản này thuộc <strong>AutoTax – tracuuhoadon.top</strong>, không phải tài khoản Gmail hay cổng Thuế. <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a>.</p>
-  <label for="webLoginEmail">User đăng nhập hoặc Email</label><input id="webLoginEmail" type="text" inputmode="email" autocomplete="username" placeholder="username hoặc email@gmail.com" required>
-  <label for="webLoginPassword">Mật khẩu AutoTax (không phải mật khẩu Gmail)</label><input id="webLoginPassword" type="password" autocomplete="current-password" required>
-  <p id="webLoginStatus" class="web-dialog-status" hidden role="status"></p>
-  <div class="web-dialog-actions"><button id="webLoginSubmit" type="submit">Đăng nhập</button><button id="webLoginToSignup" type="button" class="outline">Tạo tài khoản</button></div>
-  <div class="web-dialog-actions"><button id="webLoginToForgot" type="button" class="outline">Quên mật khẩu</button><a href="https://zalo.me/0868838242" target="_blank" rel="noopener noreferrer" class="web-dialog-button">Admin cấp lại mật khẩu</a></div>
- </form>
-</dialog>
+
 <dialog id="webSignupDialog" class="web-account-dialog" aria-labelledby="webSignupTitle">
  <form id="webSignupForm">
   <div class="web-dialog-head"><h2 id="webSignupTitle">Tạo tài khoản AutoTax</h2><button type="button" data-web-close="webSignupDialog" aria-label="Đóng">✕</button></div>

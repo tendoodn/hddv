@@ -67,12 +67,12 @@ window.addEventListener('message',event=>{
 });
 client.auth.onAuthStateChange((event,session)=>{
  queueMicrotask(()=>{
-  if(applying)return;
+  if(!resolved||applying)return;
   if(['SIGNED_IN','TOKEN_REFRESHED','USER_UPDATED'].includes(event)&&session)
    pushState('signed_in',session,Date.now());
   else if(event==='SIGNED_OUT')pushState('signed_out',null,Date.now());
  });
 });
 post('pull');
-setTimeout(finish,450);
+setTimeout(finish,250);
 })();

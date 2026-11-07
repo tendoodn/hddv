@@ -1,0 +1,43 @@
+name: Build AutoTax PDF complete offline ZIP packages
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-autotax-pdf-offline.yml"
+      - "tools/pdf-offline/**"
+      - "docs/pdf/offline.html"
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Bundle local PDF, OCR libraries and language data
+        run: bash tools/pdf-offline/build.sh
+      - name: Upload both ZIP archives as GitHub Actions artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoTax-PDF-Offline-Packages
+          if-no-files-found: error
+          path: |
+            dist-pdf/AutoTax-PDF-HTML-Offline.zip
+            dist-pdf/AutoTax-PDF-Linux-LAN.zip
+      - name: Publish downloadable GitHub release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="autotax-pdf-offline-20261107"
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "AutoTax PDF Offline - HTML + Linux LAN (2026-11-07)" --notes "Two complete offline builds; bundled PDF.js, pdf-lib, Tesseract.js, WASM, and OCR vie+eng. No Internet is required after extraction."
+          fi
+          gh release upload "$TAG" \
+            "dist-pdf/AutoTax-PDF-HTML-Offline.zip" \
+            "dist-pdf/AutoTax-PDF-Linux-LAN.zip" \
+            --clobber --repo "$GITHUB_REPOSITORY"

@@ -14,7 +14,7 @@
   if(/invalid_credentials|invalid login credentials|invalid password|wrong password|incorrect password/.test(str))return 'Sai mật khẩu.';
   if(/email_not_confirmed|email not confirmed/.test(str))return 'Email chưa được xác minh. Vui lòng kiểm tra hộp thư.';
   if(/user_not_found|user not found/.test(str))return 'Không tìm thấy tài khoản.';
-  if(/weak_password|password should|password is too short|password must/.test(str))return 'Mật khẩu phải đủ mạnh và có ít nhất 10 ký tự.';
+  if(/weak_password|password should|password is too short|password must/.test(str))return 'Mật khẩu phải đủ mạnh và có ít nhất 8 ký tự.';
   if(/over_email_send_rate_limit|email rate limit/.test(str))return 'Bạn đã yêu cầu gửi email quá nhiều lần. Vui lòng thử lại sau.';
   if(/over_request_rate_limit|too many requests|rate limit/.test(str))return 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau.';
   if(/signup_disabled|signups not allowed/.test(str))return 'Hệ thống đang tạm ngừng đăng ký tài khoản.';
@@ -42,7 +42,7 @@
  function validateSignup({name,email,password,confirmPassword}){
   if(normalizeName(name).length<2||normalizeName(name).length>100)return 'Tên người dùng phải từ 2 đến 100 ký tự.';
   if(!validEmail(email))return 'Chỉ hỗ trợ đăng ký bằng Gmail, Hotmail hoặc Yahoo Mail.';
-  if(String(password||'').length<10||String(password||'').length>128)return 'Mật khẩu phải từ 10 đến 128 ký tự.';
+  if(String(password||'').length<8||String(password||'').length>128)return 'Mật khẩu phải từ 8 đến 128 ký tự.';
   if(confirmPassword!==undefined&&password!==confirmPassword)return 'Hai lần nhập mật khẩu không khớp.';
   return '';
  }

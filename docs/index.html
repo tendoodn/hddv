@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" class="autotax-auth-gated">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -11,7 +11,7 @@
 <link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
-<title>AutoTax V1.2.0 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF</title>
+<title>AutoTax V1.2.1 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF</title>
 <link rel="canonical" href="https://tracuuhoadon.top/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="author" content="AutoTax">
@@ -19,10 +19,10 @@
 <meta property="og:site_name" content="AutoTax">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:locale" content="vi_VN">
-<meta name="twitter:title" content="AutoTax V1.2.0 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF">
+<meta name="twitter:title" content="AutoTax V1.2.1 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF">
 <meta name="twitter:description" content="Tra cứu hóa đơn điện tử mua vào, bán ra theo MST và khoảng ngày. Xem PDF hóa đơn, tổng hợp thuế, xuất Excel/XML và dùng AutoTax Lite trên điện thoại.">
 <meta property="og:locale:alternate" content="en_US">
-<meta property="og:title" content="AutoTax V1.2.0 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF">
+<meta property="og:title" content="AutoTax V1.2.1 – Tra cứu hóa đơn điện tử mua vào, bán ra và xem PDF">
 <meta property="og:description" content="Tra cứu hóa đơn điện tử mua vào, bán ra theo MST và khoảng ngày. Xem PDF hóa đơn, tổng hợp thuế, xuất Excel/XML và dùng AutoTax Lite trên điện thoại.">
 <meta property="og:url" content="https://tracuuhoadon.top/">
 <meta property="og:image" content="https://tracuuhoadon.top/apple-touch-icon.png">
@@ -148,7 +148,14 @@
 html:not([data-autotax-signed-in="true"]) #webModeControls{display:none!important}
 </style>
 <script defer src="/extension-link-v120.js?v=20261107final120"></script>
-</head>
+<style id="autotax-v121-auth-gate">
+html.autotax-auth-gated body > :not(#webLoginDialog):not(dialog):not(script):not(style){display:none!important}
+html.autotax-auth-gated body{min-height:100dvh;margin:0!important;padding:24px 12px!important;display:block!important;background:#18191f}
+html.autotax-auth-gated #webLoginDialog{display:block!important;position:relative!important;inset:auto!important;transform:none!important;margin:0 auto!important;max-width:520px!important;width:100%!important;max-height:none!important;overflow:visible!important;box-sizing:border-box!important}
+html.autotax-auth-gated #webLoginDialog::backdrop{display:none!important}
+html.autotax-auth-gated #webLoginDialog [data-web-close]{display:none!important}
+html.autotax-auth-gated #webLoginOpen{display:none!important}
+</style></head>
 <body>
 <style>
 #autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}

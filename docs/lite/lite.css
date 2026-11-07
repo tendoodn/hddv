@@ -87,8 +87,8 @@ body{background:#090b10!important}
 
 /* Mobile MST drawer uses the viewport, never the half-width MST input column. */
 @media(max-width:700px){
- #mstPickerMenu:not([hidden]){position:fixed!important;left:max(8px,env(safe-area-inset-left))!important;right:max(8px,env(safe-area-inset-right))!important;top:var(--lite-picker-top,145px)!important;width:auto!important;max-width:none!important;min-width:0!important;max-height:min(58dvh,390px)!important;overflow-y:auto!important;z-index:10020!important;box-sizing:border-box!important;box-shadow:0 18px 60px #000d!important;background:#111b29!important}
- #mstPickerMenu .mst-picker-card{min-width:0!important;flex-wrap:nowrap!important}
+ #mstPickerMenu:not([hidden]){position:fixed!important;left:max(8px,env(safe-area-inset-left))!important;right:max(8px,env(safe-area-inset-right))!important;top:var(--lite-picker-top,145px)!important;width:auto!important;max-width:none!important;min-width:0!important;max-height:min(214px,48dvh)!important;overflow-y:auto!important;overscroll-behavior:contain!important;z-index:10020!important;box-sizing:border-box!important;box-shadow:0 18px 60px #000d!important;background:#111b29!important}
+ #mstPickerMenu .mst-picker-card{min-width:0!important;min-height:64px!important;flex-wrap:nowrap!important}
  #mstPickerMenu .mst-picker-choice{min-width:0!important;flex:1!important}
  #mstPickerMenu .mst-picker-choice strong,#mstPickerMenu .mst-picker-choice small{white-space:normal!important;overflow-wrap:anywhere!important}
 }

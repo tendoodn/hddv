@@ -123,7 +123,25 @@ body .topbar a.logo span,body header .brand span{font-size:50%!important;line-he
 <header><div class="brand"><img src="/favicon.svg" alt="" width="34" height="34">AUTOTAX <span>V1.2.2 · ADMIN</span></div><div class="actions"><a href="/user" class="secondary admin-nav-pill">← Cổng khách hàng</a><a href="#adminDiscountCodes" class="secondary admin-nav-pill">Mã giảm giá</a><button id="logout" class="secondary">Đăng xuất</button></div></header>
 <div id="adminSessionPending" class="panel" role="status" aria-live="polite" hidden>Đang kết nối trang quản trị…</div>
 <!-- Admin login removed: sign in from the main Web. -->
-<section id="app" class="hidden">
+<section id="app" class="hidden"><section id="adminHddtProducts" class="panel">
+ <div class="row"><div><h2>Cấu hình giá &amp; sản phẩm HĐĐT</h2><p class="sub">Sản phẩm hiển thị tại /hddt. Mỗi dòng một sản phẩm; ghi chú trong bảng chỉ rút gọn 3–4 từ, nội dung đầy đủ mở bằng nút Sửa.</p></div><div class="actions"><button id="hddtProductAdd" type="button">+ Thêm sản phẩm</button><button id="hddtProductReload" type="button" class="secondary">Làm mới</button></div></div>
+ <p id="hddtProductAdminStatus" class="notice" role="status"></p>
+ <div class="tablewrap"><table><thead><tr><th>Hình ảnh</th><th>Tên sản phẩm</th><th>Giá bán</th><th>Ghi chú</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="hddtProductAdminRows"><tr><td colspan="6">Đang tải…</td></tr></tbody></table></div>
+</section>
+<dialog id="hddtProductDialog" aria-labelledby="hddtProductDialogTitle" style="width:min(620px,calc(100vw - 24px));border:1px solid #e5e7eb;border-radius:14px;padding:20px">
+ <form id="hddtProductForm">
+  <div class="row"><h2 id="hddtProductDialogTitle">Thêm sản phẩm</h2><button id="hddtProductClose" class="secondary" type="button" aria-label="Đóng">✕</button></div>
+  <label style="display:block;margin:9px 0">Hình ảnh <input id="hddtProductImage" type="file" accept="image/*" style="display:block;width:100%;margin-top:5px"></label>
+  <img id="hddtProductImagePreview" alt="Xem trước sản phẩm" hidden style="width:160px;height:110px;object-fit:contain;background:#f8fafc;border-radius:9px">
+  <label style="display:block;margin:9px 0">Tên sản phẩm <input id="hddtProductName" type="text" maxlength="160" required style="display:block;width:100%;margin-top:5px"></label>
+  <label style="display:block;margin:9px 0">Giá bán <input id="hddtProductPrice" type="number" min="0" step="1" required style="display:block;width:100%;margin-top:5px"></label>
+  <label style="display:block;margin:9px 0">Thông tin sản phẩm / CẤU HÌNH CHI TIẾT <textarea id="hddtProductDetails" rows="7" maxlength="6000" style="display:block;width:100%;margin-top:5px"></textarea></label>
+  <div class="row"><label>Thứ tự <input id="hddtProductSort" type="number" value="0" step="1"></label><label><input id="hddtProductActive" type="checkbox" checked> Hiển thị sản phẩm</label></div>
+  <p id="hddtProductFormStatus" class="notice" role="status"></p>
+  <div class="actions"><button id="hddtProductSave" type="submit">Lưu</button><button id="hddtProductCancel" type="button" class="secondary">Đóng</button></div>
+ </form>
+</dialog>
+
 <div class="panel" id="customerPanel"><div class="row"><h2>Quản lý khách hàng</h2><button id="reload" hidden aria-hidden="true">Làm mới</button></div><div class="row admin-filter-row">
 <input id="search" placeholder="Tìm theo email..." type="search" aria-label="Tìm email khách hàng">
 <input id="customerMstSearch" placeholder="Tìm MST khách hàng..." type="search" aria-label="Tìm MST khách hàng" inputmode="numeric">
@@ -965,6 +983,7 @@ client.auth.onAuthStateChange((event,session)=>{
 });
 void bootOnce();
 </script>
+<script src="./admin-hddt-products-v122.js?v=1220"></script>
 <script src="./admin-discounts-v119.js?v=1"></script>
 <script src="./admin-mode-v120.js?v=1120fix3"></script>
 <script src="./admin-feedback.js?v=116"></script>

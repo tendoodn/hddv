@@ -468,7 +468,7 @@ function openCropEditor(rec,side){
    const canvas=document.createElement('canvas');canvas.width=sw;canvas.height=sh;
    const ctx=canvas.getContext('2d');if(lightScanOn)ctx.filter='brightness(1.12) contrast(1.04)';ctx.drawImage(original,sx,sy,sw,sh,0,0,sw,sh);
    // Save actual cropped pixels, not just coordinates. PDF and previews use this image.
-   const cropped=canvas.toDataURL('image/jpeg',.94);
+   const cropped=mode==='makepdf'?canvas.toDataURL('image/png'):canvas.toDataURL('image/jpeg',.94);
    rec[side]=cropped;
    rec.cropRects={[side]:[0,0,0,0]};rec.cropMode='manual';
    if(typeof rec.onCropSaved==='function')rec.onCropSaved();
@@ -775,9 +775,9 @@ async function exportProcessedImage(r,ri,index){
   canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
   const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';
   ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0);
-  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.94));
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
   if(!blob)throw Error('Không thể tạo ảnh tải về.');
-  downloadBlob(blob,compactPdfName(r.name||'tailieupdf')+'_to'+String(index+1).padStart(2,'0')+'.jpg');
+  downloadBlob(blob,compactPdfName(r.name||'tailieupdf')+'_to'+String(index+1).padStart(2,'0')+'.png');
  }catch(error){console.error(error);alert('Lỗi tải ảnh: '+error.message)}
 }
 
@@ -886,7 +886,17 @@ for(let i=0;i<r.images.length;i++){
   (mode==='cccd'?card._faces:card._pages).append(block);
 }
 if(mode==='docs'||mode==='makepdf'){const more=document.createElement('button');more.className='secondary';more.textContent='+ Thêm tờ giấy';more.onclick=()=>addPage(r);card.append(more)}const single=document.createElement('button');single.textContent=mode==='makepdf'?'↓ Tải PDF hoàn chỉnh':'Tải PDF hồ sơ này';single.style.margin='8px 0 0';single.onclick=()=>exportSingle(r,ri);(mode==='cccd'?card._info:card).append(single);root.append(card);
-if(mode==='cccd'){const sh=mkSheet(),top=document.createElement('div'),bottom=document.createElement('div');top.className='cc-row';bottom.className='cc-row bottom';for(const obj of r.images){top.append(mkImage(obj));bottom.append(mkImage(obj,true))}const sig=new Image();sig.src=SIGN;sig.className='cc-sign';sh.append(top,sig,bottom);pv.append(sh);queuePreviewFit(top,bottom,r.images,gen)}else if(mode==='makepdf'){for(const obj of r.images){const sh=mkSheet();if(((obj.pageOrientationOverride&&obj.pageOrientationOverride!=='auto')?obj.pageOrientationOverride:(obj.orientation||'portrait'))==='landscape'){sh.classList.add('sheet-landscape')}if(obj.data){const im=mkImage(obj);im.className='doc-image';sh.append(im)}pv.append(sh)}}else{for(const mono of [false,true])for(const obj of r.images){const sh=mkSheet();if(obj.data){const im=mkImage(obj,mono);im.className='doc-image';sh.append(im)}if(mono){const sig=new Image();sig.src=SIGN;sig.className='doc-sign';sh.append(sig)}pv.append(sh)}}}scalePreview()}
+if(mode==='cccd'){const sh=mkSheet(),top=document.createElement('div'),bottom=document.createElement('div');top.className='cc-row';bottom.className='cc-row bottom';for(const obj of r.images){top.append(mkImage(obj));bottom.append(mkImage(obj,true))}const sig=new Image();sig.src=SIGN;sig.className='cc-sign';sh.append(top,sig,bottom);pv.append(sh);queuePreviewFit(top,bottom,r.images,gen)}else if(mode==='makepdf'){for(const obj of r.images){
+ const sh=mkSheet();
+ const selected=(obj.pageOrientationOverride&&obj.pageOrientationOverride!=='auto')?obj.pageOrientationOverride:(obj.orientation||'portrait');
+ const wide=selected==='landscape';
+ if(wide)sh.classList.add('sheet-landscape');
+ let paperW=obj.pageWidthPt||(wide?841.89:595.28),paperH=obj.pageHeightPt||(wide?595.28:841.89);
+ if((paperW>paperH)!==wide)[paperW,paperH]=[paperH,paperW];
+ sh.style.width=paperW+'px';sh.style.height=paperH+'px';sh.dataset.pageW=String(paperW);sh.dataset.pageH=String(paperH);
+ if(obj.data){const im=mkImage(obj);im.className='doc-image';im.style.left='0';im.style.top='0';im.style.width='100%';im.style.height='100%';im.style.objectFit='contain';sh.append(im)}
+ pv.append(sh)
+ }}else{for(const mono of [false,true])for(const obj of r.images){const sh=mkSheet();if(obj.data){const im=mkImage(obj,mono);im.className='doc-image';sh.append(im)}if(mono){const sig=new Image();sig.src=SIGN;sig.className='doc-sign';sh.append(sig)}pv.append(sh)}}}scalePreview()}
 
 
 
@@ -906,7 +916,7 @@ async function fitPreviewPair(row,objects,gen){
   [...row.children].forEach(im=>{im.style.width=w+'px';im.style.height=h+'px';im.style.flex='0 0 '+w+'px';im.style.objectFit='fill';im.style.margin='0';im.style.padding='0'});
  }catch(e){console.warn(e)}
 }
-function scalePreview(){const area=$('preview');if(!area)return;for(const el of area.querySelectorAll('.sheet')){const landscape=el.classList.contains('sheet-landscape'),w=landscape?842:595,h=landscape?595:842,scale=Math.min(1,(area.clientWidth-8)/w);el.style.transformOrigin='top center';el.style.transform=`scale(${scale})`;el.style.marginBottom=`${h*(scale-1)+14}px`}}window.addEventListener('resize',scalePreview);
+function scalePreview(){const area=$('preview');if(!area)return;for(const el of area.querySelectorAll('.sheet')){const landscape=el.classList.contains('sheet-landscape'),w=Number(el.dataset.pageW)||(landscape?842:595),h=Number(el.dataset.pageH)||(landscape?595:842),scale=Math.min(1,(area.clientWidth-8)/w);el.style.transformOrigin='top center';el.style.transform=`scale(${scale})`;el.style.marginBottom=`${h*(scale-1)+14}px`}}window.addEventListener('resize',scalePreview);
 $('batch').onchange=async e=>{const files=[...e.target.files];if(mode==='cccd'){for(let i=0;i<files.length;i+=2)addRecord([await url(files[i]),files[i+1]?await url(files[i+1]):null])}else {if(files.length)addRecord(await Promise.all(files.map(url)))}e.target.value=''};
 $('pdfBatch').onchange=async e=>{const files=[...(e.target.files||[])];e.target.value='';await importPdfBatch(files)};
 $('createPdfInput').onchange=async e=>{const files=[...(e.target.files||[])];e.target.value='';await importCreateFiles(files)};

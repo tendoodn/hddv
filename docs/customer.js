@@ -215,7 +215,7 @@ async function refresh(){
     ({data:userResult,error:userError}=await client.auth.getUser());
   }
   if(userError)throw userError;
-  if(!signedIn){location.replace('/');return;}
+  if(!signedIn){location.replace('/404.html');return;}
   if(!userResult?.user)throw Error('Chưa xác minh được tài khoản. Vui lòng thử lại.');
   if(userResult.user.id!==session.user.id)throw Error('Tài khoản đã thay đổi trong lúc đồng bộ. Vui lòng tải lại thông tin.');
   const forceChange=!!(userResult?.user||session?.user)?.app_metadata?.autotax_force_password_change;

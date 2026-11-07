@@ -20,7 +20,7 @@ assert.match(customer,/p_order_id:result\.order\.order_id/);
 assert.match(customer,/purchaseMode:paymentOrder\.purchaseMode/);
 assert.match(customer,/mst\.expiring_quantity/);
 assert.match(customer,/Math\.max\(0,quantity-renew\)/);
-assert.match(user,/customer\.js\?v=20261107mstmodes122/);
+assert.match(user,/customer\.js\?v=20261107paidgreen5s/);
 assert.match(user,/release-notice-v128\.js\?v=1200/,'Existing release notice must remain unchanged.');
 assert.match(demo,/<meta name="robots" content="noindex,nofollow">/);
 assert.match(demo,/<link rel="stylesheet" href="\.\/panel\.css\?v=1206">/);

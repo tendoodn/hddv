@@ -235,7 +235,7 @@ $('webProfileForm').addEventListener('submit',async e=>{
  const oldPass=$('webProfileOld').value,newPass=$('webProfileNew').value;
  if(name.length<2||name.length>100)return message('webProfileStatus','Tên từ 2 đến 100 ký tự.',true);
  if(Boolean(oldPass)!==Boolean(newPass))return message('webProfileStatus','Đổi mật khẩu phải nhập cả mật khẩu cũ và mới.',true);
- if(newPass&&newPass.length<10)return message('webProfileStatus','Mật khẩu mới ít nhất 10 ký tự.',true);
+ if(newPass&&newPass.length<8)return message('webProfileStatus','Mật khẩu mới ít nhất 8 ký tự.',true);
  btn.disabled=true;
  try{
   if(newPass){const {error}=await client.auth.signInWithPassword({email:account.email,password:oldPass});if(error)throw Error('Mật khẩu cũ không đúng.');}
@@ -279,7 +279,7 @@ $('webLogout').addEventListener('click',async()=>{
 $('webNewPasswordForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const pass=$('webNewPassword').value,confirm=$('webNewPasswordConfirm').value,btn=$('webNewPasswordSave');
- if(pass.length<10||pass.length>128)return message('webNewPasswordStatus','Mật khẩu mới phải từ 10 đến 128 ký tự.',true);
+ if(pass.length<8||pass.length>128)return message('webNewPasswordStatus','Mật khẩu mới phải từ 8 đến 128 ký tự.',true);
  if(pass!==confirm)return message('webNewPasswordStatus','Hai lần nhập mật khẩu chưa khớp.',true);
  if(account?.app_metadata?.autotax_force_password_change&&pass==='000000')
   return message('webNewPasswordStatus','Không được sử dụng lại mật khẩu tạm.',true);

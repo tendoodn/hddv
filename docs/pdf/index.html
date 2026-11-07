@@ -847,7 +847,7 @@ for(let i=0;i<r.images.length;i++){
   crop.textContent='✂ Chọn vùng cắt';crop.disabled=!obj.data;crop.onclick=()=>cropOne(obj);cb.append(crop);
   if(obj.cropRects?.front){const ok=document.createElement('span');ok.className='status';ok.textContent='✓ Đã lưu vùng cắt';cb.append(ok)}
   if(mode!=='cccd'&&r.images.length>1){const rem=document.createElement('button');rem.className='danger';rem.textContent='Xóa tờ này';rem.onclick=()=>removePage(r,i);cb.append(rem)}
-  if(mode==='makepdf'&&r.images.length>1){
+  if(mode==='makepdf'){
    const order=document.createElement('div');order.className='page-order-actions';
    for(const [symbol,offset] of [['↑',-1],['↓',1]]){
     const b=document.createElement('button');b.type='button';b.className='secondary';

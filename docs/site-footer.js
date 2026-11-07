@@ -1,12 +1,11 @@
-/* AutoTax 1.1.8 – public contact footer managed by AutoTax Admin. */
+/* AutoTax 1.2.2 – public contact footer. */
 (()=>{
  'use strict';
  const ENDPOINT='https://ucqqjdsoyvvaxswzbhaw.supabase.co/rest/v1/addon_site_links_v118';
  const APIKEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
  const defaults=[
   {label:'Thiết bị & Dịch vụ HĐĐT Viettel',url:'https://tracuuhoadon.top/baogia/'},
-  {label:'Gói và gia hạn AutoTax',url:'https://tracuuhoadon.top/user/#planSection'},
-  {label:'Trang tính K',url:'https://tracuuhoadon.top/k'},
+  {label:'Gói AutoTax',url:'https://tracuuhoadon.top/user/#planSection'},
   {label:'Công cụ PDF',url:'https://tracuuhoadon.top/pdf/'},
   {label:'Tra cứu hóa đơn Web',url:'https://tracuuhoadon.top/'}
  ];

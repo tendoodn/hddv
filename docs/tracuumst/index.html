@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="canonical" href="https://tracuuhoadon.top/tracuumst/"><meta name="description" content="AutoTax tra cứu mã số thuế 10 số, chi nhánh 13 số và định danh 12 số, tổng hợp danh sách MST để đối chiếu và xác minh.">
+<link rel="icon" type="image/x-icon" href="./favicon.ico?v=20261102b">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261102b">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20261102b">
+<title>Tra cứu mã số thuế hàng loạt · Tendoo AutoTax</title>
+<link rel="stylesheet" href="./web/web.css?v=8">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090909;color:#e7e7e9;font-family:Inter,system-ui,Arial,sans-serif}
+.mst-shell{max-width:1840px;margin:0 auto;padding:22px}
+.mst-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.mst-head a{color:#b2b2bd;font-size:13px;text-decoration:none}.mst-head strong{color:#fff}
+.mst-layout{display:grid;grid-template-columns:minmax(280px,.78fr) minmax(0,1.65fr);gap:20px;align-items:start}
+.mst-panel{background:#111;border:1px solid #303035;border-radius:17px;padding:26px;min-width:0}
+.mst-panel h1,.mst-panel h2{font-size:24px;margin:0 0 8px;line-height:1.3}
+.mst-panel p{font-size:13px;color:#9c9ca4;line-height:1.55;margin:0 0 29px}
+.mst-label{font-size:11px;text-transform:uppercase;color:#a7a7ad;font-weight:800;letter-spacing:.04em}
+.mst-count{float:right;color:#579aff;font-size:12px;font-weight:750}
+.mst-panel textarea{width:100%;margin:10px 0 14px;border:1px solid #323239;border-radius:9px;padding:15px;resize:vertical;min-height:130px;background:#19191b;color:#fff;font:600 16px/1.5 system-ui}
+.mst-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #3a3a40;border-radius:9px;background:#1b1b1e;color:#fff;cursor:pointer;padding:12px 15px;font-weight:750;font-size:14px;min-height:45px}
+.mst-button:disabled{opacity:.5;cursor:wait}.mst-button.primary{background:#232326;width:100%;margin:12px 0}.mst-button.secondary{color:#83b6ff}
+.mst-note{font-size:12px!important;color:#a3a3ad!important;margin-top:12px!important;margin-bottom:0!important}
+.mst-title-line{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.mst-progress-top{font-weight:750;font-size:14px;margin-top:36px;display:flex;justify-content:space-between}
+.mst-track{height:12px;border-radius:99px;background:#25252c;overflow:hidden;margin-top:12px}
+.mst-fill{background:#00cc88;width:0%;height:100%;border-radius:99px;transition:width .23s}
+.mst-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:28px 0 37px}
+.mst-stat{border:1px solid #343439;border-radius:15px;background:#0b0b0d;text-align:center;padding:16px 8px}
+.mst-stat strong{font-size:32px;font-variant-numeric:tabular-nums;display:block;color:#fff}
+.mst-stat span{color:#9f9fa7;font-size:12px}.mst-stat.pending strong{color:#6599ff}.mst-stat.success strong{color:#03c783}.mst-stat.failed strong{color:#ff4273}
+.mst-list-head{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:20px}
+.mst-list-head strong{font-size:14px;color:#b7b7bf}
+.mst-list-head label{font-size:12px;color:#aaa;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.mst-list-head select{background:#19191b;border:1px solid #323239;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;min-width:185px}
+.mst-table-wrap{overflow-x:auto;max-height:560px;border:1px solid #343438;border-radius:12px}
+.mst-table{width:100%;min-width:880px;border-collapse:collapse;font-size:13px}
+.mst-table th{text-align:left;color:#f6f6f7;background:#1b1b1c;font-weight:750;padding:14px 12px;white-space:nowrap;position:sticky;top:0}
+.mst-table td{padding:14px 12px;border-top:1px solid #313136;vertical-align:middle}
+.mst-table td:nth-child(2){font-weight:750}
+.mst-entity{font-weight:750;color:#f3f3f5}.mst-address{font-size:12px;color:#a1a1a9;margin-top:5px;max-width:380px}
+.mst-kind{font-size:10px;color:#bbb;background:#29292d;border-radius:4px;padding:3px 6px;margin-bottom:7px;display:inline-block}
+.mst-pill{display:inline-flex;gap:5px;align-items:center;white-space:nowrap;border-radius:99px;padding:6px 10px;border:1px solid #41414a;color:#d1d1d8;background:#202025;font-weight:700;font-size:11px}
+.mst-pill.ok{color:#00c48b;border-color:#145541;background:#09251d}.mst-pill.error{color:#ff86a5;border-color:#774051;background:#30151f}
+.mst-progress-note{white-space:pre-wrap;color:#bbb;line-height:1.5;font-size:12px;min-height:20px;margin:14px 0}
+.mst-source{color:#a5a5ae;font-size:11px}.mst-foot{color:#a4a4af;font-size:11px;margin:17px 0 0;line-height:1.6}
+.mst-empty{padding:25px;text-align:center;color:#999}
+.mst-personal-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.mst-personal-actions a{color:#88baff;text-decoration:underline;font-size:12px}
+.mst-personal-copy{border:1px solid #44445a;background:#232331;color:#ececf3;border-radius:7px;min-height:32px;padding:5px 9px;cursor:pointer;font-size:12px}
+.mst-personal-copy:hover{border-color:#88baff}
+.mst-official-dialog{width:min(680px,calc(100% - 24px));max-height:88vh;overflow-y:auto;margin:auto;padding:24px;border:1px solid #41414c;border-radius:16px;background:#161619;color:#f2f2f6;box-shadow:0 20px 70px #000b}
+.mst-official-dialog::backdrop{background:#000b}
+.mst-official-dialog h2{font-size:20px;margin:0 0 10px}
+.mst-official-dialog p{font-size:13px;line-height:1.6;color:#b8b8c3}
+.mst-official-dialog label{display:block;margin:13px 0 6px;font-size:12px;color:#c8c8d4;font-weight:700}
+.mst-official-dialog textarea,.mst-official-dialog select,.mst-official-dialog input:not([type=checkbox]){display:block;width:100%;border:1px solid #484854;border-radius:8px;background:#202026;color:#f5f5fa;padding:10px;font:14px/1.45 system-ui}
+.mst-official-dialog textarea{min-height:82px;resize:vertical}
+.mst-official-dialog .mst-official-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.mst-official-dialog .mst-official-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.mst-official-dialog .mst-official-actions button,.mst-official-dialog .mst-official-actions a{border:1px solid #595966;background:#252531;color:#f7f7ff;padding:9px 13px;border-radius:8px;text-decoration:none;cursor:pointer;font:600 13px system-ui}
+.mst-official-dialog .mst-official-actions button:disabled{opacity:.45;cursor:not-allowed}
+.mst-official-dialog .mst-official-confirm{display:flex;gap:10px;align-items:flex-start}
+.mst-official-dialog .mst-official-confirm input{margin-top:4px}
+.mst-official-dialog .mst-official-confirm span{font-weight:400;line-height:1.5}
+@media(max-width:610px){.mst-official-dialog{padding:14px}.mst-official-dialog .mst-official-fields{grid-template-columns:1fr}}
+
+
+@media(max-width:1100px){.mst-layout{grid-template-columns:1fr}.mst-panel{padding:19px}}
+@media(max-width:610px){.mst-shell{padding:12px}.mst-panel h1,.mst-panel h2{font-size:21px}.mst-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:18px 0}.mst-stat strong{font-size:25px}.mst-button.secondary{width:100%}}
+</style></head><body>
+<main class="mst-shell">
+ <p style="margin:0 0 12px;color:#b8e3d8;font-size:12px">AutoTax / Tra cứu mã số thuế — hỗ trợ MST 10 số, chi nhánh dạng 10-001 và định danh 12 chữ số. Đối chiếu trên cổng chính thức khi cần xác nhận.</p>
+ <div class="mst-head"><a href="/"><strong>AUTOTAX V1.2.0</strong> · Tra cứu MST</a><div><a href="/">Tra cứu hóa đơn</a> · <a href="/">Tài khoản</a></div></div>
+ <div class="mst-layout">
+  <section class="mst-panel" aria-label="Tra cứu danh sách mã số thuế">
+   <h1>Tra cứu mã số thuế</h1><p>Phân cách bằng dấu cách, dấu phẩy hoặc xuống dòng. Hỗ trợ 10 số, 10 số–3 số (chi nhánh) và 12 số (mã định danh cá nhân).</p>
+   <label for="mstInput" class="mst-label">Danh sách MST <span id="mstInputCount" class="mst-count">0 mã</span></label>
+   <textarea id="mstInput" rows="5" maxlength="700" placeholder="3600675874&#10;3600675874-001&#10;012345678901"></textarea>
+   <button type="button" id="startMst" class="mst-button primary">↻ &nbsp;Tra cứu đợt mới</button>
+   <p class="mst-note">Tối đa 20 mã/lượt. <strong>CCCD 12 số:</strong> AutoTax giữ nguyên cả số 0 đầu, không gửi số định danh đến API doanh nghiệp và không tự kết luận “không tồn tại”. Mở cổng Thuế TNCN, nhập vào ô <em>Số CMND/Thẻ căn cước</em> (hoặc ô MST nếu giao diện hiện tại hỗ trợ số định danh), nhập CAPTCHA rồi ghi nhận kết quả. Dòng trả về có thể chứa cả MST 10 số trước đây và CCCD 12 số.</p>
+  </section>
+  <section class="mst-panel" aria-label="Tiến trình và kết quả tra cứu">
+   <div class="mst-title-line"><div><h2>Tiến trình tra cứu</h2><p id="mstState" style="margin:0">Nhập mã số thuế rồi bấm tra cứu.</p></div><button id="downloadMst" type="button" disabled class="mst-button secondary">⇩ Tải file Excel <span id="downloadCount"></span></button></div>
+   <div class="mst-progress-top"><span id="mstProgressText">Đã xử lý: 0/0 mã số thuế</span><span id="mstPercent">0%</span></div>
+   <div class="mst-track" role="progressbar" aria-label="Tiến trình tra cứu" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="mstProgress"><div class="mst-fill" id="mstProgressFill"></div></div>
+   <div class="mst-stats">
+    <div class="mst-stat"><strong id="mstTotal">0</strong><span>Tổng số MST</span></div>
+    <div class="mst-stat pending"><strong id="mstPending">0</strong><span>Đang xử lý</span></div>
+    <div class="mst-stat success"><strong id="mstSuccess">0</strong><span>Tra được dữ liệu</span></div>
+    <div class="mst-stat failed"><strong id="mstFailed">0</strong><span>Chưa xác minh</span></div>
+   </div>
+   <div class="mst-list-head"><strong id="mstResultCount">Danh sách chi tiết (0/0)</strong><label>Lọc theo trạng thái:
+    <select id="mstFilter"><option value="all">Tất cả</option><option value="ok">Đã có dữ liệu</option><option value="missing">Chưa xác minh</option></select></label></div>
+   <div class="mst-table-wrap"><table class="mst-table"><thead><tr><th>STT</th><th>Mã số thuế</th><th>Thông tin người nộp thuế</th><th>Cơ quan quản lý</th><th>Trạng thái</th></tr></thead><tbody id="mstResults"></tbody></table></div>
+   <div class="mst-progress-note" id="noticeMst" role="status" aria-live="polite"></div>
+   <p class="mst-foot">Nguồn tự động: VietQR và các dịch vụ dữ liệu doanh nghiệp qua AutoTax (không phải dữ liệu đã xác minh trực tiếp từ Cục Thuế). Trạng thái và cơ quan thuế chỉ hiện nếu nguồn trả về. Mỗi MST có thể đối chiếu thủ công tại cả hai cổng chính thức: <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế doanh nghiệp</a> và <a href="https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp" target="_blank" rel="noopener noreferrer">cổng Thuế cá nhân</a>. Không mặc định đánh dấu “Đang hoạt động” nếu nguồn không xác minh.</p>
+  </section>
+ </div>
+</main>
+<dialog id="mstOfficialDialog" class="mst-official-dialog" aria-labelledby="mstOfficialHeading">
+ <h2 id="mstOfficialHeading">Đối chiếu trên cổng Thuế chính thức</h2>
+ <p>Mã đang đối chiếu: <strong id="mstOfficialCode"></strong>. Mỗi mã có thể được kiểm tra trên <strong>cả hai cổng</strong> và lưu kết quả riêng.</p>
+ <label for="mstOfficialSource">Nguồn đang ghi nhận</label>
+ <select id="mstOfficialSource" aria-label="Chọn cổng Thuế để ghi nhận">
+  <option value="business">Cổng doanh nghiệp / tổ chức</option>
+  <option value="personal">Cổng người nộp thuế TNCN</option>
+ </select>
+ <p id="mstOfficialType"></p>
+ <div class="mst-official-actions">
+  <a id="mstOfficialPortalBusiness" href="https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp" target="_blank" rel="noopener noreferrer">Mở cổng doanh nghiệp</a>
+  <a id="mstOfficialPortalPersonal" href="https://tracuunnt.gdt.gov.vn/tcnnt/mstcn.jsp" target="_blank" rel="noopener noreferrer">Mở cổng TNCN</a>
+  <button id="mstOfficialClose" type="button">Đóng</button>
+ </div>
+ <p><strong>Thao tác:</strong> mở cổng phù hợp, nhập MST/CCCD theo trường mà cổng đó hỗ trợ, tự nhập CAPTCHA rồi tra cứu. Chọn đúng nguồn ở ô phía trên trước khi dán một dòng kết quả. Nếu cổng không có hồ sơ, không tự đánh dấu là đã tìm thấy.</p>
+ <label for="mstOfficialPaste">Dán một dòng kết quả (Ctrl+C trên bảng, Ctrl+V tại đây)</label>
+ <textarea id="mstOfficialPaste" maxlength="5000" autocomplete="off" placeholder="TNCN: STT    MST cũ 10 số    Tên người nộp thuế    CQT    CCCD 12 số    Ngày cập nhật    Ghi chú"></textarea>
+ <div class="mst-official-actions"><button id="mstOfficialParse" type="button">Đọc dòng đã dán</button></div>
+ <p id="mstOfficialNotice" role="status" aria-live="polite"></p>
+ <div class="mst-official-fields">
+  <div><label for="mstOfficialName">Tên người nộp thuế</label><input id="mstOfficialName" maxlength="250" autocomplete="off"></div>
+  <div><label for="mstOfficialAddress">Địa chỉ (nếu có)</label><input id="mstOfficialAddress" maxlength="450" autocomplete="off"></div>
+  <div><label for="mstOfficialOffice">Cơ quan thuế (nếu có)</label><input id="mstOfficialOffice" maxlength="250" autocomplete="off"></div>
+  <div><label for="mstOfficialStatus">Trạng thái/ghi chú từ bảng</label><input id="mstOfficialStatus" maxlength="250" autocomplete="off"></div>
+ </div>
+ <label class="mst-official-confirm"><input id="mstOfficialConfirm" type="checkbox"><span>Tôi đã thực sự tra cứu mã này trên cổng đang chọn, đã kiểm tra kết quả hoặc không tìm thấy, và hiểu AutoTax không tự xác thực thông tin.</span></label>
+ <div class="mst-official-actions">
+  <button id="mstOfficialSave" type="button" disabled>Lưu dòng kết quả trong tab</button>
+  <button id="mstOfficialNoResult" type="button" disabled>Đánh dấu tôi không thấy kết quả</button>
+ </div>
+ <p><strong>Riêng tư:</strong> kết quả hai cổng được lưu tách biệt trong tab hiện tại, không gửi nội dung dán lên Supabase. Excel sẽ có cột riêng cho từng cổng và cảnh báo khi tên khác nhau. Không có kết quả ở một cổng không có nghĩa MST không tồn tại.</p>
+</dialog>
+<script src="../web/xlsx.js?v=1"></script>
+<script src="../web/mst-official.js?v=3"></script>
+<script src="../web/mst-lookup.js?v=10"></script>
+<script src="../site-footer.js?v=118"></script>
+</body></html>

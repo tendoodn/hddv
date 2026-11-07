@@ -624,7 +624,8 @@ async function finishPaidOrder(order){
  }catch(error){
   balancesText="Thanh toán đã xác nhận. Không tải được số dư mới: "+prettyError(error)+". Bấm Làm mới để kiểm tra lại.";
  }
- $("paymentSuccessInfo").textContent="Đã nhận thanh toán cho gói "+order.packageCode+".";
+ $("paymentSuccessInfo").textContent="Đã nhận thanh toán cho gói "+order.packageCode+
+   (order.purchaseMode==='duration'?" · Đã cộng thời gian cho các MST đang có và cấp thêm suất MST còn dư.":order.purchaseMode==='capacity'?" · Đã tăng số lượng MST.":".");
  $("paymentSuccessBalance").textContent=balancesText;
  const dialog=$("paymentSuccessDialog");
  if(!dialog.open)dialog.showModal();
@@ -735,7 +736,8 @@ async function buy(packageCode,button,options={}){
   $('paymentArea').hidden=false;
   const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   $("paymentArea").scrollIntoView({behavior:reducedMotion?"instant":"smooth",block:"center"});
-  showMessage("Đã tạo đơn "+packageCode+". QR tự ẩn sau 5 phút; hệ thống theo dõi thanh toán tự động.");
+  showMessage("Đã tạo đơn "+packageCode+(order.purchaseMode==='duration'?" · Tăng thời gian dùng":order.purchaseMode==='capacity'?" · Tăng số lượng dùng":"")+
+    ". QR tự ẩn sau 5 phút; hệ thống theo dõi thanh toán tự động.");
   function tick(){
    if(paymentOrder!==order||order.completed||order.expired)return;
    const remaining=qrRemainingMilliseconds(order);

@@ -123,6 +123,7 @@ async function decryptPassword(record){
 const mstName=profile=>profile.display_name||profile.name||'Chưa đặt tên hồ sơ';
 function closePicker(){
  $('mstPickerMenu').hidden=true;
+ $('mstPickerToggle')?.setAttribute('aria-expanded','false');
 }
 function filterPicker(){
  const query=$('mstFree').value.trim().toLocaleLowerCase('vi-VN');
@@ -134,6 +135,7 @@ function filterPicker(){
 }
 function openPicker(showAll=false){
  $('mstPickerMenu').hidden=false;
+ $('mstPickerToggle')?.setAttribute('aria-expanded','true');
  if(showAll)$('mstPickerMenu').querySelectorAll('.mst-picker-card').forEach(card=>card.hidden=false);
  else filterPicker();
 }
@@ -403,7 +405,12 @@ function claimPasswordReminder(mst){
 }
 function lock(){requestSeq++;keyEpoch++;deviceKey=null;deviceKeyPromise=null;$('gdtPassword').value=''}
 function init(){
- const input=$('mstFree'),selector=$('mst');
+ const input=$('mstFree'),selector=$('mst'),toggle=$('mstPickerToggle');
+ if(toggle)toggle.addEventListener('click',event=>{
+  event.preventDefault();event.stopPropagation();
+  if($('mstPickerMenu').hidden){openPicker(true);input.focus({preventScroll:true})}
+  else closePicker();
+ });
  input.addEventListener('focus',()=>openPicker(true));
  input.addEventListener('input',()=>{
   const typed=normalize(input.value);
@@ -429,7 +436,7 @@ function init(){
  });
  document.addEventListener('pointerdown',event=>{
   if(!$('mstPickerMenu').hidden&&!$('mstPickerMenu').contains(event.target)&&
-   !input.contains(event.target))closePicker();
+   !input.contains(event.target)&&!toggle?.contains(event.target))closePicker();
  },{capture:true});
  document.addEventListener('keydown',event=>{if(event.key==='Escape')closePicker()});
  selector.addEventListener('change',()=>{

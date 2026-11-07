@@ -121,6 +121,21 @@
 #webLiteNow{background:#126b36!important;border-color:#42dc81!important;color:#fff!important}
 #webLiteNow:hover{background:#18874a!important}
 </style>
+<style id="autotax-pdf-preview-mobile-v120">
+#invoicePdfPreviewDialog{box-sizing:border-box;width:min(900px,calc(100vw - 12px));max-width:100%;max-height:96dvh;margin:auto;padding:14px;background:#101a28;color:#f8fafc;border:1px solid #53657b;border-radius:12px;overflow:hidden}
+#invoicePdfPreviewDialog::backdrop{background:#030712c9}
+#invoicePdfPreviewDialog .invoice-pdf-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid #53657b;padding:0 0 9px;margin:0 0 10px}
+#invoicePdfPreviewDialog .invoice-pdf-toolbar h2{margin:0;color:#f8fafc;font-size:clamp(14px,3.8vw,18px)}
+#invoicePdfPreviewDialog .invoice-pdf-toolbar button{min-height:36px;padding:7px 12px;background:#246452;color:white;border:1px solid #55be94;border-radius:8px}
+#invoicePdfPreviewDialog .invoice-pdf-toolbar button:disabled{opacity:.5}
+#invoicePdfPreviewMeta{font-size:12px;color:#f9c8ad;margin:0 0 8px}
+#invoicePdfPreviewStatus{font-size:12px;color:#b7dcfb;margin:5px 0 10px}
+#invoicePdfCanvasPages{height:min(78dvh,850px);max-height:calc(96dvh - 125px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;padding:4px;background:#354051;border-radius:8px}
+#invoicePdfCanvasPages canvas{display:block;max-width:100%;height:auto;margin:0 auto 10px;background:#fff;box-shadow:0 2px 8px #0003}
+#invoicePdfPreviewFrame{display:block;width:100%;height:min(78dvh,850px);border:0;background:#fff}
+#invoicePdfCanvasPages[hidden],#invoicePdfPreviewFrame[hidden]{display:none!important}
+@media(max-width:640px){#invoicePdfPreviewDialog{width:calc(100vw - 6px);max-height:99dvh;padding:8px;border-radius:9px}#invoicePdfCanvasPages{height:calc(99dvh - 119px);max-height:calc(99dvh - 119px);padding:2px}#invoicePdfPreviewDialog .invoice-pdf-toolbar{gap:5px}#invoicePdfPreviewDialog .invoice-pdf-toolbar button{font-size:12px;padding:6px 8px}}
+</style>
 </head>
 <body>
 <style>
@@ -521,4 +536,11 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="../web/pdf-preview-v120a.js?v=20261106pdfjs65"></script>
 <script src="../password-toggle.js?v=116"></script>
 <script src="../lite/lite.js?v=20261107lite1"></script>
-<script src="../release-notice-v128.js?v=1200"></script></body></html>
+<script src="../release-notice-v128.js?v=1200"></script><dialog id="invoicePdfPreviewDialog" aria-labelledby="invoicePdfPreviewTitle">
+ <div class="invoice-pdf-toolbar"><h2 id="invoicePdfPreviewTitle">Xem PDF hóa đơn</h2><div class="invoice-pdf-actions"><button id="downloadInvoicePdfPreview" type="button" disabled>Tải PDF</button><button id="closeInvoicePdfPreview" type="button">Đóng</button></div></div>
+ <p id="invoicePdfPreviewMeta">PDF dựng từ dữ liệu Thuế, không phải PDF gốc</p>
+ <p id="invoicePdfPreviewStatus" role="status" aria-live="polite">Đang chuẩn bị xem PDF…</p>
+ <div id="invoicePdfCanvasPages" aria-label="Các trang PDF được hiển thị dưới dạng ảnh" hidden></div>
+ <iframe id="invoicePdfPreviewFrame" title="Bản xem PDF hóa đơn" hidden></iframe>
+</dialog>
+</body></html>

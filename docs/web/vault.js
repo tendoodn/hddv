@@ -122,7 +122,7 @@ async function decryptPassword(record){
 }
 const mstName=profile=>profile.display_name||profile.name||'Chưa đặt tên hồ sơ';
 function closePicker(){
- $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
+ $('mstPickerMenu').hidden=true;
 }
 function filterPicker(){
  const query=$('mstFree').value.trim().toLocaleLowerCase('vi-VN');
@@ -133,7 +133,7 @@ function filterPicker(){
  }
 }
 function openPicker(showAll=false){
- $('mstPickerMenu').hidden=false;$('mstPickerToggle').setAttribute('aria-expanded','true');
+ $('mstPickerMenu').hidden=false;
  if(showAll)$('mstPickerMenu').querySelectorAll('.mst-picker-card').forEach(card=>card.hidden=false);
  else filterPicker();
 }
@@ -231,7 +231,6 @@ function renderPicker(){
 }
 function updateChosen(){
  const mst=$('mst').value;
- $('mstPickerToggle').textContent='▾';
  for(const card of $('mstPickerMenu').querySelectorAll('.mst-picker-card')){
   const selected=card.querySelector('strong')?.textContent===mst;
   card.classList.toggle('selected',selected);
@@ -308,13 +307,11 @@ async function setUser(userId,rows,mode='mst'){
  const epoch=++profileSetEpoch;
  const wasInvoiceMode=invoiceMode,wasOwner=owner,previousProfilesJson=JSON.stringify(profiles);
  invoiceMode=mode==='invoice';
- $('mstPickerToggle').hidden=false;
  $('mstFree').placeholder=invoiceMode?'Nhập hoặc tìm MST (gói số tờ)':'Nhập MST hoặc tìm theo tên hồ sơ';
  const changed=(userId||'')!==owner;
  if(changed){
-  $('mstPickerToggle').dataset.userPicked='';
   owner=userId||'';deviceKey=null;deviceKeyPromise=null;keyEpoch++;requestSeq++;$('gdtPassword').value='';$('mstFree').value='';
-  $('mstPickerMenu').hidden=true;$('mstPickerToggle').setAttribute('aria-expanded','false');
+  $('mstPickerMenu').hidden=true;
  }
  const previous=changed?[]:[...profiles];
  profiles=[...new Map((rows||[]).map(x=>{
@@ -406,8 +403,7 @@ function claimPasswordReminder(mst){
 }
 function lock(){requestSeq++;keyEpoch++;deviceKey=null;deviceKeyPromise=null;$('gdtPassword').value=''}
 function init(){
- const input=$('mstFree'),selector=$('mst'),toggle=$('mstPickerToggle');
- toggle.addEventListener('click',()=>{$('mstPickerMenu').hidden?openPicker(true):closePicker();});
+ const input=$('mstFree'),selector=$('mst');
  input.addEventListener('focus',()=>openPicker(true));
  input.addEventListener('input',()=>{
   const typed=normalize(input.value);
@@ -433,7 +429,7 @@ function init(){
  });
  document.addEventListener('pointerdown',event=>{
   if(!$('mstPickerMenu').hidden&&!$('mstPickerMenu').contains(event.target)&&
-   !toggle.contains(event.target)&&!input.contains(event.target))closePicker();
+   !input.contains(event.target))closePicker();
  },{capture:true});
  document.addEventListener('keydown',event=>{if(event.key==='Escape')closePicker()});
  selector.addEventListener('change',()=>{

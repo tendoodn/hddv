@@ -288,20 +288,12 @@ html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a.web-dialog
     box-shadow:0 8px 20px rgba(22,163,74,.28)!important;
   }
 }
-</style><style id="autotax-lite-search-spacing-v121">
-#searchBtn{
-  position:relative!important;
-  clear:both!important;
-  margin-top:18px!important;
-}
-@media(max-width:700px){
-  #searchBtn{margin-top:22px!important}
-}
 </style><style id="autotax-footer-mobile-break-v122">
+.autotax-footer-nav .autotax-footer-primary,.autotax-footer-nav .autotax-footer-secondary{display:inline}
 @media(max-width:600px){
  .autotax-footer-nav .autotax-footer-primary,.autotax-footer-nav .autotax-footer-secondary{display:block}
+ .autotax-footer-nav .autotax-footer-sep{display:none}
  .autotax-footer-nav .autotax-footer-secondary{margin-top:4px}
- .autotax-footer-nav .autotax-footer-secondary::first-letter{font-size:0}
 }
 </style></head>
 <body>
@@ -626,7 +618,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
   </section>
   <footer>
     <p><strong>AutoTax là công cụ độc lập hỗ trợ tra cứu, không phải website hay ứng dụng chính thức của cơ quan Thuế.</strong> Tài khoản AutoTax và tài khoản cổng Thuế là hai tài khoản khác nhau. Chúng tôi không yêu cầu cung cấp mật khẩu AutoTax qua Zalo, tin nhắn hoặc trang web bên ngoài.</p>
-    <p class="autotax-footer-nav"><span class="autotax-footer-primary"><a href="/gioi-thieu/">Giới thiệu</a> · <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a> · <a href="/baogia/">Thiết bị &amp; HĐĐT Viettel</a></span><span class="autotax-footer-secondary"> · <a href="/user/#planSection">Gói AutoTax</a> · Hỗ trợ: 0868838242</span></p>
+    <p class="autotax-footer-nav"><span class="autotax-footer-primary"><a href="/gioi-thieu/">Giới thiệu</a> · <a href="/chinh-sach-bao-mat/">Chính sách bảo mật</a> · <a href="/baogia/">Thiết bị &amp; HĐĐT Viettel</a></span><span class="autotax-footer-sep"> · </span><span class="autotax-footer-secondary"><a href="/user/#planSection">Gói AutoTax</a> · Hỗ trợ: 0868838242</span></p>
   </footer>
 </main>
 <script>window.__autotaxRecoveryFromUrl=/type=recovery/.test(location.hash+location.search);</script>

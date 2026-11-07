@@ -1,0 +1,39 @@
+name: Build AutoTax Lite V1.2.0 installable APK
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android-lite/**'
+      - '.github/workflows/build-lite-apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-lite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Compile Android Lite (debug signed, installable)
+        run: gradle --no-daemon --stacktrace -p android-lite :app:assembleDebug
+      - name: Verify output artifact is an APK
+        run: |
+          test -s android-lite/app/build/outputs/apk/debug/app-debug.apk
+          cp android-lite/app/build/outputs/apk/debug/app-debug.apk AutoTax_Lite_V1.2.0.apk
+          file AutoTax_Lite_V1.2.0.apk
+          unzip -t AutoTax_Lite_V1.2.0.apk | tail -1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AutoTax_Lite_V1.2.0_APK_debug_signed
+          path: AutoTax_Lite_V1.2.0.apk
+          if-no-files-found: error
+          retention-days: 30

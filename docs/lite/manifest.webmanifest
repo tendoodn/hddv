@@ -1,8 +1,8 @@
 {
   "id": "/lite/",
-  "name": "AutoTax Lite",
-  "short_name": "AutoTax Lite",
-  "description": "AutoTax Lite – tra cứu hóa đơn nhanh",
+  "name": "AutoTax",
+  "short_name": "AutoTax",
+  "description": "Tra cứu nhanh HĐĐT",
   "start_url": "/lite/",
   "scope": "/lite/",
   "display": "standalone",

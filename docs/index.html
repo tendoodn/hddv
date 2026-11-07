@@ -126,7 +126,19 @@
 #invoicePdfCanvasPages[hidden],#invoicePdfPreviewFrame[hidden]{display:none!important}
 @media(max-width:640px){#invoicePdfPreviewDialog{width:calc(100vw - 6px);max-height:99dvh;padding:8px;border-radius:9px}#invoicePdfCanvasPages{height:calc(99dvh - 119px);max-height:calc(99dvh - 119px);padding:2px}#invoicePdfPreviewDialog .invoice-pdf-toolbar{gap:5px}#invoicePdfPreviewDialog .invoice-pdf-toolbar button{font-size:12px;padding:6px 8px}}
 </style>
-</head>
+<style id="autotax-tight-mobile-identity-v120">
+@media(max-width:640px){
+ #webAccountModeSlot{grid-template-columns:28px 27px repeat(3,minmax(0,1fr)) minmax(78px,.9fr)!important;column-gap:3px!important;row-gap:5px!important}
+ #webUserBlock .web-settings-wrap{grid-column:1!important;grid-row:1!important;justify-self:start!important}
+ #webSettingsToggle{width:27px!important;height:27px!important;padding:0!important}
+ #webAvatar{grid-column:2!important;grid-row:1!important;justify-self:start!important;width:26px!important;height:26px!important}
+ #webGreeting{grid-column:3 / span 3!important;grid-row:1!important;justify-self:stretch!important;max-width:none!important;margin-left:0!important}
+ #webRenewNow{grid-column:6!important;grid-row:1!important}
+ #webMstGrantNow{grid-column:1/span 3!important;grid-row:2!important;justify-self:stretch!important}
+ #webLiteNow{grid-column:4!important;grid-row:2!important}
+ #webAccountModeSlot #webModeControls:not([hidden]){grid-column:5/span 2!important;grid-row:2!important}
+}
+</style></head>
 <body>
 <style>
 #autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}

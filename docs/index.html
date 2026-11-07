@@ -143,7 +143,11 @@
 #webModeControls[hidden],#webAccountModeSlot #webModeControls[hidden],
 .web-mode-controls[hidden]{display:none!important;visibility:hidden!important}
 #webUsageModeHint:empty{display:none!important}
-</style></head>
+</style><style id="autotax-auth-mode-visibility-v120">
+#webModeControls[hidden],#webAccountModeSlot #webModeControls[hidden]{display:none!important;visibility:hidden!important}
+html:not([data-autotax-signed-in="true"]) #webModeControls{display:none!important}
+</style>
+</head>
 <body>
 <style>
 #autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}

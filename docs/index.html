@@ -407,7 +407,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
         </div>
         <div class="field">
           <label for="gdtPassword">Mật khẩu cổng Thuế <em>*</em></label>
-          <div class="password-wrap"><input id="gdtPassword" name="tax_gateway_secret_no_store" form="autotaxTaxCredentialSilo" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" class="tax-secret-input" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" data-form-type="other" placeholder="Nhập một lần, tự điền khi chọn lại MST" maxlength="256">
+          <div class="password-wrap"><input id="gdtPassword" type="text" inputmode="text" autocomplete="one-time-code" data-autotax-tax-secret="1" autocapitalize="off" spellcheck="false" class="tax-secret-input" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-protonpass-ignore="true" data-form-type="other" placeholder="Nhập một lần, tự điền khi chọn lại MST" maxlength="256">
             <button id="togglePassword" type="button" aria-label="Hiện hoặc ẩn mật khẩu">◉</button></div>
           <button id="mstForgetPassword" type="button" class="text-btn">Xóa mật khẩu đã lưu trên thiết bị này</button>
         </div>

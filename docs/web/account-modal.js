@@ -48,7 +48,6 @@ function open(id){
 function update(){
  const signedIn=!!account;
  document.documentElement.classList.toggle('autotax-auth-gated',!signedIn);
- $('webLoginOpen').hidden=signedIn;
  $('webUserBlock').hidden=!signedIn;
  if(signedIn){
   const name=nameOf(account)||account.email?.split('@')[0]||'bạn';
@@ -84,10 +83,6 @@ for(const id of dialogs){
  d.addEventListener('click',e=>{if(e.target===d&&id!=='webNewPasswordDialog')close(id)});
 }
 document.querySelectorAll('[data-web-close]').forEach(b=>b.addEventListener('click',()=>close(b.dataset.webClose)));
-$('webLoginOpen').addEventListener('click',()=>{
- $('webLoginEmail').value=recentEmail();$('webLoginPassword').value='';
- message('webLoginStatus');open('webLoginDialog');
-});
 $('webLoginToSignup').addEventListener('click',()=>{
  $('webSignupName').value='';$('webSignupUsername').value='';$('webSignupEmail').value=$('webLoginEmail').value.includes('@')?$('webLoginEmail').value:'';
  $('webSignupPassword').value='';$('webSignupConfirm').value='';

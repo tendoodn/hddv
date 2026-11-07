@@ -656,16 +656,16 @@ body{font-size:90%}
 .row-select input,.invoice-select,.invoice-imported{width:17px;height:17px;accent-color:#e60012;cursor:pointer}
 .invoice-imported-cell{text-align:center;vertical-align:middle}
 .invoice-row-actions{min-width:245px!important;gap:3px!important}
-.invoice-row-actions .table-detail-btn{padding:4px 4px!important;min-height:28px!important;font-size:9.5px!important;line-height:1.2!important;border-radius:6px!important}
+.invoice-row-actions .table-detail-btn{padding:3px 3px!important;min-height:24px!important;font-size:8px!important;line-height:1.15!important;border-radius:6px!important}
 .table-wrap th,.table-wrap td{padding-top:8px!important;padding-bottom:8px!important}
 @media(max-width:700px){
  body{font-size:90%}
  .wrap{padding:9px 8px 34px}
  .search-card,.result-card{padding:12px;border-radius:15px}
- #searchBtn.search-btn{min-height:42px!important;height:42px!important;font-size:22px!important;margin-top:14px!important}
+ #searchBtn.search-btn{min-height:42px!important;height:42px!important;font-size:23.4px!important;margin-top:14px!important}
  #webTeamQuotaSummary .quota-line{display:block}
  #webTeamQuotaSummary .quota-mst-line::before{content:""}
  #webTeamQuotaSummary .quota-line+.quota-line{margin-top:2px}
  .invoice-row-actions{min-width:170px!important}
- .invoice-row-actions .table-detail-btn{font-size:9px!important;min-height:27px!important;padding:3px!important}
+ .invoice-row-actions .table-detail-btn{font-size:8px!important;min-height:24px!important;padding:3px!important}
 }

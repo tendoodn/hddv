@@ -342,6 +342,8 @@ async function refreshAccountCore(epoch){
    show('Hãy bấm Đăng nhập ở phía trên để sử dụng AutoTax.');
    return;
   }
+  // A valid session must immediately clear any signed-out notice left by the initial boot.
+  show('');
   $('authStatus').textContent=account.email+' · Đã kết nối';
   $('accountEmailLabel').textContent=account.email||'Tài khoản AutoTax';
   // Run cache invalidation and account RPCs concurrently: returning to a tab

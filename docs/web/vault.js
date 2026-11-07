@@ -412,6 +412,7 @@ function init(){
   else closePicker();
  });
  input.addEventListener('focus',()=>openPicker(true));
+ input.addEventListener('click',()=>openPicker(true));
  input.addEventListener('input',()=>{
   const typed=normalize(input.value);
   const exact=profiles.find(p=>p.mst===typed);

@@ -30,14 +30,22 @@
   return el;
  };
  async function getLinks(){
+  const CACHE='autotax_site_links_v122',TTL=10*60*1000;
+  try{
+   const cached=JSON.parse(sessionStorage.getItem(CACHE)||'null');
+   if(cached&&Date.now()-Number(cached.at||0)<TTL&&Array.isArray(cached.rows))
+    return cached.rows;
+  }catch{}
   try{
    const res=await fetch(ENDPOINT+'?enabled=eq.true&select=label,url,sort_order&order=sort_order.asc',{
-   cache:'no-store',headers:{apikey:APIKEY},signal:AbortSignal.timeout(4500)
-  });
+    cache:'no-store',headers:{apikey:APIKEY},signal:AbortSignal.timeout(2200)
+   });
    if(!res.ok)throw Error('Footer links unavailable');
    const rows=await res.json();
    if(!Array.isArray(rows))throw Error('Invalid response');
-   return rows.filter(row=>safeUrl(row.url)&&String(row.label||'').trim()).slice(0,30);
+   const safe=rows.filter(row=>safeUrl(row.url)&&String(row.label||'').trim()).slice(0,30);
+   try{sessionStorage.setItem(CACHE,JSON.stringify({at:Date.now(),rows:safe}))}catch{}
+   return safe;
   }catch{return defaults}
  }
  async function render(){

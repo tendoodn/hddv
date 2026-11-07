@@ -257,6 +257,37 @@ html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a.web-dialog
   border-color:#38bdf8!important;
   color:#075985!important;
 }
+</style><style id="autotax-global-button-hover-v121">
+@media (hover:hover) and (pointer:fine){
+  button:not(:disabled),
+  a.web-dialog-button,
+  a.outline,
+  .exports a{
+    transition:transform .16s ease,box-shadow .16s ease,filter .16s ease,background-color .16s ease,border-color .16s ease!important;
+  }
+  button:not(:disabled):hover,
+  a.web-dialog-button:hover,
+  a.outline:hover,
+  .exports a:hover{
+    transform:translateY(-2px)!important;
+    box-shadow:0 6px 16px rgba(0,0,0,.20)!important;
+    filter:brightness(1.08);
+  }
+  button:not(:disabled):active,
+  a.web-dialog-button:active,
+  a.outline:active,
+  .exports a:active{
+    transform:translateY(0)!important;
+    box-shadow:none!important;
+  }
+  #searchBtn:hover:not(:disabled){
+    background:#16a34a!important;
+    border-color:#22c55e!important;
+    color:#fff!important;
+    filter:none!important;
+    box-shadow:0 8px 20px rgba(22,163,74,.28)!important;
+  }
+}
 </style></head>
 <body>
 <style>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>AutoTax V1.2.0 · Demo 6 ngữ cảnh Add-on</title>
+<link rel="stylesheet" href="./panel.css?v=1206">
+<style>
+body{background:#e8edf3!important;min-height:100vh;height:auto;display:block!important}
+.demo-toolbar{padding:16px max(14px,calc((100vw - 1050px)/2));background:#192b42;color:white;box-shadow:0 2px 12px #16263922}
+.demo-toolbar h1{color:white!important;font:800 clamp(18px,3vw,25px)/1.3 system-ui!important;white-space:normal!important}
+.demo-toolbar p{margin:5px 0 12px;color:#d2deee}
+.demo-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.demo-tabs button{height:auto;padding:9px 11px;border-radius:8px;border:1px solid #6784a4;background:#293f59;color:#fff;font-weight:650}
+.demo-tabs button[aria-selected="true"]{background:#10a16f;color:#fff;border-color:#50dfad}
+.demo-layout{display:grid;grid-template-columns:minmax(290px,430px) minmax(220px,1fr);gap:24px;max-width:1050px;margin:20px auto;padding:0 16px;align-items:start}
+.demo-frame{width:100%;height:min(780px,calc(100dvh - 160px));min-height:560px;background:#fff;border:7px solid #26394d;border-radius:17px;box-shadow:0 14px 30px #1e293b38;overflow:auto;position:relative}
+.demo-frame .topbar{position:sticky;top:0}
+.demo-frame main{padding:12px 14px 18px;display:block}
+.demo-frame .section{padding:12px 0}
+.demo-frame .footer{position:sticky;bottom:0}
+.demo-side{background:white;border:1px solid #cbd5e1;border-radius:13px;padding:16px;line-height:1.6;color:#283b50}
+.demo-side h2{font-size:19px}
+.demo-side p{color:#425466}
+.demo-side a{color:#0f766e}
+.demo-caption{background:#fff9eb;border:1px solid #d7bd82;border-radius:8px;padding:8px;margin:8px 0;color:#76510a;font-size:12px}
+.license-card{border:1px solid #d5dce3;border-radius:11px;padding:12px;margin-bottom:12px}
+.demo-frame .license-head{margin-bottom:7px}
+.demo-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:8px 0}
+.demo-buttons a,.demo-buttons button{height:auto;min-height:33px;font-size:11px!important;padding:4px!important;border:1px solid #afc9c8!important;background:#edf8f6!important;border-radius:7px;text-decoration:none;text-align:center;color:#115e59}
+.demo-field{margin:8px 0}
+.demo-field input{display:block;width:100%;height:37px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:white}
+.demo-card{padding:10px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:9px;margin:8px 0}
+.demo-green{color:#15803d;font-weight:750}
+.demo-red{color:#b91c1c;font-weight:750}
+.demo-console{font:11px/1.7 ui-monospace,monospace;background:#071421;color:#b0f7d0;padding:12px;border-radius:10px;max-height:180px;overflow:hidden}
+.demo-console span{display:block}
+.demo-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.demo-summary div{padding:10px;background:#e6f6f4;border:1px solid #9fd8d0;border-radius:8px}
+.demo-summary strong{display:block;font-size:15px}
+.demo-table{border-collapse:collapse;width:100%;font-size:11px}
+.demo-table th,.demo-table td{padding:7px 4px;border-bottom:1px solid #dbe4ed;text-align:left}
+.demo-note{font:12px/1.5 system-ui;color:#64748b}
+.demo-danger{background:#fff4f4;border:1px solid #e7a4a4;border-radius:10px;padding:12px;color:#a51825}
+.demo-progress{height:8px;border-radius:9px;background:#dce9ed;overflow:hidden;margin:9px 0}
+.demo-progress i{display:block;background:#159979;height:100%;width:64%}
+@media(max-width:760px){.demo-layout{grid-template-columns:1fr;margin:10px auto}.demo-frame{max-width:420px;margin:auto;height:690px}.demo-side{max-width:420px;margin:auto}.demo-tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}.demo-tabs button{flex:none;white-space:nowrap}.demo-toolbar{padding:12px}}
+</style></head><body>
+<div class="demo-toolbar">
+ <h1>AutoTax V1.2.0 · Xem trước 6 ngữ cảnh Add-on</h1>
+ <p>Dùng mã CSS Add-on hiện tại, dữ liệu giả lập. Chọn một tình huống để xem phiên bản Side Panel trên điện thoại hoặc máy tính.</p>
+ <nav class="demo-tabs" role="tablist" aria-label="Chọn ngữ cảnh">
+  <button type="button" role="tab" aria-selected="true" data-state="0">1. Đăng nhập AutoTax</button>
+  <button type="button" role="tab" aria-selected="false" data-state="1">2. Đăng nhập Thuế</button>
+  <button type="button" role="tab" aria-selected="false" data-state="2">3. Sẵn sàng</button>
+  <button type="button" role="tab" aria-selected="false" data-state="3">4. Đang quét</button>
+  <button type="button" role="tab" aria-selected="false" data-state="4">5. Hoàn tất</button>
+  <button type="button" role="tab" aria-selected="false" data-state="5">6. Hết lượt / chưa cấp MST</button>
+ </nav>
+</div>
+<div class="demo-layout">
+ <div id="demoPanel" class="demo-frame" aria-live="polite"></div>
+ <aside class="demo-side">
+  <h2 id="demoHeading">1. Đăng nhập AutoTax</h2>
+  <p id="demoDescription">Bảng đăng nhập lúc chưa có phiên AutoTax hợp lệ.</p>
+  <div class="demo-caption">Đây chỉ là bản xem giao diện. Mọi thông tin, số dư, MST và hóa đơn đều là giả lập. Các nút trong khung không gửi dữ liệu ra máy chủ.</div>
+  <p><a href="/lite/">AutoTax Lite</a> · <a href="/">Trang chủ AutoTax</a></p>
+ </aside>
+</div>
+<script>
+(()=>{
+'use strict';
+const commonHead=(tag,status)=>'<header class="topbar"><div class="logo" aria-hidden="true" style="border-radius:9px;display:grid;place-items:center;background:#e6f6f4;color:#0f766e;font-size:21px;font-weight:900">A</div><div class="titles"><div class="title-row"><h1>AutoTax V1.2.0</h1><button class="icon" type="button" aria-label="Làm mới">↻</button></div><div class="sub-row"><span class="company">'+tag+'</span><span class="badge '+status+'">'+(status==='on'?'Đã kết nối':'Chưa kết nối')+'</span></div></div></header>';
+const actions='<div class="demo-buttons"><button>Đổi MST</button><button>Gia Hạn</button><button>Tài khoản</button><button>Đăng xuất</button></div>';
+const login='<main><section class="license-card"><h2>Đăng nhập tài khoản AutoTax</h2><div class="demo-field"><label>Email đăng nhập</label><input value="demo@example.com" readonly></div><div class="demo-field"><label>Mật khẩu</label><input type="password" value="demopass" readonly></div><div class="actions"><button class="primary" type="button">Đăng nhập</button><button type="button">Tạo tài khoản</button></div><p class="demo-note">Quên mật khẩu · Không tự động gửi dữ liệu</p></section><section class="section"><h2>AutoTax dành cho kế toán</h2><p class="demo-note">Tra cứu mua vào, bán ra, báo cáo Excel/XML/PDF.</p></section></main>';
+const govt='<main><section class="license-card"><strong>Xin chào, người dùng demo!</strong>'+actions+'<div class="demo-card"><strong>Quyền sử dụng: 1 MST</strong><br>Hiệu lực đến 07/11/2027</div><h2>Đăng nhập cổng hoadondientu</h2><div class="demo-field"><label>MST</label><input value="0100000000" readonly></div><div class="demo-field"><label>Mật khẩu Thuế</label><input type="password" value="example" readonly></div><div class="demo-card">CAPTCHA: A7T4 <button type="button">Đổi mã</button></div><button class="primary" style="width:100%">Đăng nhập cổng Thuế</button></section></main>';
+const base='<section class="license-card"><strong>Xin chào, người dùng demo!</strong>'+actions+'<div class="demo-card"><span class="demo-green">● Gói MST đang hoạt động</span><br>1 MST · 0 lượt trừ theo số tờ<br>Hạn gần nhất: 07/11/2027</div></section><section class="section"><h2>Khoảng thời gian</h2><div class="grid2"><div class="field"><label>Từ ngày</label><input class="date" value="01/11/2026" readonly></div><div class="field"><label>Đến ngày</label><input class="date" value="07/11/2026" readonly></div></div></section><section class="section"><h2>Loại hóa đơn</h2><div class="checks autotax-kind-row"><label class="check"><input type="checkbox" checked>Mua vào</label><label class="check"><input type="checkbox">Bán ra</label></div></section><section class="section"><h2>Định dạng tải về</h2><div class="tiles"><label class="tile"><input type="checkbox" checked>Excel</label><label class="tile"><input type="checkbox" checked>XML</label><label class="tile"><input type="checkbox">PDF</label><label class="tile"><input type="checkbox">HTML</label></div></section>';
+const footer=(button,status)=>'<div class="footer"><div class="actions"><button class="primary">'+button+'</button></div><div class="status">'+status+'</div></div>';
+const ready='<main>'+base+'</main>'+footer('Tra cứu & tải dữ liệu','Sẵn sàng đọc hóa đơn');
+const scanning='<main>'+base+'<section class="section"><h2>Console tiến trình</h2><div class="demo-progress"><i></i></div><div class="demo-console"><span>✓ Đăng nhập cổng Thuế thành công</span><span>✓ Xác minh quyền MST hợp lệ</span><span>• Quét mua vào: 01/11–07/11/2026</span><span>• Đã đọc 18/28 hóa đơn</span><span>• Đang lấy trang dữ liệu 3/4…</span></div></section></main>'+footer('Dừng','Đang chạy · 64%');
+const done='<main>'+base+'<section class="section"><h2>Tra cứu hoàn tất</h2><div class="demo-summary"><div>Hóa đơn<strong>28</strong></div><div>Tổng thanh toán<strong>46.200.000 ₫</strong></div></div><table class="demo-table"><thead><tr><th>Ngày</th><th>Đối tác</th><th>Tổng tiền</th></tr></thead><tbody><tr><td>06/11</td><td>Công ty A</td><td>1.920.000</td></tr><tr><td>05/11</td><td>Cửa hàng B</td><td>3.650.000</td></tr></tbody></table><p class="demo-green">✓ Đã xác minh 28 hóa đơn; đọc lại không trừ lần hai.</p></section></main>'+footer('Tra cứu lần nữa','Hoàn thành');
+const limited='<main><section class="license-card"><strong>Xin chào, người dùng demo!</strong>'+actions+'<div class="demo-danger"><strong>MST chưa được cấp quyền</strong><p>MST 0100000000 chưa nằm trong danh sách được phép dùng gói MST.</p><button type="button">Cấp quyền MST</button></div><div class="demo-card"><span class="demo-red">Gói số tờ: 0 lượt còn lại</span><br>Đã đọc 100/100 hóa đơn. Các hóa đơn trước đây đã trừ vẫn được đọc lại theo quyền hiện có.</div></section></main>'+footer('Trở lại','Cần bổ sung quyền sử dụng');
+const states=[
+ {title:'1. Đăng nhập AutoTax',detail:'Bảng đăng nhập tài khoản AutoTax khi chưa có phiên xác thực.',tag:'Chưa đăng nhập AutoTax',status:'off',body:login},
+ {title:'2. Đăng nhập cổng Thuế',detail:'Tài khoản AutoTax hợp lệ nhưng chưa kết nối cổng Thuế. MST và CAPTCHA chỉ là mẫu.',tag:'Chưa kết nối cổng Thuế',status:'off',body:govt},
+ {title:'3. Sẵn sàng tra cứu',detail:'Gói đang hoạt động, chọn khoảng ngày, hóa đơn mua/bán và các định dạng.',tag:'MST 0100000000',status:'on',body:ready},
+ {title:'4. Đang chạy',detail:'Có Console tiến trình, thanh tiến độ và nút Dừng. Đây là dữ liệu mẫu.',tag:'MST 0100000000',status:'on',body:scanning},
+ {title:'5. Hoàn tất / kết quả',detail:'Hiển thị tổng hợp hóa đơn và kết quả mẫu sau quét.',tag:'MST 0100000000',status:'on',body:done},
+ {title:'6. Thiếu quyền / hết lượt',detail:'Khi MST chưa được cấp quyền hoặc gói số tờ không còn lượt mới.',tag:'MST 0100000000',status:'on',body:limited}
+];
+function show(index){
+ const item=states[index]||states[0];document.getElementById('demoPanel').innerHTML=commonHead(item.tag,item.status)+item.body;
+ document.getElementById('demoHeading').textContent=item.title;
+ document.getElementById('demoDescription').textContent=item.detail;
+ document.querySelectorAll('.demo-tabs button').forEach(b=>b.setAttribute('aria-selected',String(Number(b.dataset.state)===index)));
+}
+document.querySelectorAll('.demo-tabs button').forEach(b=>b.addEventListener('click',()=>show(Number(b.dataset.state))));
+show(0);
+})();
+</script></body></html>

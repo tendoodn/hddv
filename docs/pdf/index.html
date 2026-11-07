@@ -205,7 +205,30 @@ let mode=null,records=[],seq=0,renderGeneration=0,pdfImportBusy=false;let pdfjsR
  addRecord();
 }
 function addRecord(images=[]){const r={id:++seq,images:mode==='cccd'?[{data:images[0]||null,cropMode:'manual',cropRects:{}},{data:images[1]||null,cropMode:'manual',cropRects:{}}]:images.map(data=>({data,cropMode:'manual',cropRects:{}})),name:'',ocrStatus:''};if(mode!=='cccd'&&!r.images.length)r.images.push({data:null,cropMode:'manual',cropRects:{}});records.push(r);render();if(mode==='cccd'&&r.images[0]?.data)scanName(r)}
-async function changeImage(r,i,file){if(!file)return;r.images[i]={data:await url(file),filename:file.name,cropMode:'manual',cropRects:{}};if(mode==='cccd'&&i===0){r.name='';r.ocrStatus='';render();scanName(r)}else render()}
+// Read the orientation of each uploaded image from its actual pixel dimensions.
+// The same path is used by drag/drop, the replace-image button and clipboard paste.
+async function imagePageMetrics(src){
+ const img=await loadImg(src);
+ const width=img.naturalWidth,height=img.naturalHeight;
+ if(!width||!height)throw Error('Không xác định được kích thước ảnh.');
+ return {
+  orientation:width>height?'landscape':'portrait',
+  imageWidthPx:width,imageHeightPx:height,
+  // Raster images have no guaranteed PDF paper size; 96 pixels map to 72 points.
+  // Their original pixels are not resampled.
+  pageWidthPt:width*.75,pageHeightPt:height*.75
+ };
+}
+async function imagePageFromFile(file){
+ const data=await url(file);
+ try{return {data,filename:file.name,cropMode:'manual',cropRects:{},...(await imagePageMetrics(data))}}
+ catch(error){URL.revokeObjectURL(data);throw error}
+}
+async function changeImage(r,i,file){
+ if(!file)return;
+ r.images[i]=mode==='makepdf'?await imagePageFromFile(file):{data:await url(file),filename:file.name,cropMode:'manual',cropRects:{}};
+ if(mode==='cccd'&&i===0){r.name='';r.ocrStatus='';render();scanName(r)}else render();
+}
 function addPage(r){r.images.push({data:null,cropMode:'manual',cropRects:{}});render()}
 function removePage(r,i){r.images.splice(i,1);if(!r.images.length)r.images.push({data:null,cropMode:'manual',cropRects:{}});render()}
 async function preparedImage(data,mono=false,rec=null,opts={}){
@@ -472,7 +495,7 @@ function openCropEditor(rec,side){
    const cropped=mode==='makepdf'?canvas.toDataURL('image/png'):canvas.toDataURL('image/jpeg',.94);
    rec[side]=cropped;
    rec.cropRects={[side]:[0,0,0,0]};rec.cropMode='manual';
-   if(typeof rec.onCropSaved==='function')rec.onCropSaved();
+   if(typeof rec.onCropSaved==='function')await rec.onCropSaved();
    closeCropEditor();render();
   }catch(err){console.error(err);alert('Không lưu được vùng cắt: '+err.message);save.disabled=false;save.textContent='Áp dụng cắt ảnh'}
  });
@@ -484,8 +507,19 @@ async function croppedImage(obj,mono=false,opts={}){
 async function showThumb(img,obj,mono,gen){try{const out=await croppedImage(obj,false,{maxEdge:380,quality:.76});if(gen===renderGeneration&&img.isConnected)img.src=out.data;if(mono)img.style.filter='grayscale(1)'}catch(e){console.warn(e)}}
 function cropOne(obj){
  if(!obj.data)return alert('Hãy tải ảnh lên trước.');
- const facade={front:obj.data,cropMode:'manual',cropRects:{front:[...(obj.cropRects?.front||[0,0,0,0])]},onCropSaved:()=>{
-  obj.data=facade.front;obj.sourceUnmodified=false;obj.sourceBitmapModified=true;obj.cropMode='manual';obj.cropRects={front:[...facade.cropRects.front]};if(mode==='cccd'&&records.some(r=>r.images[0]===obj)){const owner=records.find(r=>r.images[0]===obj);owner.name='';owner.ocrStatus='';queueMicrotask(()=>scanName(owner));}
+ const facade={front:obj.data,cropMode:'manual',cropRects:{front:[...(obj.cropRects?.front||[0,0,0,0])]},onCropSaved:async()=>{
+  const oldW=obj.imageWidthPx||0,oldH=obj.imageHeightPx||0;
+  const oldPageW=obj.pageWidthPt||0,oldPageH=obj.pageHeightPt||0;
+  obj.data=facade.front;obj.sourceUnmodified=false;obj.sourceBitmapModified=true;obj.cropMode='manual';obj.cropRects={front:[...facade.cropRects.front]};
+  if(mode==='makepdf'){
+   const newMetrics=await imagePageMetrics(obj.data);
+   obj.orientation=newMetrics.orientation;
+   obj.imageWidthPx=newMetrics.imageWidthPx;obj.imageHeightPx=newMetrics.imageHeightPx;
+   // Crop at the same native pixel density as the imported PDF or photo.
+   obj.pageWidthPt=oldW&&oldPageW?oldPageW*newMetrics.imageWidthPx/oldW:newMetrics.pageWidthPt;
+   obj.pageHeightPt=oldH&&oldPageH?oldPageH*newMetrics.imageHeightPx/oldH:newMetrics.pageHeightPt;
+  }
+  if(mode==='cccd'&&records.some(r=>r.images[0]===obj)){const owner=records.find(r=>r.images[0]===obj);owner.name='';owner.ocrStatus='';queueMicrotask(()=>scanName(owner));}
  }};
  openCropEditor(facade,'front');
 }
@@ -667,6 +701,7 @@ async function readPdfPages(file,onProgress){
     images.push({
      data:extracted.data,
      orientation:extracted.orientation,
+     imageWidthPx:extracted.width,imageHeightPx:extracted.height,
      fromPdf:true,
      sourcePdfFile:file,
      sourcePageIndex:pageNum-1,
@@ -764,7 +799,7 @@ async function importCreateFiles(fileList){
     if(isPdfFile(file)){
      pages=await readPdfPages(file,(page,total)=>showPdfImportStatus('PDF '+(i+1)+'/'+files.length+': '+file.name+' · trang '+page+'/'+total));
     }else if((file.type||'').startsWith('image/')||/\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name||'')){
-     pages=[{data:await url(file),filename:file.name,cropMode:'manual',cropRects:{}}];
+     pages=[await imagePageFromFile(file)];
     }else throw Error('Không hỗ trợ định dạng tệp này');
     if(mode!=='makepdf'||!records.includes(target))break;
     target.images=target.images.filter(obj=>obj?.data).concat(pages);

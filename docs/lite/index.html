@@ -10,7 +10,10 @@
  const viewport=document.querySelector('meta[name="viewport"]');
  if(viewport)viewport.setAttribute('content','width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
  document.documentElement.classList.add('autotax-lite-no-pinch');
- const block=e=>{if((e.touches&&e.touches.length>1)||/^gesture/.test(e.type))e.preventDefault()};
+ const block=e=>{
+ if(e.target?.closest?.('#invoicePdfCanvasPages'))return;
+ if((e.touches&&e.touches.length>1)||/^gesture/.test(e.type))e.preventDefault();
+};
  document.addEventListener('touchmove',block,{passive:false});
  document.addEventListener('gesturestart',block,{passive:false});
  document.addEventListener('gesturechange',block,{passive:false});
@@ -166,12 +169,14 @@ html.autotax-lite-no-pinch #autotaxPwaLaunch{position:fixed;inset:0;z-index:2147
 #invoicePdfPreviewFrame{display:block;width:100%;height:min(78dvh,850px);border:0;background:#fff}
 #invoicePdfCanvasPages[hidden],#invoicePdfPreviewFrame[hidden]{display:none!important}
 @media(max-width:640px){#invoicePdfPreviewDialog{width:calc(100vw - 6px);max-height:99dvh;padding:8px;border-radius:9px}#invoicePdfCanvasPages{height:calc(99dvh - 119px);max-height:calc(99dvh - 119px);padding:2px}#invoicePdfPreviewDialog .invoice-pdf-toolbar{gap:5px}#invoicePdfPreviewDialog .invoice-pdf-toolbar button{font-size:12px;padding:6px 8px}}
-html.autotax-lite-no-pinch #invoicePdfPreviewDialog[open]{display:flex!important;flex-direction:column!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:8px!important;border:0!important;border-radius:0!important;box-sizing:border-box!important}
+html.autotax-lite-no-pinch #invoicePdfPreviewDialog[open]{display:flex!important;flex-direction:column!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:max(6px,env(safe-area-inset-top,0px)) max(6px,env(safe-area-inset-right,0px)) max(6px,env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))!important;border:0!important;border-radius:0!important;box-sizing:border-box!important;zoom:1.25!important;transform:none!important}
 html.autotax-lite-no-pinch #invoicePdfPreviewDialog .invoice-pdf-toolbar,
 html.autotax-lite-no-pinch #invoicePdfPreviewMeta,
 html.autotax-lite-no-pinch #invoicePdfPreviewStatus{flex:0 0 auto!important}
 html.autotax-lite-no-pinch #invoicePdfCanvasPages,
 html.autotax-lite-no-pinch #invoicePdfPreviewFrame{flex:1 1 auto!important;min-height:0!important;height:auto!important;max-height:none!important;border-radius:0!important}
+html.autotax-lite-no-pinch #invoicePdfCanvasPages{overflow:auto!important;touch-action:pan-x pan-y!important;overscroll-behavior:contain!important}
+html.autotax-lite-no-pinch #closeInvoicePdfPreview{width:auto!important;min-width:64px!important;padding:7px 12px!important;font-size:12px!important;white-space:nowrap!important}
 </style>
 <style id="autotax-tight-mobile-identity-v120">
 @media(max-width:640px){
@@ -747,7 +752,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="../web/web.js?v=20261107lite-layout123"></script>
 
 <script src="../web/web-results.js?v=20261107lite1"></script>
-<script src="../web/pdf-preview-v120a.js?v=20261106pdfjs65"></script>
+<script src="../web/pdf-preview-v120a.js?v=20261107pwa-fullpinch124"></script>
 <script src="../dialog-lock-v122.js?v=1220"></script>
 <script src="../password-toggle.js?v=116"></script>
 <script src="../lite/lite.js?v=20261107lite1"></script>

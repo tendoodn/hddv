@@ -1,0 +1,20 @@
+{
+  "id": "/lite/",
+  "name": "AutoTax Lite",
+  "short_name": "AutoTax Lite",
+  "description": "AutoTax Lite – tra cứu hóa đơn nhanh",
+  "start_url": "/lite/",
+  "scope": "/lite/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09090b",
+  "theme_color": "#09131d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -87,6 +87,7 @@
       const canvas=document.createElement('canvas');
       canvas.width=Math.ceil(scaled.width*pixelRatio);
       canvas.height=Math.ceil(scaled.height*pixelRatio);
+      canvas.dataset.pdfWidth=String(viewport.width);
       canvas.dataset.baseWidth=String(scaled.width);
       canvas.style.width=(scaled.width*zoom)+'px';canvas.style.height='auto';
       canvas.setAttribute('aria-label','Trang PDF '+n);
@@ -96,7 +97,20 @@
         [pixelRatio,0,0,pixelRatio,0,0]}).promise;
       page.cleanup();
     }
-    if(request===generation)status.hidden=true;
+    if(request===generation){
+     // At 100%, always fit the PDF to the current viewer width. This also
+     // makes orientation changes/resizes adapt to the user's screen ratio.
+     const fit=()=>{
+      if(zoom!==1||!canvasHost?.clientWidth)return;
+      const target=Math.max(220,Math.min(canvasHost.clientWidth-8,1100));
+      canvasHost.querySelectorAll('canvas[data-base-width]').forEach(canvas=>{
+       canvas.dataset.baseWidth=String(target);
+       canvas.style.width=target+'px';
+      });
+     };
+     fit();
+     status.hidden=true;
+    }
    }catch(pdfError){
     // On mobile do NOT show a native PDF iframe: it asks users to install a
     // plugin even though a PDF blob is already available for download.
@@ -123,6 +137,10 @@
  function init(){
   const dialog=$('invoicePdfPreviewDialog'),close=$('closeInvoicePdfPreview');
   const download=$('downloadInvoicePdfPreview');if(!dialog||!close||!download)return;
+  const canvasHost=$('invoicePdfCanvasPages');
+  // Always show an explicit text action; old cached builds used a narrow "×" button.
+  close.textContent='Đóng';
+  close.setAttribute('aria-label','Đóng trình xem PDF');
   const actions=dialog.querySelector('.invoice-pdf-actions,.invoice-pdf-buttons')||close.parentElement;
   if(actions&&!$('invoicePdfZoomOut')){
    const group=document.createElement('span');group.className='invoice-pdf-zoom';
@@ -132,6 +150,60 @@
    $('invoicePdfZoomIn').addEventListener('click',()=>applyZoom(zoom+.2));
    $('invoicePdfZoomReset').addEventListener('click',()=>applyZoom(1));
   }
+  // Installed Lite PWA: two fingers zoom only the PDF canvas. The dialog stays
+  // fixed to the viewport, while one-finger drag continues to scroll the pages.
+  if(canvasHost&&!canvasHost.dataset.pinchReady){
+   canvasHost.dataset.pinchReady='1';
+   let pinch=null;
+   const distance=touches=>{
+    const [a,b]=touches;return Math.hypot(b.clientX-a.clientX,b.clientY-a.clientY);
+   };
+   const center=touches=>({
+    x:(touches[0].clientX+touches[1].clientX)/2,
+    y:(touches[0].clientY+touches[1].clientY)/2
+   });
+   canvasHost.addEventListener('touchstart',event=>{
+    if(event.touches.length!==2)return;
+    const mid=center(event.touches),rect=canvasHost.getBoundingClientRect();
+    pinch={
+     dist:Math.max(1,distance(event.touches)),
+     zoom,
+     localX:mid.x-rect.left,
+     localY:mid.y-rect.top,
+     contentX:(canvasHost.scrollLeft+mid.x-rect.left)/Math.max(.01,zoom),
+     contentY:(canvasHost.scrollTop+mid.y-rect.top)/Math.max(.01,zoom)
+    };
+    event.preventDefault();event.stopPropagation();
+   },{passive:false});
+   canvasHost.addEventListener('touchmove',event=>{
+    if(!pinch||event.touches.length!==2)return;
+    const next=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,
+      pinch.zoom*distance(event.touches)/pinch.dist));
+    applyZoom(next);
+    canvasHost.scrollLeft=Math.max(0,pinch.contentX*zoom-pinch.localX);
+    canvasHost.scrollTop=Math.max(0,pinch.contentY*zoom-pinch.localY);
+    event.preventDefault();event.stopPropagation();
+   },{passive:false});
+   const endPinch=event=>{
+    if(event.touches?.length>=2)return;
+    pinch=null;
+    if(event.cancelable)event.preventDefault();
+    event.stopPropagation();
+   };
+   canvasHost.addEventListener('touchend',endPinch,{passive:false});
+   canvasHost.addEventListener('touchcancel',endPinch,{passive:false});
+   let gestureStartZoom=1;
+   canvasHost.addEventListener('gesturestart',event=>{
+    gestureStartZoom=zoom;event.preventDefault();event.stopPropagation();
+   },{passive:false});
+   canvasHost.addEventListener('gesturechange',event=>{
+    applyZoom(gestureStartZoom*(Number(event.scale)||1));
+    event.preventDefault();event.stopPropagation();
+   },{passive:false});
+   canvasHost.addEventListener('gestureend',event=>{
+    event.preventDefault();event.stopPropagation();
+   },{passive:false});
+  }
   close.addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',clear);
   download.addEventListener('click',()=>{
@@ -139,6 +211,18 @@
    const a=document.createElement('a');a.href=url;a.download=filename;
    document.body.append(a);a.click();a.remove();
   });
+  let resizeTimer=0;
+  window.addEventListener('resize',()=>{
+   clearTimeout(resizeTimer);
+   resizeTimer=setTimeout(()=>{
+    if(zoom!==1||!canvasHost||canvasHost.hidden)return;
+    const target=Math.max(220,Math.min(canvasHost.clientWidth-8,1100));
+    canvasHost.querySelectorAll('canvas[data-base-width]').forEach(canvas=>{
+     canvas.dataset.baseWidth=String(target);
+     canvas.style.width=target+'px';
+    });
+   },80);
+  },{passive:true});
   window.addEventListener('pagehide',clear);
  }
  window.WebPdfPreview={open};

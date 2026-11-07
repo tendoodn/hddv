@@ -589,7 +589,31 @@ async function pdfPageToImage(page,scale=2){
  const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
  const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
  await page.render({canvasContext:ctx,viewport}).promise;
- return canvas.toDataURL('image/jpeg',0.92);
+ // Detect the actual document ink, not the PDF MediaBox: scans can contain
+ // a horizontal table surrounded by large blank A4 portrait margins.
+ const sample=document.createElement('canvas'),factor=Math.min(1,650/Math.max(canvas.width,canvas.height));
+ sample.width=Math.max(1,Math.round(canvas.width*factor));sample.height=Math.max(1,Math.round(canvas.height*factor));
+ const sc=sample.getContext('2d',{willReadFrequently:true});sc.drawImage(canvas,0,0,sample.width,sample.height);
+ const {data}=sc.getImageData(0,0,sample.width,sample.height),sw=sample.width,sh=sample.height;
+ const row=new Uint32Array(sh),col=new Uint32Array(sw);
+ for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){
+  const i=(y*sw+x)*4,r=data[i],g=data[i+1],b=data[i+2];
+  if(Math.min(r,g,b)<190 || (Math.max(r,g,b)-Math.min(r,g,b)>42 && Math.min(r,g,b)<232)){row[y]++;col[x]++}
+ }
+ const find=(counts,minCount)=>{let a=-1,z=-1;for(let i=0;i<counts.length;i++)if(counts[i]>=minCount){if(a<0)a=i;z=i}return [a,z]};
+ const [top,bottom]=find(row,Math.max(2,Math.floor(sw*.003)));
+ const [left,right]=find(col,Math.max(2,Math.floor(sh*.003)));
+ let output=canvas;
+ if(top>=0&&left>=0){
+  const pad=Math.max(5,Math.round(Math.min(sw,sh)*.014));
+  const x0=Math.max(0,left-pad),y0=Math.max(0,top-pad),x1=Math.min(sw,right+pad+1),y1=Math.min(sh,bottom+pad+1);
+  const x=Math.floor(x0/factor),y=Math.floor(y0/factor),w=Math.min(canvas.width-x,Math.ceil((x1-x0)/factor)),h=Math.min(canvas.height-y,Math.ceil((y1-y0)/factor));
+  if(w>canvas.width*.20&&h>canvas.height*.10&&(w<canvas.width*.88||h<canvas.height*.88)){
+   output=document.createElement('canvas');output.width=w;output.height=h;
+   output.getContext('2d',{alpha:false}).drawImage(canvas,x,y,w,h,0,0,w,h);
+  }
+ }
+ return {data:output.toDataURL('image/jpeg',0.92),orientation:output.width>output.height?'landscape':'portrait',width:output.width,height:output.height};
 }
 
 function isPdfFile(file){
@@ -626,9 +650,10 @@ async function readPdfPages(file,onProgress){
    onProgress?.(pageNum,pdf.numPages);
    const page=await pdf.getPage(pageNum);
    try{
+    const extracted=await pdfPageToImage(page,2);
     images.push({
-     data:await pdfPageToImage(page,2),
-     orientation:page.getViewport({scale:1}).width>page.getViewport({scale:1}).height?'landscape':'portrait',
+     data:extracted.data,
+     orientation:extracted.orientation,
      fromPdf:true,
      filename:(file.name||'tailen.pdf')+'#'+pageNum,
      cropMode:'manual',cropRects:{}

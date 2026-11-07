@@ -37,7 +37,7 @@ body{background:#090b10!important}
 #searchForm .autotax-kind-row{grid-column:1/-1;display:flex!important;gap:8px;align-items:center;flex-wrap:nowrap;margin-top:5px;margin-bottom:4px}
 #searchForm .autotax-kind-row .check{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #33465d;border-radius:9px;padding:9px 7px;background:#172334;white-space:nowrap;font-size:clamp(11px,3vw,14px)}
 #searchForm .autotax-kind-row .check input{accent-color:#56b5fa;width:17px;height:17px}
-#searchBtn{display:block;width:100%;min-height:47px;border-radius:30px;font-weight:850;background:#fff;color:#141416;border:0;margin-top:28px!important;box-shadow:none}
+#searchBtn{display:block;width:100%;min-height:60px;border-radius:30px;font-weight:850;font-size:18px;background:#fff!important;color:#141416!important;border:0!important;margin-top:30px!important;box-shadow:none;clear:both;position:relative}
 #liteHome{display:block;margin:9px auto 0;width:100%;padding:11px;text-align:center;color:#e2e8f0;background:#242a35;border:1px solid #3c465b;border-radius:10px;text-decoration:none;font-weight:750;font-size:13px}
 #liteStatus{margin:12px 0 0;padding:9px 11px;border:1px solid #244d71;border-radius:10px;background:#0d2233;color:#b9e6fd;min-height:35px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/1.5 ui-monospace,monospace}
 #liteStatus:empty:before{content:"Sẵn sàng tra cứu";color:#8da6b7}
@@ -88,4 +88,6 @@ body{background:#090b10!important}
 .topbar .logo{min-width:0;flex:none;max-width:55%;display:inline-flex;align-items:center}
 .topbar .logo span{white-space:nowrap}
 
-@media (hover:hover) and (pointer:fine){#searchBtn:hover{background:#16a34a!important;color:#fff!important;box-shadow:0 8px 20px rgba(22,163,74,.28)!important}}
+@media (hover:hover) and (pointer:fine){#searchBtn:hover:not(:disabled){background:#16a34a!important;border-color:#22c55e!important;color:#fff!important;box-shadow:0 8px 20px rgba(22,163,74,.28)!important;transform:translateY(-2px)!important}}
+
+@media(max-width:700px){#searchBtn{margin-top:34px!important}}

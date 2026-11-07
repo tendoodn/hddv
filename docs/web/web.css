@@ -667,3 +667,8 @@ td.audit-info{color:#c6c6db}
   #webTeamQuotaSummary .quota-mst-line::before{content:""}
   #webTeamQuotaSummary .quota-line+.quota-line{margin-top:2px}
 }
+
+/* Tax gateway credentials are managed only by AutoTax's encrypted MST vault.
+   Keep them out of browser password managers while preserving masked display. */
+.tax-secret-input{-webkit-text-security:disc!important}
+.tax-secret-input.tax-secret-revealed{-webkit-text-security:none!important}

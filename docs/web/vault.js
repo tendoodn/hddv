@@ -245,7 +245,7 @@ function updateChosen(){
  }
 }
 async function select(mst){
- const input=$('gdtPassword');input.value='';input.type='password';
+ const input=$('gdtPassword');input.value='';input.classList.remove('tax-secret-revealed');
  const borrowed=profiles.some(p=>p.mst===mst&&p.source==='team');
  const eye=$('togglePassword'),forget=$('mstForgetPassword');
  if(eye)eye.hidden=borrowed;
@@ -328,7 +328,7 @@ async function setUser(userId,rows,mode='mst'){
   const activeMst=normalize($('mstFree').value||$('mst').value);
   if(revoked.includes(activeMst)){
    $('mstFree').value='';$('mst').value='';$('gdtPassword').value='';
-   $('gdtPassword').type='password';
+   $('gdtPassword').classList.remove('tax-secret-revealed');
    const eye=$('togglePassword');if(eye)eye.hidden=false;
   }
   document.dispatchEvent(new CustomEvent('autotax-team-msts-revoked',{detail:{msts:revoked}}));

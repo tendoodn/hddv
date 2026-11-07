@@ -37,7 +37,7 @@ body{background:#090b10!important}
 #searchForm .autotax-kind-row{grid-column:1/-1;display:flex!important;gap:8px;align-items:center;flex-wrap:nowrap;margin-top:5px;margin-bottom:4px}
 #searchForm .autotax-kind-row .check{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #33465d;border-radius:9px;padding:9px 7px;background:#172334;white-space:nowrap;font-size:clamp(11px,3vw,14px)}
 #searchForm .autotax-kind-row .check input{accent-color:#56b5fa;width:17px;height:17px}
-#searchBtn{display:block;width:100%;min-height:60px;border-radius:30px;font-weight:850;font-size:18px;background:#fff!important;color:#141416!important;border:0!important;margin-top:30px!important;box-shadow:none;clear:both;position:relative}
+#searchBtn{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;width:100%;min-height:60px;border-radius:30px;font-weight:800;font-size:18px;background:#fff!important;color:#141416!important;border:0!important;margin-top:30px!important;box-shadow:none;clear:both;position:relative;transition:background .15s!important}
 #liteHome{display:block;margin:9px auto 0;width:100%;padding:11px;text-align:center;color:#e2e8f0;background:#242a35;border:1px solid #3c465b;border-radius:10px;text-decoration:none;font-weight:750;font-size:13px}
 #liteStatus{margin:12px 0 0;padding:9px 11px;border:1px solid #244d71;border-radius:10px;background:#0d2233;color:#b9e6fd;min-height:35px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/1.5 ui-monospace,monospace}
 #liteStatus:empty:before{content:"Sẵn sàng tra cứu";color:#8da6b7}

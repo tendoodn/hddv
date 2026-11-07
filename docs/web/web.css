@@ -617,3 +617,11 @@ td.audit-info{color:#c6c6db}
 .wrap > footer{text-align:center!important}
 .wrap > footer p{max-width:920px;margin:8px auto!important;text-align:center!important}
 @media(max-width:480px){.wrap > header.hero .autotax-independence{font-size:11px!important;padding:0 3px!important}}
+
+/* AutoTax 1.2.2 mobile footer split */
+@media(max-width:600px){
+ .autotax-footer-nav{display:grid!important;gap:4px!important;line-height:1.55!important}
+ .autotax-footer-primary,.autotax-footer-secondary{display:block!important;width:100%!important}
+ .autotax-footer-sep{display:none!important}
+}
+/* end AutoTax 1.2.2 mobile footer split */

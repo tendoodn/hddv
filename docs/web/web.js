@@ -393,12 +393,22 @@ async function refreshAccountCore(epoch){
   const teamMstShared=Number(ent.data?.team_mst_count||0),invoiceMstShared=Number(ent.data?.team_invoice_shared_mst_count||0);
   const totalSheets=ownSheets+groupSheets;
   $('webTeamQuotaSummary').hidden=false;
-  $('webTeamQuotaSummary').textContent=
-   'Hóa đơn: '+totalSheets.toLocaleString('vi-VN')+' / '+totalBought.toLocaleString('vi-VN')+
-   ' (cá nhân '+ownSheets.toLocaleString('vi-VN')+', nhóm '+groupSheets.toLocaleString('vi-VN')+')'+
-   ' · MST: '+(ownMst+groupMst).toLocaleString('vi-VN')+
-   ' (cá nhân '+ownMst+', nhóm '+groupMst+', đã chia sẻ '+teamMstShared+')'+
-   (groupSheets>0&&invoiceMstShared===0?' · Chờ trưởng nhóm cấp MST để sử dụng gói nhóm.':'');
+  $('webTeamQuotaSummary').replaceChildren();
+  const quotaInvoice=document.createElement('span');
+  quotaInvoice.className='quota-line quota-invoice-line';
+  quotaInvoice.textContent='Hóa đơn: '+totalSheets.toLocaleString('vi-VN')+' / '+totalBought.toLocaleString('vi-VN')+
+   ' (cá nhân '+ownSheets.toLocaleString('vi-VN')+', nhóm '+groupSheets.toLocaleString('vi-VN')+')';
+  const quotaMst=document.createElement('span');
+  quotaMst.className='quota-line quota-mst-line';
+  quotaMst.textContent='MST: '+(ownMst+groupMst).toLocaleString('vi-VN')+
+   ' (cá nhân '+ownMst.toLocaleString('vi-VN')+', nhóm '+groupMst.toLocaleString('vi-VN')+
+   ', đã chia sẻ '+teamMstShared.toLocaleString('vi-VN')+')';
+  $('webTeamQuotaSummary').append(quotaInvoice,quotaMst);
+  if(groupSheets>0&&invoiceMstShared===0){
+   const warn=document.createElement('span');warn.className='quota-warning';
+   warn.textContent='Chờ trưởng nhóm cấp MST để sử dụng gói nhóm.';
+   $('webTeamQuotaSummary').append(warn);
+  }
   $('webUsageModeHint').textContent=dual?
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
     'Hạn mức cá nhân và nhóm được cộng khi còn quyền nhóm. Chỉ MST được trưởng nhóm chia sẻ mới dùng hạn mức nhóm.'; 

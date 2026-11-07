@@ -2,11 +2,13 @@
 (()=>{'use strict';
  const current=new URL(location.href);
  const scope=current.pathname.split('/').filter(Boolean)[0]||'';
- if(!['lite','user','admin','baogia','pdf'].includes(scope))return;
+ if(!['lite','user','admin','baogia','pdf','hddt'].includes(scope))return;
  const base='/'+scope+'/';
  if('serviceWorker' in navigator&&isSecureContext)
   window.addEventListener('load',()=>navigator.serviceWorker.register(base+'sw.js',{scope:base})
     .catch(error=>console.warn('Không thể đăng ký cài ứng dụng:',error.message)),{once:true});
+ const showInstallButton=scope==='lite';
+ if(!showInstallButton)return;
  let deferred=null,button=null;
  const standalone=window.matchMedia?.('(display-mode: standalone)').matches||
   window.navigator.standalone===true;

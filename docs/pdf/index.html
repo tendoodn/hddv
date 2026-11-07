@@ -590,7 +590,7 @@ async function pdfPageToImage(page,scale=2,keepOriginal=false){
  const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
  const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
  await page.render({canvasContext:ctx,viewport}).promise;
- if(keepOriginal)return {data:canvas.toDataURL('image/png'),orientation:canvas.width>canvas.height?'landscape':'portrait',width:canvas.width,height:canvas.height,pageWidthPt:paper.width,pageHeightPt:paper.height};
+ // Source page stays at native raster size; blank margins are detected separately.
  // Detect the actual document ink, not the PDF MediaBox: scans can contain
  // a horizontal table surrounded by large blank A4 portrait margins.
  const sample=document.createElement('canvas'),factor=Math.min(1,650/Math.max(canvas.width,canvas.height));
@@ -615,7 +615,15 @@ async function pdfPageToImage(page,scale=2,keepOriginal=false){
    output.getContext('2d',{alpha:false}).drawImage(canvas,x,y,w,h,0,0,w,h);
   }
  }
- return {data:output.toDataURL('image/png'),orientation:output.width>output.height?'landscape':'portrait',width:output.width,height:output.height,pageWidthPt:paper.width,pageHeightPt:paper.height};
+ return {
+  data:output.toDataURL('image/png'),
+  orientation:output.width>output.height?'landscape':'portrait',
+  width:output.width,height:output.height,
+  pageWidthPt:paper.width*(output.width/canvas.width),
+  pageHeightPt:paper.height*(output.height/canvas.height),
+  contentCropped:output!==canvas,
+  sourceWidthPt:paper.width,sourceHeightPt:paper.height
+ };
 }
 
 function isPdfFile(file){
@@ -660,7 +668,7 @@ async function readPdfPages(file,onProgress){
      sourcePdfFile:file,
      sourcePageIndex:pageNum-1,
      sourcePageCount:pdf.numPages,
-     sourceUnmodified:true,
+     sourceUnmodified:!extracted.contentCropped,
      pageWidthPt:extracted.pageWidthPt,
      pageHeightPt:extracted.pageHeightPt,
      filename:(file.name||'tailen.pdf')+'#'+pageNum,
@@ -867,7 +875,7 @@ for(let i=0;i<r.images.length;i++){
    orientationSelect.className='page-orientation-select';
    orientationSelect.title='Hướng trang riêng cho tờ này';
    for(const [value,label] of [['auto','Tự động'],['portrait','Dọc'],['landscape','Ngang']]){
-    const option=document.createElement('option');option.value=value;option.textContent=label;orientationSelect.append(option);
+    const option=document.createElement('option');option.value=value;option.textContent=value==='auto'?'Tự động · '+(r.images[i].orientation==='landscape'?'Ngang':'Dọc'):label;orientationSelect.append(option);
    }
    orientationSelect.value=r.images[i].pageOrientationOverride||'auto';
    orientationSelect.onchange=()=>{r.images[i].pageOrientationOverride=orientationSelect.value;render()};
@@ -1020,17 +1028,12 @@ function encodePdf(pages){
 async function originalPixelImageForPdf(source){
  const img=await loadImg(source),w=img.naturalWidth,h=img.naturalHeight;
  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
- const ctx=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
+ const ctx=canvas.getContext('2d',{alpha:false});
  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
- if(typeof CompressionStream!=='undefined'){
-  const rgba=ctx.getImageData(0,0,w,h).data,rgb=new Uint8Array(w*h*3);
-  for(let j=0,k=0;j<rgba.length;j+=4){rgb[k++]=rgba[j];rgb[k++]=rgba[j+1];rgb[k++]=rgba[j+2]}
-  const compressed=new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'));
-  const bytes=new Uint8Array(await new Response(compressed).arrayBuffer());
-  return {bytes,filter:'/FlateDecode',w,h};
- }
- // Fallback browser cũ: JPEG tối đa chất lượng, vẫn giữ đầy đủ pixel.
- return {jpeg:canvas.toDataURL('image/jpeg',1),w,h};
+ // Keep native pixel count. JPEG is necessary for scanned document streams:
+ // raw RGB /FlateDecode inflated a seven-page, ~620 KB scanned PDF to ~8 MB.
+ // Untouched original PDFs are returned byte-for-byte by originalUnchangedPdf().
+ return {jpeg:canvas.toDataURL('image/jpeg',.90),w,h};
 }
 function originalUnchangedPdf(r){
  if(mode!=='makepdf'||!r.images.length)return null;

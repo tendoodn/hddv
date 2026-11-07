@@ -247,21 +247,34 @@ $('webProfileForm').addEventListener('submit',async e=>{
  }catch(error){message('webProfileStatus',accountFlow.message(error),true)}
  finally{btn.disabled=false}
 });
+function clearAutoTaxLocalSession(){
+ const prefixes=['sb-ucqqjdsoyvvaxswzbhaw-auth-token','supabase.auth.token'];
+ for(const store of [localStorage,sessionStorage]){
+  try{
+   for(let i=store.length-1;i>=0;i--){
+    const key=store.key(i)||'';
+    if(prefixes.some(prefix=>key===prefix||key.startsWith(prefix+'-')))store.removeItem(key);
+   }
+  }catch{}
+ }
+}
 $('webLogout').addEventListener('click',async()=>{
  $('webSettingsMenu').hidden=true;closeAll();
  if(logoutSubmitting)return;
  logoutSubmitting=true;
- const previousAccount=account;
  account=null;update();
+ message('webAccountNotice');
  try{
-  const {error}=await client.auth.signOut();
-  if(error)throw error;
-  void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.({force:true}))
-   .catch(error=>console.warn('Chưa đồng bộ được trạng thái đăng xuất:',error.message||error));
- }catch(error){
-  account=previousAccount;update();
-  message('webAccountNotice',accountFlow.message(error),true);
- }finally{logoutSubmitting=false}
+  // Local sign-out is enough for this browser and must still work when the JWT
+  // or refresh token has already expired.
+  await client.auth.signOut({scope:'local'}).catch(()=>null);
+ }finally{
+  clearAutoTaxLocalSession();
+  logoutSubmitting=false;
+  // Recreate the Supabase client from a clean browser session so a stale
+  // in-memory token cannot re-authenticate the page after logout.
+  window.location.replace(window.location.pathname+window.location.search);
+ }
 });
 $('webNewPasswordForm').addEventListener('submit',async e=>{
  e.preventDefault();

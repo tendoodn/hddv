@@ -178,6 +178,11 @@ html.crop-editor-open,body.crop-editor-open{overflow:hidden!important;overscroll
 .crop-overlay .crop-stage{max-width:none!important;max-height:none!important}
 .crop-overlay .crop-side-controls{flex:0 0 min(350px,32vw)!important;align-self:stretch!important;max-height:100%!important;overflow-y:auto!important}
 @media(max-width:700px){.crop-overlay .crop-workspace{flex-direction:column!important}.crop-overlay .crop-image-pane{height:auto!important;min-height:0!important;flex:1 1 0!important}.crop-overlay .crop-side-controls{flex:0 0 auto!important;width:100%!important;max-height:min(42dvh,320px)!important}}
+.page-order-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.page-order-actions .page-orientation-select{min-width:86px;max-width:120px;padding:7px 5px;font-size:13px}
+/* Image-to-PDF preview uses the image's native ratio, without A4 backing. */
+.native-pdf-page{box-sizing:border-box!important;margin-left:auto!important;margin-right:auto!important;overflow:hidden!important}
+.native-pdf-page .doc-image{display:block!important;max-width:none!important;max-height:none!important;border:0!important;border-radius:0!important}
+.native-size-hint{display:block;margin:3px 0 6px;color:#49607a;font-size:12px}
 </style><link rel="manifest" href="/pdf/manifest.webmanifest">
 <script defer src="/pwa-install-v120.js?v=1220"></script>
 </head><body><main class="wrap"><div class="panel"><div class="modes"><button id="ccMode" class="mode" onclick="switchMode('cccd')">🪪 Đối chiếu CCCD</button><button id="docMode" class="mode" onclick="switchMode('docs')">📄 Đối chiếu giấy tờ</button><button id="makePdfMode" class="mode" onclick="switchMode('makepdf')">🖨️ Tạo PDF</button></div></div><section id="workspace" class="hidden"><div class="panel"><h2 id="modeTitle"></h2><p id="modeHelp" class="muted"></p><div class="bar"><label class="pick secondary" id="batchLabel">Chọn nhiều ảnh<input type="file" accept="image/*" multiple id="batch"></label><label class="pick secondary hidden" id="pdfBatchLabel">📄 Chọn nhiều PDF vào 1 hồ sơ<input type="file" id="pdfBatch" accept="application/pdf,.pdf" multiple></label><label class="pick secondary hidden" id="createPdfLabel">🖼️ Thêm ảnh hoặc PDF<input type="file" id="createPdfInput" accept="image/*,application/pdf,.pdf" multiple></label><span id="pdfBatchStatus" class="muted hidden" role="status" aria-live="polite"></span><button class="secondary" onclick="if(confirm('Xóa toàn bộ hồ sơ?')){records=[];if(mode==='makepdf')addRecord();else render()}">Xóa tất cả</button></div><div id="createPdfDrop" class="create-pdf-drop hidden" role="button" tabindex="0">Kéo thả ảnh hoặc PDF vào đây để thêm trang · PDF nhiều trang sẽ tự tách tờ</div><div id="profiles"></div><div class="bar" id="addRecordRow" style="margin-top:16px"><button onclick="addRecord()">+ Thêm hồ sơ</button></div></div><div class="panel"><div class="bar"><button id="export" onclick="exportAll()">↓ Tải tất cả PDF (.ZIP)</button><span id="count" class="muted"></span></div><p class="muted"> </p></div><div class="panel"><h2>Xem trước bố cục</h2><div id="preview" class="preview"></div></div></section></main><script>
@@ -221,7 +226,7 @@ async function imagePageMetrics(src){
 }
 async function imagePageFromFile(file){
  const data=await url(file);
- try{return {data,filename:file.name,cropMode:'manual',cropRects:{},...(await imagePageMetrics(data))}}
+ try{return {data,filename:file.name,sourceImageFile:file,sourceImageUnmodified:true,cropMode:'manual',cropRects:{},...(await imagePageMetrics(data))}}
  catch(error){URL.revokeObjectURL(data);throw error}
 }
 async function changeImage(r,i,file){
@@ -510,7 +515,7 @@ function cropOne(obj){
  const facade={front:obj.data,cropMode:'manual',cropRects:{front:[...(obj.cropRects?.front||[0,0,0,0])]},onCropSaved:async()=>{
   const oldW=obj.imageWidthPx||0,oldH=obj.imageHeightPx||0;
   const oldPageW=obj.pageWidthPt||0,oldPageH=obj.pageHeightPt||0;
-  obj.data=facade.front;obj.sourceUnmodified=false;obj.sourceBitmapModified=true;obj.cropMode='manual';obj.cropRects={front:[...facade.cropRects.front]};
+  obj.data=facade.front;obj.sourceUnmodified=false;obj.sourceBitmapModified=true;obj.sourceImageUnmodified=false;obj.cropMode='manual';obj.cropRects={front:[...facade.cropRects.front]};
   if(mode==='makepdf'){
    const newMetrics=await imagePageMetrics(obj.data);
    obj.orientation=newMetrics.orientation;
@@ -919,9 +924,22 @@ for(let i=0;i<r.images.length;i++){
     const option=document.createElement('option');option.value=value;option.textContent=value==='auto'?'Tự động · '+(r.images[i].orientation==='landscape'?'Ngang':'Dọc'):label;orientationSelect.append(option);
    }
    orientationSelect.value=r.images[i].pageOrientationOverride||'auto';
-   orientationSelect.onchange=()=>{r.images[i].pageOrientationOverride=orientationSelect.value;render()};
+   orientationSelect.onchange=()=>{
+    const item=r.images[i],chosen=orientationSelect.value;
+    if(item.data&&!item.fromPdf&&chosen!=='auto'&&chosen!==item.orientation){
+     alert('Ảnh gốc '+item.imageWidthPx+' × '+item.imageHeightPx+' px. Để không thêm nền trắng, không thể ép hướng giấy trái với tỷ lệ ảnh. Hãy chọn Tự động hoặc xoay ảnh trong phần cắt.');
+     orientationSelect.value=item.pageOrientationOverride||'auto';return;
+    }
+    item.pageOrientationOverride=chosen;render();
+   };
    order.append(orientationSelect);
    cb.append(order);
+   if(obj.data){
+    const hint=document.createElement('small');hint.className='native-size-hint';
+    if(obj.imageWidthPx&&obj.imageHeightPx)hint.textContent='Ảnh gốc: '+obj.imageWidthPx+' × '+obj.imageHeightPx+' px · Không ghép vào A4';
+    else if(obj.pageWidthPt&&obj.pageHeightPt)hint.textContent='Trang PDF: '+obj.pageWidthPt.toFixed(1)+' × '+obj.pageHeightPt.toFixed(1)+' pt';
+    if(hint.textContent)cb.append(hint);
+   }
   }
   block.append(cb);
   if(mode==='docs'||mode==='makepdf'){
@@ -940,10 +958,16 @@ if(mode==='cccd'){const sh=mkSheet(),top=document.createElement('div'),bottom=do
  const selected=(obj.pageOrientationOverride&&obj.pageOrientationOverride!=='auto')?obj.pageOrientationOverride:(obj.orientation||'portrait');
  const wide=selected==='landscape';
  if(wide)sh.classList.add('sheet-landscape');
- let paperW=obj.pageWidthPt||(wide?841.89:595.28),paperH=obj.pageHeightPt||(wide?595.28:841.89);
- if((paperW>paperH)!==wide)[paperW,paperH]=[paperH,paperW];
+ const isUploadedImage=!obj.fromPdf&&!!obj.data;
+ const actualW=obj.imageWidthPx||0,actualH=obj.imageHeightPx||0;
+ let paperW=isUploadedImage?actualW:(obj.pageWidthPt||(wide?841.89:595.28));
+ let paperH=isUploadedImage?actualH:(obj.pageHeightPt||(wide?595.28:841.89));
+ if(!isUploadedImage&&(paperW>paperH)!==wide)[paperW,paperH]=[paperH,paperW];
+ if(isUploadedImage)sh.classList.toggle('sheet-landscape',actualW>actualH);
+ sh.classList.add('native-pdf-page');
  sh.style.width=paperW+'px';sh.style.height=paperH+'px';sh.dataset.pageW=String(paperW);sh.dataset.pageH=String(paperH);
- if(obj.data){const im=mkImage(obj);im.className='doc-image';im.style.left='0';im.style.top='0';im.style.width='100%';im.style.height='100%';im.style.objectFit='contain';sh.append(im)}
+ sh.style.background='transparent';sh.style.padding='0';sh.style.border='0';
+ if(obj.data){const im=mkImage(obj);im.className='doc-image';im.style.left='0';im.style.top='0';im.style.width='100%';im.style.height='100%';im.style.objectFit=isUploadedImage?'fill':'contain';sh.append(im)}
  pv.append(sh)
  }}else{for(const mono of [false,true])for(const obj of r.images){const sh=mkSheet();if(obj.data){const im=mkImage(obj,mono);im.className='doc-image';sh.append(im)}if(mono){const sig=new Image();sig.src=SIGN;sig.className='doc-sign';sh.append(sig)}pv.append(sh)}}}scalePreview()}
 
@@ -1066,15 +1090,47 @@ function encodePdf(pages){
  const start=len;put('xref\n0 '+(n+1)+'\n0000000000 65535 f \n');for(let i=1;i<=n;i++)put(String(offsets[i]).padStart(10,'0')+' 00000 n \n');put('trailer\n<< /Size '+(n+1)+' /Root 1 0 R >>\nstartxref\n'+start+'\n%%EOF');return new Blob(chunks,{type:'application/pdf'});
 }
 // Không thay đổi kích thước pixel, không nén JPEG khi tạo PDF.
-async function originalPixelImageForPdf(source){
+// A PDF page for an uploaded photo uses the ORIGINAL image pixel grid.
+// For JPEGs without EXIF rotation, embed the original compressed JPEG bytes directly.
+// Other formats use lossless RGB /FlateDecode at native pixel dimensions.
+function rawJpegMatchesOrientation(bytes,width,height){
+ if(bytes.length<16||bytes[0]!==255||bytes[1]!==216)return false;
+ let i=2,found=false,hasExif=false;
+ while(i+4<bytes.length){
+  if(bytes[i]!==255)break;
+  while(bytes[i]===255)i++;
+  const marker=bytes[i++];
+  if(marker===0xd9||marker===0xda)break;
+  if(marker===0x01||(marker>=0xd0&&marker<=0xd7))continue;
+  if(i+2>bytes.length)break;
+  const len=(bytes[i]<<8)|bytes[i+1];if(len<2||i+len>bytes.length)break;
+  if(marker===0xe1&&len>8&&bytes[i+2]===69&&bytes[i+3]===120&&bytes[i+4]===105&&bytes[i+5]===102)hasExif=true;
+  if([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)&&len>=7){
+   const h=(bytes[i+3]<<8)|bytes[i+4],w=(bytes[i+5]<<8)|bytes[i+6];
+   found=w===width&&h===height;
+  }
+  i+=len;
+ }
+ return found&&!hasExif;
+}
+async function originalPixelImageForPdf(source,obj=null){
  const img=await loadImg(source),w=img.naturalWidth,h=img.naturalHeight;
+ if(obj?.sourceImageUnmodified&&obj.sourceImageFile){
+  const raw=new Uint8Array(await obj.sourceImageFile.arrayBuffer());
+  if(rawJpegMatchesOrientation(raw,w,h))return {bytes:raw,filter:'/DCTDecode',w,h};
+ }
  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
- const ctx=canvas.getContext('2d',{alpha:false});
+ const ctx=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
- // Keep native pixel count. JPEG is necessary for scanned document streams:
- // raw RGB /FlateDecode inflated a seven-page, ~620 KB scanned PDF to ~8 MB.
- // Untouched original PDFs are returned byte-for-byte by originalUnchangedPdf().
- return {jpeg:canvas.toDataURL('image/jpeg',.90),w,h};
+ if(typeof CompressionStream==='function'){
+  const rgba=ctx.getImageData(0,0,w,h).data;
+  const rgb=new Uint8Array(w*h*3);
+  for(let i=0,j=0;i<rgba.length;i+=4){rgb[j++]=rgba[i];rgb[j++]=rgba[i+1];rgb[j++]=rgba[i+2]}
+  const stream=new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'));
+  return {bytes:new Uint8Array(await new Response(stream).arrayBuffer()),filter:'/FlateDecode',w,h};
+ }
+ // Legacy browsers: same dimensions, highest supported JPEG quality.
+ return {jpeg:canvas.toDataURL('image/jpeg',1),w,h};
 }
 function originalUnchangedPdf(r){
  if(mode!=='makepdf'||!r.images.length)return null;
@@ -1092,10 +1148,10 @@ async function makePages(r,scale,quality){
  const sig=(ctx,x,y,w,h)=>{const ratio=Math.min(w/sign.width,h/sign.height),dw=sign.width*ratio,dh=sign.height*ratio;ctx.drawImage(sign,(x+(w-dw)/2)*mm,(y+(h-dh)/2)*mm,dw*mm,dh*mm)};
  if(mode==='makepdf'){
   for(const obj of r.images){
-   const bitmap=await originalPixelImageForPdf(obj.data);
-   let paperW=obj.pageWidthPt||bitmap.w*.75,paperH=obj.pageHeightPt||bitmap.h*.75;
+   const bitmap=await originalPixelImageForPdf(obj.data,obj);
+   let paperW=(obj.fromPdf&&obj.pageWidthPt)||bitmap.w*.75,paperH=(obj.fromPdf&&obj.pageHeightPt)||bitmap.h*.75;
    const choice=(obj.pageOrientationOverride&&obj.pageOrientationOverride!=='auto')?obj.pageOrientationOverride:null;
-   if(choice&&((paperW>paperH)!==(choice==='landscape')))[paperW,paperH]=[paperH,paperW];
+   if(obj.fromPdf&&choice&&((paperW>paperH)!==(choice==='landscape')))[paperW,paperH]=[paperH,paperW];
    pages.push({...bitmap,pageWidthPt:paperW,pageHeightPt:paperH});
   }
   return pages;

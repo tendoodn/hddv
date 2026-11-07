@@ -120,12 +120,23 @@ function build(){
  result.append(section);
  const btn=$('searchBtn');
  btn.textContent='Tra Cứu';
- const link=document.createElement('a');
- link.id='liteHome';link.href='/';link.textContent='Trở lại trang chủ';
- btn.insertAdjacentElement('afterend',link);
  const status=document.createElement('p');status.id='liteStatus';
  status.setAttribute('role','status');status.setAttribute('aria-live','polite');
- link.insertAdjacentElement('afterend',status);
+ btn.insertAdjacentElement('afterend',status);
+ // A wide MST drawer is positioned underneath the half-width input.
+ const repositionPicker=()=>{
+  const menu=$('mstPickerMenu'),field=$('mstFree');
+  if(!menu||!field||menu.hidden)return;
+  const rect=field.getBoundingClientRect();
+  const top=Math.min(window.innerHeight-160,Math.max(65,rect.bottom+8));
+  document.documentElement.style.setProperty('--lite-picker-top',top+'px');
+ };
+ const picker=$('mstPickerMenu');
+ if(picker){
+  new MutationObserver(repositionPicker).observe(picker,{attributes:true,attributeFilter:['hidden']});
+  window.addEventListener('resize',repositionPicker,{passive:true});
+  window.addEventListener('scroll',repositionPicker,{passive:true});
+ }
  $('liteResultKind').addEventListener('change',e=>{
   kind=e.target.value;page=1;queueRender();
  });

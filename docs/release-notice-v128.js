@@ -11,7 +11,7 @@ function init(){
  const title=document.createElement('strong');title.textContent='AutoTax V'+VERSION+' đã cập nhật';
  title.style.cssText='display:block;color:#a20d29;font-size:15px';
  const detail=document.createElement('p');
- detail.textContent='Tối ưu giao diện và quy trình tra cứu, bổ sung Lite dành cho điện thoại, cải thiện tốc độ hiển thị và bảo vệ nguồn tệp. Quyền MST và hạn mức hóa đơn được giữ nguyên.';
+ detail.textContent='Đồng bộ đăng nhập Web–Lite–Add-on, chuẩn hóa tên file tải, cải thiện giao diện Lite trên điện thoại, tăng phản hồi nút bấm và tiếp tục tách mã nguồn build/backend khỏi repo public. Quyền MST, gói và lịch sử sử dụng được giữ nguyên.';
  detail.style.margin='5px 0';
  const close=document.createElement('button');close.type='button';close.textContent='Đóng thông báo';
  close.style.cssText='background:#bd0e2c;color:white;border:0;border-radius:8px;padding:8px 14px;font-weight:750;cursor:pointer';

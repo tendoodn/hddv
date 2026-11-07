@@ -214,6 +214,27 @@ html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a.web-dialog
 }
 #webLoginSubmit:hover{background:#b91f3d!important;border-color:transparent!important}
 #webLoginSubmit:focus-visible{outline:3px solid #ff9cad!important;outline-offset:2px}
+</style><style id="autotax-login-actions-hover-v121">
+#webLoginDialog .autotax-login-actions-grid>button,
+#webLoginDialog .autotax-login-actions-grid>a{
+ transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease,border-color .16s ease,filter .16s ease!important;
+}
+#webLoginDialog .autotax-login-actions-grid>button:hover,
+#webLoginDialog .autotax-login-actions-grid>a:hover{
+ transform:translateY(-2px)!important;
+ box-shadow:0 6px 14px rgba(0,0,0,.18)!important;
+ filter:brightness(1.08);
+}
+#webLoginDialog #webLoginSubmit:hover{
+ background:#b91f3d!important;
+ border-color:transparent!important;
+ filter:none;
+}
+#webLoginDialog .autotax-login-actions-grid>button:active,
+#webLoginDialog .autotax-login-actions-grid>a:active{
+ transform:translateY(0)!important;
+ box-shadow:none!important;
+}
 </style></head>
 <body>
 <style>
@@ -593,6 +614,8 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script>
+<script src="./account-flow.js?v=20261107authfast121"></script>
+<script src="./web/account-modal.js?v=20261107authfast121"></script>
 <script src="./web/zip.js?v=1"></script>
 <script src="./web/xlsx.js?v=1"></script>
 <script src="./web/workbook-fast-v120.js?v=120w1"></script>
@@ -617,11 +640,9 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/invoice-cache-v120.js?v=20261107cache30"></script>
 <script src="./member-cache-reset-v122.js?v=1127cache"></script>
 <script src="./web/date-slide-picker.js?v=1122b"></script>
-<script src="./account-flow.js?v=20261106u130"></script>
 <script src="./issuer-reference-v1.js?v=20261106footer134"></script>
-<script src="./web/web.js?v=20261107quota120"></script>
+<script src="./web/web.js?v=20261107authfast121"></script>
 
-<script src="./web/account-modal.js?v=20261107authfix121b"></script>
 <script src="./extension-link-v118.js?v=121account2"></script>
 <script src="./data365-payment.js?v=1123data365qr1"></script>
 <script src="./web/web-results.js?v=20261106grantcenter136"></script>

@@ -64,10 +64,17 @@ jobs:
           curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/?v=$cache_bust" -o /tmp/web.html
           curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/lite/?v=$cache_bust" -o /tmp/lite.html
           curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/admin/?v=$cache_bust" -o /tmp/admin.html
+          curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/lite/lite.css?v=122f&check=$cache_bust" -o /tmp/lite.css
+          curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/web/web.js?v=20261107lite-layout123&check=$cache_bust" -o /tmp/web.js
           grep -Fq 'position:absolute!important' /tmp/web.html
           grep -Fq 'lite.css?v=122f' /tmp/lite.html
           grep -Fq '20261107lite-layout123' /tmp/lite.html
+          grep -Fq '#searchForm .field:nth-child(3){grid-column:1/-1' /tmp/lite.css
+          grep -Fq '#webTeamQuotaSummary{' /tmp/lite.css
+          grep -Fq 'display:none!important;margin:8px 0 10px' /tmp/lite.css
+          grep -Fq "if(window.AutoTaxLite===true)show('');" /tmp/web.js
           grep -Fq 'grid-template-columns:minmax(390px,1.45fr)' /tmp/admin.html
           echo 'LIVE_OK: Web settings menu marker present.'
-          echo 'LIVE_OK: Lite cache-busted CSS/JS markers present.'
+          echo 'LIVE_OK: Lite date row and hidden quota banner CSS present.'
+          echo 'LIVE_OK: Lite entitlement banner suppression JS present.'
           echo 'LIVE_OK: Admin one-row grant marker present.'

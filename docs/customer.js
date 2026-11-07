@@ -258,7 +258,8 @@ async function refresh(){
    (teamInvoice>0&&teamInvoiceShared===0?" (chưa có MST được chia sẻ)":"");
   $("mstCapacity").textContent=mstCapacity.toLocaleString("vi-VN")+" MST";
   $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMst.toLocaleString("vi-VN")+" MST (đã chia sẻ "+teamMstShared+" MST)";
-  $("mstExpiry").textContent="Hạn gói cá nhân: gần nhất "+vnDate(mst.nearest_expiry)+" · xa nhất "+vnDate(mst.farthest_expiry);
+  $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+
+   " ("+Number(mst.expiring_quantity||0)+" MST hết hạn ở mốc này) · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   $("rereadNote").hidden=!license.can_reread_charged_invoices;
   const modeCounts={invoice:Number(invoice.remaining||0)+teamInvoiceUsable,mst:Number(mst.active_quantity||0)+teamMstShared};
   const spendableInvoice=modeCounts.invoice>0,spendableMst=modeCounts.mst>0;
@@ -319,6 +320,42 @@ async function refresh(){
   }
  }
 }
+const mstPackageCodes=new Set();
+function chooseMstPurchaseMode(packageCode){
+ const dialog=$('mstPurchaseModeDialog');
+ const active=Number(state?.packages?.mst?.active_quantity||0);
+ const quantity=Number(mstPackageMeta.get(packageCode)?.quantity||0);
+ const days=Number(mstPackageMeta.get(packageCode)?.validity_days||365);
+ const renew=Math.min(active,quantity),newSlots=Math.max(0,quantity-renew);
+ $('mstPurchaseModeDescription').textContent='Gói '+packageCode+' · '+quantity+' MST · '+days+' ngày.';
+ $('mstPurchaseModePreview').textContent=active>0?
+   ('Hiện có '+active+' MST cá nhân. Nếu tăng thời gian: tối đa '+renew+
+    ' MST đang dùng được gia hạn thêm '+days+' ngày từ ngày hết hạn cũ; '+
+    newSlots+' MST mới (nếu có) nhận '+days+' ngày từ lúc thanh toán.'):
+   ('Chưa có MST cá nhân còn hạn. Chọn Tăng số lượng dùng để thêm '+quantity+' MST.');
+ const duration=$('mstPurchaseDuration');
+ duration.disabled=active<1;
+ duration.title=active<1?'Chưa có MST đang còn hạn để gia hạn':'Ưu tiên cộng ngày cho MST hiện có';
+ return new Promise(resolve=>{
+  let settled=false;
+  const finish=mode=>{if(settled)return;settled=true;dialog.close();cleanup();resolve(mode)};
+  const onQty=()=>finish('capacity'),onDuration=()=>finish('duration'),onCancel=()=>finish(null),onClose=()=>finish(null);
+  const cleanup=()=>{
+   $('mstPurchaseQuantity').removeEventListener('click',onQty);
+   $('mstPurchaseDuration').removeEventListener('click',onDuration);
+   $('mstPurchaseCancel').removeEventListener('click',onCancel);
+   dialog.removeEventListener('cancel',onClose);
+   dialog.removeEventListener('close',onClose);
+  };
+  $('mstPurchaseQuantity').addEventListener('click',onQty);
+  duration.addEventListener('click',onDuration);
+  $('mstPurchaseCancel').addEventListener('click',onCancel);
+  dialog.addEventListener('cancel',onClose);
+  dialog.addEventListener('close',onClose);
+  dialog.showModal();
+ });
+}
+const mstPackageMeta=new Map();
 async function loadPackages(){
  const rows=await rpc("addon_list_packages");
  const list=$("packageList");list.replaceChildren();
@@ -333,6 +370,7 @@ async function loadPackages(){
    heading.style.cssText='grid-column:1/-1;margin:12px 0 0;color:#9f1239';
    list.append(heading);customHeadingAdded=true;
   }
+  if(item.family==='mst')mstPackageMeta.set(item.code,{quantity:item.quantity,validity_days:item.validity_days});
   const card=document.createElement("div");card.className="plan";
   addText(card,"h3",item.name);
   addText(card,"p",item.family==="storage"
@@ -578,7 +616,8 @@ async function finishPaidOrder(order){
   $("invoiceTeamLimit").textContent="Cá nhân: "+Number(inv.remaining||0).toLocaleString("vi-VN")+" · Nhóm: "+teamSheets.toLocaleString("vi-VN")+
    (teamSheets>0&&teamInvoiceShared===0?" (chưa có MST được chia sẻ)":"");
   $("mstTeamLimit").textContent="Cá nhân: "+Number(mst.active_quantity||0).toLocaleString("vi-VN")+" MST · Nhóm: "+teamMsts.toLocaleString("vi-VN")+" MST (đã chia sẻ "+teamMstShared+" MST)";
-  $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+" · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
+  $("mstExpiry").textContent="Hạn gần nhất: "+vnDate(mst.nearest_expiry)+
+   " ("+Number(mst.expiring_quantity||0)+" MST hết hạn ở mốc này) · Hạn xa nhất: "+vnDate(mst.farthest_expiry);
   balancesText="Hóa đơn: "+remaining.toLocaleString("vi-VN")+" / "+purchased.toLocaleString("vi-VN")+
    " lượt\nMST hiện có: "+capacity.toLocaleString("vi-VN")+
    (mst.nearest_expiry?"\nHạn gần nhất: "+vnDate(mst.nearest_expiry):"");
@@ -627,6 +666,13 @@ async function buy(packageCode,button,options={}){
   return;
  }
  if(paymentCreating||button.disabled)return;
+ // Never silently reinterpret a duration purchase as additional seats.
+ // The option must be saved on the pending server order before showing its QR.
+ if(mstPackageMeta.has(packageCode)&&!options.purchaseMode){
+  const mode=await chooseMstPurchaseMode(packageCode);
+  if(!mode)return;
+  options={...options,purchaseMode:mode};
+ }
  paymentCreating=true;button.disabled=true;
  // Show the checkout immediately. Do not show a QR or permit payment until
  // the server has created a real order with a validated amount and expiry.
@@ -651,13 +697,17 @@ async function buy(packageCode,button,options={}){
   const result=await response.json();
   if(requestEpoch!==paymentRequestEpoch)return;
   if(!response.ok||!result.success||!result.payment?.qr_url)throw Error(result.error||"Không tạo được đơn hàng.");
+  if(mstPackageMeta.has(packageCode)){
+   const mode=options.purchaseMode||'capacity';
+   await rpc('autotax_set_mst_purchase_mode_v120',{p_order_id:result.order.order_id,p_mode:mode});
+  }
   const expiresAt=Date.parse(result.payment.expires_at||result.order?.qr_expires_at);
   if(!Number.isFinite(expiresAt))throw Error("Hệ thống chưa trả về hạn QR. Vui lòng tải lại trang và thử lại.");
   // Keep the already-open checkout. Closing here would hide it and invalidate
   // a user request; only replace the placeholder with confirmed payment data.
   const serverTime=Date.parse(result.server_time);
   const order={
-   id:result.order.order_id,packageCode,
+   id:result.order.order_id,packageCode,purchaseMode:options.purchaseMode||null,
    expiresAt,serverOffset:Number.isFinite(serverTime)?serverTime-Date.now():0,
    completed:false,expired:false
   };
@@ -717,7 +767,8 @@ async function buy(packageCode,button,options={}){
 $("applyPaymentCoupon").addEventListener("click",()=>{
  if(!paymentOrder)return showMessage("Chưa có QR để áp dụng mã.",true);
  const coupon=$("paymentCouponCode").value.trim().toUpperCase();
- void buy(paymentOrder.packageCode,$("applyPaymentCoupon"),{coupon,replaceId:paymentOrder.id});
+ void buy(paymentOrder.packageCode,$("applyPaymentCoupon"),{coupon,replaceId:paymentOrder.id,
+   purchaseMode:paymentOrder.purchaseMode});
 });
 async function action(id,fn){
  const button=$(id);button.disabled=true;

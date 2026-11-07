@@ -2,14 +2,23 @@
 (()=>{
  'use strict';
  const $=id=>document.getElementById(id);
- let generation=0,url='',bytes=null,filename='';
+ let generation=0,url='',bytes=null,filename='',zoom=1;
+ const ZOOM_MIN=.6,ZOOM_MAX=3;
+ function applyZoom(next){
+  zoom=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,Number(next)||1));
+  const host=$('invoicePdfCanvasPages');
+  host?.querySelectorAll('canvas[data-base-width]').forEach(canvas=>{
+   canvas.style.width=(Number(canvas.dataset.baseWidth)*zoom)+'px';
+  });
+  const label=$('invoicePdfZoomValue');if(label)label.textContent=Math.round(zoom*100)+'%';
+ }
  function clear(){
   generation++;
   const frame=$('invoicePdfPreviewFrame');
   if(frame){frame.removeAttribute('src');frame.hidden=true}
   const canvasHost=$('invoicePdfCanvasPages');if(canvasHost){canvasHost.replaceChildren();canvasHost.hidden=true}
   if(url)URL.revokeObjectURL(url);
-  url='';bytes=null;filename='';
+  url='';bytes=null;filename='';zoom=1;applyZoom(1);
   const download=$('downloadInvoicePdfPreview');if(download)download.disabled=true;
  }
  async function open(row){
@@ -72,13 +81,14 @@
       const width=Math.max(220,Math.min(canvasHost.clientWidth||window.innerWidth-30,1100));
       const renderScale=width/viewport.width;
       const scaled=page.getViewport({scale:renderScale});
-      // Limit mobile memory: cap total pixels to 6 million per page.
-      const pixelRatio=Math.max(1,Math.min(window.devicePixelRatio||1,2,
-        Math.sqrt(6000000/Math.max(1,scaled.width*scaled.height))));
+      // V1.2.2: render sharper text while keeping a per-page memory ceiling.
+      const pixelRatio=Math.max(1,Math.min(window.devicePixelRatio||1,3,
+        Math.sqrt(16000000/Math.max(1,scaled.width*scaled.height))));
       const canvas=document.createElement('canvas');
       canvas.width=Math.ceil(scaled.width*pixelRatio);
       canvas.height=Math.ceil(scaled.height*pixelRatio);
-      canvas.style.width='100%';canvas.style.height='auto';
+      canvas.dataset.baseWidth=String(scaled.width);
+      canvas.style.width=(scaled.width*zoom)+'px';canvas.style.height='auto';
       canvas.setAttribute('aria-label','Trang PDF '+n);
       canvasHost.append(canvas);
       const ctx=canvas.getContext('2d',{alpha:false});
@@ -113,6 +123,15 @@
  function init(){
   const dialog=$('invoicePdfPreviewDialog'),close=$('closeInvoicePdfPreview');
   const download=$('downloadInvoicePdfPreview');if(!dialog||!close||!download)return;
+  const actions=dialog.querySelector('.invoice-pdf-actions,.invoice-pdf-buttons')||close.parentElement;
+  if(actions&&!$('invoicePdfZoomOut')){
+   const group=document.createElement('span');group.className='invoice-pdf-zoom';
+   group.innerHTML='<button id="invoicePdfZoomOut" type="button" aria-label="Thu nhỏ PDF">−</button><output id="invoicePdfZoomValue" aria-live="polite">100%</output><button id="invoicePdfZoomIn" type="button" aria-label="Phóng to PDF">+</button><button id="invoicePdfZoomReset" type="button">Vừa trang</button>';
+   actions.insertBefore(group,download);
+   $('invoicePdfZoomOut').addEventListener('click',()=>applyZoom(zoom-.2));
+   $('invoicePdfZoomIn').addEventListener('click',()=>applyZoom(zoom+.2));
+   $('invoicePdfZoomReset').addEventListener('click',()=>applyZoom(1));
+  }
   close.addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',clear);
   download.addEventListener('click',()=>{

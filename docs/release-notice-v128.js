@@ -1,7 +1,7 @@
-/* AutoTax V1.2.0 announcement. No tracking or remote dependencies. */
+/* AutoTax V1.2.2 announcement. No tracking or remote dependencies. */
 (()=>{
 'use strict';
-const VERSION='1.2.0', KEY='autotax_release_seen_'+VERSION;
+const VERSION='1.2.2', KEY='autotax_release_seen_'+VERSION;
 function init(){
  try{if(localStorage.getItem(KEY)==='1')return}catch{}
  if(document.getElementById('autotaxReleaseNotice'))return;

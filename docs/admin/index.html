@@ -320,13 +320,15 @@ body .topbar a.logo span,body header .brand span{font-size:50%!important;line-he
  });
 })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script><script src="./admin-mst.js?v=120nov2"></script><script>
-const client=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ");
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script>
+<script src="./auth-extension-bridge.js?v=20261107sync121"></script><script src="./admin-mst.js?v=120nov2"></script><script>
+const client=window.AutoTaxSharedClient||(window.AutoTaxSharedClient=window.supabase.createClient("https://ucqqjdsoyvvaxswzbhaw.supabase.co","sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ"));
 const $=id=>document.getElementById(id);let allUsers=[],allPackages=[],customerPage=1,packagePage=1;
 function msg(id,t,e=false){$(id).textContent=t;$(id).classList.remove("hidden","error");if(e)$(id).classList.add("error")}
 function fmt(v){return v?new Date(v).toLocaleString("vi-VN"):"—"}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function boot(){
+ if(window.AutoTaxAuthBridgeReady)await window.AutoTaxAuthBridgeReady.catch(()=>{});
  const {data,error:sessionError}=await client.auth.getSession();
  const session=data?.session||null;
  // Do not blank a verified Admin workspace for a token refresh / same-user event.

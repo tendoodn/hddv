@@ -63,11 +63,10 @@ public final class MainActivity extends Activity {
         fullEdition = getPackageName().endsWith(".full");
         getWindow().setStatusBarColor(Color.rgb(6, 16, 25));
         getWindow().setNavigationBarColor(Color.rgb(6, 16, 25));
-        getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-        );
+        // Android 15+ forces edge-to-edge: explicitly consume real system insets.
+        // Do not request layout fullscreen; the first toolbar line must stay
+        // below camera cutouts and the Android status bar on every device.
+        if (Build.VERSION.SDK_INT >= 30) getWindow().setDecorFitsSystemWindows(false);
         WebView.setWebContentsDebuggingEnabled(false);
 
         LinearLayout shell = new LinearLayout(this);
@@ -85,7 +84,7 @@ public final class MainActivity extends Activity {
                 left=insets.getSystemWindowInsetLeft();
                 right=insets.getSystemWindowInsetRight();
             }
-            view.setPadding(left,top+dp(5),right,bottom);
+            view.setPadding(left,top+dp(12),right,bottom+dp(4));
             return insets;
         });
         setContentView(shell);

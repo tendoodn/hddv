@@ -1,0 +1,33 @@
+name: Export AutoTax V1.2.2 compact ZIP
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release/AutoTax.1.2.2.zip'
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compact release
+        run: |
+          unzip -t release/AutoTax.1.2.2.zip
+          python3 - <<'PY'
+          import json,zipfile
+          p='release/AutoTax.1.2.2.zip'
+          with zipfile.ZipFile(p) as z:
+              m=json.loads(z.read('manifest.json'))
+              assert m['version']=='1.2.2'
+              css=z.read('panel.css').decode('utf-8')
+              assert 'AutoTax V1.2.2 compact Side Panel' in css
+          print('AutoTax 1.2.2 compact ZIP validated')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AutoTax.1.2.2-compact
+          path: release/AutoTax.1.2.2.zip
+          if-no-files-found: error
+          compression-level: 0

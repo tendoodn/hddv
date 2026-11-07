@@ -87,7 +87,7 @@ $('accountProfileForm').addEventListener('submit',async event=>{
  const oldPass=$('accountOldPassword').value,newPass=$('accountNewPassword').value,avatarToSave=avatarData;
  if(name.length<2||name.length>100)return status('Tên người dùng phải dài từ 2 đến 100 ký tự.',true);
  if(Boolean(oldPass)!==Boolean(newPass))return status('Muốn đổi mật khẩu phải nhập cả mật khẩu cũ và mới.',true);
- if(newPass&&newPass.length<10)return status('Mật khẩu mới phải có ít nhất 10 ký tự.',true);
+ if(newPass&&newPass.length<8)return status('Mật khẩu mới phải có ít nhất 8 ký tự.',true);
  btn.disabled=true;status('Đang cập nhật thông tin…');
  try{
   const {data:{session}}=await client.auth.getSession();

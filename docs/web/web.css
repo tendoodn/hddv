@@ -342,12 +342,10 @@ td.audit-info{color:#c6c6db}
 #webAccountModeSlot #webModeControls:not([hidden]){background:transparent;border:0}
 #webAccountModeSlot #webModeControls select{min-width:170px;max-width:225px}
 .mst-combobox{position:relative;display:flex;align-items:center;width:100%;min-width:0}
-.mst-combobox #mstFree{display:block!important;min-width:0;width:100%;padding-right:56px}
+.mst-combobox #mstFree{display:block!important;min-width:0;width:100%;padding-right:14px}
 .mst-combobox #mstFree[hidden]{display:block!important}
-.mst-combobox #mstPickerToggle,.mst-combobox #mstPickerToggle[aria-expanded="true"]{display:flex!important;align-items:center;justify-content:center;position:absolute;right:5px;top:5px;bottom:5px;width:40px!important;min-height:0;height:auto!important;max-height:calc(100% - 10px);padding:0;border:0;background:#282a34;border-radius:11px;color:#fff;font-size:22px;cursor:pointer}
-.mst-combobox #mstPickerToggle:hover{background:#454958}
-.mst-picker-menu{position:relative;z-index:20;max-height:310px}
-.mst-picker-card{border-bottom:1px solid #34363e}
+.mst-picker-menu{position:relative;z-index:20;max-height:214px;overflow-y:auto;overscroll-behavior:contain}
+.mst-picker-card{border-bottom:1px solid #34363e;min-height:64px;box-sizing:border-box}
 .mst-picker-card.selected{background:#292231}
 .mst-picker-card .mst-picker-selected{font-size:10px;color:#b8f5cd}
 .mst-picker-add{font-size:12px}

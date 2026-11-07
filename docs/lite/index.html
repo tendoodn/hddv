@@ -53,9 +53,9 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"AutoTax Lite","applicationCategory":"BusinessApplication","operatingSystem":"Web","url":"https://tracuuhoadon.top/lite/","description":"Tra cứu hóa đơn mua vào, bán ra và xem PDF nhanh trên điện thoại; không xuất file.","inLanguage":"vi","offers":{"@type":"Offer","url":"https://tracuuhoadon.top/baogia/"}}</script>
 <meta name="description" content="AutoTax Lite: tra cứu hóa đơn điện tử mua vào, bán ra trên điện thoại. Xem PDF, ngày ký, tên đối tác, tổng thanh toán; phân trang 10–30 hóa đơn.">
 <link rel="preload" href="../web/hddt-api.js?v=20261106xmlfull2" as="script">
-<link rel="preload" href="../web/vault.js?v=20261107mstpicker123" as="script">
+<link rel="preload" href="../web/vault.js?v=20261107mstlist125" as="script">
 <link rel="preload" href="../web/invoice-cache-v120.js?v=20261107cache30" as="script">
-<link rel="preload" href="../web/web.js?v=20261107lite-layout123" as="script">
+<link rel="preload" href="../web/web.js?v=20261107mstlist125" as="script">
 <link rel="preload" href="../lite/lite.js?v=20261107lite1" as="script">
 <link rel="stylesheet" href="../web/web.css?v=122f">
 <link rel="preconnect" href="https://img.vietqr.io">
@@ -460,7 +460,6 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
            <select id="mst" name="mst" class="mst-hidden-select" aria-label="Hồ sơ MST đã chọn" tabindex="-1"><option value="">MST đã lưu</option></select>
            <input id="mstFree" name="tax_id_lookup" type="search" inputmode="search" maxlength="120" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true"
             placeholder="Nhập MST hoặc tìm theo tên hồ sơ…" aria-label="Nhập hoặc tìm kiếm MST" aria-controls="mstPickerMenu">
-           <button id="mstPickerToggle" type="button" aria-label="Chọn MST đã lưu" aria-controls="mstPickerMenu" aria-expanded="false" title="Chọn MST đã lưu">⌄</button>
           </div>
           <div id="mstPickerMenu" class="mst-picker-menu" hidden aria-label="Danh sách hồ sơ MST"></div>
           <div class="vault-inline"><a href="/user" target="_blank" rel="noopener noreferrer">Quản lý / đổi tên hồ sơ MST</a><span id="mstProfileCount"></span></div>
@@ -744,12 +743,12 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 
 <script src="../mst-sync.js?v=118"></script>
 <script src="../team-shared-v119.js?v=20261106teamsync"></script>
-<script src="../web/vault.js?v=20261107mstpicker123"></script>
+<script src="../web/vault.js?v=20261107mstlist125"></script>
 <script src="../web/pdf.js?v=20261107fontpath123"></script>
 <script src="../web/invoice-cache-v120.js?v=20261107cache30"></script>
 <script src="../member-cache-reset-v122.js?v=1127cache"></script>
 <script src="../web/date-slide-picker.js?v=1122b"></script>
-<script src="../web/web.js?v=20261107lite-layout123"></script>
+<script src="../web/web.js?v=20261107mstlist125"></script>
 
 <script src="../web/web-results.js?v=20261107lite1"></script>
 <script src="../web/pdf-preview-v120a.js?v=20261107pwa-fullpinch124"></script>

@@ -1,0 +1,20 @@
+{
+  "id": "/user/",
+  "name": "AutoTax – Tài khoản",
+  "short_name": "AutoTax USER",
+  "description": "Quản lý tài khoản và gia hạn AutoTax",
+  "start_url": "/user/",
+  "scope": "/user/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09090b",
+  "theme_color": "#09131d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

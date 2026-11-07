@@ -336,7 +336,7 @@ async function boot(){
   showAdminSessionMessage("Không đọc được phiên đăng nhập: "+sessionError.message+" · Kiểm tra kết nối và thử lại.");
   return;
  }
- if(!session){location.replace('/');return;}
+ if(!session){location.replace('/404.html');return;}
  // Identity and Admin role verification are independent network requests:
  // run concurrently, but never expose protected data before BOTH succeed.
  const [identityResult,roleResult]=await Promise.all([
@@ -956,7 +956,7 @@ client.auth.onAuthStateChange((event,session)=>{
    if(!error&&!data?.session){
     adminVerifiedUserId=null;
     $("app").classList.add("hidden");
-    showAdminSessionMessage("Phiên đăng nhập đã kết thúc. Vui lòng quay lại trang tra cứu để đăng nhập.");
+    location.replace("/404.html");
    }
   });
  }

@@ -2,14 +2,16 @@
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-const client=window.AutoTaxSharedClient;
+const SUPABASE='https://ucqqjdsoyvvaxswzbhaw.supabase.co';
+const PUBLIC_KEY='sb_publishable_7zUjUap6EkHJZ0Gp12vesw_UY-yB7jJ';
+const client=window.AutoTaxSharedClient||(window.AutoTaxSharedClient=window.supabase?.createClient(SUPABASE,PUBLIC_KEY));
 const accountFlow=window.AutoTaxAccountFlow;
 if(!client||!$('webLoginDialog'))return;
 const dialogs=['webLoginDialog','webSignupDialog','webForgotDialog','webResetSentDialog','webNewPasswordDialog','webProfileDialog'];
 const logo='/favicon.svg?v=20261102b';
 const allowedEmail=v=>/^[^@\s]+@(gmail\.com|hotmail\.com|yahoo\.com|yahoo\.com\.vn)$/i.test(v);
 let account=null,recovery=false,resetCloseTimer=null,avatar=logo;
-let loginSubmitting=false;
+let loginSubmitting=false,logoutSubmitting=false;
 let usernameOwner='',usernameCache='',usernameRequest=null;
 async function loadProfileUsername(user){
  const field=$('webProfileUsername');
@@ -97,6 +99,7 @@ $('webLoginForm').addEventListener('submit',async e=>{
  const password=$('webLoginPassword').value;
  if(btn.disabled)return;
  btn.disabled=true;loginSubmitting=true;
+ const loginLabel=btn.textContent;btn.textContent='Đang đăng nhập…';
  message('webLoginStatus','Đang xác thực tài khoản…');
  try{
   const login=email.includes('@')?
@@ -130,7 +133,7 @@ $('webLoginForm').addEventListener('submit',async e=>{
   void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.({force:true}))
     .catch(error=>console.warn('Chưa đồng bộ được hồ sơ sau đăng nhập:',error.message||error));
  }catch(error){message('webLoginStatus',accountFlow.message(error),true)}
- finally{loginSubmitting=false;btn.disabled=false}
+ finally{loginSubmitting=false;btn.disabled=false;btn.textContent=loginLabel}
 });
 $('webSignupForm').addEventListener('submit',async e=>{
  e.preventDefault();
@@ -246,9 +249,19 @@ $('webProfileForm').addEventListener('submit',async e=>{
 });
 $('webLogout').addEventListener('click',async()=>{
  $('webSettingsMenu').hidden=true;closeAll();
- const {error}=await client.auth.signOut();
- if(error)return message('webAccountNotice',accountFlow.message(error),true);
- account=null;update();await window.AutoTaxRefreshWebAccount?.({force:true});
+ if(logoutSubmitting)return;
+ logoutSubmitting=true;
+ const previousAccount=account;
+ account=null;update();
+ try{
+  const {error}=await client.auth.signOut();
+  if(error)throw error;
+  void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.({force:true}))
+   .catch(error=>console.warn('Chưa đồng bộ được trạng thái đăng xuất:',error.message||error));
+ }catch(error){
+  account=previousAccount;update();
+  message('webAccountNotice',accountFlow.message(error),true);
+ }finally{logoutSubmitting=false}
 });
 $('webNewPasswordForm').addEventListener('submit',async e=>{
  e.preventDefault();
@@ -301,7 +314,7 @@ client.auth.onAuthStateChange((event,session)=>{
    if(!$('webNewPasswordDialog').open)open('webNewPasswordDialog');
   }
   if(['SIGNED_IN','SIGNED_OUT','USER_UPDATED'].includes(event)&&
-     !loginSubmitting&&!unchangedSignIn)
+     !loginSubmitting&&!logoutSubmitting&&!unchangedSignIn)
     void Promise.resolve().then(()=>window.AutoTaxRefreshWebAccount?.({force:true}))
      .catch(error=>console.warn('Không đồng bộ được phiên AutoTax:',error.message||error));
  });

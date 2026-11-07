@@ -1,4 +1,4 @@
-name: Build AutoTax Lite V1.2.0 installable APK
+name: Build AutoTax V1.2.0 Lite and Full APKs
 on:
   push:
     branches: [main]
@@ -29,17 +29,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Compile Android Lite (debug signed, installable)
-        run: gradle --no-daemon --stacktrace -p android-lite :app:assembleDebug
-      - name: Verify output artifact is an APK
+      - name: Build two independently installable hybrid Android apps
+        run: gradle --no-daemon --stacktrace -p android-lite :app:assembleLiteDebug :app:assembleFullDebug
+      - name: Verify branded Android APKs
         run: |
-          test -s android-lite/app/build/outputs/apk/debug/app-debug.apk
-          cp android-lite/app/build/outputs/apk/debug/app-debug.apk AutoTax_Lite_V1.2.0.apk
-          file AutoTax_Lite_V1.2.0.apk
-          unzip -t AutoTax_Lite_V1.2.0.apk | tail -1
+          set -euo pipefail
+          cp android-lite/app/build/outputs/apk/lite/debug/app-lite-debug.apk AutoTax_Lite_V1.2.0.apk
+          cp android-lite/app/build/outputs/apk/full/debug/app-full-debug.apk AutoTax_Full_V1.2.0.apk
+          for apk in AutoTax_Lite_V1.2.0.apk AutoTax_Full_V1.2.0.apk; do
+            test -s "$apk"
+            file "$apk"
+            unzip -t "$apk" | tail -1
+          done
       - uses: actions/upload-artifact@v4
         with:
-          name: AutoTax_Lite_V1.2.0_APK_debug_signed
-          path: AutoTax_Lite_V1.2.0.apk
+          name: AutoTax_V1.2.0_Android_Lite_and_Full_debug_signed
+          path: |
+            AutoTax_Lite_V1.2.0.apk
+            AutoTax_Full_V1.2.0.apk
           if-no-files-found: error
           retention-days: 30

@@ -392,22 +392,26 @@ async function refreshAccountCore(epoch){
   const ownMst=Number(msts.active_quantity||0),groupMst=Number(ent.data?.team_mst_package_capacity||0);
   const teamMstShared=Number(ent.data?.team_mst_count||0),invoiceMstShared=Number(ent.data?.team_invoice_shared_mst_count||0);
   const totalSheets=ownSheets+groupSheets;
-  $('webTeamQuotaSummary').hidden=false;
-  $('webTeamQuotaSummary').replaceChildren();
-  const quotaInvoice=document.createElement('span');
-  quotaInvoice.className='quota-line quota-invoice-line';
-  quotaInvoice.textContent='Hóa đơn: '+totalSheets.toLocaleString('vi-VN')+' / '+totalBought.toLocaleString('vi-VN')+
-   ' (cá nhân '+ownSheets.toLocaleString('vi-VN')+', nhóm '+groupSheets.toLocaleString('vi-VN')+')';
-  const quotaMst=document.createElement('span');
-  quotaMst.className='quota-line quota-mst-line';
-  quotaMst.textContent='MST: '+(ownMst+groupMst).toLocaleString('vi-VN')+
-   ' (cá nhân '+ownMst.toLocaleString('vi-VN')+', nhóm '+groupMst.toLocaleString('vi-VN')+
-   ', đã chia sẻ '+teamMstShared.toLocaleString('vi-VN')+')';
-  $('webTeamQuotaSummary').append(quotaInvoice,quotaMst);
-  if(groupSheets>0&&invoiceMstShared===0){
-   const warn=document.createElement('span');warn.className='quota-warning';
-   warn.textContent='Chờ trưởng nhóm cấp MST để sử dụng gói nhóm.';
-   $('webTeamQuotaSummary').append(warn);
+  if(window.AutoTaxLite===true){
+   $('webTeamQuotaSummary').hidden=true;
+  }else{
+   $('webTeamQuotaSummary').hidden=false;
+   $('webTeamQuotaSummary').replaceChildren();
+   const quotaInvoice=document.createElement('span');
+   quotaInvoice.className='quota-line quota-invoice-line';
+   quotaInvoice.textContent='Hóa đơn: '+totalSheets.toLocaleString('vi-VN')+' / '+totalBought.toLocaleString('vi-VN')+
+    ' (cá nhân '+ownSheets.toLocaleString('vi-VN')+', nhóm '+groupSheets.toLocaleString('vi-VN')+')';
+   const quotaMst=document.createElement('span');
+   quotaMst.className='quota-line quota-mst-line';
+   quotaMst.textContent='MST: '+(ownMst+groupMst).toLocaleString('vi-VN')+
+    ' (cá nhân '+ownMst.toLocaleString('vi-VN')+', nhóm '+groupMst.toLocaleString('vi-VN')+
+    ', đã chia sẻ '+teamMstShared.toLocaleString('vi-VN')+')';
+   $('webTeamQuotaSummary').append(quotaInvoice,quotaMst);
+   if(groupSheets>0&&invoiceMstShared===0){
+    const warn=document.createElement('span');warn.className='quota-warning';
+    warn.textContent='Chờ trưởng nhóm cấp MST để sử dụng gói nhóm.';
+    $('webTeamQuotaSummary').append(warn);
+   }
   }
   $('webUsageModeHint').textContent=dual?
     'Hai chế độ dùng chung tài khoản, không chạy cùng lúc. Gói chưa chọn được bảo lưu.':
@@ -449,7 +453,8 @@ async function refreshAccountCore(epoch){
   if(epoch!==accountRefreshEpoch||account?.id!==requestedUserId)return;
   maybeRemindTaxPassword(profiles.data||[]);
   document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
-  if(selectedMode==='invoice')show('Chế độ số tờ: nhập MST bất kỳ, không cần thêm vào danh sách hồ sơ. Hệ thống sẽ trừ lượt hóa đơn mới.',true);
+  if(window.AutoTaxLite===true)show('');
+  else if(selectedMode==='invoice')show('Chế độ số tờ: nhập MST bất kỳ, không cần thêm vào danh sách hồ sơ. Hệ thống sẽ trừ lượt hóa đơn mới.',true);
   else if(!profileAllowedMsts.length)show('Chưa có MST được cấp quyền. Khi tra cứu MST đầu tiên, AutoTax sẽ hỏi bạn có muốn cấp phép hay không.');
   else show('Gói MST: đã cấp quyền '+profileAllowedMsts.length+' MST. Chỉ các MST trong danh sách cấp quyền được tra cứu.',true);
  }catch(e){

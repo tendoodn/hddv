@@ -172,7 +172,17 @@ body .topbar a.logo span,body header .brand span{font-size:50%!important;line-he
 </section>
 <style>
 /* Fast customer selector is anchored to the grant controls only. */
-#adminPackageGrant .grant-customer-field{min-width:min(330px,100%);flex:1 1 330px;display:flex;flex-direction:column;gap:7px;font-weight:700}
+#adminPackageGrant>.actions{display:grid;grid-template-columns:minmax(390px,1.45fr) minmax(300px,1fr) max-content;gap:8px;align-items:center;flex-wrap:nowrap}
+#adminPackageGrant>.actions>label{margin:0;min-width:0}
+#adminPackageGrant .grant-customer-field{min-width:0;display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:8px;font-weight:700}
+#adminPackageGrant>.actions>label:not(.grant-customer-field){display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:8px;font-weight:700;white-space:nowrap}
+#adminPackageGrant #grantPackage{width:100%;min-width:0}
+#adminPackageGrant #grantNow{white-space:nowrap;min-height:42px;align-self:center}
+@media(max-width:760px){
+ #adminPackageGrant>.actions{grid-template-columns:1fr;align-items:stretch}
+ #adminPackageGrant .grant-customer-field,#adminPackageGrant>.actions>label:not(.grant-customer-field){grid-template-columns:1fr;gap:5px}
+ #adminPackageGrant #grantNow{width:100%}
+}
 #adminPackageGrant .grant-search{display:block;position:relative;min-width:0}
 #grantCustomerSearch{width:100%;min-width:0}
 #grantCustomerMatches{position:absolute;z-index:90;top:calc(100% + 4px);left:0;right:0;max-height:276px;overflow-y:auto;border:1px solid #cbd5e1;border-radius:10px;background:white;box-shadow:0 14px 38px #0f172a33;padding:4px}

@@ -8,7 +8,7 @@ body{background:#090b10!important}
 .toplinks,#autotaxZaloDock,.hero,.autotax-guide,footer,
 #webAccountNotice,#accountEmailLabel,
 #notice,#gdtConnectionHelp,#mstPermissionManageLink,
-#searchForm .field:nth-child(3),#searchForm .field-note,
+#searchForm .field-note,
 #searchForm .vault-inline,#searchForm .mst-picker-notice,
 #searchForm #mstForgetPassword,#searchForm .k-hint,
 #searchForm #openingStockControl,#searchForm .checks legend,
@@ -33,6 +33,17 @@ body{background:#090b10!important}
 #searchForm .password-wrap{padding:0}
 #searchForm .password-wrap input{padding:7px!important;min-width:0}
 #searchForm .password-wrap button{font-size:16px;padding:4px}
+#searchForm .field:nth-child(3){grid-column:1/-1;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px;align-items:center;margin-top:2px}
+#searchForm .field:nth-child(3)>label{margin:0;white-space:nowrap}
+#searchForm .field:nth-child(3)>.date-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;min-width:0}
+#searchForm .field:nth-child(3)>small{display:none!important}
+#searchForm .field:nth-child(3) .vn-date-field{min-width:0}
+#searchForm .field:nth-child(3) .vn-date-field>input:not([type=date]){min-width:0;width:100%;font-size:clamp(11px,2.8vw,14px);padding:8px 4px}
+#searchForm .field:nth-child(3) .vn-date-field>button{flex:0 0 36px;min-width:36px;padding:6px 3px!important}
+@media(max-width:540px){
+ #searchForm .field:nth-child(3){grid-template-columns:1fr;gap:5px}
+ #searchForm .field:nth-child(3)>.date-pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+}
 #searchForm .autotax-kind-row{grid-column:1/-1;display:flex!important;gap:8px;align-items:center;flex-wrap:nowrap;margin-top:5px;margin-bottom:4px}
 #searchForm .autotax-kind-row .check{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #33465d;border-radius:9px;padding:9px 7px;background:#172334;white-space:nowrap;font-size:clamp(11px,3vw,14px)}
 #searchForm .autotax-kind-row .check input{accent-color:#56b5fa;width:17px;height:17px}
@@ -110,7 +121,7 @@ body{background:#090b10!important}
 }
 #searchBtn span{font-size:20px!important;line-height:1!important}
 #webTeamQuotaSummary{
-  display:block;margin:8px 0 10px!important;padding:8px 10px!important;
+  display:none!important;margin:8px 0 10px!important;padding:8px 10px!important;
   border:1px solid #244d71;border-radius:10px;background:#0d2233;
   color:#fff!important;font:800 11px/1.45 system-ui,sans-serif!important;white-space:normal;
 }

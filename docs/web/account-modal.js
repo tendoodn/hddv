@@ -42,11 +42,12 @@ function closeAll(){
 }
 function open(id){
  closeAll();const dialog=$(id);if(!dialog)return;
- dialog.showModal();
+ if(id!=='webLoginDialog')dialog.showModal();
  dialog.querySelector('input:not([type=file])')?.focus();
 }
 function update(){
  const signedIn=!!account;
+ document.documentElement.classList.toggle('autotax-auth-gated',!signedIn);
  $('webLoginOpen').hidden=signedIn;
  $('webUserBlock').hidden=!signedIn;
  if(signedIn){

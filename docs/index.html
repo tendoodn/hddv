@@ -149,9 +149,9 @@ html:not([data-autotax-signed-in="true"]) #webModeControls{display:none!importan
 </style>
 <script defer src="/extension-link-v120.js?v=20261107final120"></script>
 <style id="autotax-v121-auth-gate">
-html.autotax-auth-gated body > :not(#webLoginDialog):not(dialog):not(script):not(style){display:none!important}
-html.autotax-auth-gated body{min-height:100dvh;margin:0!important;padding:24px 12px!important;display:block!important;background:#18191f}
-html.autotax-auth-gated #webLoginDialog{display:block!important;position:relative!important;inset:auto!important;transform:none!important;margin:0 auto!important;max-width:520px!important;width:100%!important;max-height:none!important;overflow:visible!important;box-sizing:border-box!important}
+html.autotax-auth-gated .search-card{display:none!important}
+html.autotax-auth-gated body{min-height:100dvh}
+html.autotax-auth-gated #webLoginDialog{display:block!important;position:relative!important;inset:auto!important;transform:none!important;margin:16px auto 24px!important;max-width:620px!important;width:calc(100% - 24px)!important;max-height:none!important;overflow:visible!important;box-sizing:border-box!important}
 html.autotax-auth-gated #webLoginDialog::backdrop{display:none!important}
 html.autotax-auth-gated #webLoginDialog [data-web-close]{display:none!important}
 html.autotax-auth-gated #webLoginOpen{display:none!important}
@@ -176,7 +176,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 });
 </script>
 <main class="wrap">
-  <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="Logo AutoTax" width="43" height="43" style="vertical-align:middle;border-radius:9px;margin-right:9px" decoding="async">AUTOTAX <span>WEB V1.2.0</span></a>
+  <div class="topbar"><a class="logo" href="/"><img src="./favicon.svg?v=20261102b" alt="Logo AutoTax" width="43" height="43" style="vertical-align:middle;border-radius:9px;margin-right:9px" decoding="async">AUTOTAX <span>WEB V1.2.1</span></a>
     <nav class="toplinks" aria-label="Điều hướng tiện ích"><a id="extensionHeaderDownloadBtn" class="web-search-blink autotax-extension-cta" href="https://drive.google.com/file/d/1pnFGMK_xymxa7OA736PXAD9jQnlWmfAI/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Tải Extension Chrome</a><a href="/tracuumst/" target="_blank" rel="noopener noreferrer">Tra cứu nhanh MST</a><a href="https://hoadondientu.gdt.gov.vn/" target="_blank" rel="noopener noreferrer">Cổng Thuế ↗</a></nav></div>
   <header class="hero">
     <h1>Tải hóa đơn điện tử hàng loạt</h1>

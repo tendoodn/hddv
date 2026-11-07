@@ -1,4 +1,4 @@
-/* AutoTax V1.2.0 installability worker. Always use fresh network responses.
+/* AutoTax V1.2.2 installability worker. Always use fresh network responses.
    Auth, tax data and PDFs must never be cached or intercepted here. */
 self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));

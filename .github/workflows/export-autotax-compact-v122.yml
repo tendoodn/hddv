@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'release/AutoTax.1.2.2.zip'
+      - '.github/workflows/export-autotax-compact-v122.yml'
 permissions:
   contents: read
 jobs:
@@ -25,9 +26,12 @@ jobs:
               assert 'AutoTax V1.2.2 compact Side Panel' in css
           print('AutoTax 1.2.2 compact ZIP validated')
           PY
+          rm -rf /tmp/autotax-extension
+          mkdir -p /tmp/autotax-extension
+          unzip -q release/AutoTax.1.2.2.zip -d /tmp/autotax-extension
       - uses: actions/upload-artifact@v4
         with:
-          name: AutoTax.1.2.2-compact
-          path: release/AutoTax.1.2.2.zip
+          name: AutoTax.1.2.2-drive
+          path: /tmp/autotax-extension/*
           if-no-files-found: error
-          compression-level: 0
+          compression-level: 6

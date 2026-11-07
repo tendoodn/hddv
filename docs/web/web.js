@@ -1041,9 +1041,10 @@ function init(){
   }
  });
  $('togglePassword').addEventListener('click',()=>{
-  // A member may never reveal the leader's password for a borrowed MST.
+  // Tax credentials stay a text field so browser password managers never
+  // associate them with the AutoTax account. Only the CSS mask is toggled.
   if($('togglePassword').hidden)return;
-  const input=$('gdtPassword');input.type=input.type==='password'?'text':'password';
+  $('gdtPassword').classList.toggle('tax-secret-revealed');
  });
  $('closeGdtLoginError').addEventListener('click',()=>$('gdtLoginErrorDialog').close());
  for(const [id,kind] of [['exportAllZip','all'],['exportExcel','excel'],['exportXml','xml'],['exportHtml','html'],['exportPdf','pdf'],['exportPdfTax','pdfTax']])

@@ -20,9 +20,9 @@ Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa
 
 ## Sử dụng
 
-- [AutoTax – Tài khoản](https://tracuuhoadon.top/)
-- [Tra cứu hóa đơn Web](https://tracuuhoadon.top/web.html)
-- [Tra cứu MST](https://tracuuhoadon.top/mst.html)
+- [AutoTax – Tài khoản](https://tracuuhoadon.top/user/)
+- [Tra cứu hóa đơn Web](https://tracuuhoadon.top/)
+- [Tra cứu MST](https://tracuuhoadon.top/tracuumst/)
 - [Trang tạo PDF đối chiếu](https://tracuuhoadon.top/pdf/)
 - [Báo giá thiết bị & HDĐT Viettel](https://tracuuhoadon.top/baogia/)
 - [Theo dõi hệ số K](https://tracuuhoadon.top/k/)

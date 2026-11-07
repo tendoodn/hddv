@@ -355,7 +355,7 @@ async function refreshAccountCore(epoch){
    console.warn('Không kiểm tra được reset cache thành viên:',error.message);
    return null;
   });
-  const [ent,profiles,sharedRows,invalidated]=await Promise.all([
+  let [ent,profiles,sharedRows,invalidated]=await Promise.all([
    client.rpc('autotax_my_entitlements_v118'),
    client.rpc('addon_list_my_mst_assignments'),
    client.rpc('autotax_team_shared_mst_profiles_v119'),
@@ -367,9 +367,41 @@ async function refreshAccountCore(epoch){
    window.WebResults?.resetForSearch?.();
    show('Đã xóa bộ nhớ đệm hóa đơn thành viên trên thiết bị này. Bộ đếm nhóm bắt đầu lại từ 0.',true);
   }
-  if(ent.error)throw ent.error;if(profiles.error)throw profiles.error;
+
+  // MST profiles are critical UI state and must not disappear just because an
+  // unrelated entitlement/team RPC transiently fails. Fall back to the RLS-
+  // protected table, which exposes only this signed-in user's assignments.
+  if(profiles.error||!Array.isArray(profiles.data)){
+   console.warn('RPC hồ sơ MST chưa sẵn sàng, dùng bảng RLS dự phòng:',profiles.error?.message||'invalid payload');
+   const fallback=await client.from('addon_mst_assignments')
+    .select('id,mst,display_name,assigned_at,password_updated_at,name_verified_at,mst_allowed')
+    .order('assigned_at',{ascending:true});
+   if(!fallback.error&&Array.isArray(fallback.data))profiles=fallback;
+   else console.warn('Không tải được hồ sơ MST dự phòng:',fallback.error?.message||'empty fallback');
+  }
   if(sharedRows.error)console.warn('Không tải được MST nhóm:',sharedRows.error.message);
   const shared=Array.isArray(sharedRows.data)?sharedRows.data:[];
+  const ownProfiles=Array.isArray(profiles.data)?profiles.data:[];
+  const previewMerged=new Map(ownProfiles.map(x=>[normalizedMst(x.mst),{...x,source:'personal'}]));
+  for(const sharedRow of shared){
+   const mst=normalizedMst(sharedRow.mst);
+   if(!mst)continue;
+   const original=previewMerged.get(mst)||{};
+   previewMerged.set(mst,{...original,...sharedRow,source:'team',mst,
+    mst_allowed:sharedRow.can_use_mst_package===true||
+      sharedRow.can_use_invoice_package===true||
+      sharedRow.personally_authorized===true||original.mst_allowed===true});
+  }
+  // Render MST picker immediately, independently from package/entitlement UI.
+  await window.GdtVault?.setUser(account.id,[...previewMerged.values()],selectedMode);
+  if(epoch!==accountRefreshEpoch||account?.id!==requestedUserId)return;
+
+  if(ent.error){
+   console.warn('Không tải được quyền AutoTax:',ent.error.message);
+   document.dispatchEvent(new CustomEvent('autotax-web-user-ready',{detail:{userId:account.id}}));
+   show('Đã tải hồ sơ MST. Trạng thái gói AutoTax đang được tải lại.');
+   return;
+  }
   // Server has already applied the persisted automatic switch.
   const choice=window.AutoTaxAccountFlow.quotaModes(ent.data);
   selectedMode=choice.selected;
@@ -424,7 +456,6 @@ async function refreshAccountCore(epoch){
       (Number(ent.data?.team_invoice_shared_mst_count||0)===0?
       ' Trưởng nhóm chưa chọn MST nên chưa thể dùng gói nhóm.':'');
   }
-  const ownProfiles=profiles.data||[];
   // A borrowed MST is a read-only alias of the leader's profile even if this
   // member previously saved the same tax ID independently.
   const merged=new Map(ownProfiles.map(x=>[normalizedMst(x.mst),{...x,source:'personal'}]));

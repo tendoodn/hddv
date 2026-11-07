@@ -327,9 +327,10 @@ async function refreshAccountCore(epoch){
    window.AutoTaxWebAccount?.sync(account);
   if(!account){
    $('webTeamQuotaSummary').hidden=true;
-   $('webModeControls').hidden=false;
+   // Logged-out visitors must not see any usage-mode labels or options.
+   $('webModeControls').hidden=true;
    $('webUsageMode').disabled=true;
-   $('webUsageModeHint').textContent='Đăng nhập AutoTax để xem chế độ sử dụng.';
+   $('webUsageModeHint').textContent='';
    $('accountEmailLabel').textContent='Chưa đăng nhập';
    profileMsts=[];profileAllowedMsts=[];profileDisplayNames.clear();
    void window.GdtVault?.setUser(null,[])?.catch(error=>

@@ -119,7 +119,7 @@ function build(){
   '<nav class="lite-pages" aria-label="Phân trang hóa đơn"><label>Xem <select id="litePageSize" class="lite-page-size"><option value="10">10</option><option value="20">20</option><option value="30">30</option></select></label><button id="litePrev" type="button">‹ Trước</button><span id="litePageInfo">1 / 1</span><button id="liteNext" type="button">Sau ›</button></nav>';
  result.append(section);
  const btn=$('searchBtn');
- btn.textContent='Tra Cứu';
+ btn.innerHTML='<span>⌕</span> Tìm kiếm hóa đơn';
  const status=document.createElement('p');status.id='liteStatus';
  status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  btn.insertAdjacentElement('afterend',status);
@@ -166,7 +166,7 @@ function build(){
   }
  });
  document.addEventListener('autotax-lite-busy',e=>{
-  btn.textContent=e.detail?.busy?'Dừng':'Tra Cứu';
+  btn.innerHTML=e.detail?.busy?'Dừng':'<span>⌕</span> Tìm kiếm hóa đơn';
   if(e.detail?.busy){page=1;detailEpoch++;requestedDetails.clear();lastSummary='';$('liteStatus').textContent='Đang bắt đầu tra cứu…'}
   else queueRender();
  });

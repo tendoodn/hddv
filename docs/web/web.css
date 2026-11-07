@@ -634,3 +634,38 @@ td.audit-info{color:#c6c6db}
 .invoice-pdf-zoom button{min-width:34px;padding:5px 8px}
 #invoicePdfZoomValue{min-width:48px;text-align:center;font:700 11px/1.2 system-ui;color:#f8fafc}
 @media(max-width:640px){#invoicePdfCanvasPages{padding:8px}.invoice-pdf-zoom{order:-1;width:100%;justify-content:center}.invoice-pdf-actions{flex-wrap:wrap;justify-content:flex-end}}
+
+/* AutoTax V1.2.2 compact pass */
+body{font-size:90%}
+.wrap{padding:11px 22px 40px}
+.search-card,.result-card{padding:22px;border-radius:21px}
+.fields{column-gap:22px;row-gap:19px}
+.field>label,.checks legend,.captcha-info label{font-size:12.6px;margin-bottom:10px}
+.field input:not([type=checkbox]),.captcha-row input,.password-wrap{min-height:44px;padding:10px 14px;font-size:14.4px;border-radius:14px}
+.check{font-size:13.5px;margin-bottom:13px;gap:10px}.check input{width:21px;height:21px}
+.outline{min-height:37px;padding:7px 12px;font-size:10.8px}
+#searchBtn.search-btn{min-height:42px!important;height:42px!important;border-radius:22px!important;font-size:23.4px!important;line-height:1!important;margin-top:16px!important;gap:10px!important}
+#searchBtn.search-btn span{font-size:31px!important;line-height:1!important}
+.search-status-box{margin-top:10px;padding:9px 12px;border:1px solid #24567d;border-radius:10px;background:#0d2a40;color:#fff}
+#webTeamQuotaSummary{margin:0!important;color:#fff!important;font-size:12px!important;font-weight:800!important;line-height:1.45}
+#webTeamQuotaSummary .quota-line{display:inline}
+#webTeamQuotaSummary .quota-mst-line::before{content:" · "}
+#webTeamQuotaSummary .quota-warning{display:block;margin-top:3px;color:#d9efff;font-weight:700;font-size:10.5px}
+.result-select-head{text-align:center}
+.row-select{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;white-space:normal!important}
+.row-select input,.invoice-select,.invoice-imported{width:17px;height:17px;accent-color:#e60012;cursor:pointer}
+.invoice-imported-cell{text-align:center;vertical-align:middle}
+.invoice-row-actions{min-width:245px!important;gap:3px!important}
+.invoice-row-actions .table-detail-btn{padding:4px 4px!important;min-height:28px!important;font-size:9.5px!important;line-height:1.2!important;border-radius:6px!important}
+.table-wrap th,.table-wrap td{padding-top:8px!important;padding-bottom:8px!important}
+@media(max-width:700px){
+ body{font-size:90%}
+ .wrap{padding:9px 8px 34px}
+ .search-card,.result-card{padding:12px;border-radius:15px}
+ #searchBtn.search-btn{min-height:42px!important;height:42px!important;font-size:22px!important;margin-top:14px!important}
+ #webTeamQuotaSummary .quota-line{display:block}
+ #webTeamQuotaSummary .quota-mst-line::before{content:""}
+ #webTeamQuotaSummary .quota-line+.quota-line{margin-top:2px}
+ .invoice-row-actions{min-width:170px!important}
+ .invoice-row-actions .table-detail-btn{font-size:9px!important;min-height:27px!important;padding:3px!important}
+}

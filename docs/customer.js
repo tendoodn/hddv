@@ -915,7 +915,7 @@ $('forcedPasswordForm').addEventListener('submit',async e=>{
  const error=$('forcedPasswordError'),button=$('forcedPasswordSave');
  const fail=message=>{error.textContent=message;error.hidden=false};
  error.hidden=true;
- if(password.length<10||password.length>128)return fail('Mật khẩu mới phải từ 10 đến 128 ký tự.');
+ if(password.length<8||password.length>128)return fail('Mật khẩu mới phải từ 8 đến 128 ký tự.');
  if(password==='000000')return fail('Không được dùng lại mật khẩu tạm 000000.');
  if(password!==confirmPassword)return fail('Hai lần nhập mật khẩu chưa trùng khớp.');
  button.disabled=true;

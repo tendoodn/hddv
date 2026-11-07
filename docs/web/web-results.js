@@ -8,6 +8,17 @@ const money=n=>Number(n||0).toLocaleString('vi-VN')+' ₫';
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
 const app=()=>window.WebInvoiceApp;
 const keyOf=r=>String(r.key||[r.kind,r.form,r.khhdon,r.shdon,r.nbmst,r.nmmst].join('|'));
+const IMPORTED_STORE='autotax_imported_invoices_v122';
+const importedKey=r=>[r.kind||'',r.form||'',String(r.nbmst||'').replace(/\\D/g,''),String(r.nmmst||'').replace(/\\D/g,''),r.khhdon||'',String(r.shdon||''),String(r.tdlap||r.nlap||'').slice(0,10)].join('|');
+const loadImported=()=>{try{const raw=JSON.parse(localStorage.getItem(IMPORTED_STORE)||'[]');return new Set(Array.isArray(raw)?raw.filter(x=>typeof x==='string').slice(-5000):[])}catch{return new Set()}};
+const imported=loadImported();
+function persistImported(){
+ try{
+  const items=[...imported];
+  if(items.length>5000)items.splice(0,items.length-5000);
+  localStorage.setItem(IMPORTED_STORE,JSON.stringify(items));
+ }catch{}
+}
 const isActive=r=>![4,6].includes(Number(r.tthai));
 const invoiceMonth=r=>{
  const s=String(r.tdlap||r.nlap||'').trim();
@@ -211,11 +222,16 @@ function renderVisible(){
   const d=r.tdlap?new Date(r.tdlap).toLocaleDateString('vi-VN'):'—';
   const values=[r.kind==='purchase'?'Mua vào':'Bán ra',d,
    [r.khhdon,r.shdon].filter(Boolean).join(' / '),partner||'—',
-   money(r.tgtttbso),money(r.tgtthue),window.HDDT?.TTHAI?.[r.tthai]||'—'];
+   money(r.tgtttbso),window.HDDT?.TTHAI?.[r.tthai]||'—'];
   values.forEach((value,i)=>{
    const td=document.createElement('td');td.textContent=value;
-   if(i===4||i===5)td.className='money';tr.append(td);
+   if(i===4)td.className='money';tr.append(td);
   });
+  const importedCell=document.createElement('td'),importedBox=document.createElement('input');
+  importedBox.type='checkbox';importedBox.className='invoice-imported';
+  importedBox.dataset.imported=importedKey(r);importedBox.checked=imported.has(importedBox.dataset.imported);
+  importedBox.setAttribute('aria-label','Đánh dấu đã nhập hóa đơn '+(r.shdon||''));
+  importedCell.className='invoice-imported-cell';importedCell.append(importedBox);tr.append(importedCell);
   const action=document.createElement('td'),actionGroup=document.createElement('div');
   actionGroup.className='invoice-row-actions';
   const button=document.createElement('button');button.type='button';
@@ -585,6 +601,12 @@ async function exportStock(single=false){
 }
 function init(){
  $('resultRows').addEventListener('change',event=>{
+  const importedBox=event.target.closest('input.invoice-imported');
+  if(importedBox){
+   if(importedBox.checked)imported.add(importedBox.dataset.imported);
+   else imported.delete(importedBox.dataset.imported);
+   persistImported();return;
+  }
   const box=event.target.closest('input.invoice-select');if(!box)return;
   if(box.checked)checked.add(box.dataset.key);else checked.delete(box.dataset.key);
   updateScope();

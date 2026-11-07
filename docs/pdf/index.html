@@ -198,7 +198,7 @@ let mode=null,records=[],seq=0,renderGeneration=0,pdfImportBusy=false;let pdfjsR
 
 
  $('modeTitle').textContent=m==='makepdf'?'Tạo & ghép PDF':'';
- $('modeHelp').textContent=m==='makepdf'?'Chọn nhiều ảnh và PDF, tự tách từng trang PDF, kéo để sắp xếp, cắt và quét màu trước khi xuất.':'';
+ $('modeHelp').textContent=m==='makepdf'?'Mỗi ảnh tạo thành một trang đúng tỷ lệ và số pixel gốc, không ghép lên nền A4. PDF tải lên giữ kích thước trang nguồn; hỗ trợ cắt và sắp xếp từng trang.':'';
  $('batchLabel').classList.toggle('hidden',m==='makepdf');
  $('batchLabel').firstChild.textContent=m==='cccd'?'Chọn hàng loạt ảnh (theo cặp)':'Chọn nhiều tờ cho hồ sơ mới';
  $('pdfBatchLabel').classList.toggle('hidden',m!=='docs');
@@ -936,7 +936,7 @@ for(let i=0;i<r.images.length;i++){
    cb.append(order);
    if(obj.data){
     const hint=document.createElement('small');hint.className='native-size-hint';
-    if(obj.imageWidthPx&&obj.imageHeightPx)hint.textContent='Ảnh gốc: '+obj.imageWidthPx+' × '+obj.imageHeightPx+' px · Không ghép vào A4';
+    if(obj.imageWidthPx&&obj.imageHeightPx)hint.textContent=(obj.fromPdf?'Ảnh tách từ PDF: ':'Ảnh gốc: ')+obj.imageWidthPx+' × '+obj.imageHeightPx+' px · Không ghép vào A4';
     else if(obj.pageWidthPt&&obj.pageHeightPt)hint.textContent='Trang PDF: '+obj.pageWidthPt.toFixed(1)+' × '+obj.pageHeightPt.toFixed(1)+' pt';
     if(hint.textContent)cb.append(hint);
    }

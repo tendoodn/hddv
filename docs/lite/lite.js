@@ -122,7 +122,8 @@ function build(){
  btn.innerHTML='<span>⌕</span> Tìm kiếm hóa đơn';
  const status=document.createElement('p');status.id='liteStatus';
  status.setAttribute('role','status');status.setAttribute('aria-live','polite');
- btn.insertAdjacentElement('afterend',status);
+ const statusBox=$('searchStatusBox');
+ if(statusBox)statusBox.append(status);else btn.insertAdjacentElement('afterend',status);
  // A wide MST drawer is positioned underneath the half-width input.
  const repositionPicker=()=>{
   const menu=$('mstPickerMenu'),field=$('mstFree');

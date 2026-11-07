@@ -33,3 +33,41 @@ jobs:
               print('Could not request Pages build:',error.code,error.read().decode()[:1000])
               raise
           PY
+      - name: Wait for Pages publish and verify live AutoTax markers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,time,urllib.request
+          api='https://api.github.com/repos/tendoodn/hddv/pages/builds/latest'
+          headers={
+            'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+            'Accept':'application/vnd.github+json',
+            'X-GitHub-Api-Version':'2022-11-28',
+            'Cache-Control':'no-cache'
+          }
+          last={}
+          for _ in range(24):
+              req=urllib.request.Request(api,headers=headers)
+              with urllib.request.urlopen(req,timeout=25) as response:
+                  last=json.loads(response.read().decode())
+              print('Pages latest:',last.get('status'),last.get('commit'),last.get('updated_at'))
+              if last.get('status') in ('built','errored'):
+                  break
+              time.sleep(5)
+          if last.get('status')!='built':
+              raise SystemExit('Pages build did not finish successfully: '+repr(last))
+          PY
+          cache_bust="$(date +%s)"
+          curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/?v=$cache_bust" -o /tmp/web.html
+          curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/lite/?v=$cache_bust" -o /tmp/lite.html
+          curl -fsSL --retry 3 --retry-delay 2 "https://tracuuhoadon.top/admin/?v=$cache_bust" -o /tmp/admin.html
+          grep -Fq 'position:absolute!important' /tmp/web.html
+          grep -Fq 'lite.css?v=122f' /tmp/lite.html
+          grep -Fq '20261107lite-layout123' /tmp/lite.html
+          grep -Fq 'grid-template-columns:minmax(390px,1.45fr)' /tmp/admin.html
+          echo 'LIVE_OK: Web settings menu marker present.'
+          echo 'LIVE_OK: Lite cache-busted CSS/JS markers present.'
+          echo 'LIVE_OK: Admin one-row grant marker present.'

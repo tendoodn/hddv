@@ -60,4 +60,30 @@ assert.match(accountModal,/web-greeting-long/,'Long greeting should scroll');
 assert.match(cache,/DETAIL_RETENTION_DAYS=30/,'Local invoice detail cache must last 30 days');
 assert.match(web,/form_code:\(row\.form\|\|''\)\+':'\+\(row\.khmshdon\|\|''\)/,'Keep safe invoice identity');
 assert.match(web,/const unique=new Map\(\)/,'Deduplicate network quota claims');
+// The mobile viewer JS was already present, but without these DOM targets every
+// PDF click silently returned before displaying a dialog.
+for(const [name,markup] of [['Web',home],['Lite',html]]){
+ for(const id of ['invoicePdfPreviewDialog','invoicePdfCanvasPages',
+    'invoicePdfPreviewStatus','invoicePdfPreviewFrame',
+    'downloadInvoicePdfPreview','closeInvoicePdfPreview']){
+  assert(markup.includes('id="'+id+'"'),name+' missing PDF viewer target '+id);
+ }
+ assert.match(markup,/autotax-pdf-preview-mobile-v120/,'PDF mobile canvas styling required');
+ assert.match(markup,/autotax-tight-mobile-identity-v120/,'Compact mobile greeting required');
+ assert.match(markup,/href="\/tracuumst\/"/,'MST navigation must point to the new route');
+}
+const pdfViewer=read('web/pdf-preview-v120a.js');
+assert.match(pdfViewer,/WebInvoiceApp/,'Viewer must use the canonical invoice detail loader');
+assert.match(pdfViewer,/pdfjs-dist@6\.5\.438/,'Canvas preview must load PDF.js on mobile');
+const taxpayerLookup=read('tracuumst/index.html');
+assert.match(taxpayerLookup,/\.\.\/web\/mst-lookup\.js/,'The /tracuumst route must load its correct relative scripts');
+assert.match(read('mst.html'),/location\.replace\('\/tracuumst\//,'Legacy MST URL must redirect');
+const portal=read('user/index.html'),checkout=read('customer.js');
+assert.match(portal,/autotax-user-mobile-head-tight-v120/,'Mobile account settings alignment required');
+assert.match(portal,/paymentSuccessAutoClose/,'Payment confirmation must show countdown');
+assert.match(portal,/autotax-payment-success-green-v120/,'Paid modal must be green');
+assert.match(checkout,/paymentSuccessTimer=setTimeout\(closePaymentSuccess,5000\)/,'Paid confirmation must close after 5 seconds');
+const intro=read('gioi-thieu/index.html');
+assert.match(intro,/AutoTax · V1\.2\.0/,'Current introduction version must match');
+assert.match(intro,/\/tracuumst\//,'Intro must link to taxpayer lookup');
 console.log('AutoTax Lite static checks PASSED: shared auth, PDF, pagination and lean bundle.');

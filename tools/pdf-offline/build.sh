@@ -51,4 +51,6 @@ cd "$WORK/out"
 zip -q -r -9 AutoTax-PDF-HTML-Offline.zip AutoTax-PDF-HTML-Offline
 zip -q -r -9 AutoTax-PDF-Linux-LAN.zip AutoTax-PDF-Linux-LAN
 ls -lh *.zip
-echo "BUILD_OUT=$WORK/out" >> "$GITHUB_ENV"
+mkdir -p "$REPO_ROOT/dist-pdf"
+cp ./*.zip "$REPO_ROOT/dist-pdf/"
+echo "BUILD_OUT=$REPO_ROOT/dist-pdf" >> "$GITHUB_ENV"

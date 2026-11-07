@@ -402,6 +402,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
            <select id="mst" name="mst" class="mst-hidden-select" aria-label="Hồ sơ MST đã chọn" tabindex="-1"><option value="">MST đã lưu</option></select>
            <input id="mstFree" name="tax_id_lookup" type="search" inputmode="search" maxlength="120" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true"
             placeholder="Nhập MST hoặc tìm theo tên hồ sơ…" aria-label="Nhập hoặc tìm kiếm MST" aria-controls="mstPickerMenu">
+           <button id="mstPickerToggle" type="button" aria-label="Chọn MST đã lưu" aria-controls="mstPickerMenu" aria-expanded="false" title="Chọn MST đã lưu">⌄</button>
           </div>
           <div id="mstPickerMenu" class="mst-picker-menu" hidden aria-label="Danh sách hồ sơ MST"></div>
           <div class="vault-inline"><a href="/user" target="_blank" rel="noopener noreferrer">Quản lý / đổi tên hồ sơ MST</a><span id="mstProfileCount"></span></div>
@@ -693,7 +694,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
 <script src="./web/download-folder.js?v=126flat1"></script>
 <script src="./mst-sync.js?v=118"></script>
 <script src="./team-shared-v119.js?v=20261106teamsync"></script>
-<script src="./web/vault.js?v=20261107taxpass122"></script>
+<script src="./web/vault.js?v=20261107mstpicker123"></script>
 <script src="./web/pdf.js?v=1122bPdfAddon"></script>
 <script src="./web/issuer-archive.js?v=1118"></script>
 <script src="./web/vinvoice-bridge.js?v=121vinvoice"></script>

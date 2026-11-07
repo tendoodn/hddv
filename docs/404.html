@@ -50,6 +50,18 @@ footer{padding:clamp(6px,1.3vh,12px) 10px;font-size:11px}
 <p>Đường dẫn này có thể đã được thay đổi, di chuyển hoặc không còn tồn tại. Đừng lo, dữ liệu hóa đơn và tài khoản AutoTax của bạn không bị ảnh hưởng.</p>
 <div class="actions"><a href="/">⌂ Về trang tra cứu</a><a href="/lite/">↗ AutoTax Lite</a><a href="/user/">♙ Quản lý tài khoản</a></div>
 <div class="hint"><strong>Gợi ý:</strong> Kiểm tra lại địa chỉ hoặc trở về trang chủ để tiếp tục tra cứu hóa đơn điện tử.</div>
-</main>
+<p class="autotax-404-countdown" style="text-align:center;font-size:12px;color:#fb7185;margin:0 0 5px">Tự động trở về trang chủ sau <strong id="autotax404Countdown">5</strong> giây</p></main>
 <footer>© AutoTax · Công cụ hỗ trợ tra cứu hóa đơn điện tử độc lập · Hỗ trợ: 0868838242</footer>
-</body></html>
+<script id="autotax-404-auto-home-v121">
+(function(){
+ let seconds=5;
+ const label=document.getElementById('autotax404Countdown');
+ function tick(){
+  if(label)label.textContent=String(seconds);
+  if(seconds<=0){window.location.replace('/');return;}
+  seconds--;
+  window.setTimeout(tick,1000);
+ }
+ tick();
+})();
+</script></body></html>

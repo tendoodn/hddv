@@ -17,6 +17,10 @@ const mstExpiryText=mst=>mst?.nearest_expiry?
 const DUP_EMAIL="Email đã tồn tại.";
 const accountFlow=window.AutoTaxAccountFlow;
 let state=null,ordersWatch=null,paymentCloseTimer=null,checking=false;
+let paymentSuccessTimer=null,paymentSuccessTick=null;
+function closePaymentSuccess(){if(paymentSuccessTimer)clearTimeout(paymentSuccessTimer);if(paymentSuccessTick)clearInterval(paymentSuccessTick);paymentSuccessTimer=null;paymentSuccessTick=null;const d=$('paymentSuccessDialog');if(d?.open)d.close();}
+function showPaymentSuccess(){const d=$('paymentSuccessDialog');if(!d)return;closePaymentSuccess();d.showModal();const until=Date.now()+5000;const label=$('paymentSuccessAutoClose');const tick=()=>{if(label)label.textContent='Tự đóng sau '+Math.max(0,Math.ceil((until-Date.now())/1000))+' giây';};tick();paymentSuccessTick=setInterval(tick,500);paymentSuccessTimer=setTimeout(closePaymentSuccess,5000);}
+
 let lastQuotaSnapshot='',quotaProbeBusy=false;
 // Compare only entitlement facts, never volatile auth refresh timestamps.
 function entitlementSnapshot(license){
@@ -634,8 +638,7 @@ async function finishPaidOrder(order){
  $("paymentSuccessInfo").textContent="Đã nhận thanh toán cho gói "+order.packageCode+
    (order.purchaseMode==='duration'?" · Đã cộng thời gian cho các MST đang có và cấp thêm suất MST còn dư.":order.purchaseMode==='capacity'?" · Đã tăng số lượng MST.":".");
  $("paymentSuccessBalance").textContent=balancesText;
- const dialog=$("paymentSuccessDialog");
- if(!dialog.open)dialog.showModal();
+ showPaymentSuccess();
  showMessage("Thanh toán thành công! Đã cập nhật gói sử dụng.");
 }
 async function checkPaymentStatus(manual=false){
@@ -900,7 +903,7 @@ $("usageMode").addEventListener("change",async e=>{
 });
 $("closePaymentBtn").addEventListener("click",closePayment);
 $("checkPaymentBtn").addEventListener("click",()=>{void checkPaymentStatus(true)});
-$("closePaymentSuccessBtn").addEventListener("click",()=>$("paymentSuccessDialog").close());
+$("closePaymentSuccessBtn").addEventListener("click",closePaymentSuccess);
 // Force-password reset uses the signed-in token, validated again by Supabase.
 const resetDialog=$('forcedPasswordDialog');
 resetDialog.addEventListener('cancel',e=>{e.preventDefault()});

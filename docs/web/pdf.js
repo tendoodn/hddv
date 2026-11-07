@@ -84,8 +84,19 @@
   }
 
   let fontsPromise = null;
-  const loadFonts = () => (fontsPromise ||= Promise.all(['regular', 'bold', 'italic'].map(async (n) =>
-    parseFont(new Uint8Array(await (await fetch(`./web/fonts/pdf-${n}.ttf`)).arrayBuffer())))));
+  const loadFonts = () => (fontsPromise ||= Promise.all(['regular', 'bold', 'italic'].map(async (n) => {
+    // Use an origin-absolute path so the shared renderer also works from /lite/.
+    // A relative "./web/fonts" path resolves to /lite/web/fonts inside Lite/PWA
+    // and may return an HTML 404 page, which then crashes DataView parsing.
+    const res = await fetch(`/web/fonts/pdf-${n}.ttf`, { cache: 'force-cache' });
+    if (!res.ok) throw Error(`Không tải được font PDF ${n}: HTTP ${res.status}`);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.byteLength < 1024) throw Error(`Font PDF ${n} không hợp lệ hoặc bị thiếu dữ liệu.`);
+    const sfnt = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(0);
+    if (sfnt !== 0x00010000 && sfnt !== 0x4f54544f)
+      throw Error(`Font PDF ${n} không đúng định dạng TTF/OTF.`);
+    return parseFont(bytes);
+  })));
 
   const deflate = async (bytes) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
 

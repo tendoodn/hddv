@@ -626,6 +626,8 @@ async function readPdfPages(file,onProgress){
    try{
     images.push({
      data:await pdfPageToImage(page,2),
+     orientation:page.getViewport({scale:1}).width>page.getViewport({scale:1}).height?'landscape':'portrait',
+     fromPdf:true,
      filename:(file.name||'tailen.pdf')+'#'+pageNum,
      cropMode:'manual',cropRects:{}
     });
@@ -717,6 +719,7 @@ async function importCreateFiles(fileList){
     }else throw Error('Không hỗ trợ định dạng tệp này');
     if(mode!=='makepdf'||!records.includes(target))break;
     target.images=target.images.filter(obj=>obj?.data).concat(pages);
+    if(pages.some(p=>p.fromPdf)){pdfOrientation=pages.find(p=>p.fromPdf).orientation;$('pdfOrientation').value=pdfOrientation;}
     if(!target.name)target.name=compactPdfName((file.name||'tailieupdf').replace(/\.[^.]+$/,''));
     addedFiles++;addedPages+=pages.length;render();
    }catch(error){console.error('Không tải được tệp:',file.name,error);failures.push(file.name+': '+(error.message||error))}
@@ -838,9 +841,9 @@ for(let i=0;i<r.images.length;i++){
   (mode==='cccd'?card._faces:card._pages).append(block);
 }
 if(mode==='docs'||mode==='makepdf'){const more=document.createElement('button');more.className='secondary';more.textContent='+ Thêm tờ giấy';more.onclick=()=>addPage(r);card.append(more)}const single=document.createElement('button');single.textContent=mode==='makepdf'?'↓ Tải PDF hoàn chỉnh':'Tải PDF hồ sơ này';single.style.margin='8px 0 0';single.onclick=()=>exportSingle(r,ri);(mode==='cccd'?card._info:card).append(single);root.append(card);
-if(mode==='cccd'){const sh=mkSheet(),top=document.createElement('div'),bottom=document.createElement('div');top.className='cc-row';bottom.className='cc-row bottom';for(const obj of r.images){top.append(mkImage(obj));bottom.append(mkImage(obj,true))}const sig=new Image();sig.src=SIGN;sig.className='cc-sign';sh.append(top,sig,bottom);pv.append(sh);queuePreviewFit(top,bottom,r.images,gen)}else if(mode==='makepdf'){for(const obj of r.images){const sh=mkSheet();if(pdfOrientation==='landscape'){sh.classList.add('sheet-landscape')}if(obj.data){const im=mkImage(obj);im.className='doc-image';sh.append(im)}pv.append(sh)}}else{for(const mono of [false,true])for(const obj of r.images){const sh=mkSheet();if(obj.data){const im=mkImage(obj,mono);im.className='doc-image';sh.append(im)}if(mono){const sig=new Image();sig.src=SIGN;sig.className='doc-sign';sh.append(sig)}pv.append(sh)}}}scalePreview()}
+if(mode==='cccd'){const sh=mkSheet(),top=document.createElement('div'),bottom=document.createElement('div');top.className='cc-row';bottom.className='cc-row bottom';for(const obj of r.images){top.append(mkImage(obj));bottom.append(mkImage(obj,true))}const sig=new Image();sig.src=SIGN;sig.className='cc-sign';sh.append(top,sig,bottom);pv.append(sh);queuePreviewFit(top,bottom,r.images,gen)}else if(mode==='makepdf'){for(const obj of r.images){const sh=mkSheet();if((obj.orientation||pdfOrientation)==='landscape'){sh.classList.add('sheet-landscape')}if(obj.data){const im=mkImage(obj);im.className='doc-image';sh.append(im)}pv.append(sh)}}else{for(const mono of [false,true])for(const obj of r.images){const sh=mkSheet();if(obj.data){const im=mkImage(obj,mono);im.className='doc-image';sh.append(im)}if(mono){const sig=new Image();sig.src=SIGN;sig.className='doc-sign';sh.append(sig)}pv.append(sh)}}}scalePreview()}
 
-$('pdfOrientation').addEventListener('change',e=>{pdfOrientation=e.target.value;render()});
+$('pdfOrientation').addEventListener('change',e=>{pdfOrientation=e.target.value;if(mode==='makepdf')for(const r of records)for(const obj of r.images)obj.orientation=pdfOrientation;render()});
 $('pdfCompression').addEventListener('change',e=>{pdfCompression=e.target.value});
 let previewFitObserver;
 function queuePreviewFit(top,bottom,objects,gen){
@@ -956,14 +959,14 @@ function encodePdf(pages){
 }
 async function makePages(r,scale,quality){
  const landscape=mode==='makepdf'&&pdfOrientation==='landscape';
- const pages=[],W=Math.round((landscape?1123:794)*scale),H=Math.round((landscape?794:1123)*scale),mm=W/(landscape?297:210);
+ const pages=[],W=Math.round(794*scale),H=Math.round(1123*scale),mm=W/210;
  const sign=await loadImg(SIGN);
- const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d',{alpha:false});ctx.fillStyle='white';ctx.fillRect(0,0,W,H);return {c,ctx}};
+ const mk=(wide=false)=>{const c=document.createElement('canvas');c.width=Math.round((wide?1123:794)*scale);c.height=Math.round((wide?794:1123)*scale);const ctx=c.getContext('2d',{alpha:false});ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);return {c,ctx}};
  const finish=p=>pages.push({jpeg:p.c.toDataURL('image/jpeg',quality),w:W,h:H});
  const paint=async(ctx,obj,mono,x,y,w,h)=>{const out=await croppedImage(obj,mono,{maxEdge:Math.round(1800*scale),quality:.92});const im=await loadImg(out.data);const ratio=Math.min(w/im.width,h/im.height),dw=im.width*ratio,dh=im.height*ratio;ctx.drawImage(im,(x+(w-dw)/2)*mm,(y+(h-dh)/2)*mm,dw*mm,dh*mm)};
  const sig=(ctx,x,y,w,h)=>{const ratio=Math.min(w/sign.width,h/sign.height),dw=sign.width*ratio,dh=sign.height*ratio;ctx.drawImage(sign,(x+(w-dw)/2)*mm,(y+(h-dh)/2)*mm,dw*mm,dh*mm)};
  if(mode==='makepdf'){
-  for(const obj of r.images){const p=mk();await paint(p.ctx,obj,false,5,5,landscape?287:200,landscape?200:287);finish(p)}
+  for(const obj of r.images){const wide=(obj.orientation||pdfOrientation)==='landscape';const p=mk(wide);const pageMm=p.c.width/(wide?297:210);const out=await croppedImage(obj,false,{maxEdge:Math.round(1800*scale),quality:.92});const im=await loadImg(out.data);const availableW=p.c.width-10*pageMm,availableH=p.c.height-10*pageMm;const ratio=Math.min(availableW/im.width,availableH/im.height);p.ctx.drawImage(im,(p.c.width-im.width*ratio)/2,(p.c.height-im.height*ratio)/2,im.width*ratio,im.height*ratio);finish(p)}
   return pages;
  }
  if(mode==='cccd'){

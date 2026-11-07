@@ -196,6 +196,7 @@ function closePayment(){
 }
 async function refresh(){
  if(checking)return;
+ if(window.AutoTaxAuthBridgeReady)await window.AutoTaxAuthBridgeReady.catch(()=>{});
  checking=true;
  try{
   const {data:{session}}=await client.auth.getSession();

@@ -307,6 +307,12 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  .portal-account-head .autotax-account-tabs button{width:auto!important;flex:0 1 auto!important;min-width:0!important;font-size:clamp(10px,2.75vw,12px)!important;padding:7px 8px!important;white-space:nowrap!important}
  .portal-account-head>.account-quick-actions{grid-column:1!important;grid-row:3!important}
 }
+</style><style id="autotax-payment-success-green-v120">
+#paymentSuccessDialog{background:#effdf3!important;color:#14532d!important;border:2px solid #22c55e!important;box-shadow:0 18px 55px #16653444!important}
+#paymentSuccessDialog h2{color:#15803d!important}
+#paymentSuccessDialog .notice{background:#d1fae5!important;color:#14532d!important;border-color:#86efac!important;white-space:pre-line}
+#paymentSuccessDialog #closePaymentSuccessBtn{background:#15803d!important;border-color:#15803d!important;color:#fff!important}
+#paymentSuccessDialog #paymentSuccessAutoClose{color:#166534;font-size:12px}
 </style></head>
 <body>
 <main class="wrap"><h1 class="autotax-page-title" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Thông tin tài khoản AutoTax</h1>
@@ -553,6 +559,7 @@ header .portal-header-actions{display:flex;align-items:center;gap:8px;width:auto
  <div class="payment-success-head"><span aria-hidden="true">✓</span><h2 id="paymentSuccessTitle">Thanh toán thành công!</h2></div>
  <p id="paymentSuccessInfo"></p>
  <p id="paymentSuccessBalance" class="notice"></p>
+ <p id="paymentSuccessAutoClose" aria-live="polite">Tự đóng sau 5 giây</p>
  <div class="actions"><button id="closePaymentSuccessBtn" type="button">Đóng thông báo</button></div>
 </dialog>
 <section id="passwordRecovery" class="panel" hidden><h2>Đặt mật khẩu mới</h2><p class="muted">Nếu bạn vừa mở liên kết khôi phục, đăng nhập bằng liên kết và đổi mật khẩu ở phía trên.</p></section>

@@ -1,4 +1,4 @@
-/* AutoTax V1.2.0 — local, account-scoped invoice detail cache.
+/* AutoTax V1.2.2 — local, account-scoped invoice detail cache.
  * Stores invoice payloads only (never passwords, GDT/AutoTax tokens, CAPTCHA).
  * Live server entitlement and quota checks MUST happen before every search.
  */

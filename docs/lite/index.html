@@ -188,6 +188,36 @@ html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>button,html.
 html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a.web-dialog-button{appearance:none!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;padding:10px 12px!important;border:1px solid #565764!important;border-radius:10px!important;background:#30313a!important;color:#fff!important;text-decoration:none!important;font:inherit!important;font-weight:700!important;line-height:1.3!important;white-space:normal!important;text-align:center!important;box-sizing:border-box!important}
 html.autotax-auth-gated #webLoginDialog .autotax-login-actions-grid>a.web-dialog-button:hover{background:#41424e!important}
 </style><style id="autotax-login-red-v121">
+</style><style id="autotax-export-left-mobile-grid-v121">
+.export-toolbar .exports{
+  width:100%!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  gap:8px!important;
+  margin-left:0!important;
+  margin-right:auto!important;
+}
+@media(max-width:650px){
+  .export-toolbar .exports{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:7px!important;
+    width:100%!important;
+  }
+  .export-toolbar .exports>button,
+  .export-toolbar .exports>a{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    padding:8px 5px!important;
+    font-size:11px!important;
+    line-height:1.2!important;
+    white-space:normal!important;
+    text-align:center!important;
+  }
+}
 </style></head>
 <body>
 <style>

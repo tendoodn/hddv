@@ -1,7 +1,7 @@
 /* AutoTax Lite PWA static accelerator v1.2.3.
    Cache only public static runtime assets. Never cache invoice/API responses,
    credentials, Supabase requests, GDT requests, or HTML navigation responses. */
-const STATIC_CACHE='autotax-lite-static-v123-fast1';
+const STATIC_CACHE='autotax-lite-static-v124-pdf1';
 const STATIC_ASSETS=[
  '/web/web.css?v=122f',
  '/lite/lite.css?v=122f',
@@ -18,6 +18,8 @@ const STATIC_ASSETS=[
  '/web/date-slide-picker.js?v=1122b',
  '/web/web.js?v=20261107lite-layout123',
  '/web/web-results.js?v=20261107lite1',
+ '/web/pdf.js?v=20261107fontpath123',
+ '/web/pdf-preview-v120a.js?v=20261107pwa-fullpinch124',
  '/lite/lite.js?v=20261107lite1',
  '/password-toggle.js?v=116',
  '/favicon.svg?v=20261102b',

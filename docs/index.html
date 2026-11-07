@@ -446,7 +446,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
         <button id="reloadCaptcha" type="button" class="outline">Đổi mã ↻</button>
       </div>
       
-      <button id="searchBtn" type="button" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>
+      <button id="searchBtn" type="button" class="search-btn"><span>⌕</span> Tìm kiếm hóa đơn</button>\n      <div id="searchStatusBox" class="search-status-box" aria-live="polite"><p id="webTeamQuotaSummary" role="status" style="font-size:12px;margin:8px 0;color:#334155" hidden></p></div>
       <div class="progress autotax-terminal" id="progress" aria-live="polite" hidden><div class="autotax-terminal-bar"><span class="autotax-terminal-dots" aria-hidden="true">● ● ●</span><strong>AutoTax / Download Console</strong><span class="spinner" id="downloadConsoleSpinner" aria-hidden="true"></span><span id="downloadConsoleActive" hidden>Đang tải…</span><span id="downloadConsoleDone" class="autotax-console-done" hidden>✓ Đã xong</span><button type="button" id="stopBtn">Dừng</button></div><div id="progressLog" class="autotax-terminal-log" role="log" aria-live="polite" aria-relevant="additions"><div id="progressText" class="autotax-terminal-line">Đang xử lý…</div></div></div>
       <button id="changeOutputFolderWeb" type="button" class="outline">Đổi thư mục lưu tệp</button>
       <small>Chọn thư mục lưu lần đầu khi bấm Tìm kiếm. Các lần sau dùng lại thư mục đã chọn khi trình duyệt còn cấp quyền.</small>
@@ -481,7 +481,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
     </div>
     <p class="result-help">Phạm vi tải được xác định tự động: nếu có hóa đơn đã tick trong danh sách đang hiển thị thì chỉ tải các hóa đơn đó; nếu không tick, tải tất cả hóa đơn thuộc bộ lọc hiện tại. Không cần chọn thêm chế độ xuất. Việc lấy PDF gốc phụ thuộc nhà phát hành và bước xác thực hợp lệ.</p>
     <p class="result-help" id="originalPdfPolicy"><strong>Thử lấy PDF gốc:</strong> chỉ tệp PDF nhận trực tiếp từ nhà phát hành mới được xếp vào thư mục PDF gốc. Tệp dựng từ dữ liệu Thuế hoặc do người dùng gắn được tách riêng và ghi rõ <strong>KHÔNG PHẢI PDF GỐC</strong>. AutoTax không tự vượt CAPTCHA hoặc xác minh chữ ký số.</p>
-    <div class="table-wrap"><table><thead><tr><th><label class="row-select"><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"><span>Chọn</span></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Thuế</th><th>Trạng thái</th><th>Thao tác hóa đơn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th class="result-select-head"><label class="row-select"><span>Chọn</span><input id="selectAllInvoices" type="checkbox" title="Chọn toàn bộ hóa đơn đang hiển thị"></label></th><th>Loại</th><th>Ngày lập</th><th>Ký hiệu / Số HĐ</th><th>Đối tác</th><th>Tổng thanh toán</th><th>Trạng thái</th><th>Đã nhập</th><th>Thao tác hóa đơn</th></tr></thead><tbody id="resultRows"></tbody></table></div>
     <nav id="resultPageNav" class="result-page-nav" aria-label="Phân trang kết quả hóa đơn">
       <label for="resultPageSize" class="result-page-size-label">Số tờ/trang
         <select id="resultPageSize" aria-label="Số hóa đơn mỗi trang">

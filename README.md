@@ -2,7 +2,7 @@
 
 ![Logo AutoTax](docs/favicon.svg)
 
-**AutoTax V1.1.22 · Tendoo**
+**AutoTax V1.2.2 · Public Web Runtime**
 
 Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa đơn mua vào/bán ra, xuất Excel/XML/HTML/PDF, kiểm tra rủi ro và đối chiếu sản phẩm.
 
@@ -30,9 +30,14 @@ Phần mềm hỗ trợ quản lý tài khoản và hồ sơ MST, tra cứu hóa
 
 **Lưu ý:** PDF dựng lại không phải PDF gốc; một số cổng nhà phát hành cần phiên đăng nhập hoặc CAPTCHA hợp lệ.
 
-## Đồng bộ mật khẩu MST và liên hệ (1.1.20)
+## Đồng bộ mật khẩu MST và liên hệ (1.2.2)
 
 - Mật khẩu MST tự mã hóa AES-GCM trên máy và đồng bộ ciphertext lên Supabase theo tài khoản AutoTax. Đăng nhập cùng email/mật khẩu AutoTax trên Web và Add-on để tự mở khóa, không cần bấm nút chuyển mật khẩu.
 - Admin chỉnh sửa danh sách liên kết chân trang tại trang quản trị: 1 ô nội dung hiển thị, 1 ô đường link, bật/tắt và sắp xếp.
 - Liên hệ: Zalo/điện thoại **0868838242**; email **lienhe@tracuuhoadon.top** / **ptflorist68@gmail.com**.
 - Copyright © 2026 AutoTax - Phương Thảo Florist. All rights reserved.
+
+
+## Cấu trúc phát hành
+
+Repository này chỉ giữ các tài nguyên Web tĩnh cần thiết cho GitHub Pages. Mã nguồn build Android, bộ triển khai Auth và backend/server-side được bảo trì trong repository riêng tư `tendoodn/tax` và không còn lưu ở cây public này.

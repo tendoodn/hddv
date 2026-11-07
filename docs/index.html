@@ -155,7 +155,7 @@ html.autotax-auth-gated #webLoginDialog{display:block!important;position:relativ
 html.autotax-auth-gated #webLoginDialog::backdrop{display:none!important}
 html.autotax-auth-gated #webLoginDialog [data-web-close]{display:none!important}
 html.autotax-auth-gated #webLoginOpen{display:none!important}
-</style></head>
+</style><style id="autotax-settings-icon-v121">#webSettingsToggle{background:transparent!important;border:0!important;box-shadow:none!important;color:#f8fafc!important}#webSettingsToggle svg{display:block;width:22px;height:22px;stroke:currentColor}</style></head>
 <body>
 <style>
 #autotaxZaloDock{position:fixed;z-index:80;top:78px;right:12px;display:flex;align-items:flex-start;gap:6px;transition:transform .22s ease}
@@ -191,7 +191,7 @@ document.getElementById('autotaxZaloSlide').addEventListener('click',function(){
           <button id="webLoginOpen" type="button" class="web-login-open">Đăng nhập</button>
           <div id="webUserBlock" class="web-user-block" hidden>
            <div class="web-settings-wrap">
-            <button id="webSettingsToggle" type="button" aria-label="Cài đặt tài khoản" aria-expanded="false" aria-controls="webSettingsMenu" title="Cài đặt tài khoản">⚙</button>
+            <button id="webSettingsToggle" type="button" aria-label="Cài đặt tài khoản" aria-expanded="false" aria-controls="webSettingsMenu" title="Cài đặt tài khoản"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.4 2.6h3.2l.6 2.3c.6.2 1.1.4 1.6.7l2.1-1.2 2.3 2.3-1.2 2.1c.3.5.5 1 .7 1.6l2.3.6v3.2l-2.3.6c-.2.6-.4 1.1-.7 1.6l1.2 2.1-2.3 2.3-2.1-1.2c-.5.3-1 .5-1.6.7l-.6 2.3h-3.2l-.6-2.3c-.6-.2-1.1-.4-1.6-.7l-2.1 1.2-2.3-2.3 1.2-2.1c-.3-.5-.5-1-.7-1.6L2 13.6v-3.2l2.3-.6c.2-.6.4-1.1.7-1.6L3.8 6.1l2.3-2.3 2.1 1.2c.5-.3 1-.5 1.6-.7z"/><circle cx="12" cy="12" r="3"/></svg></button>
             <nav id="webSettingsMenu" class="web-settings-menu" hidden aria-label="Cài đặt tài khoản">
              <button type="button" id="webEditProfile">Cập nhật thông tin</button>
              <a href="/user">Quản lý tài khoản</a>

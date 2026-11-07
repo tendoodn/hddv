@@ -319,6 +319,7 @@ async function refreshAccountCore(epoch){
   if(epoch!==accountRefreshEpoch)return;
   const previousAccount=account;
   account=session?.user||null;
+  document.documentElement.dataset.autotaxSignedIn=account?.id?'true':'false';
   accountRefreshOwner=account?.id||null;
   // Focus refreshes must not collapse a user's open account menu or dialog.
   if(previousAccount?.id!==account?.id||

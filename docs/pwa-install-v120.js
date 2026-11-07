@@ -6,7 +6,7 @@
  const base='/'+scope+'/';
  if('serviceWorker' in navigator&&isSecureContext)
   window.addEventListener('DOMContentLoaded',()=>navigator.serviceWorker.register(
-    base+'sw.js'+(scope==='lite'?'?v=123-fast1':''),
+    base+'sw.js'+(scope==='lite'?'?v=125-mst1':''),
     {scope:base,updateViaCache:'none'}
   ).then(reg=>{if(scope==='lite')void reg.update().catch(()=>{})})
    .catch(error=>console.warn('Không thể đăng ký cài ứng dụng:',error.message)),{once:true});

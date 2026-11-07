@@ -1,0 +1,15 @@
+[Unit]
+Description=AutoTax PDF LAN Offline
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/autotax-pdf
+ExecStart=/usr/bin/python3 -m http.server 8080 --bind 0.0.0.0 --directory /opt/autotax-pdf
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
